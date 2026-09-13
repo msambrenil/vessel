@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #09090B;
+  --foreground: #FFFFFF;
+  --raw-amber: #8B5CF6;
+  --primary-violet: #8B5CF6;
+  --blood-neon: #E61937;
+  --mint-neon: #10B981;
+  --surface-dark: #121216;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: #09090B;
+  color: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+  overflow-x: clip;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeLegibility;
+}
+
+/* Modo accesibilidad: Respetar preferencias de movimiento reducido y ahorro de batería del OS */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Selección suave en tono Electric Violet */
+::selection {
+  background-color: rgba(139, 92, 246, 0.4);
+  color: #FFFFFF;
+}
+
+/* Custom Scrollbar Minimalista Moderno */
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8B5CF6;
+}
+
+/* Efecto Glassmorphism refinado */
+.glass-panel {
+  background: rgba(18, 18, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-nav {
+  background: rgba(9, 9, 11, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Borde Neón Fucsia Giratorio para Miembros Pagos (Border Beam) */
+@keyframes border-beam-spin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.border-beam-fuchsia {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+  padding: 2px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.border-beam-fuchsia::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 250%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%) rotate(0deg);
+  transform-origin: center center;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    rgba(255, 0, 127, 0.25) 290deg,
+    #ff007f 320deg,
+    #ff2a85 345deg,
+    #f472b6 360deg
+  );
+  animation: border-beam-spin 8s linear infinite;
+  will-change: transform;
+}
+
+/* Erradicación de contraste Grindr (texto negro sobre acento):
+   Garantía arquitectónica global: cualquier botón o elemento sobre fondo de acento violeta/ámbar muestra texto blanco puro */
+.bg-rawAmber.text-black,
+.bg-electricViolet.text-black,
+.bg-amber-500.text-black,
+.bg-amber-400.text-black,
+.bg-amber-600.text-black {
+  color: #FFFFFF !important;
+}
+
+/* Micro-interacciones Táctiles y Cinematográficas */
+@keyframes plane-launch {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  35% { transform: translate(6px, -6px) scale(1.2); opacity: 0.95; }
+  65% { transform: translate(16px, -16px) scale(0.6); opacity: 0; }
+  66% { transform: translate(-8px, 8px) scale(0.4); opacity: 0; }
+  100% { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+.animate-plane-launch {
+  animation: plane-launch 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes pulse-wave {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.animate-pulse-wave {
+  animation: pulse-wave 0.55s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes lock-rotate {
+  0% { transform: rotate(0deg) scale(1); }
+  35% { transform: rotate(-18deg) scale(1.25); }
+  70% { transform: rotate(12deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.animate-lock-rotate {
+  animation: lock-rotate 0.4s ease-in-out;
+}
+

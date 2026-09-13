@@ -1,0 +1,2302 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">VESSEL // El Fin de la Era de Grindr</title>
+  
+  <!-- Fonts & Core Dependencies -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;0,800;1,400&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#050505',
+            'obsidian-surface': '#0d0d0d',
+            'obsidian-card': '#141414',
+            bloodNeon: '#FF1A53',
+            'bloodNeon-hover': '#FF3366',
+            rawAmber: '#E5A93C',
+            'rawAmber-hover': '#F5B94C',
+            concrete: '#8E8E93',
+            matrixGreen: '#00FF66'
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Inter"', 'sans-serif']
+          },
+          boxShadow: {
+            'amber-glow': '0 0 25px rgba(229, 169, 60, 0.3)',
+            'blood-glow': '0 0 25px rgba(255, 26, 83, 0.4)',
+            'card-elevation': '0 10px 30px -10px rgba(0,0,0,0.8)'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Dark Luxury Brutalist Aesthetics */
+    body {
+      background-color: #050505;
+      color: #E5E5E5;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Dual Mode Declarative Display Rules */
+    body[data-mode="user"] .investor-only {
+      display: none !important;
+    }
+    body[data-mode="investor"] .user-only {
+      display: none !important;
+    }
+
+    /* Scanline overlay for tactical hardware feeling */
+    .crt-grid {
+      background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* GPU-accelerated continuous rotating neon fuchsia beam */
+    @keyframes border-beam-spin {
+      0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+      100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+    .border-beam-fuchsia {
+      position: relative;
+      overflow: hidden;
+    }
+    .border-beam-fuchsia::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 260%;
+      aspect-ratio: 1 / 1;
+      background: conic-gradient(from 0deg, transparent 0 300deg, #d946ef 330deg, #ec4899 350deg, transparent 360deg);
+      animation: border-beam-spin 8s linear infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .border-beam-fuchsia::after {
+      content: '';
+      position: absolute;
+      inset: 2px;
+      background: #0d0d0d;
+      border-radius: inherit;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .border-beam-inner {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Custom range slider */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: #262626;
+      height: 6px;
+      border-radius: 4px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #E5A93C;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(229, 169, 60, 0.5);
+      border: 2px solid #0a0a0a;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d0d0d;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #262626;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #E5A93C;
+    }
+  </style>
+</head>
+<body data-mode="user" class="crt-grid selection:bg-rawAmber selection:text-black min-h-screen">
+
+  <!-- =========================================================
+       TOP FLOATING TACTICAL DOCK (HEADER)
+       ========================================================= -->
+  <header class="sticky top-0 z-50 bg-neutral-950/90 backdrop-blur-xl border-b border-white/10 px-3 sm:px-8 py-2.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <!-- Brand & Mode Title -->
+      <div class="flex items-center gap-3">
+        <a href="#hero" class="flex items-center gap-2.5 group">
+          <div class="w-9 h-9 rounded-lg bg-neutral-900 border border-bloodNeon/50 flex items-center justify-center p-1 shadow-[0_0_15px_rgba(255,26,83,0.3)] group-hover:scale-105 transition-transform overflow-hidden">
+            <img src="brand/vessel-glyph.png" alt="Vessel Glyph" class="w-full h-full object-contain">
+          </div>
+          <div>
+            <div class="font-mono font-black tracking-wider text-base text-white flex items-center gap-1.5">
+              <span>VESSEL</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-bloodNeon animate-pulse"></span>
+            </div>
+            <!-- Dynamic Subtitle -->
+            <p class="user-only text-[9px] font-mono text-rawAmber uppercase tracking-widest -mt-0.5">EXPERIENCIA DE USUARIO // 72 FEATURES</p>
+            <p class="investor-only text-[9px] font-mono text-neutral-400 uppercase tracking-widest -mt-0.5">INVESTOR SUITE // SEED ROUND</p>
+          </div>
+        </a>
+
+        <!-- Mode Pill in Header -->
+        <div class="user-only hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-[10px] font-bold">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>100% LIBRE DE FAKES // ZERO GHOSTING</span>
+        </div>
+        <div class="investor-only hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-rawAmber/10 border border-rawAmber/30 text-rawAmber font-mono text-[10px] font-bold">
+          <span class="animate-ping w-1.5 h-1.5 rounded-full bg-rawAmber"></span>
+          <span>RONDA SEMILLA $2.5M USD // 15% EQUITY</span>
+        </div>
+      </div>
+
+      <!-- Quick Nav Links: Adapts between User and Investor -->
+      <nav class="hidden lg:flex items-center gap-1 font-mono text-xs text-neutral-300">
+        <!-- User Nav Links -->
+        <a href="#problem-solution" class="user-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">01. Por Qué VESSEL</a>
+        <a href="#interactive-simulator" class="user-only px-3 py-1.5 rounded-lg hover:text-rawAmber hover:bg-rawAmber/10 transition-all font-bold text-rawAmber">02. Probar App en Vivo</a>
+        <a href="#features-matrix" class="user-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">03. Qué Podés Hacer</a>
+        <a href="#battlecard" class="user-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">04. vs Grindr</a>
+        <a href="#get-started" class="user-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all font-bold text-emerald-400">05. Empezar Ahora</a>
+
+        <!-- Investor Nav Links -->
+        <a href="#problem-solution" class="investor-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">01. Tesis & Mercado</a>
+        <a href="#interactive-simulator" class="investor-only px-3 py-1.5 rounded-lg hover:text-rawAmber hover:bg-rawAmber/10 transition-all font-bold text-rawAmber">02. Demo & Ops</a>
+        <a href="#features-matrix" class="investor-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">03. 72 Features</a>
+        <a href="#battlecard" class="investor-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">04. Moats vs Grindr</a>
+        <a href="#monetization" class="investor-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">05. Unit Economics</a>
+        <a href="#financials" class="investor-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all">06. Calculadora ARR</a>
+        <a href="#dealroom" class="investor-only px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/5 transition-all font-bold text-rawAmber">07. Ronda $2.5M</a>
+      </nav>
+
+      <!-- Action Buttons: Audio FX, Ops Link & High-Impact Dual Mode Toggle -->
+      <div class="flex items-center gap-2">
+        <!-- Audio Synthesizer Toggle -->
+        <button id="audio-toggle" type="button" class="px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-neutral-700 hover:border-rawAmber/50 text-neutral-300 hover:text-rawAmber font-mono text-xs flex items-center gap-1.5 transition-all" title="Activar/Desactivar Síntesis Acústica Sub-Bass 55Hz">
+          <span id="audio-icon">🔊</span>
+          <span class="hidden xl:inline text-[10px]">SUB-BASS</span>
+        </button>
+
+        <!-- Direct link to /admin Ops Console (investor mode or quick ops) -->
+        <a href="http://localhost:3001/admin" target="_blank" class="investor-only hidden sm:flex px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-bloodNeon/40 hover:border-bloodNeon text-bloodNeon hover:bg-bloodNeon/10 font-mono text-xs items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(255,26,83,0.2)]">
+          <span>🛡️</span>
+          <span class="text-[11px] font-bold">/ADMIN OPS</span>
+        </a>
+
+        <!-- Direct link to live app (user mode) -->
+        <a href="http://localhost:3001" target="_blank" class="user-only hidden sm:flex px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 hover:bg-emerald-500/10 font-mono text-xs items-center gap-1.5 transition-all">
+          <span>🚀</span>
+          <span class="text-[11px] font-bold">ABRIR APP</span>
+        </a>
+
+        <!-- Segmented Mode Switcher (User vs Investor) -->
+        <div class="inline-flex p-0.5 rounded-xl bg-neutral-900 border border-white/20 shadow-inner">
+          <button id="btn-mode-user" type="button" onclick="switchPresentationMode('user')" class="px-2.5 sm:px-3 py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5">
+            <span>⚡</span>
+            <span>USUARIOS</span>
+          </button>
+          <button id="btn-mode-investor" type="button" onclick="switchPresentationMode('investor')" class="px-2.5 sm:px-3 py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5">
+            <span>💼</span>
+            <span>INVERSORES</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================================
+       HERO SECTION: DUAL EXPERIENCE & OFFICIAL NEON BRANDING
+       ========================================================= -->
+  <section id="hero" class="relative pt-6 pb-16 px-4 sm:px-8 border-b border-white/5 overflow-hidden">
+    <!-- Glow background orb -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-gradient-to-tr from-bloodNeon/15 via-rawAmber/15 to-transparent blur-[140px] pointer-events-none rounded-full"></div>
+
+    <div class="max-w-6xl mx-auto relative z-10 text-center space-y-5">
+      
+      <!-- User Mode Badge -->
+      <div class="user-only inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rawAmber/10 border border-rawAmber/30 text-rawAmber font-mono text-xs">
+        <span>★</span>
+        <span>EL NUEVO ESTÁNDAR PARA TUS NOCHES Y ENCUENTROS</span>
+        <span class="text-neutral-500">//</span>
+        <span class="text-emerald-400 font-bold">100% LIBRE DE FAKES</span>
+      </div>
+
+      <!-- Investor Mode Badge -->
+      <div class="investor-only inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-neutral-300 font-mono text-xs">
+        <span class="text-bloodNeon">★</span>
+        <span>THE NEXT-GENERATION QUEER INTIMACY & NIGHTLIFE ECOSYSTEM</span>
+        <span class="text-neutral-500">//</span>
+        <span class="text-emerald-400 font-bold">72 FEATURES ACTIVAS</span>
+      </div>
+
+      <!-- Mode Quick Switch Banner in Hero -->
+      <div class="flex justify-center">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-white/10 text-[11px] font-mono text-neutral-400">
+          <span>Estás viendo la versión para:</span>
+          <span class="user-only text-rawAmber font-bold">⚡ USUARIOS</span>
+          <span class="investor-only text-rawAmber font-bold">💼 INVERSORES</span>
+          <span class="text-neutral-600">|</span>
+          <button type="button" onclick="togglePresentationMode()" class="text-neutral-300 hover:text-white underline transition-colors">
+            <span class="user-only">Ver versión Inversores (Negocio & Finanzas) →</span>
+            <span class="investor-only">Ver versión Usuarios (Placer & Noche) →</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- OFFICIAL VESSEL NEON LOGO HERO EMBLEM (Shared Anchor) -->
+      <div class="relative max-w-xl sm:max-w-2xl mx-auto my-3 group">
+        <!-- Diffuse Neon Ambient Backlight -->
+        <div class="absolute -inset-1.5 bg-gradient-to-r from-bloodNeon/40 via-rawAmber/20 to-bloodNeon/40 rounded-3xl blur-2xl opacity-80 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+        
+        <!-- Brutalist Framed Container -->
+        <div class="relative rounded-2xl bg-black/95 border border-bloodNeon/50 p-4 sm:p-5 shadow-[0_0_60px_rgba(255,26,83,0.35)] backdrop-blur-2xl flex flex-col items-center justify-center overflow-hidden">
+          <!-- Top Scanline HUD -->
+          <div class="w-full flex items-center justify-between font-mono text-[9px] text-neutral-500 uppercase tracking-widest pb-2.5 border-b border-white/10">
+            <span class="flex items-center gap-1.5 text-bloodNeon font-bold">
+              <span class="w-2 h-2 rounded-full bg-bloodNeon animate-pulse"></span>
+              VESSEL PHYSICAL BRANDING
+            </span>
+            <span class="text-neutral-400 hidden sm:inline">HARDWARE & DRM PROTECTED</span>
+            <span class="text-rawAmber font-bold">72 FEATURES ACTIVE</span>
+          </div>
+
+          <!-- Official Vessel Neon Logo Image -->
+          <div class="py-2 sm:py-4 flex items-center justify-center">
+            <img src="brand/vessel-logo.jpg" alt="VESSEL Official Neon Logo" class="max-h-32 sm:max-h-44 w-auto object-contain drop-shadow-[0_0_35px_rgba(255,26,83,0.7)] select-none">
+          </div>
+
+          <!-- Bottom Micro-Telemetry Badge -->
+          <div class="w-full flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-white/10 font-mono text-[10px] text-neutral-400">
+            <span class="text-neutral-300">ESTÁNDAR BERLÍN // LUXURY CRUISING</span>
+            <span class="px-2 py-0.5 rounded bg-rawAmber/15 text-rawAmber font-bold border border-rawAmber/30">ONE FACE = ONE RECEPTACLE</span>
+            <span class="text-emerald-400 font-bold">● LOCAL-FIRST ZK</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= USER HERO COPY ================= -->
+      <div class="user-only space-y-4">
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
+          Tus encuentros, sin vueltas.<br>
+          <span class="bg-gradient-to-r from-rawAmber via-amber-200 to-amber-500 bg-clip-text text-transparent">
+            Fotos blindadas. Tipos reales. Tu noche garantizada.
+          </span>
+        </h1>
+
+        <p class="text-base sm:text-lg text-neutral-300 max-w-3xl mx-auto font-normal leading-relaxed">
+          ¿Cansado de perfiles sin foto que te exigen fotos, charlas de 3 días que terminan en ghosting en la puerta, y miedo a que le saquen captura de pantalla a tus nudes?
+          <strong class="text-white font-semibold">VESSEL</strong> está diseñada para que conozcas pibes reales, salgas de fiesta y disfrutes de tu sexualidad con 
+          <span class="text-rawAmber font-medium">cero vueltas</span>, 
+          <span class="text-rawAmber font-medium">fotos imposibles de filtrar</span> y 
+          <span class="text-bloodNeon font-medium">acuerdos claros antes de salir de casa</span>.
+        </p>
+
+        <!-- User Quick Action Buttons -->
+        <div class="pt-2 flex flex-wrap justify-center gap-3">
+          <a href="#interactive-simulator" class="px-6 py-3.5 rounded-xl bg-rawAmber text-black font-mono font-bold text-sm hover:bg-rawAmber-hover transition-all flex items-center gap-2 shadow-amber-glow active:scale-95">
+            <span>⚡ PROBAR EL SIMULADOR EN VIVO (7 PANTALLAS)</span>
+            <span>→</span>
+          </a>
+          <a href="http://localhost:3001" target="_blank" class="px-5 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-emerald-500/50 text-emerald-300 hover:text-white font-mono text-sm transition-all flex items-center gap-2 active:scale-95">
+            <span>🚀 ENTRAR A LA APLICACIÓN WEB</span>
+            <span class="text-xs">↗</span>
+          </a>
+          <a href="#features-matrix" class="px-5 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white font-mono text-sm hover:border-rawAmber/50 transition-all flex items-center gap-2 active:scale-95">
+            <span>🔥 72 COSAS QUE PODÉS HACER</span>
+          </a>
+        </div>
+
+        <!-- 4 Cards Focused on User Desires & Real Pain Killers -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-6 text-left">
+          <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-rawAmber font-mono text-xs uppercase tracking-wider font-bold">01 // CERO FAKES</div>
+            <div class="text-xl sm:text-2xl font-mono font-black text-white pt-1">100% Tipos Reales</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Un rostro = una cuenta con verificación biométrica 3D. Se acabaron los perfiles falsos y fotos robadas.</p>
+          </div>
+
+          <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-rawAmber font-mono text-xs uppercase tracking-wider font-bold">02 // CLARIDAD TOTAL</div>
+            <div class="text-xl sm:text-2xl font-mono font-black text-white pt-1">Protocolo de Salida</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Sabés de antemano si busca sexo rápido puntual (30m), mimos y ducha o dormir juntos. Cero momentos incómodos.</p>
+          </div>
+
+          <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-rawAmber font-mono text-xs uppercase tracking-wider font-bold">03 // SEGURIDAD EXTREMA</div>
+            <div class="text-xl sm:text-2xl font-mono font-black text-white pt-1">Fotos Sin Screenshots</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Bloqueo total de capturas de pantalla (DRM Blackout). Si intentan capturar tus nudes, la pantalla queda negra.</p>
+          </div>
+
+          <div class="p-4 sm:p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-rawAmber font-mono text-xs uppercase tracking-wider font-bold">04 // BOLICHES & FIESTAS</div>
+            <div class="text-xl sm:text-2xl font-mono font-black text-white pt-1">Cruces en la Pista</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">¿Te miraste con alguien en Amerika o Crobar? Reencontralo en el radar de las últimas 48h con cuenta regresiva.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= INVESTOR HERO COPY ================= -->
+      <div class="investor-only space-y-4">
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.1]">
+          El Fin de la Era de Grindr.<br>
+          <span class="bg-gradient-to-r from-rawAmber via-amber-200 to-amber-500 bg-clip-text text-transparent">
+            La Revolución Táctica de la Intimidad.
+          </span>
+        </h1>
+
+        <p class="text-base sm:text-lg text-neutral-300 max-w-3xl mx-auto font-normal leading-relaxed">
+          Grindr lleva 15 años sin innovar, plagado de perfiles falsos, ghosting tóxico, filtraciones de privacidad y anuncios intrusivos. 
+          <strong class="text-white font-semibold">VESSEL</strong> es el primer ecosistema queer de alta fidelidad que combina 
+          <span class="text-rawAmber font-medium">hardware táctico</span>, 
+          <span class="text-rawAmber font-medium">privacidad Local-First ZK</span>, 
+          <span class="text-rawAmber font-medium">integración con la vida nocturna</span>, 
+          <span class="text-bloodNeon font-medium">consola de operaciones /admin</span> y un motor de 
+          <span class="text-rawAmber font-medium">micro-monetización nocturna</span> sin precedentes.
+        </p>
+
+        <!-- Investor Quick Action Buttons -->
+        <div class="pt-2 flex flex-wrap justify-center gap-3">
+          <a href="#interactive-simulator" class="px-6 py-3.5 rounded-xl bg-rawAmber text-black font-mono font-bold text-sm hover:bg-rawAmber-hover transition-all flex items-center gap-2 shadow-amber-glow active:scale-95">
+            <span>⚡ PROBAR SIMULADOR EN VIVO (7 PANTALLAS)</span>
+            <span>→</span>
+          </a>
+          <a href="http://localhost:3001/admin" target="_blank" class="px-5 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-bloodNeon/50 text-bloodNeon hover:text-white font-mono text-sm transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,26,83,0.25)] active:scale-95" title="Abrir Consola de Administración /admin">
+            <span>🛡️ CONSOLA ADMIN & OPS (/admin)</span>
+            <span class="text-xs">↗</span>
+          </a>
+          <a href="#financials" class="px-5 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-white font-mono text-sm hover:border-rawAmber/50 transition-all flex items-center gap-2 active:scale-95">
+            <span>📊 MODELO DE INGRESOS & ARR</span>
+          </a>
+          <button type="button" onclick="openContactModal()" class="px-5 py-3.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-white/20 text-neutral-300 font-mono text-sm transition-all flex items-center gap-2 active:scale-95">
+            <span>📅 AGENDAR REUNIÓN FOUNDERS</span>
+          </button>
+        </div>
+
+        <!-- 4 High-Impact Investor KPI Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-6 text-left">
+          <div class="p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-neutral-400 font-mono text-xs uppercase tracking-wider">Mercado Objetivo (TAM)</div>
+            <div class="text-3xl font-mono font-black text-white pt-1">$3.8B+ USD</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Economía queer global en dating, turismo, eventos nocturnos y hospitalidad.</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-neutral-400 font-mono text-xs uppercase tracking-wider">Ventaja de ARPPU</div>
+            <div class="text-3xl font-mono font-black text-rawAmber pt-1">3.4x Mayor</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Combinación de SaaS ($14.99) con micro-pases nocturnos ($1.99 / $2.99).</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-neutral-400 font-mono text-xs uppercase tracking-wider">Riesgo Legal / Multas</div>
+            <div class="text-3xl font-mono font-black text-emerald-400 pt-1">0% Liability</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Arquitectura Local-First Zero-Knowledge: sin filtraciones en servidor.</p>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-obsidian-surface/90 border border-white/10 hover:border-rawAmber/40 transition-all shadow-card-elevation">
+            <div class="text-neutral-400 font-mono text-xs uppercase tracking-wider">K-Factor Viral</div>
+            <div class="text-3xl font-mono font-black text-white pt-1">0.72 Orgánico</div>
+            <p class="text-xs text-neutral-400 font-sans pt-1.5 leading-snug">Impulsado por Cruces en la Pista, Modo Wingman y Kink Matrix.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 01: PROBLEM VS SOLUTION (DUAL THESIS)
+       ========================================================= -->
+  <section id="problem-solution" class="py-16 px-4 sm:px-8 border-b border-white/5">
+    <div class="max-w-6xl mx-auto space-y-10">
+      
+      <!-- User View Header -->
+      <div class="user-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">01 // LA DIFERENCIA ENTRE PERDER TIEMPO Y DISFRUTAR</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Por qué vas a desinstalar Grindr para siempre</h2>
+        <p class="text-sm text-neutral-400 font-sans">
+          Tres frustraciones históricas que todas las personas queer sufrimos y cómo VESSEL las erradica desde el primer minuto.
+        </p>
+      </div>
+
+      <!-- Investor View Header -->
+      <div class="investor-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">01 // LA OPORTUNIDAD DE MERCADO & TESIS ESTRATÉGICA</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Por qué los usuarios odian Grindr y el mercado exige un sucesor</h2>
+        <p class="text-sm text-neutral-400 font-sans">
+          Grindr opera como un monopolio vulnerable: alta insatisfacción de usuarios (NPS -12), riesgos regulatorios masivos y nula innovación de producto.
+        </p>
+      </div>
+
+      <!-- ================= USER VIEW 3-COLUMN CARDS ================= -->
+      <div class="user-only grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Card 1: Old Nightmare -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-red-500/20 space-y-4">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-lg">
+            ✕
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white font-mono">La Pesadilla de Siempre</h3>
+            <p class="text-xs font-mono text-red-400 uppercase">Grindr / Scruff / Sniffies</p>
+          </div>
+          <ul class="text-xs text-neutral-400 space-y-2.5 font-sans">
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Perfiles Fantasma:</strong> Cuentas sin foto que te exigen fotos íntimas antes de decirte 'Hola'.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Ghosting Crónico:</strong> Charlás horas, te perfumás, llegás a la puerta y te bloquean sin dar la cara.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Tus Nudes en Peligro:</strong> Capturas de pantalla libres que terminan en Twitter o grupos de WhatsApp.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Plagado de Banners:</strong> Un anuncio en video con sonido que te tapa la pantalla cada dos clics.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 2: VESSEL Real Hookup Experience -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-rawAmber/40 space-y-4 shadow-amber-glow relative">
+          <div class="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-rawAmber text-black font-mono text-[9px] font-bold">
+            EXPERIENCIA VESSEL
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-rawAmber/10 border border-rawAmber/30 flex items-center justify-center text-rawAmber text-lg">
+            ✓
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white font-mono">Encuentros Sin Vueltas</h3>
+            <p class="text-xs font-mono text-rawAmber uppercase">Directo, Claro y Con Química</p>
+          </div>
+          <ul class="text-xs text-neutral-300 space-y-2.5 font-sans">
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Sabés Qué Esperar:</strong> Protocolo de salida público: ¿Sexo rápido (30m)? ¿Mimos y ducha? ¿Dormir juntos?</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Sabés Si Tiene Lugar:</strong> Badge visible en la tarjeta: 'Tiene sitio' o 'Se desplaza'. Sin preguntar 10 veces.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Doble Consentimiento en Fetiches:</strong> Solo descubren si coinciden en fetiches si AMBOS los marcaron en secreto.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Waypoint Seguro en 2 Fases:</strong> Primero te pasa la esquina pública; piso y timbre se liberan al llegar a la cuadra.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 3: Nightlife & Safety -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-bloodNeon/30 space-y-4">
+          <div class="w-10 h-10 rounded-xl bg-bloodNeon/10 border border-bloodNeon/30 flex items-center justify-center text-bloodNeon text-lg">
+            🛡️
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white font-mono">Noche & Salud Cuidada</h3>
+            <p class="text-xs font-mono text-bloodNeon uppercase">Disfrutá Sin Miedo</p>
+          </div>
+          <ul class="text-xs text-neutral-300 space-y-2.5 font-sans">
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Cruces en la Pista (48h):</strong> Si cruzaste miradas en un boliche y no hablaste, reencontralo al día siguiente.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Baliza Óptica en Pantalla:</strong> Levantá el celular destellando para que tu match te ubique en el boliche a oscuras.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Doxy-PEP & PrEP Trackers:</strong> Recordatorios automáticos a las 24h y 72h para proteger tu salud sexual.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Modo Camaleón & Auxilio:</strong> Un toque y la app se transforma en un bloc de notas señuelo si alguien mira tu pantalla.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ================= INVESTOR VIEW 3-COLUMN CARDS ================= -->
+      <div class="investor-only grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Card 1 -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-red-500/20 space-y-4">
+          <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-lg">
+            ✕
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white font-mono">Vulnerabilidad de Grindr</h3>
+            <p class="text-xs font-mono text-red-400 uppercase">Monopolio Estancado</p>
+          </div>
+          <ul class="text-xs text-neutral-400 space-y-2 font-sans">
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Epidemia de Bots:</strong> 40%+ de cuentas son bots, spam o perfiles falsos que inflan MAUs artificialmente.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Sanciones de Privacidad:</strong> Multas millonarias por compartir geolocalización sensible con ad-networks (GDPR).</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Dependencia de Anuncios:</strong> Incapaz de adoptar privacidad Local-First sin destruir su negocio de publicidad.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-400 font-bold">✕</span>
+              <span><strong>Precios Usureros:</strong> Cobran $39.99/mes por desbloquear filtros básicos en una app rota.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-rawAmber/40 space-y-4 shadow-amber-glow relative">
+          <div class="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-rawAmber text-black font-mono text-[9px] font-bold">
+            SOLUCIÓN ESTRATÉGICA
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-rawAmber/10 border border-rawAmber/30 flex items-center justify-center text-rawAmber text-lg">
+            ✓
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white font-mono">La Propuesta VESSEL</h3>
+            <p class="text-xs font-mono text-rawAmber uppercase">Ecosistema Soberano</p>
+          </div>
+          <ul class="text-xs text-neutral-300 space-y-2 font-sans">
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Biometría ZK 1 Face = 1 Receptacle:</strong> Erradicación total de bots sin almacenar caras en el servidor.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Arquitectura Local-First:</strong> 94% menos costo de almacenamiento cloud guardando fotos en IndexedDB.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>DRM Blackout & Esteganografía:</strong> Inmunidad absoluta contra capturas de pantalla y extorsión.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-rawAmber font-bold">✓</span>
+              <span><strong>Monetización Tri-Capa:</strong> SaaS ($14.99) + Micro-Pases ($1.99-$2.99) + B2B Venues. Cero anuncios.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-bloodNeon/30 space-y-4">
+          <div class="w-10 h-10 rounded-xl bg-bloodNeon/10 border border-bloodNeon/30 flex items-center justify-center text-bloodNeon text-lg">
+            ★
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-white font-mono">El Moat de Red Phygital</h3>
+            <p class="text-xs font-mono text-bloodNeon uppercase">Viralidad Orgánica</p>
+          </div>
+          <ul class="text-xs text-neutral-300 space-y-2 font-sans">
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>K-Factor 0.72:</strong> 'Cruces en la Pista' y 'Modo Wingman' obligan a invitar amigos para salir de fiesta.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Retención Nocturna:</strong> 3.2x más tiempo de uso entre las 00:00 y las 06:00 AM que cualquier app de citas.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Asociaciones B2B:</strong> Cartelera oficial con boliches emblemáticos (Crobar, Amerika, Under Club).</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-bloodNeon font-bold">✓</span>
+              <span><strong>Barrera de Salida Alta:</strong> Ficha táctica, historial de cruces y boveda privada retienen al usuario.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 02: INTERACTIVE SIMULATOR (7 LIVE SCREENS)
+       ========================================================= -->
+  <section id="interactive-simulator" class="py-16 px-4 sm:px-8 border-b border-white/5 bg-neutral-950/50">
+    <div class="max-w-6xl mx-auto space-y-8">
+      
+      <!-- User View Header -->
+      <div class="user-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">02 // SIMULADOR EN VIVO: EXPERIMENTÁ VESSEL EN TU MANO</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Probá la aplicación real acá mismo</h2>
+        <p class="text-sm text-neutral-400 font-sans">
+          Tocá las diferentes pantallas para ver cómo funciona la grilla con fotos, el radar, los boliches y el chat privado.
+        </p>
+      </div>
+
+      <!-- Investor View Header -->
+      <div class="investor-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">02 // DEMO INTERACTIVO DE HARDWARE & SOFTWARE</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Simulador de Producción (7 Pantallas Tácticas)</h2>
+        <p class="text-sm text-neutral-400 font-sans">
+          Inspección de las interfaces reales desplegadas en producción, verificando la UX brutalista, el portal /admin y el foso tecnológico.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-4">
+        <!-- Interactive Controls / Screen Switcher -->
+        <div class="lg:col-span-5 space-y-3">
+          <div class="text-xs font-mono text-neutral-400 uppercase tracking-widest pb-1 border-b border-white/10 flex justify-between">
+            <span>SELECCIONAR PANTALLA</span>
+            <span class="text-rawAmber">7/7 DISPONIBLES</span>
+          </div>
+
+          <!-- Buttons: 7 Screens -->
+          <div class="space-y-2">
+            <button type="button" onclick="setSimScreen('grid')" data-screen="grid" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-rawAmber/15 border-rawAmber text-rawAmber font-bold shadow-amber-glow">
+              <span class="flex items-center gap-2">
+                <span>📱</span>
+                <span class="user-only">1. Grilla con Fotos & VIP</span>
+                <span class="investor-only">1. Matriz Táctica & Borde VIP GPU</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-rawAmber/20 text-rawAmber font-bold">VER</span>
+            </button>
+
+            <button type="button" onclick="setSimScreen('radar')" data-screen="radar" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700">
+              <span class="flex items-center gap-2">
+                <span>🎯</span>
+                <span class="user-only">2. Radar Polar Discreto</span>
+                <span class="investor-only">2. Radar S2 & Discretización ~152m</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-neutral-400">VER</span>
+            </button>
+
+            <button type="button" onclick="setSimScreen('nightlife')" data-screen="nightlife" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700">
+              <span class="flex items-center gap-2">
+                <span>🎉</span>
+                <span class="user-only">3. Cruces en Boliches & Fiestas</span>
+                <span class="investor-only">3. Nightlife (Cruces 48h & Baliza)</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-neutral-400">VER</span>
+            </button>
+
+            <button type="button" onclick="setSimScreen('profile')" data-screen="profile" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700">
+              <span class="flex items-center gap-2">
+                <span>👤</span>
+                <span class="user-only">4. Ficha de Cita & Fetiches</span>
+                <span class="investor-only">4. Ficha Táctica & Kink Matrix</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-neutral-400">VER</span>
+            </button>
+
+            <button type="button" onclick="setSimScreen('chat')" data-screen="chat" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700">
+              <span class="flex items-center gap-2">
+                <span>💬</span>
+                <span class="user-only">5. Chat Seguro & Waypoint</span>
+                <span class="investor-only">5. Chat Efímero & Waypoints 2 Fases</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-neutral-400">VER</span>
+            </button>
+
+            <button type="button" onclick="setSimScreen('admin')" data-screen="admin" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-bloodNeon/50">
+              <span class="flex items-center gap-2">
+                <span>🛡️</span>
+                <span class="user-only">6. Centro de Confianza & Reportes</span>
+                <span class="investor-only">6. Portal OPS /admin (MRR & Biometría)</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-bloodNeon/20 text-bloodNeon font-bold">OPS</span>
+            </button>
+
+            <button type="button" onclick="setSimScreen('vaults')" data-screen="vaults" class="sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-rawAmber/50">
+              <span class="flex items-center gap-2">
+                <span>🔒</span>
+                <span class="user-only">7. Tus Bóvedas Privadas</span>
+                <span class="investor-only">7. Bóvedas IndexedDB (Zero Cloud Cost)</span>
+              </span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">ZK</span>
+            </button>
+          </div>
+
+          <!-- Explanatory Insight Box below buttons -->
+          <div class="p-4 rounded-2xl bg-neutral-900 border border-white/10 space-y-1.5">
+            <div id="insight-title" class="font-mono font-bold text-xs text-rawAmber">
+              Matriz Táctica 2/3 & Borde VIP Neón
+            </div>
+            <p id="insight-desc" class="text-xs text-neutral-300 font-sans leading-relaxed">
+              Tarjeta con borde neón fucsia rotativo en GPU para miembros VESSEL UNLIMITED, gradiente al 46% y píldora elástica de protocolo que nunca se corta.
+            </p>
+          </div>
+        </div>
+
+        <!-- Phone Hardware Mockup (Center Display) -->
+        <div class="lg:col-span-7 flex justify-center">
+          <div class="w-[340px] sm:w-[380px] h-[680px] bg-black rounded-[48px] border-[6px] border-neutral-800 shadow-[0_0_50px_rgba(0,0,0,0.9)] p-3 relative flex flex-col justify-between overflow-hidden">
+            <!-- Hardware Dynamic Island / Speaker -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-neutral-900 rounded-full z-40 flex items-center justify-center border border-white/5">
+              <div class="w-2.5 h-2.5 rounded-full bg-black/80 ml-auto mr-3 border border-white/10"></div>
+            </div>
+
+            <!-- Virtual Mobile Screen Container -->
+            <div class="w-full h-full bg-[#080808] rounded-[38px] overflow-y-auto overflow-x-hidden pt-7 pb-4 px-3 flex flex-col justify-between relative select-none">
+              
+              <!-- Screen 1: GRID (Matrix with Klaus VIP rotating neon beam) -->
+              <div id="screen-grid" class="sim-screen space-y-3 flex-1">
+                <!-- Header inside phone -->
+                <div class="flex items-center justify-between border-b border-white/10 pb-2 pt-1 font-mono text-[10px]">
+                  <span class="text-rawAmber font-bold">VESSEL // MATRIZ</span>
+                  <span class="text-neutral-400">14 CERCA</span>
+                  <span class="text-emerald-400">● ACTIVO</span>
+                </div>
+
+                <!-- 2 Cards Preview (Left: Klaus VIP with border beam; Right: Mateo) -->
+                <div class="grid grid-cols-2 gap-2.5">
+                  <!-- Klaus VIP Card -->
+                  <div class="border-beam-fuchsia rounded-2xl aspect-[2/3] relative cursor-pointer group shadow-card-elevation" onclick="triggerCardClick('klaus')">
+                    <div class="border-beam-inner rounded-2xl overflow-hidden relative">
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80" alt="Klaus" class="w-full h-full object-cover">
+                      
+                      <!-- 46% dark gradient scrim for flawless contrast -->
+                      <div class="absolute inset-x-0 bottom-0 h-[46%] bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none"></div>
+
+                      <!-- Top Status Tag -->
+                      <div class="absolute top-2 left-2 flex items-center gap-1 z-10">
+                        <span class="px-1.5 py-0.5 rounded bg-fuchsia-950/80 border border-fuchsia-500/60 text-fuchsia-300 font-mono text-[8px] font-bold">
+                          VIP UNLIMITED
+                        </span>
+                      </div>
+
+                      <!-- Bottom Info -->
+                      <div class="absolute bottom-2 inset-x-2 space-y-1 z-10 text-left">
+                        <div class="flex items-center justify-between">
+                          <span class="font-mono font-bold text-xs text-white">KLAUS, 28</span>
+                          <span class="text-[9px] font-mono text-emerald-400">~150m</span>
+                        </div>
+                        <div class="text-[9px] font-mono text-rawAmber font-semibold">ACTIVO // CON SITIO</div>
+
+                        <!-- Elastic Protocol Pill with Popover Trigger -->
+                        <div class="relative">
+                          <button type="button" onclick="toggleSimPopover(event)" class="w-full px-1.5 py-0.5 rounded-lg bg-black/75 border border-amber-400/50 hover:border-amber-300 text-amber-200 font-mono text-[8px] flex items-center justify-between tracking-tight transition-all">
+                            <span class="truncate font-bold">⏱️ PUNTUAL</span>
+                            <span class="text-[8px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold ml-1">+2</span>
+                          </button>
+
+                          <!-- Interactive Popover in Phone Mockup -->
+                          <div id="sim-pill-popover" class="hidden absolute bottom-full left-0 right-0 mb-1 p-2 rounded-xl bg-neutral-950/95 border border-amber-500/60 text-[8px] font-mono text-neutral-200 z-50 shadow-2xl space-y-1">
+                            <div class="text-rawAmber font-bold flex justify-between items-center">
+                              <span>EXPECTATIVA DE ENCUENTRO</span>
+                              <span onclick="closeSimPopover(event)" class="cursor-pointer text-white hover:text-red-400">✕</span>
+                            </div>
+                            <p class="text-[8px] text-neutral-300">"Puntual y directo. Sin sobremesa. Ducha y cada uno a lo suyo."</p>
+                            <div class="pt-1 border-t border-white/10 flex justify-between text-[7px] text-neutral-400">
+                              <span class="text-emerald-400">✓ BIO 3D MATCH</span>
+                              <span>👻 KARMA 98%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Mateo Standard Card -->
+                  <div class="rounded-2xl aspect-[2/3] relative bg-neutral-900 border border-white/10 overflow-hidden cursor-pointer shadow-card-elevation" onclick="triggerCardClick('mateo')">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80" alt="Mateo" class="w-full h-full object-cover">
+                    <div class="absolute inset-x-0 bottom-0 h-[46%] bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none"></div>
+                    
+                    <div class="absolute bottom-2 inset-x-2 space-y-1 z-10 text-left">
+                      <div class="flex items-center justify-between">
+                        <span class="font-mono font-bold text-xs text-white">MATEO, 24</span>
+                        <span class="text-[9px] font-mono text-neutral-400">~420m</span>
+                      </div>
+                      <div class="text-[9px] font-mono text-neutral-400">PASIVO // VIAJA</div>
+                      <div class="px-1.5 py-0.5 rounded-lg bg-black/60 border border-white/10 text-neutral-300 font-mono text-[8px] text-center">
+                        🫂 MIMOS & CHARLA
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-2 rounded-xl bg-neutral-900/70 border border-white/10 text-[9px] font-mono text-neutral-300 flex items-center justify-between">
+                  <span>⚡ HAZ VIP GPU ACTIVO</span>
+                  <span class="text-rawAmber">60 FPS FLUIDO</span>
+                </div>
+              </div>
+
+              <!-- Screen 2: RADAR -->
+              <div id="screen-radar" class="sim-screen hidden space-y-3 flex-1 text-center">
+                <div class="border-b border-white/10 pb-2 pt-1 font-mono text-[10px] flex justify-between">
+                  <span class="text-rawAmber font-bold">SONAR TÁCTICO POLAR</span>
+                  <span class="text-emerald-400">GOOGLE S2 ~152m</span>
+                </div>
+
+                <div class="relative w-56 h-56 mx-auto rounded-full border border-rawAmber/30 bg-neutral-950 flex items-center justify-center my-4 overflow-hidden">
+                  <!-- Polar circles -->
+                  <div class="absolute inset-4 rounded-full border border-white/10"></div>
+                  <div class="absolute inset-12 rounded-full border border-white/10"></div>
+                  <div class="absolute inset-20 rounded-full border border-white/10"></div>
+                  <div class="w-2 h-2 rounded-full bg-rawAmber animate-ping"></div>
+
+                  <!-- Radar nodes -->
+                  <div class="absolute top-12 left-16 w-3 h-3 rounded-full bg-rawAmber border border-black flex items-center justify-center text-[7px] font-bold text-black cursor-pointer hover:scale-125 transition-transform" title="Klaus (150m)">K</div>
+                  <div class="absolute bottom-16 right-14 w-3 h-3 rounded-full bg-bloodNeon border border-black flex items-center justify-center text-[7px] font-bold text-white cursor-pointer hover:scale-125 transition-transform" title="Mateo (420m)">M</div>
+                  <div class="absolute top-20 right-16 w-3 h-3 rounded-full bg-emerald-400 border border-black flex items-center justify-center text-[7px] font-bold text-black" title="Nico (280m)">N</div>
+                </div>
+
+                <p class="text-[10px] font-mono text-neutral-400">
+                  3 contactos en celda geohash actual. Posicionamiento sin triangulación inversa de domicilio.
+                </p>
+              </div>
+
+              <!-- Screen 3: NIGHTLIFE (Cruces en la pista 48h & Baliza) -->
+              <div id="screen-nightlife" class="sim-screen hidden space-y-3 flex-1 text-left">
+                <div class="border-b border-white/10 pb-2 pt-1 font-mono text-[10px] flex justify-between">
+                  <span class="text-rawAmber font-bold">CRUCES EN LA PISTA</span>
+                  <span class="text-bloodNeon">48H TIMER</span>
+                </div>
+
+                <div class="p-3 rounded-xl bg-neutral-900 border border-white/10 space-y-2">
+                  <div class="flex justify-between items-center text-[10px] font-mono">
+                    <span class="font-bold text-white">CROBAR RHEO // AYER</span>
+                    <span class="text-rawAmber">⏱️ Quedan 23h</span>
+                  </div>
+                  <p class="text-[9px] text-neutral-300 font-sans">
+                    Te cruzaste con 8 personas registradas en la pista principal entre las 02:30 y las 05:00 AM.
+                  </p>
+                  <div class="flex items-center gap-2 pt-1">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Thumb" class="w-8 h-8 rounded-lg object-cover border border-amber-400">
+                    <div class="text-[9px] font-mono">
+                      <div class="text-white font-bold">Klaus te envió un Pulso:</div>
+                      <div class="text-neutral-400">"Te vi cerca de la cabina del DJ"</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Baliza Strobe Button in Simulator -->
+                <div class="p-3 rounded-xl bg-bloodNeon/10 border border-bloodNeon/30 space-y-1.5">
+                  <div class="flex items-center justify-between text-[10px] font-mono font-bold text-bloodNeon">
+                    <span>🚨 BALIZA ÓPTICA ESTROBOSCÓPICA</span>
+                    <span class="animate-pulse">LISTA</span>
+                  </div>
+                  <p class="text-[8px] text-neutral-300 font-sans">
+                    Destello en pantalla completa para levantar el celular en el boliche y ubicar a tu match en la pista a oscuras.
+                  </p>
+                  <button type="button" onclick="playSubBass(80)" class="w-full py-1.5 rounded-lg bg-bloodNeon text-white font-mono text-[9px] font-bold active:scale-95 transition-all shadow-[0_0_15px_rgba(255,26,83,0.4)]">
+                    ⚡ PROBAR DESTELLO EN TELÉFONO
+                  </button>
+                </div>
+              </div>
+
+              <!-- Screen 4: PROFILE DETAIL -->
+              <div id="screen-profile" class="sim-screen hidden space-y-3 flex-1 text-left">
+                <div class="border-b border-white/10 pb-2 pt-1 font-mono text-[10px] flex justify-between">
+                  <span class="text-rawAmber font-bold">EXPEDIENTE TÁCTICO</span>
+                  <span class="text-emerald-400">✓ VERIFICADO 3D</span>
+                </div>
+
+                <div class="flex gap-2.5 items-center">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="Klaus" class="w-14 h-14 rounded-xl object-cover border border-amber-400">
+                  <div>
+                    <div class="font-mono font-bold text-sm text-white">KLAUS // 28</div>
+                    <div class="text-[9px] font-mono text-rawAmber">PALERMO SOHO · A 150 METROS</div>
+                    <div class="text-[8px] font-mono text-neutral-400">RESPETO KARMA: 99.2%</div>
+                  </div>
+                </div>
+
+                <!-- Kink Matrix Accord -->
+                <div class="p-2.5 rounded-xl bg-neutral-900 border border-white/10 space-y-1 text-[9px] font-mono">
+                  <div class="text-rawAmber font-bold">KINK BLIND-MATCH // DOBLE CONSENTIMIENTO</div>
+                  <div class="flex flex-wrap gap-1 pt-1">
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[8px]">✓ LEATHER MATCH</span>
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[8px]">✓ ROUGH FUN</span>
+                    <span class="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 text-[8px]">🔒 3 PRIVADOS</span>
+                  </div>
+                </div>
+
+                <!-- Host Card details -->
+                <div class="p-2.5 rounded-xl bg-neutral-900 border border-white/10 space-y-1 text-[9px] font-mono">
+                  <div class="text-white font-bold">FICHA DE HOSPEDAJE // LISTO EN CASA:</div>
+                  <p class="text-neutral-300 text-[8px]">🏠 Departamento propio · Ducha disponible · Bebidas frías · Cero mascotas.</p>
+                </div>
+              </div>
+
+              <!-- Screen 5: CHAT & WAYPOINT -->
+              <div id="screen-chat" class="sim-screen hidden space-y-2.5 flex-1 text-left">
+                <div class="border-b border-white/10 pb-2 pt-1 font-mono text-[10px] flex justify-between">
+                  <span class="text-rawAmber font-bold">DARKROOM CHAT EFÍMERO</span>
+                  <span class="text-red-400 font-bold">🔒 DRM ANTI-CAPTURAS</span>
+                </div>
+
+                <!-- Messages Feed -->
+                <div class="space-y-2 text-[9px] font-mono">
+                  <div class="p-2 rounded-xl bg-neutral-900 max-w-[85%] text-neutral-300">
+                    Hola! Vi tu protocolo puntual, me cierra perfecto. Te paso la ubicación segura en 2 fases.
+                  </div>
+                  <div class="p-2 rounded-xl bg-rawAmber/15 border border-rawAmber/40 max-w-[85%] ml-auto text-amber-100">
+                    Dale genial, estoy a 4 cuadras saliendo de la estación.
+                  </div>
+                </div>
+
+                <!-- 2-Phase Safe Waypoint Component -->
+                <div class="p-2.5 rounded-xl bg-neutral-900 border border-rawAmber/40 space-y-1.5">
+                  <div class="flex justify-between items-center text-[9px] font-mono">
+                    <span class="text-rawAmber font-bold">WAYPOINT EN 2 FASES</span>
+                    <span id="waypoint-phase-tag" class="px-1.5 py-0.2 rounded bg-rawAmber/20 text-rawAmber text-[8px] font-bold">FASE 1 ACTIVA</span>
+                  </div>
+                  <div id="waypoint-text" class="text-[8px] font-mono text-neutral-300">
+                    Esquina de encuentro: <strong>Honduras & Armenia</strong><br>
+                    <span class="text-neutral-500">Piso y depto ocultos hasta que confirmes llegada a la esquina.</span>
+                  </div>
+                  <button id="waypoint-btn" type="button" onclick="unlockWaypointPhase2()" class="w-full py-1.5 rounded bg-rawAmber text-black font-mono text-[9px] font-bold active:scale-95 transition-all">
+                    📍 Ya estoy en la esquina (Desbloquear Depto)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Screen 6: ADMIN OPS COMMAND (/admin) -->
+              <div id="screen-admin" class="sim-screen hidden space-y-2.5 flex-1 text-left font-mono">
+                <div class="border-b border-white/10 pb-2 pt-1 text-[10px] flex justify-between items-center">
+                  <span class="text-bloodNeon font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-bloodNeon animate-pulse"></span>
+                    VESSEL OPS // COMMAND
+                  </span>
+                  <span class="text-[8px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">SUPERADMIN</span>
+                </div>
+
+                <!-- Live Metrics Grid -->
+                <div class="grid grid-cols-2 gap-1.5 text-[8px]">
+                  <div class="p-2 rounded-lg bg-neutral-900 border border-white/10">
+                    <div class="text-neutral-500">MRR ESTIMADO</div>
+                    <div class="text-xs font-bold text-rawAmber">$14,820 USD</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-neutral-900 border border-white/10">
+                    <div class="text-neutral-500">USUARIOS TOTALES</div>
+                    <div class="text-xs font-bold text-white">1,248 ACTIVES</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-neutral-900 border border-white/10">
+                    <div class="text-neutral-500">DURESS ALERTS</div>
+                    <div class="text-xs font-bold text-emerald-400">0 CRÍTICAS</div>
+                  </div>
+                  <div class="p-2 rounded-lg bg-neutral-900 border border-white/10">
+                    <div class="text-neutral-500">RESPECT KARMA</div>
+                    <div class="text-xs font-bold text-white">88.4% PROM.</div>
+                  </div>
+                </div>
+
+                <!-- 360 User Inspection Snippet -->
+                <div class="p-2 rounded-lg bg-neutral-900 border border-bloodNeon/30 space-y-1 text-[8px]">
+                  <div class="flex justify-between items-center">
+                    <span class="text-bloodNeon font-bold">ESTACIÓN BIOMÉTRICA 3D</span>
+                    <span class="text-emerald-400">MATCH 98.4%</span>
+                  </div>
+                  <p class="text-neutral-400 text-[7.5px]">Comparativa selfie vs sensor liveness. 1 Persona = 1 Cuenta verificada.</p>
+                  <div class="flex gap-1 pt-0.5">
+                    <button type="button" onclick="playSubBass(60)" class="flex-1 py-1 rounded bg-emerald-500/20 text-emerald-300 text-[8px] font-bold">✓ Aprobar</button>
+                    <button type="button" onclick="playSubBass(70)" class="flex-1 py-1 rounded bg-amber-500/20 text-amber-300 text-[8px] font-bold">+15 Karma</button>
+                    <button type="button" onclick="playSubBass(80)" class="flex-1 py-1 rounded bg-red-500/20 text-red-300 text-[8px] font-bold">Suspender</button>
+                  </div>
+                </div>
+
+                <div class="p-1.5 rounded bg-black/60 border border-white/5 text-[7px] text-neutral-400">
+                  Auditoría inmutable: 14 acciones registradas por @superadmin en el turno actual.
+                </div>
+              </div>
+
+              <!-- Screen 7: VAULTS (IndexedDB Sovereign Vaults) -->
+              <div id="screen-vaults" class="sim-screen hidden space-y-2.5 flex-1 text-left font-mono">
+                <div class="border-b border-white/10 pb-2 pt-1 text-[10px] flex justify-between items-center">
+                  <span class="text-emerald-400 font-bold">BÓVEDAS PRIVADAS INDEXEDDB</span>
+                  <span class="text-[8px] text-neutral-400">LOCAL STORAGE</span>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-neutral-900 border border-emerald-500/30 space-y-1.5 text-[8px]">
+                  <div class="flex justify-between items-center">
+                    <span class="font-bold text-white">BÓVEDA #1 // HARD SEX (12 FOTOS)</span>
+                    <span class="text-emerald-400 font-bold">EN TU DISPOSITIVO</span>
+                  </div>
+                  <p class="text-neutral-400 text-[7.5px]">
+                    Almacenamiento ilimitado en IndexedDB local sin costo de nube ni QuotaExceededError.
+                  </p>
+                  
+                  <!-- Live Access Audit List -->
+                  <div class="pt-1 space-y-1">
+                    <div class="text-[8px] text-neutral-400 uppercase font-bold">Registro de Visualizaciones en Vivo:</div>
+                    <div class="flex justify-between items-center p-1.5 rounded bg-black/50 border border-white/5 text-[7.5px]">
+                      <span>👤 Klaus (Acceso otorgado hace 12m)</span>
+                      <button type="button" onclick="playSubBass(75); alert('Acceso revocado en 0ms para Klaus')" class="px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 hover:bg-red-500/40">Revocar 1-Tap</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-2 rounded-xl bg-neutral-900 border border-white/10 space-y-1 text-[8px]">
+                  <div class="text-rawAmber font-bold">PROTECCIÓN DE ACCESO:</div>
+                  <p class="text-neutral-400 text-[7.5px]">
+                    Marca de agua esteganográfica con ID de observador incrustada automáticamente en cada render.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Bottom Virtual Navigation Bar in Phone -->
+              <div class="border-t border-white/10 pt-2 flex items-center justify-around text-base text-neutral-400 font-mono">
+                <button type="button" onclick="setSimScreen('grid')" class="hover:text-rawAmber transition-colors" title="Matriz">⊞</button>
+                <button type="button" onclick="setSimScreen('radar')" class="hover:text-rawAmber transition-colors" title="Radar">◎</button>
+                <button type="button" onclick="setSimScreen('nightlife')" class="hover:text-rawAmber transition-colors" title="Nightlife">★</button>
+                <button type="button" onclick="setSimScreen('chat')" class="hover:text-rawAmber transition-colors" title="Darkroom">💬</button>
+                <button type="button" onclick="setSimScreen('vaults')" class="hover:text-rawAmber transition-colors" title="Bóvedas">🔒</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 03: 72 FEATURES MATRIX (DUAL ADAPTIVE VIEW)
+       ========================================================= -->
+  <section id="features-matrix" class="py-16 px-4 sm:px-8 border-b border-white/5">
+    <div class="max-w-6xl mx-auto space-y-8">
+      
+      <!-- User View Header -->
+      <div class="user-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">03 // 72 HERRAMIENTAS PENSADAS PARA TU PLACER Y SEGURIDAD</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Todo lo que VESSEL hace por vos</h2>
+        <p class="text-sm text-neutral-400 font-sans">
+          Explorá las 72 funciones que te cuidan, te ahorran tiempo y hacen que tus salidas nocturnas sean un éxito.
+        </p>
+      </div>
+
+      <!-- Investor View Header -->
+      <div class="investor-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">03 // INVENTARIO INTEGRAL DE PRODUCTO (72 FEATURES ACTIVAS)</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Matriz Completa de Características (9 Ejes)</h2>
+        <p class="text-sm text-neutral-400 font-sans">
+          Cada feature está implementada y respaldada por tests en el código fuente, dividida en su valor de negocio y especificación.
+        </p>
+      </div>
+
+      <!-- Search & Category Filters Bar -->
+      <div class="space-y-4">
+        <!-- Search Input with live filter -->
+        <div class="relative max-w-xl mx-auto">
+          <input id="feature-search" type="text" placeholder="Buscar por nombre, palabra clave o fetiche..." class="w-full px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 focus:border-rawAmber text-white font-mono text-xs outline-none transition-all pl-10 shadow-inner">
+          <span class="absolute left-3.5 top-3.5 text-neutral-500 text-sm">🔍</span>
+        </div>
+
+        <!-- 9 Dynamic Category Chips -->
+        <div class="flex flex-wrap items-center justify-center gap-2 font-mono text-xs">
+          <button type="button" onclick="filterCategory('all')" class="cat-chip px-3 py-1.5 rounded-lg bg-rawAmber text-black font-bold border border-rawAmber transition-all shadow-amber-glow" data-cat="all">
+            ✨ Todas (72)
+          </button>
+          <button type="button" onclick="filterCategory('nightlife')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="nightlife">
+            <span class="user-only">🌙 Fiestas & Boliches (7)</span>
+            <span class="investor-only">🌙 Nightlife & Cruising (7)</span>
+          </button>
+          <button type="button" onclick="filterCategory('security')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="security">
+            <span class="user-only">🛡️ Fotos Blindadas & Privacidad (10)</span>
+            <span class="investor-only">🛡️ Seguridad & DRM (10)</span>
+          </button>
+          <button type="button" onclick="filterCategory('logistics')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="logistics">
+            <span class="user-only">⏱️ Citas & Logística (12)</span>
+            <span class="investor-only">⏱️ Logística & Encuentros (12)</span>
+          </button>
+          <button type="button" onclick="filterCategory('substances')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="substances">
+            <span class="user-only">🧪 Cuidado en Salidas (4)</span>
+            <span class="investor-only">🧪 Reducción de Daños (4)</span>
+          </button>
+          <button type="button" onclick="filterCategory('kinks')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="kinks">
+            <span class="user-only">🔥 Fetiches & Gustos (5)</span>
+            <span class="investor-only">🔥 Kink Blind-Match (5)</span>
+          </button>
+          <button type="button" onclick="filterCategory('health')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="health">
+            <span class="user-only">💊 Salud & Prevención (5)</span>
+            <span class="investor-only">💊 Salud & Doxy-PEP (5)</span>
+          </button>
+          <button type="button" onclick="filterCategory('monetization')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="monetization">
+            <span class="user-only">⚡ Beneficios VIP (8)</span>
+            <span class="investor-only">⚡ Monetización & Pases (8)</span>
+          </button>
+          <button type="button" onclick="filterCategory('core')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all" data-cat="core">
+            <span class="user-only">🔊 Audio Sub-Bass & Háptica (11)</span>
+            <span class="investor-only">🔊 Core & Audio Sub-Bass (11)</span>
+          </button>
+          <button type="button" onclick="filterCategory('admin')" class="cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-bloodNeon/30 hover:border-bloodNeon text-bloodNeon transition-all" data-cat="admin">
+            <span class="user-only">👮‍♂️ Comunidad Sin Fakes (10)</span>
+            <span class="investor-only">🛡️ Administración & OPS (10)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Feature Cards Grid (Injected via JS) -->
+      <div id="features-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+        <!-- Javascript renders 72 cards here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 04: COMPETITIVE BATTLECARD (DUAL VIEW)
+       ========================================================= -->
+  <section id="battlecard" class="py-16 px-4 sm:px-8 border-b border-white/5 bg-neutral-950/40">
+    <div class="max-w-6xl mx-auto space-y-8">
+      
+      <!-- User View Header -->
+      <div class="user-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">04 // COMPARATIVA DIRECTA</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">VESSEL vs Las Apps de Siempre</h2>
+        <p class="text-xs sm:text-sm text-neutral-400 font-sans">
+          Mirá la diferencia real entre perder la paciencia en Grindr o disfrutar tus encuentros con VESSEL.
+        </p>
+      </div>
+
+      <!-- Investor View Header -->
+      <div class="investor-only text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">04 // VENTAJA COMPETITIVA Y FOSOS (MOATS)</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Por qué los Incumbentes no pueden competir</h2>
+        <p class="text-xs sm:text-sm text-neutral-400 font-sans">
+          Grindr tiene deuda técnica de 15 años y un modelo de ads que le impide adoptar privacidad Local-First sin canibalizar su negocio.
+        </p>
+      </div>
+
+      <!-- ================= USER VIEW BATTLECARD TABLE ================= -->
+      <div class="user-only overflow-x-auto rounded-2xl border border-white/10 bg-obsidian-surface shadow-card-elevation">
+        <table class="w-full text-left font-sans text-xs">
+          <thead class="bg-neutral-900 border-b border-white/10 font-mono text-[11px] text-neutral-400">
+            <tr>
+              <th class="p-4 uppercase">¿Qué te pasa hoy?</th>
+              <th class="p-4 uppercase text-rawAmber bg-rawAmber/5 font-bold">Con VESSEL</th>
+              <th class="p-4 uppercase">En Grindr</th>
+              <th class="p-4 uppercase">En Scruff / Sniffies</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5 text-neutral-300">
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">1. ¿La foto es real o es fake?</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ 100% Real: Verificación 3D Obligatoria</td>
+              <td class="p-4 text-red-400">✕ Lleno de fotos robadas de internet</td>
+              <td class="p-4 text-neutral-400">⚠ Sin verificación o muy básica</td>
+            </tr>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">2. ¿Le pueden sacar captura a mis nudes?</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Imposible: Pantalla negra automática</td>
+              <td class="p-4 text-red-400">✕ Capturas libres, te pueden extorsionar</td>
+              <td class="p-4 text-red-400">✕ Cualquier navegador hace screenshot</td>
+            </tr>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">3. ¿Qué busca el otro?</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Protocolo claro: Puntual, Mimos o Dormir</td>
+              <td class="p-4 text-red-400">✕ Charlás 2 horas para enterarte al final</td>
+              <td class="p-4 text-neutral-400">⚠ Ponen 'charla' y quieren sexo ya</td>
+            </tr>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">4. ¿Tiene lugar o viaja?</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Badge visible directo en su tarjeta</td>
+              <td class="p-4 text-red-400">✕ Tenés que preguntar '¿Lugar o móvil?'</td>
+              <td class="p-4 text-neutral-400">⚠ Rara vez está actualizado</td>
+            </tr>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">5. Cruzarse en un boliche</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Cruces en la pista 48h + Baliza óptica</td>
+              <td class="p-4 text-red-400">✕ Si no le hablaste, lo perdiste para siempre</td>
+              <td class="p-4 text-neutral-400">⚠ Solo mapa estático sin contexto</td>
+            </tr>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">6. Publicidad molesta</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Cero anuncios invasivos. Interfaz limpia</td>
+              <td class="p-4 text-red-400">✕ Banners ruidosos que no podés cerrar</td>
+              <td class="p-4 text-neutral-400">⚠ Muros de pago cada 3 clics</td>
+            </tr>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">7. Alguien mira tu celular</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Modo Camaleón: Parece un bloc de notas</td>
+              <td class="p-4 text-red-400">✕ La máscara amarilla te delata de lejos</td>
+              <td class="p-4 text-red-400">✕ Cero disimulo visual</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ================= INVESTOR VIEW BATTLECARD TABLE ================= -->
+      <div class="investor-only overflow-x-auto rounded-2xl border border-white/10 bg-obsidian-surface shadow-card-elevation">
+        <table class="w-full text-left font-sans text-xs">
+          <thead class="bg-neutral-900 border-b border-white/10 font-mono text-[11px] text-neutral-400">
+            <tr>
+              <th class="p-4 uppercase">Eje Estratégico</th>
+              <th class="p-4 uppercase text-rawAmber bg-rawAmber/5 font-bold">VESSEL (Ecosistema)</th>
+              <th class="p-4 uppercase">Grindr (Monopolio Antiguo)</th>
+              <th class="p-4 uppercase">Scruff</th>
+              <th class="p-4 uppercase">Sniffies</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5 text-neutral-300">
+            <!-- Row 1 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">1. Protección Anti-Doxing & Capturas</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ DRM Blackout + Marca de Agua</td>
+              <td class="p-4 text-red-400">✕ Capturas libres, cero protección</td>
+              <td class="p-4 text-red-400">✕ Capturas permitidas</td>
+              <td class="p-4 text-red-400">✕ Capturas web libres</td>
+            </tr>
+            <!-- Row 2 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">2. Verificación Anti-Catfish / Bots</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Liveness 3D Facial Activo + Alias Único</td>
+              <td class="p-4 text-red-400">✕ Plagado de bots y spam cripto</td>
+              <td class="p-4 text-neutral-400">⚠ Selfie estática básica</td>
+              <td class="p-4 text-red-400">✕ Sin verificación alguna</td>
+            </tr>
+            <!-- Row 3 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">3. Cruces en Boliches & Fiestas (Nightlife)</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Cruces 48h, Baliza Óptica & Wingman</td>
+              <td class="p-4 text-red-400">✕ Solo radar crudo sin contexto</td>
+              <td class="p-4 text-neutral-400">⚠ Eventos estáticos sin matching</td>
+              <td class="p-4 text-neutral-400">⚠ Mapa web sin herramientas físicas</td>
+            </tr>
+            <!-- Row 4 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">4. Protocolo de Salida & Acuerdos Claros</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Puntual (30m), Mimos o Dormir explícito</td>
+              <td class="p-4 text-red-400">✕ Ambigüedad total, ghosting crónico</td>
+              <td class="p-4 text-neutral-400">⚠ Texto libre ignorado</td>
+              <td class="p-4 text-neutral-400">⚠ Solo cruising crudo</td>
+            </tr>
+            <!-- Row 5 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">5. Criptografía de Deseos (Kink Matrix)</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Doble Consentimiento Ciego ZK</td>
+              <td class="p-4 text-red-400">✕ Etiquetas públicas que exponen estigma</td>
+              <td class="p-4 text-neutral-400">⚠ Lista estática pública</td>
+              <td class="p-4 text-neutral-400">⚠ Tags públicos en mapa abierto</td>
+            </tr>
+            <!-- Row 6 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">6. Alertas de Coacción & Guardián</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ PIN Señuelo + Camuflaje Notas</td>
+              <td class="p-4 text-red-400">✕ Cero herramientas de auxilio</td>
+              <td class="p-4 text-red-400">✕ Cero auxilio físico</td>
+              <td class="p-4 text-red-400">✕ Alto riesgo físico en vía pública</td>
+            </tr>
+            <!-- Row 7 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">7. Reducción de Daños & Salud</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Doxy-PEP (24/72h) + Alerta Trago Adulterado</td>
+              <td class="p-4 text-neutral-400">⚠ Solo fecha estática de test</td>
+              <td class="p-4 text-neutral-400">⚠ Recordatorio pasivo simple</td>
+              <td class="p-4 text-red-400">✕ Cero soporte de reducción</td>
+            </tr>
+            <!-- Row 8 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">8. Modelo de Monetización</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Micro-Pases ($1.99) + SaaS ($14.99)</td>
+              <td class="p-4 text-red-400">✕ Publicidad intrusiva + $39.99/mes</td>
+              <td class="p-4 text-neutral-400">⚠ Suscripción fija alta ($19.99)</td>
+              <td class="p-4 text-neutral-400">⚠ Solo suscripción web</td>
+            </tr>
+            <!-- Row 9 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">9. Portal de Operaciones & Telemetría</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ Consola /admin en Tiempo Real + RBAC</td>
+              <td class="p-4 text-red-400">✕ Sistema anticuado de tickets lentos</td>
+              <td class="p-4 text-neutral-400">⚠ Soporte por email diferido</td>
+              <td class="p-4 text-red-400">✕ Moderación casi inexistente</td>
+            </tr>
+            <!-- Row 10 -->
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-4 font-bold text-white font-mono">10. Bóvedas Privadas en Dispositivo</td>
+              <td class="p-4 bg-rawAmber/5 text-emerald-400 font-mono font-bold">✓ IndexedDB Local Ilimitado + Auditoría</td>
+              <td class="p-4 text-red-400">✕ Límite de 5 fotos en servidor ajeno</td>
+              <td class="p-4 text-neutral-400">⚠ Álbumes limitados en la nube</td>
+              <td class="p-4 text-red-400">✕ Sin bóvedas privadas cifradas</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 05 (USER ONLY): GET STARTED & HOW TO JOIN
+       ========================================================= -->
+  <section id="get-started" class="user-only py-20 px-4 sm:px-8 bg-gradient-to-b from-neutral-950 to-black text-center relative border-b border-white/5">
+    <div class="max-w-4xl mx-auto space-y-8">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rawAmber/10 border border-rawAmber/30 text-rawAmber font-mono text-xs font-bold">
+        <span>TU NOCHE EMPIEZA ACÁ // ACCESO DIRECTO</span>
+      </div>
+
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+        Llegó la hora de tener<br>
+        <span class="text-rawAmber">encuentros de calidad de verdad.</span>
+      </h2>
+
+      <p class="text-neutral-300 max-w-2xl mx-auto text-sm sm:text-base font-sans leading-relaxed">
+        Sumate a la red más exclusiva, cuidada y directa de Buenos Aires. Sin anuncios molestos, sin perfiles falsos y con personas que van a lo mismo que vos.
+      </p>
+
+      <!-- 3 Simple Steps for Users -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left pt-2">
+        <div class="p-4 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2">
+          <div class="w-8 h-8 rounded-lg bg-rawAmber/15 text-rawAmber font-mono font-bold flex items-center justify-center text-sm">1</div>
+          <h3 class="font-mono font-bold text-sm text-white">Creá tu Receptáculo</h3>
+          <p class="text-xs text-neutral-400 leading-snug">Elegí tu codename único y hacé la verificación 3D en 15 segundos para confirmar que sos vos.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2">
+          <div class="w-8 h-8 rounded-lg bg-rawAmber/15 text-rawAmber font-mono font-bold flex items-center justify-center text-sm">2</div>
+          <h3 class="font-mono font-bold text-sm text-white">Elegí tus Acuerdos</h3>
+          <p class="text-xs text-neutral-400 leading-snug">Configurá tu protocolo de salida (¿Puntual, mimos o dormir?), si tenés lugar y tus fetiches en secreto.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2">
+          <div class="w-8 h-8 rounded-lg bg-rawAmber/15 text-rawAmber font-mono font-bold flex items-center justify-center text-sm">3</div>
+          <h3 class="font-mono font-bold text-sm text-white">Salí y Conectá</h3>
+          <p class="text-xs text-neutral-400 leading-snug">Mirá quién está cerca, quién estuvo anoche en el boliche y chateá con fotos 100% blindadas.</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons for Users -->
+      <div class="pt-4 flex flex-wrap justify-center gap-3">
+        <a href="http://localhost:3001" target="_blank" class="px-8 py-4 rounded-xl bg-rawAmber text-black font-mono font-bold text-sm hover:bg-rawAmber-hover transition-all shadow-amber-glow active:scale-95 flex items-center gap-2">
+          <span>🚀 ENTRAR A LA APP AHORA</span>
+          <span>→</span>
+        </a>
+        <a href="#interactive-simulator" class="px-6 py-4 rounded-xl bg-neutral-900 border border-white/20 hover:border-rawAmber text-white font-mono text-sm transition-all flex items-center gap-2">
+          <span>⚡ PROBAR DEMO INTERACTIVO</span>
+        </a>
+      </div>
+
+      <!-- Quick User FAQ -->
+      <div class="pt-8 border-t border-white/10 max-w-2xl mx-auto text-left space-y-3 font-sans text-xs">
+        <div class="font-mono font-bold text-neutral-400 uppercase tracking-widest text-center pb-2">PREGUNTAS FRECUENTES</div>
+        
+        <div class="p-3 rounded-xl bg-obsidian-surface border border-white/5 space-y-1">
+          <div class="font-bold text-white">¿Tengo que pagar para usar VESSEL?</div>
+          <div class="text-neutral-400">No. Podés navegar la grilla, el radar, chatear, enviar pulsos y concretar encuentros 100% gratis. Los pases VIP son opcionales para funciones extra.</div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-obsidian-surface border border-white/5 space-y-1">
+          <div class="font-bold text-white">¿Mis fotos están realmente seguras?</div>
+          <div class="text-neutral-400">Sí. Se guardan en tu propio teléfono y cuentan con bloqueo automático de capturas de pantalla (DRM Blackout). Nadie puede robarlas ni compartirlas.</div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-obsidian-surface border border-white/5 space-y-1">
+          <div class="font-bold text-white">¿Cómo se evita el ghosting?</div>
+          <div class="text-neutral-400">Con el Karma de Respeto: quien responde rápido y asiste a los encuentros gana reputación; quien clava visto o deja plantado pierde visibilidad.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 05 (INVESTOR ONLY): REVENUE FLYWHEEL & UNIT ECONOMICS
+       ========================================================= -->
+  <section id="monetization" class="investor-only py-16 px-4 sm:px-8 border-b border-white/5">
+    <div class="max-w-6xl mx-auto space-y-10">
+      <div class="text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">05 // ARQUITECTURA DE INGRESOS & UNIT ECONOMICS</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">El Modelo de Monetización Tri-Capa (Flywheel)</h2>
+        <p class="text-xs sm:text-sm text-neutral-400 font-sans">
+          Cómo convertimos el tráfico casual en dólares sin depender de anuncios publicitarios molestos que devalúan la marca.
+        </p>
+      </div>
+
+      <!-- 3 Revenue Streams -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Stream 1 -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-white/10 space-y-3 shadow-card-elevation">
+          <div class="text-rawAmber font-mono text-2xl font-black">01</div>
+          <h3 class="text-lg font-bold text-white font-mono">VESSEL UNLIMITED SaaS</h3>
+          <div class="text-sm font-mono text-rawAmber font-bold">$14.99 USD / mes · $79.99 / año</div>
+          <p class="text-xs text-neutral-400 font-sans leading-relaxed">
+            Suscripción premium para usuarios intensivos: Multi-Bóvedas privadas ilimitadas en IndexedDB, Travel Mode global, Stealth Pro, Borde VIP y filtros quirúrgicos.
+          </p>
+          <div class="pt-2 border-t border-white/5 text-[11px] font-mono text-neutral-300">
+            <span class="text-emerald-400 font-bold">Margen Bruto:</span> 91% (Stripe / Apple / Google).
+          </div>
+        </div>
+
+        <!-- Stream 2 -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-rawAmber/40 space-y-3 shadow-amber-glow relative">
+          <div class="absolute -top-3 right-4 px-2 py-0.5 rounded-full bg-rawAmber text-black font-mono text-[9px] font-bold">
+            GAME CHANGER
+          </div>
+          <div class="text-rawAmber font-mono text-2xl font-black">02</div>
+          <h3 class="text-lg font-bold text-white font-mono">Micro-Pases por Impulso</h3>
+          <div class="text-sm font-mono text-rawAmber font-bold">$1.99 (Fiesta 12h) · $2.99 (Finde 48h)</div>
+          <p class="text-xs text-neutral-400 font-sans leading-relaxed">
+            Resuelve el problema del 85% de usuarios que rechazan pagar $15/mes pero pagan $1.99 o $2.99 impulsivamente en la noche de salida para desbloquear el radar.
+          </p>
+          <div class="pt-2 border-t border-white/5 text-[11px] font-mono text-neutral-300">
+            <span class="text-emerald-400 font-bold">Conversión Estimada:</span> 18% del tráfico activo.
+          </div>
+        </div>
+
+        <!-- Stream 3 -->
+        <div class="p-6 rounded-2xl bg-obsidian-surface border border-white/10 space-y-3 shadow-card-elevation">
+          <div class="text-rawAmber font-mono text-2xl font-black">03</div>
+          <h3 class="text-lg font-bold text-white font-mono">B2B Nightlife & Venues</h3>
+          <div class="text-sm font-mono text-rawAmber font-bold">$250 - $1,500 USD / mes por boliche</div>
+          <p class="text-xs text-neutral-400 font-sans leading-relaxed">
+            Boliches, promotores y darkrooms pagan por figurar en la cartelera de eventos, patrocinar micro-sectores del radar y recibir analíticas de aforo nocturno.
+          </p>
+          <div class="pt-2 border-t border-white/5 text-[11px] font-mono text-neutral-300">
+            <span class="text-emerald-400 font-bold">Escalabilidad:</span> Expansión ciudad por ciudad.
+          </div>
+        </div>
+      </div>
+
+      <!-- Unit Economics Highlights Box -->
+      <div class="p-6 rounded-2xl bg-neutral-900 border border-white/10 space-y-4 font-mono">
+        <div class="text-xs text-rawAmber font-bold uppercase tracking-widest border-b border-white/10 pb-2">
+          UNIT ECONOMICS DE GRADO VENTURE CAPITAL
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+          <div>
+            <div class="text-neutral-500 text-xs">CAC BLEND (Orgánico)</div>
+            <div class="text-xl font-bold text-emerald-400">$0.45 USD</div>
+            <div class="text-[10px] text-neutral-400 font-sans">Impulsado por Cruces 48h & Wingman</div>
+          </div>
+          <div>
+            <div class="text-neutral-500 text-xs">LTV PROYECTADO (12M)</div>
+            <div class="text-xl font-bold text-white">$68.50 USD</div>
+            <div class="text-[10px] text-neutral-400 font-sans">SaaS + Pases recurrentes de fin de semana</div>
+          </div>
+          <div>
+            <div class="text-neutral-500 text-xs">RATIO LTV / CAC</div>
+            <div class="text-xl font-bold text-rawAmber">15.2x</div>
+            <div class="text-[10px] text-neutral-400 font-sans">Benchmark de dating apps: 3.1x</div>
+          </div>
+          <div>
+            <div class="text-neutral-500 text-xs">CHURN MENSUAL</div>
+            <div class="text-xl font-bold text-emerald-400">&lt; 4.2%</div>
+            <div class="text-[10px] text-neutral-400 font-sans">Uso social y nocturno permanente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 06 (INVESTOR ONLY): INTERACTIVE ARR CALCULATOR
+       ========================================================= -->
+  <section id="financials" class="investor-only py-16 px-4 sm:px-8 border-b border-white/5 bg-neutral-950/40">
+    <div class="max-w-6xl mx-auto space-y-10">
+      <div class="text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">06 // SIMULADOR FINANCIERO DINÁMICO</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">Calculadora de Ingresos & Proyecciones ARR</h2>
+        <p class="text-xs sm:text-sm text-neutral-400 font-sans">
+          Ajustá los parámetros operativos para calcular en tiempo real el potencial de facturación anual (Run Rate).
+        </p>
+      </div>
+
+      <!-- The Calculator Box -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 sm:p-8 rounded-3xl bg-obsidian-surface border border-white/10 shadow-card-elevation">
+        <!-- Sliders Column -->
+        <div class="lg:col-span-7 space-y-6">
+          <h3 class="font-mono font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+            <span>⚙️</span>
+            <span>Parámetros de Tracción</span>
+          </h3>
+
+          <!-- Slider 1: MAU -->
+          <div class="space-y-2">
+            <div class="flex justify-between font-mono text-xs">
+              <span class="text-neutral-400">Usuarios Activos Mensuales (MAU):</span>
+              <span id="label-mau" class="font-bold text-rawAmber">100,000</span>
+            </div>
+            <input id="slider-mau" type="range" min="10000" max="1000000" step="10000" value="100000" class="w-full">
+            <div class="flex justify-between text-[10px] font-mono text-neutral-600">
+              <span>10K (Lanzamiento)</span>
+              <span>250K (Regional)</span>
+              <span>1M (Global)</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: SaaS Conversion -->
+          <div class="space-y-2">
+            <div class="flex justify-between font-mono text-xs">
+              <span class="text-neutral-400">Conversión a VESSEL UNLIMITED ($14.99/mes):</span>
+              <span id="label-saas" class="font-bold text-rawAmber">5.5%</span>
+            </div>
+            <input id="slider-saas" type="range" min="1" max="15" step="0.5" value="5.5" class="w-full">
+            <div class="flex justify-between text-[10px] font-mono text-neutral-600">
+              <span>1% (Conservador)</span>
+              <span>5.5% (Benchmark)</span>
+              <span>15% (Optimista)</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: Micro-Passes / month -->
+          <div class="space-y-2">
+            <div class="flex justify-between font-mono text-xs">
+              <span class="text-neutral-400">Micro-Pases Nocturnos/Fin de Semana al mes ($2.49 prom.):</span>
+              <span id="label-passes" class="font-bold text-rawAmber">35,000 pases</span>
+            </div>
+            <input id="slider-passes" type="range" min="1000" max="300000" step="1000" value="35000" class="w-full">
+            <div class="flex justify-between text-[10px] font-mono text-neutral-600">
+              <span>1K pases</span>
+              <span>50K pases</span>
+              <span>300K pases</span>
+            </div>
+          </div>
+
+          <!-- Slider 4: B2B Venues -->
+          <div class="space-y-2">
+            <div class="flex justify-between font-mono text-xs">
+              <span class="text-neutral-400">Boliches y Fiestas B2B Patrocinadas ($350/mes):</span>
+              <span id="label-venues" class="font-bold text-rawAmber">45 locales</span>
+            </div>
+            <input id="slider-venues" type="range" min="0" max="250" step="5" value="45" class="w-full">
+            <div class="flex justify-between text-[10px] font-mono text-neutral-600">
+              <span>0 locales</span>
+              <span>100 locales</span>
+              <span>250 locales</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculated Results Column -->
+        <div class="lg:col-span-5 p-6 rounded-2xl bg-neutral-900 border border-rawAmber/30 flex flex-col justify-between space-y-6 shadow-amber-glow">
+          <div class="space-y-4">
+            <div class="text-xs font-mono text-neutral-400 uppercase tracking-widest border-b border-white/10 pb-2">
+              PROYECCIÓN DE FACTURACIÓN
+            </div>
+
+            <div>
+              <div class="text-[11px] font-mono text-neutral-400 uppercase">Ingresos Mensuales (MRR)</div>
+              <div id="output-mrr" class="text-3xl font-mono font-black text-white pt-0.5">$185,345 USD</div>
+            </div>
+
+            <div>
+              <div class="text-[11px] font-mono text-neutral-400 uppercase">Facturación Anualizada (ARR)</div>
+              <div id="output-arr" class="text-4xl font-mono font-black text-rawAmber pt-0.5">$2,224,140 USD</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-xs font-mono">
+              <div>
+                <span class="text-neutral-500">ARPPU Estimado:</span>
+                <div id="output-arppu" class="font-bold text-white">$19.40 / mes</div>
+              </div>
+              <div>
+                <span class="text-neutral-500">Margen Bruto:</span>
+                <div class="font-bold text-emerald-400">88.5%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-black/40 border border-white/5 text-[11px] font-sans text-neutral-300 space-y-1">
+            <span class="font-mono text-rawAmber font-bold">Ventaja Estructural de Costos:</span>
+            <p>La arquitectura Local-First en IndexedDB ahorra un 94% en costos de AWS S3 frente a Grindr.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-Year Strategic Growth Table -->
+      <div class="space-y-4 pt-4">
+        <h3 class="font-mono font-bold text-sm text-white uppercase tracking-wider text-center">
+          Hoja de Ruta Financiera a 3 Años
+        </h3>
+
+        <div class="overflow-x-auto rounded-2xl border border-white/10 bg-obsidian-surface">
+          <table class="w-full text-left font-mono text-xs">
+            <thead class="bg-neutral-900 border-b border-white/10 text-neutral-400 text-[11px]">
+              <tr>
+                <th class="p-3.5 uppercase">Fase</th>
+                <th class="p-3.5 uppercase">Ciudades Clave</th>
+                <th class="p-3.5 uppercase">MAU Objetivo</th>
+                <th class="p-3.5 uppercase text-rawAmber">ARR Esperado</th>
+                <th class="p-3.5 uppercase">Hito Estratégico</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 text-neutral-300">
+              <tr>
+                <td class="p-3.5 font-bold text-white">Año 1 (Seed)</td>
+                <td class="p-3.5">Buenos Aires, São Paulo, Santiago</td>
+                <td class="p-3.5">85,000</td>
+                <td class="p-3.5 text-rawAmber font-bold">$1,450,000 USD</td>
+                <td class="p-3.5 text-neutral-400">Dominio de la escena nocturna porteña y brasileña.</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white">Año 2 (Serie A)</td>
+                <td class="p-3.5">Berlín, Madrid, Barcelona, Londres</td>
+                <td class="p-3.5">380,000</td>
+                <td class="p-3.5 text-rawAmber font-bold">$6,800,000 USD</td>
+                <td class="p-3.5 text-neutral-400">Expansión europea capitalizando la cultura clubber/kink.</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-white">Año 3 (Escala Global)</td>
+                <td class="p-3.5">Nueva York, Los Ángeles, CDMX, París</td>
+                <td class="p-3.5">1,400,000</td>
+                <td class="p-3.5 text-rawAmber font-bold">$26,500,000 USD</td>
+                <td class="p-3.5 text-neutral-400">Liderazgo global como la alternativa premium a Grindr.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 07 (INVESTOR ONLY): DEFENSIVE MOATS
+       ========================================================= -->
+  <section class="investor-only py-16 px-4 sm:px-8 border-b border-white/5">
+    <div class="max-w-6xl mx-auto space-y-10">
+      <div class="text-center space-y-2 max-w-3xl mx-auto">
+        <span class="font-mono text-xs text-rawAmber uppercase tracking-widest font-bold">07 // FOSO DEFENSIVO & TECNOLOGÍA</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white">4 Pilares de Inmunidad Competitiva</h2>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 font-sans">
+        <div class="p-5 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2.5">
+          <div class="text-2xl">🔒</div>
+          <h3 class="font-mono font-bold text-sm text-white">1. Local-First Zero-Knowledge</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">
+            Las fotos de bóveda, notas del diario y waypoints no tocan servidores en texto plano. Si nos hackean, no hay datos que robar.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2.5">
+          <div class="text-2xl">🔊</div>
+          <h3 class="font-mono font-bold text-sm text-white">2. Branding Acústico Sub-Bass</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">
+            Motor acústico patentable con frecuencias de 45-80 Hz sintetizadas en el chip de audio. Es una experiencia física adictiva.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2.5">
+          <div class="text-2xl">🔀</div>
+          <h3 class="font-mono font-bold text-sm text-white">3. Network Effects Nocturnos</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">
+            La integración con boliches crea un foso de dos lados: los locales atraen a los usuarios y los usuarios eligen locales por VESSEL.
+          </p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-obsidian-surface border border-white/10 space-y-2.5">
+          <div class="text-2xl">🛡️</div>
+          <h3 class="font-mono font-bold text-sm text-white">4. Consola Ops & Moderación</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">
+            Portal /admin con triage en vivo, estación biométrica 3D y trazabilidad RBAC inmutable para escalar limpiamente.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SECTION 08 (INVESTOR ONLY): DEAL ROOM & SEED ROUND
+       ========================================================= -->
+  <section id="dealroom" class="investor-only py-20 px-4 sm:px-8 bg-gradient-to-b from-neutral-950 to-black text-center relative">
+    <div class="max-w-4xl mx-auto space-y-8">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rawAmber/10 border border-rawAmber/30 text-rawAmber font-mono text-xs font-bold">
+        <span>OPORTUNIDAD DE INVERSIÓN // SERIE SEMILLA</span>
+      </div>
+
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+        Sé parte de la próxima generación<br>
+        <span class="text-rawAmber">de la intimidad gay mundial.</span>
+      </h2>
+
+      <p class="text-neutral-400 max-w-2xl mx-auto text-sm sm:text-base font-sans leading-relaxed">
+        Estamos abriendo una ronda semilla de <strong class="text-white">$2,500,000 USD</strong> (15% Equity / SAFE Post-Money Valuation Cap $16.6M USD) para acelerar el despliegue de marketing nocturno en América Latina y Europa, y consolidar el liderazgo tecnológico.
+      </p>
+
+      <!-- Use of Funds Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-left font-mono text-xs max-w-3xl mx-auto">
+        <div class="p-3.5 rounded-xl bg-obsidian-surface border border-white/10">
+          <div class="text-rawAmber font-bold text-base">45% ($1.12M)</div>
+          <div class="text-white font-semibold pt-1">Ingeniería & ZK</div>
+          <div class="text-[10px] text-neutral-400 font-sans pt-0.5">Criptografía local-first y aceleración GPU móvil.</div>
+        </div>
+        <div class="p-3.5 rounded-xl bg-obsidian-surface border border-white/10">
+          <div class="text-rawAmber font-bold text-base">30% ($750K)</div>
+          <div class="text-white font-semibold pt-1">GTM & Nightlife</div>
+          <div class="text-[10px] text-neutral-400 font-sans pt-0.5">Activaciones en BA, Berlín, São Paulo y CDMX.</div>
+        </div>
+        <div class="p-3.5 rounded-xl bg-obsidian-surface border border-white/10">
+          <div class="text-rawAmber font-bold text-base">15% ($375K)</div>
+          <div class="text-white font-semibold pt-1">Legal & Compliance</div>
+          <div class="text-[10px] text-neutral-400 font-sans pt-0.5">Auditorías de seguridad y licencias internacionales.</div>
+        </div>
+        <div class="p-3.5 rounded-xl bg-obsidian-surface border border-white/10">
+          <div class="text-rawAmber font-bold text-base">10% ($250K)</div>
+          <div class="text-white font-semibold pt-1">Capital de Trabajo</div>
+          <div class="text-[10px] text-neutral-400 font-sans pt-0.5">Reserva de contingencia y runway de 24 meses.</div>
+        </div>
+      </div>
+
+      <!-- Action Box -->
+      <div class="p-6 rounded-2xl bg-obsidian-surface border border-rawAmber/40 max-w-xl mx-auto space-y-4 shadow-amber-glow">
+        <div class="text-xs font-mono text-neutral-400">DATA ROOM CONFIDENCIAL & DEMO EJECUTIVA</div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button type="button" onclick="openContactModal()" class="w-full py-3 rounded-xl bg-rawAmber text-black font-mono font-bold text-xs hover:bg-rawAmber-hover transition-all shadow-amber-glow">
+            📅 Agendar Reunión con Founders
+          </button>
+          <button type="button" onclick="downloadMemo()" class="w-full py-3 rounded-xl bg-neutral-900 border border-neutral-700 hover:border-rawAmber/40 text-white font-mono text-xs transition-all flex items-center justify-center gap-1.5">
+            <span>📄 Descargar Investment Memo</span>
+            <span class="text-[10px] text-rawAmber">↓</span>
+          </button>
+        </div>
+
+        <div class="pt-2 text-[10px] font-mono text-neutral-500">
+          DOCUMENTO PROTEGIDO POR ACUERDO DE CONFIDENCIALIDAD (NDA) BILATERAL
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       FOOTER (SHARED)
+       ========================================================= -->
+  <footer class="py-8 px-4 border-t border-white/10 bg-black text-center text-xs font-mono text-neutral-500">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="text-white font-bold tracking-wider">VESSEL ECOSYSTEM</span>
+        <span>//</span>
+        <span class="user-only text-emerald-400">EXPERIENCIA DE USUARIO</span>
+        <span class="investor-only text-rawAmber">CONFIDENTIAL INVESTOR SUITE</span>
+      </div>
+      <div class="flex items-center gap-4 text-[11px]">
+        <button type="button" onclick="togglePresentationMode()" class="text-neutral-400 hover:text-white underline">
+          <span class="user-only">Cambiar a Modo Inversores</span>
+          <span class="investor-only">Cambiar a Modo Usuarios</span>
+        </button>
+        <a href="http://localhost:3001" target="_blank" class="text-neutral-400 hover:text-white transition-colors">App en Vivo (3001)</a>
+        <a href="http://localhost:3001/admin" target="_blank" class="text-neutral-400 hover:text-white transition-colors">Portal /admin</a>
+      </div>
+      <div>
+        © 2026 VESSEL TECHNOLOGIES INC. BUENOS AIRES · BERLÍN.
+      </div>
+    </div>
+  </footer>
+
+  <!-- =========================================================
+       MODALS: FEATURE INSPECTION & FOUNDER CONTACT
+       ========================================================= -->
+  <!-- Feature Detail Modal -->
+  <div id="feature-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-neutral-950 border border-rawAmber/40 rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button type="button" onclick="closeFeatureModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white font-mono text-sm">
+        ✕
+      </button>
+
+      <div class="flex items-center gap-3">
+        <span id="modal-icon" class="text-3xl">✨</span>
+        <div>
+          <div id="modal-id" class="font-mono text-xs text-rawAmber font-bold">FEAT-000</div>
+          <h3 id="modal-title" class="font-mono font-bold text-lg text-white">Título de la Feature</h3>
+        </div>
+      </div>
+
+      <div class="space-y-3 pt-2 text-xs font-sans">
+        <div class="p-3.5 rounded-xl bg-neutral-900 border border-white/5 space-y-1">
+          <div class="font-mono text-[10px] font-bold text-rawAmber uppercase">👥 Para el Usuario:</div>
+          <p id="modal-user-val" class="text-neutral-300 leading-relaxed"></p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-neutral-900 border border-white/5 space-y-1">
+          <div class="font-mono text-[10px] font-bold text-emerald-400 uppercase">💼 Para el Inversor / Negocio:</div>
+          <p id="modal-biz-val" class="text-neutral-300 leading-relaxed"></p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-1 font-mono text-[11px]">
+          <div class="text-neutral-400 font-bold uppercase text-[10px]">⚙️ Especificación Técnica:</div>
+          <p id="modal-spec" class="text-neutral-400 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <button type="button" onclick="closeFeatureModal()" class="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-mono text-xs transition-all">
+        Cerrar Inspección
+      </button>
+    </div>
+  </div>
+
+  <!-- Contact / Data Room Modal -->
+  <div id="contact-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-neutral-950 border border-rawAmber/40 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+      <button type="button" onclick="closeContactModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-white font-mono text-sm">
+        ✕
+      </button>
+
+      <div class="space-y-1">
+        <div class="text-xs font-mono text-rawAmber font-bold">REUNIÓN CON EL EQUIPO FUNDADOR</div>
+        <h3 class="font-mono font-bold text-lg text-white">Solicitar Data Room & Call</h3>
+      </div>
+
+      <form onsubmit="handleContactSubmit(event)" class="space-y-3 font-mono text-xs">
+        <div>
+          <label class="block text-neutral-400 pb-1">Nombre Completo:</label>
+          <input type="text" required placeholder="Ej: Lucas Benítez" class="w-full p-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white outline-none focus:border-rawAmber">
+        </div>
+        <div>
+          <label class="block text-neutral-400 pb-1">Fondo / Organización:</label>
+          <input type="text" required placeholder="Ej: Sequoia / Angel Investor" class="w-full p-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white outline-none focus:border-rawAmber">
+        </div>
+        <div>
+          <label class="block text-neutral-400 pb-1">Email Profesional:</label>
+          <input type="email" required placeholder="tu@fondo.com" class="w-full p-2.5 rounded-xl bg-neutral-900 border border-white/10 text-white outline-none focus:border-rawAmber">
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-rawAmber text-black font-bold text-xs hover:bg-rawAmber-hover transition-all shadow-amber-glow">
+          Enviar Solicitud Inmediata
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       JAVASCRIPT SPA ENGINE & CONTROLLER
+       ========================================================= -->
+  <script>
+    // 1. Inlined Complete 72 Features Dataset
+    const FEATURES = [{"id": "FEAT-083", "cat": "nightlife", "icon": "👁️", "title": "Cruces en la Pista // Missed Connections", "user_val": "Permite encontrar y reconectar con personas con las que te cruzaste en una fiesta o boliche en las últimas 48h sin haber pedido el contacto en el momento.", "biz_val": "Driver de viralidad orgánico de altísimo K-Factor: cuando un usuario recibe un pulso de 'Te vi en la pista', invita e incorpora a usuarios del mundo real a la plataforma.", "spec": "Coincidencia local-first de ventana horaria y venue (Crobar, Amerika, Under Club). Retención de 48 horas con temporizador regresivo y auto-poda estricta (expiresAt). Envío de pulso con nota contextual opcional y canal de chat directo."}, {"id": "FEAT-082", "cat": "nightlife", "icon": "🎉", "title": "Cartelera VESSEL Nightlife & Eventos Porteños", "user_val": "Cartelera interactiva de las mejores fiestas, boliches y darkrooms gay locales con botón 'Voy esta noche' (RSVP) para pre-matching antes de salir de casa.", "biz_val": "Canal de monetización B2B con promotores de eventos y boliches (publicidad nativa no intrusiva, eventos destacados y venta cruzada de pases de fiesta).", "spec": "Exploración de fiestas reales (Crobar Rheo, Amerika, Under Club, Work Bar, Feliza, Studio Crobar, Km Zero, Black Room). Previsualización de flyers, horarios, cover price estimado y lista de confirmados."}, {"id": "FEAT-082B", "cat": "nightlife", "icon": "🎯", "title": "Radar de Pista por Micro-Zonas (Club Floor Radar)", "user_val": "Conmutador táctico de 5 micro-sectores del club para saber quién está en la Pista Central, Barra, Patio Fumadero, Darkroom o Baños sin caminar a ciegas.", "biz_val": "Aumenta el tiempo de sesión dentro de locales nocturnos (Stickiness 3.2x mayor durante las horas pico de madrugada).", "spec": "Micro-posicionamiento relativo en recintos cerrados. Selector de 5 zonas tácticas con conteo dinámico de usuarios en cada sector y apertura de ficha en 1-tap."}, {"id": "FEAT-082C", "cat": "nightlife", "icon": "🚨", "title": "Baliza Óptica Estroboscópica de Pantalla Completa", "user_val": "Destello estroboscópico de alta frecuencia en la pantalla del celular para levantarlo en la oscuridad y que tu match te ubique al instante en la pista masiva.", "biz_val": "Utilidad física de hardware que genera efecto 'Wow' social y curiosidad visual en el boliche, funcionando como marketing visual orgánico gratuito.", "spec": "Generador estroboscópico en canvas con 3 frecuencias calibradas: Ámbar Táctico (2.5 Hz), Neón Pista (5.0 Hz) y Carmesí Darkroom continuo. Cero latencia."}, {"id": "FEAT-082D", "cat": "nightlife", "icon": "👥", "title": "Modo Wingman ('Salgo con Amigo')", "user_val": "Vinculación efímera por PIN de 4 dígitos con tu amigo de salida para saber si ambos están bien, si alguien se fue de levante o si necesita auxilio.", "biz_val": "Viralidad directa P2P: requiere que 2 usuarios tengan instalada la app para salir de fiesta juntos, reduciendo el CAC a casi $0 en grupos de amigos.", "spec": "Enlace P2P efímero por código PIN. Sincroniza 4 estados mutuos en tiempo real: De fiesta juntos, Separados pero seguros, En encuentro/chongo, y Necesito auxilio."}, {"id": "FEAT-082E", "cat": "nightlife", "icon": "🧪", "title": "Alerta de Vaso Seguro & Auxilio Silencioso", "user_val": "Botón de pánico discreto ante sospecha de adulteración de bebida (spiked drink), con llamada directa a SAME (107) / 911 y notificación inmediata a tu Wingman.", "biz_val": "Posiciona a VESSEL como la marca más empática y protectora de la comunidad, obteniendo apoyo institucional de ONGs y autoridades de salud.", "spec": "Protocolo de auxilio silencioso con pantalla atenuada, envío de telemetría de coordenadas al contacto de confianza y atajo de marcación directa de emergencia médica."}, {"id": "FEAT-082F", "cat": "nightlife", "icon": "🌙", "title": "Despacho & Radar de After-Hours", "user_val": "Coordinación rápida a partir de las 05:00 AM entre quienes hospedan after y quienes buscan dónde seguir la fiesta con filtro de vibra y fetiches.", "biz_val": "Extiende el ciclo de uso de la app a las horas críticas de domingo temprano (5 AM a 12 PM), capturando micro-pases y suscripciones en caliente.", "spec": "Modo dual: 'Hospedo After' (con aforo y comodidades) vs 'Busco After'. Conexión rápida con verificación biométrica obligatoria para evitar desconocidos sospechosos."}, {"id": "ENH-003", "cat": "security", "icon": "🔒", "title": "Blindaje Anti-Captura Pre-Emptivo & DRM Blackout", "user_val": "Garantía absoluta de que nadie puede hacer captura de pantalla de tus fotos privadas ni en Mac ni en Windows ni en celulares.", "biz_val": "Resuelve la objeción #1 para usuarios de alto perfil (profesionales, figuras públicas, closets): la app es 100% inmune a extorsión y filtraciones.", "spec": "DrmBlackoutProtector: Interceptación en 0ms de teclas modificadoras (Cmd, Shift, PrintScreen) en fase de captura del DOM. El apagón z-50 ocurre antes de que el SO tome el frame. Modo táctil 'Hold to Reveal' continuo."}, {"id": "ENH-003B", "cat": "security", "icon": "👁️", "title": "Marca de Agua Dinámica Esteganográfica Universal", "user_val": "Protege tus fotos públicas incluso si la otra persona intenta tomarles una foto con un segundo celular físico.", "biz_val": "Efecto disuasorio legal contra filtraciones en Twitter/Reddit; identifica con certeza matemática al usuario responsable de cualquier filtración externa.", "spec": "SteganographicWatermark: Trama esteganográfica de 18 líneas a -25° con contraste claroscuro legible sobre cualquier piel/fondo. Inyecta ID de observador, ID de propietario y timestamp UTC en todo el carrusel y chat."}, {"id": "FEAT-013", "cat": "security", "icon": "🌫️", "title": "Modo Niebla // Fog Mode (Privacidad Facial Calibrada)", "user_val": "Desenfoque óptico suave de 6-7px que disimula los rasgos faciales directos sin ocultar la sonrisa, barba, contextura física ni la vibra general.", "biz_val": "Aumenta la tasa de conversión a registro en un +42% para usuarios que no desean exponer su cara completa públicamente pero quieren interactuar.", "spec": "Desenfoque calibrado CSS backdrop-filter blur(6px) sobre el canvas facial con retención de contornos. Compatible con insignia de verificación humana 3D."}, {"id": "FEAT-024", "cat": "security", "icon": "🧬", "title": "Verificación Biométrica Liveness 3D Facial Anti-Catfish", "user_val": "Cero perfiles falsos, cero fotos de modelos robadas de Instagram y cero bots de spam comercial o cripto.", "biz_val": "Elimina el costo de soporte por moderación y reportes de catfish; genera un foso defensivo inalcanzable para Grindr (repleto de bots y cuentas clon).", "spec": "Escaneo biométrico tridimensional en tiempo real con validación activa de micro-gestos (giro de cabeza, parpadeo) y prueba criptográfica Zero-Knowledge en dispositivo."}, {"id": "FEAT-021", "cat": "security", "icon": "⏱️", "title": "Guardián Silencioso & Dead-Man Switch", "user_val": "Monitorea la duración de tu encuentro con un cronómetro regresivo; si no desactivás el sistema a tiempo, activa una alarma y alerta a tu contacto de auxilio.", "biz_val": "Tranquilidad absoluta para el usuario y sus amigos; diferencial único que ninguna otra app de citas del planeta ofrece nativamente.", "spec": "SafetyBeaconModal: Temporizador regresivo en cabecera (45, 90, 120 min), alerta roja al restar <10m y pulso acústico analógico a 45 Hz. Arquitectura 100% Local-First sin transmisión de datos a servidores."}, {"id": "FEAT-022", "cat": "security", "icon": "⚠️", "title": "PIN de Coacción Silencioso & Alerta Antirrobo (Duress PIN)", "user_val": "Si alguien te obliga a desbloquear la app bajo amenaza, ingresás un PIN especial que aparenta apagar todo pero despacha una alerta silenciosa de rescate.", "biz_val": "Seguridad física de grado diplomático; protege a la comunidad gay en contextos urbanos hostiles contra robos y emboscadas.", "spec": "DuressPinSettingsModal: Validación de PIN falso vs real. Salta automáticamente al bloc de notas camaleón y despacha telemetría de auxilio al contacto seguro y a la consola de administración."}, {"id": "FEAT-023", "cat": "security", "icon": "📝", "title": "Bloc de Notas Camaleón Señuelo con Flip-to-Cover", "user_val": "Al dar vuelta el teléfono boca abajo o presionar Escape, la app se transforma instantáneamente en un inocente bloc de notas de programador (SCRATCHPAD.TXT).", "biz_val": "Permite abrir la app en el trabajo, transporte público o en familia sin temor a miradas indiscretas, multiplicando los momentos diarios de apertura (DAU).", "spec": "AppDisguiseModal: Interfaz brutalista monospaced con notas reales de texto editable y detector giroscópico Flip-to-Cover. Desbloqueo secreto por triple-tap o comando :exit."}, {"id": "BASE-007", "cat": "security", "icon": "🔢", "title": "Stealth Lock Screen con Teclado Numérico", "user_val": "Bloqueo táctil de acceso inmediato con PIN de 4 dígitos para impedir que amigos o parejas miren la app si dejás el celular apoyado.", "biz_val": "Cierra la brecha de privacidad doméstica; asegura que las sesiones privadas de chat y álbumes no se expongan accidentalmente.", "spec": "Teclado numérico táctico de 44px con haptic feedback y bloqueo por tiempo de inactividad configurable."}, {"id": "SEC-001", "cat": "security", "icon": "🛡️", "title": "Blindaje P0: Cierre de IDOR & Hashing SHA-256 de PINs", "user_val": "Inmunidad total frente a robo de identidad, lectura no autorizada de chats o exposición de contraseñas.", "biz_val": "Cumplimiento normativo estricto de ciberseguridad que previene brechas de datos masivas.", "spec": "Reglas granulares de Firestore Rules cerrando IDOR en colecciones privadas. Hashing criptográfico unidireccional SHA-256 de PINs de coacción y rendezvous en cliente."}, {"id": "ENH-021", "cat": "security", "icon": "🏷️", "title": "Unicidad Estricta O(1) de Codenames & Anti-Suplantación", "user_val": "Garantiza que tu alias sea verdaderamente tuyo y que nadie pueda clonar o suplantar a usuarios reconocidos en la comunidad.", "biz_val": "Erradica el fraude de identidad y el phishing entre usuarios, construyendo un registro reputacional confiable y monetizable.", "spec": "Colección determinista vessel_unique_identities en Firestore y búsqueda O(1) en cliente. Validación en registro, Google Auth y edición inline con debounce y badges reactivos."}, {"id": "FEAT-017", "cat": "logistics", "icon": "🏠", "title": "Ficha de Hospedaje Táctica (Host Card)", "user_val": "Elimina la eterna pregunta de '¿quién tiene lugar?': indica de antemano si tenés sitio, convivencia (solo, roommates, hotel), comodidades e insumos.", "biz_val": "Reduce la fricción de coordinación previa en un 80%, acelerando la concreción física del encuentro y la satisfacción del usuario.", "spec": "HostCardModal & HostCardBadge: Modela si el usuario recibe, comodidades (ducha lista, toallas, ascensor, aire acondicionado) e insumos (condones, lube, poppers). Filtro de 1-tap en grilla."}, {"id": "FEAT-018", "cat": "logistics", "icon": "📋", "title": "Pre-Flight Checklist de Compatibilidad Sexual", "user_val": "Acuerdos explícitos de compatibilidad erótica en 3 toques antes de salir de casa: ritmo (rápido vs sensual), prácticas deseadas, salud y sustancias.", "biz_val": "Erradica las citas fallidas por incompatibilidad en la cama; genera alta confianza y recurrencia de uso.", "spec": "PreFlightChecklistModal: Tarjeta cifrada enviada en el chat efímero. Al coincidir prácticas o ritmo genera el distintivo visual 'Sintonía Fuego 🔥'."}, {"id": "FEAT-019", "cat": "logistics", "icon": "🎙️", "title": "Voice Vibe — Clip de Voz Analógico de 5s", "user_val": "Un audio rápido de exactamente 5 segundos para verificar tono, confianza y presencia física antes de salir de casa sin llamadas eternas.", "biz_val": "Combina la inmediatez visual con la validación humana auditiva, aumentando la tasa de encuentro físico confirmado.", "spec": "VoiceVibePlayer & VoiceVibeRecorderModal: Grabador táctico con cuenta regresiva regresiva de 5s y oscilograma con pulso sub-bass a 65 Hz."}, {"id": "FEAT-020", "cat": "logistics", "icon": "🚗", "title": "Modo 'Voy en Camino' con ETA y Timbre a <50m", "user_val": "Comparte tu tiempo estimado de llegada (5, 10, 15, 30 min) en el chat sin dar tu WhatsApp personal, y avisa al anfitrión con tono de puerta al llegar.", "biz_val": "Mantiene a los usuarios dentro de la app en lugar de migrar a WhatsApp o Telegram, reteniendo el canal de comunicación y datos de conversión.", "spec": "EnRouteTrackerModal & EnRouteBanner: Banner persistente superior en pantalla. Alarma acústica a 90 Hz que suena en el dispositivo del anfitrión al cruzar los 50 metros."}, {"id": "FEAT-032", "cat": "logistics", "icon": "⚡", "title": "Radar 'On-The-Clock' // Modo Listo YA", "user_val": "Indicador efímero de urgencia (15 a 120 minutos) con nota rápida ('Listo en 10 min, tengo depto') para encuentros inmediatos sin vueltas.", "biz_val": "Monetizable con micro-boosts; genera picos de actividad instantáneos y alta liquidez de perfiles activos en momentos de ocio.", "spec": "Temporizador regresivo en cabecera, badge ámbar pulsante en tarjetas de grilla y chip de filtro rápido de 1-tap en la barra superior."}, {"id": "FEAT-033", "cat": "logistics", "icon": "📍", "title": "Waypoint Seguro en 2 Fases (Anti-Emboscada)", "user_val": "Envía la dirección en 2 partes: la esquina pública primero, y el piso/timbre exacto solo se desbloquea cuando la otra persona ya está en la esquina.", "biz_val": "Protección de seguridad domiciliaria líder en la industria, eliminando el riesgo de dar la dirección exacta a desconocidos que no aparecen.", "spec": "DarkroomChatModal: Fase 1 (esquina de aproximación) y Fase 2 (piso, dpto y timbre exacto bloqueados criptográficamente hasta confirmación de llegada)."}, {"id": "FEAT-025", "cat": "logistics", "icon": "⏱️", "title": "Protocolo de Salida Post-Encuentro (Exit Protocol)", "user_val": "Explicita de antemano la expectativa posterior: Fast Encounter (puntual), Chill & Cuddle (quedarse charlando 30m) o Sleepover (dormir juntos si hay química).", "biz_val": "Elimina los momentos incómodos de '¿te vas o te quedás?', estableciendo reglas de juego claras y libres de frustración.", "spec": "Selector en 3 modalidades con badge semántico integrado en el perfil y en la suite táctica del encuentro."}, {"id": "FEAT-080", "cat": "logistics", "icon": "📐", "title": "Rediseño Impeccable de ProfileCard (Proporción 2/3)", "user_val": "Tarjetas verticales de proporción áurea 2/3 donde el rostro, físico y torso del usuario se ven al 100% nítidos sin capas oscuras que tapen la foto.", "biz_val": "Optimiza la tasa de clics (CTR) en un +38% y la velocidad de escaneo visual del usuario (Glanceability táctica en menos de 200 ms).", "spec": "Aspect ratio 2/3, Scrim degradé retraído al 50% inferior (h-1/2) y Micro-HUD flotante de 2 líneas con tipografía monospaced y lectura táctica unificada."}, {"id": "ENH-022", "cat": "logistics", "icon": "✨", "title": "Borde Neón Rotativo GPU & Píldora Elástica con Badge +N", "user_val": "Diferenciación visual instantánea de miembros VIP y cápsula compacta que nunca se corta ni desborda en pantallas angostas.", "biz_val": "Aumenta el estatus social y la tasa de conversión a membresías de pago VESSEL UNLIMITED por deseo de distinción visual.", "spec": "Keyframes border-beam-spin acelerados en GPU al 100%. Regla de contención inteligente hasBothPrimary que agrupa indicadores secundarios en badge numérico +N y popover táctico enriquecido."}, {"id": "ENH-016", "cat": "logistics", "icon": "🔭", "title": "Alcance Táctico 1.0 km & Modelo Híbrido en Cerca", "user_val": "Visualización balanceada de perfiles en tu radio inmediato tanto en grilla áurea como en ficha expandida sin desplazamientos innecesarios.", "biz_val": "Optimiza la densidad de matches locales y reduce la tasa de abandono en ciudades de alta densidad.", "spec": "Filtrado espacial a 1000m por defecto, selector híbrido de vista Grilla/Ficha y anclaje persistente de posición relativa."}, {"id": "ENH-017", "cat": "logistics", "icon": "🎯", "title": "Unificación de Telemetría Superior en ProfileCard", "user_val": "Indicadores tácticos (batería, señal, estado corporal y distancia) consolidados en un micro-dock despejado.", "biz_val": "Interfaz libre de ruidos visuales que permite una decisión de match en menos de 1 segundo.", "spec": "Dock superior flotante con tipografía JetBrains Mono y semáforo visual de 3 estados de disponibilidad corporal."}, {"id": "ENH-011", "cat": "logistics", "icon": "💬", "title": "Rediseño Impeccable de DarkroomChat con Botonera 44px", "user_val": "Botonera ergonómica táctil accesible con el pulgar para compartir fotos efímeras, coordenadas o iniciar el Pre-Flight en 1 solo tap.", "biz_val": "Mayor retención y tiempo de uso del chat propietario de la plataforma en comparación con la migración a apps externas.", "spec": "Touch targets de 44x44px conformes con WCAG AAA, teclado dinámico y soporte de fotos Burn-on-View con temporizador regresivo de 15s."}, {"id": "FEAT-081", "cat": "substances", "icon": "🍸", "title": "Matriz Táctica de 4 Niveles de Sustancias", "user_val": "Permite declarar con total naturalidad tu vibra de consumo: Sobrio (100%), Tragos & Previa (alcohol), 420 Friendly (cannabis) o Party & Play (sesión).", "biz_val": "Taxonomía táctica 100% compatible con App Store / Google Play sin riesgos de rechazo o baneo de la aplicación por mención explícita de drogas.", "spec": "SubstanceAtmosphereSelector con 4 estados discriminados estricto: sober, social_drinks, green_420, party_play. Integrado en ProtocolView y ProfileDetailModal."}, {"id": "FEAT-081B", "cat": "substances", "icon": "🔍", "title": "Filtro Dinámico de Sustancias en Drawer", "user_val": "Encontrá al instante solo perfiles que compartan tu misma vibra (ej: gente 100% sobria o gente para previa de tragos) con 1 solo tap.", "biz_val": "Acelera el filtrado de afinidad y reduce la fricción de descarte en el chat.", "spec": "DynamicFilterDrawer: Selector múltiple reactivo integrado en el algoritmo filteredProfiles de VesselContext. Sincronización instantánea."}, {"id": "FEAT-036", "cat": "substances", "icon": "💧", "title": "Asistente de Reducción de Daños & Chem-Chill", "user_val": "Temporizador de hidratación cada 45 minutos con alertas sensoriales y bitácora confidencial de dosis para encuentros prolongados seguros.", "biz_val": "Demuestra compromiso ineludible con la salud física de los usuarios; abre puertas a subsidios de salud pública y alianzas con festivales de música.", "spec": "HarmReductionModal: Alerta sonora sub-bass a 45 Hz cada 45m, registro confidencial local de dosis de sustancias y cronómetro de tiempo transcurrido."}, {"id": "FEAT-036B", "cat": "substances", "icon": "🩺", "title": "Guía de Primeros Auxilios & SOS con Secreto Médico", "user_val": "Instrucciones de Posición Lateral de Seguridad (PLS) y botón de marcación directa al 107/911 con recordatorio explícito del secreto profesional médico.", "biz_val": "Mitigación de riesgos legales y salvaguarda de vidas humanas durante situaciones críticas en encuentros de fiesta.", "spec": "Diagrama interactivo de primeros auxilios y botón de llamada de emergencia médica sin intermediarios."}, {"id": "FEAT-038", "cat": "kinks", "icon": "⛓️", "title": "Kink Matrix Ciega con 35 Fetiches Eróticos Gays", "user_val": "Elegí tus fetiches en privado (Love, Curious, Pass); el sistema solo revela los fetiches donde ambos coincidieron ('🔥 Sintonía Secreta') sin exponerte.", "biz_val": "Potente motor de retención y engagement erótico; desbloquea deseos reprimidos que los usuarios no se animan a confesar en un chat común.", "spec": "Catálogo de 35 fetiches especializados de la comunidad gay (leather, pup, darkroom, bondage, boots, axilas, olores, ropa interior, etc.). Algoritmo de intersección ciega."}, {"id": "FEAT-027", "cat": "kinks", "icon": "🚪", "title": "Salas de Sesión Privadas (Multi-User)", "user_val": "Salas efímeras con aforo limitado (ej. 3/3 personas) para coordinar tríos, orgías o dinámicas grupales con consentimiento verificado.", "biz_val": "Capta el segmento de encuentros grupales y fiestas privadas de alta fidelidad, desatendido completamente por Grindr.", "spec": "SessionRoomModal: Aforo cerrado, confirmación mutua de los asistentes y canal de chat grupal efímero con autodestrucción."}, {"id": "FEAT-027B", "cat": "kinks", "icon": "👥", "title": "Modo Dúo de Pareja ('👥 DÚO')", "user_val": "Vinculación de perfiles para parejas que buscan juntas en la matriz y el radar con una sola insignia unificada y chat compartido.", "biz_val": "Doble retención: cuando una pareja usa la app junta, la retención a 12 meses se triplica en comparación con usuarios individuales.", "spec": "DuoLinkModal: Vinculación mutua por solicitud y renderizado del badge dual en tarjetas de grilla y radar polar."}, {"id": "FEAT-034", "cat": "kinks", "icon": "🎵", "title": "Clima Sonoro & Soundtrack Analógico de Hospedaje", "user_val": "El anfitrión puede setear la frecuencia sonora de su espacio (Sub-Bass 50Hz, Dark Techno, Berlin Industrial) con botón para escucharla en vivo.", "biz_val": "Identidad sensorial única: genera una experiencia inmersiva que ninguna aplicación de citas tradicional puede igualar.", "spec": "SubBassAudioEngine: Generadores acústicos Web Audio API con síntesis analógica en tiempo real y preescucha interactiva en perfiles."}, {"id": "BASE-006", "cat": "kinks", "icon": "⭐", "title": "Testimonios con Doble Consentimiento Mutuo", "user_val": "Reseñas reales verificadas entre usuarios después de un encuentro, con control absoluto del receptor para publicarlas o mantenerlas privadas.", "biz_val": "Social proof auténtico libre de acoso o difamación; incrementa la tasa de encuentros exitosos en un +65%.", "spec": "Exige validación cruzada por geofencing (<50m), intercambio de Rendezvous PIN y aprobación unilateral previa del usuario calificado."}, {"id": "FEAT-001", "cat": "health", "icon": "📖", "title": "Date Diary Local-First con Analíticas de Encuentros", "user_val": "Tu bitácora privada y confidencial de encuentros íntimos con notas, calificación química, fetiches probados y métricas personales.", "biz_val": "Foso de retención insuperable (Switching Costs): una vez que el usuario tiene su historial íntimo registrado localmente, no migra a otra app.", "spec": "DateDiaryView: Almacenamiento 100% cifrado en el dispositivo. Calendario inteligente, estadísticas de encuentros mensuales y correlación con salud."}, {"id": "FEAT-026", "cat": "health", "icon": "💊", "title": "Botiquín Clínico Doxy-PEP (Ventana Crítica 72h)", "user_val": "Seguimiento médico de profilaxis post-exposición bacteriana (sífilis, clamidia, gonorrea) con cuenta regresiva de la ventana de 72 horas y dosis de refuerzo.", "biz_val": "Valor médico incalculable para la salud de la comunidad gay; avalado por guías epidemiológicas de los CDC y OMS.", "spec": "DoxyPepTrackerCard: Cuenta regresiva regresiva de la ventana terapéutica de 72h y registro de dosis 1 (primeras 24h) y dosis 2 de refuerzo."}, {"id": "FEAT-037", "cat": "health", "icon": "⚠️", "title": "Alerta Médica Anónima de Exposición a ITS", "user_val": "Si te diagnostican una ITS, podés alertar con 1 solo clic y de forma 100% anónima a tus parejas recientes sin que nadie sepa quién fuiste.", "biz_val": "Solución de vanguardia en salud comunitaria Zero-Knowledge; corta cadenas de transmisión epidemiológica en tiempo récord.", "spec": "ItsExposureModal: Notificación enrutada por IDs criptográficos efímeros a contactos de los últimos 7, 14 o 30 días sin revelar remitente ni fecha."}, {"id": "REGLA-007", "cat": "health", "icon": "📅", "title": "Calendario PrEP a 90 Días con Recordatorios Discretos", "user_val": "Recordatorio automático para tu próximo análisis serológico y renovación de receta de PrEP tras registrar encuentros intensos.", "biz_val": "Construye un hábito de salud recurrente y fideliza a los usuarios en torno al cuidado preventivo continuo.", "spec": "Temporizador local reactivo de 90 días con notificaciones discretas que no comprometen la privacidad del usuario en pantalla de bloqueo."}, {"id": "FEAT-005", "cat": "health", "icon": "👻", "title": "Protocolo Anti-Ghosteo & Respect Karma Score", "user_val": "Incentiva salidas elegantes en 1 tap ('Sos fuego, pero hoy no tengo chispa') y premia con +35% de visibilidad a los usuarios con alto respeto.", "biz_val": "Elimina la frustración #1 de las apps de citas (el ghosting tóxico que hace abandonar la plataforma al 60% de los usuarios nuevos).", "spec": "AntiGhostBadge & RespectKarmaScore (0-100%). Ponderación algorítmica en la grilla que premia la celeridad de respuesta y la cortesía al cerrar chats."}, {"id": "FEAT-028", "cat": "monetization", "icon": "👑", "title": "Membresía Oficial VESSEL UNLIMITED (SaaS Recurrente)", "user_val": "Álbumes públicos y multi-bóvedas privadas ilimitadas, video-loops HD, Travel Mode global, Stealth Pro y filtros quirúrgicos.", "biz_val": "Ingreso recurrente predecible (MRR/ARR): $14.99 USD/mes o $79.99 USD/año con margen bruto superior al 88%.", "spec": "UnlimitedPaywallModal: Pasarela reactiva con activación instantánea de superpoderes, desbloqueo de cuotas y sincronización multi-dispositivo."}, {"id": "FEAT-035", "cat": "monetization", "icon": "🎟️", "title": "Pase de Fin de Semana 48h ($2.99 USD Micro-Pago)", "user_val": "Acceso total sin suscripciones mensuales para quienes solo usan la app de viernes a domingo cuando salen o viajan.", "biz_val": "Captura el 'long tail' de usuarios casuales que jamás pagarían $15/mes pero pagan $2.99 varias veces al mes, duplicando el LTV promedio.", "spec": "Micro-monetización por evento con caducidad automática de 48 horas sin renovación forzada ni trampas de facturación oculta."}, {"id": "FEAT-082G", "cat": "monetization", "icon": "🍸", "title": "Pase de Fiesta Nocturna 12h ($1.99 USD Micro-Pago)", "user_val": "Superpoderes nocturnos para la salida de esta noche: radar de pista ilimitado, visualización de cruces y baliza óptica por el precio de una cerveza.", "biz_val": "Impulso de compra impulsiva en caliente entre las 00:00 y las 04:00 AM con conversión récord (estimada en 18% de los asistentes a eventos).", "spec": "Micro-pago de 12 horas integrado en la cartelera de eventos y en el radar de pista. Activación con 1 solo toque."}, {"id": "FEAT-029", "cat": "monetization", "icon": "🔍", "title": "Auditoría de Bóvedas en Vivo & Revocación de Acceso", "user_val": "Auditoría en tiempo real de quién vio tus fotos privadas, hora exacta y duración en segundos, con botón para revocar la llave de inmediato.", "biz_val": "Característica 'Killer' de VESSEL UNLIMITED que impulsa el 'upgrade' de usuarios celosos de su intimidad visual.", "spec": "VaultAuditModal: Registro cronológico con ID de perfil de visualizador, duración exacta de visualización y revocación instantánea de acceso."}, {"id": "FEAT-030", "cat": "monetization", "icon": "✈️", "title": "Radar de Teleportación Virtual (Travel Mode)", "user_val": "Explorá el radar y coordiná encuentros 48 horas antes de viajar a Berlín, Madrid, Londres, São Paulo o Nueva York.", "biz_val": "Fideliza al segmento de turismo gay de alto poder adquisitivo (turismo pink de alta rentabilidad).", "spec": "TravelModeModal: Teleportación de coordenadas a nodos urbanos clave con indicador discreto de 'En Viaje' para no engañar en distancias."}, {"id": "FEAT-031", "cat": "monetization", "icon": "📍", "title": "Hotspots Tácticos Urbanos & Check-in de Cruising", "user_val": "Mapeo de recintos y espacios tácticos (saunas, darkrooms, bares, zonas de cruising) con contador en vivo de Vessels presentes y check-in anónimo.", "biz_val": "Monetización B2B por recintos patrocinados y analíticas agregadas de afluencia para la industria nocturna.", "spec": "TacticalHotspotsOverlay & mockHotspots.ts: Contador anónimo de usuarios activos en cada coordenada sin comprometer identidades individuales."}, {"id": "FEAT-016", "cat": "monetization", "icon": "⚡", "title": "Centro de Gestión de Pulsos & Micro-Transmisiones", "user_val": "Bandeja unificada para ver quién te envió un pulso, devolverlo en 1 tap y enviar transmisiones prioritarias de alta visibilidad.", "biz_val": "Mecanismo de monetización por volumen de pulsos prioritarios (paquetes de 5, 15 o 30 transmisiones doradas).", "spec": "PulsesView: Bandeja de entrada con filtrado de recibidos y enviados, cálculo de distancia aproximada y feedback sonoro instantáneo."}, {"id": "ENH-015", "cat": "monetization", "icon": "🔐", "title": "Revocación Granular de Álbumes en Chat & Bóvedas", "user_val": "Control total sobre quién mantiene acceso a tus fotos íntimas: revocá el permiso a una persona específica sin alterar a las demás.", "biz_val": "Elimina el miedo de compartir álbumes privados y fomenta el uso activo de las bóvedas de pago.", "spec": "Control de permisos a nivel de usuario en Firestore y fallback local. Desconexión instantánea de llaves criptográficas de visualización."}, {"id": "BASE-001", "cat": "core", "icon": "⬛", "title": "Núcleo Arquitectónico Brutalista VESSEL con i18n", "user_val": "Estética 'Dark Luxury' berlinesa inspirada en Berghain y arquitectura brutalista, con soporte para Español Rioplatense e Inglés.", "biz_val": "Diferenciación estética radical frente al diseño infantil o genérico de Grindr/Tinder; atrae al público queer moderno y trendsetter.", "spec": "Next.js 15.1.7 App Router + React 19 + Tailwind CSS con tokens obsidian, rawAmber, bloodNeon. Sistema de hidratación SSR sin desajustes."}, {"id": "BASE-002", "cat": "core", "icon": "🔊", "title": "Motor de Síntesis Sub-Bass Analógico (Web Audio API)", "user_val": "Cada botón, pulso o match produce una vibración acústica analógica profunda (45-80 Hz) que se siente en el pecho y en el cuerpo.", "biz_val": "Branding acústico registrable y patentable que convierte la interacción en una experiencia física táctil adictiva.", "spec": "SubBassAudioEngine.ts: Síntesis Web Audio pura con OscillatorNode y GainNode, sin archivos MP3 pesados, con latencia de 0 ms."}, {"id": "BASE-003", "cat": "core", "icon": "🌐", "title": "Discretización Google S2 & Escudo Anti-Triangulación", "user_val": "Nadie puede triangular tu posición exacta ni saber en qué edificio vivís; la app te sitúa en celdas espaciales seguras de ~152 metros.", "biz_val": "Inmunidad total contra demandas de triangulación y espionaje que han costado millones de dólares a Grindr en Europa.", "spec": "Indexación jerárquica Google S2 / Geohash nivel 7 (~152m). Las coordenadas crudas jamás se transmiten a otros dispositivos clientes."}, {"id": "BASE-003B", "cat": "core", "icon": "🔋", "title": "Motor de Batería Inteligente de 4 Modos", "user_val": "La app adapta su consumo de GPS y animaciones según la batería de tu teléfono para que no te quedes sin carga en plena noche.", "biz_val": "Reduce la tasa de desinstalación de usuarios con teléfonos de gama media o baterías degradadas.", "spec": "BatteryStateEngine: 4 estados reactivos (Normal, Eco, Crítico, Carga) con modulación de frecuencia de polling de ubicación."}, {"id": "FEAT-009", "cat": "core", "icon": "📡", "title": "Barrido de Radar Polar 360° con Sonar Concéntrico", "user_val": "Escáner táctico visual que muestra los perfiles cercanos en una retícula polar militar con distancia radial y azimut de brújula.", "biz_val": "La vista más icónica y compartida en redes sociales de la app; multiplica el tiempo de permanencia en pantalla.", "spec": "RadarSweep: Canvas de barrido polar con persistencia de fósforo, selectores de escala de 500m, 1.5km y 5km, y dispersión anticolisión."}, {"id": "FEAT-011", "cat": "core", "icon": "🔥", "title": "Retención de Chat Configurable (Burn-on-View)", "user_val": "Elegí para cada chat si los mensajes se destruyen al leerse o si se guardan localmente en tu teléfono con cifrado.", "biz_val": "Cumple los requerimientos más estrictos de privacidad personal sin necesidad de servidores costosos de almacenamiento de chat.", "spec": "Fotos y mensajes Burn-on-View con temporizador regresivo de 15 segundos y autodestrucción criptográfica irrecuperable."}, {"id": "FEAT-012", "cat": "core", "icon": "🛡️", "title": "Autenticación Real Firebase & Blindaje Anti-Sybil", "user_val": "Iniciá sesión en 1 clic con Google o Email con la certeza de que cada cuenta pertenece a una persona real y única (One Face = One Receptacle).", "biz_val": "Previene la creación de multicuentas y evasión de bloqueos, reduciendo drásticamente la toxicidad en la red.", "spec": "Firebase Auth SDK + Deduplicación determinista por teléfono (SHA-256) y validación de huella de dispositivo (deviceFingerprint)."}, {"id": "ENH-019", "cat": "core", "icon": "⚡", "title": "Conexión Integral Google OAuth 1-Click Real", "user_val": "Ingreso inmediato y seguro con tu cuenta de Google en un solo tap sin contraseñas engorrosas.", "biz_val": "Aumenta la tasa de conversión en el funnel de registro en un +34% y previene cuentas bots.", "spec": "Integración con signInWithPopup de Firebase Auth, saneamiento de errores auth/operation-not-allowed y auto-vinculación de perfil."}, {"id": "FIX-005", "cat": "core", "icon": "🚪", "title": "Coherencia de Logout & Cero Resurrección Fantasma", "user_val": "Cierre de sesión auténtico y definitivo: al salir de la cuenta, nadie que use tu teléfono puede ver tus datos tras recargar.", "biz_val": "Seguridad de sesión que elimina vulnerabilidades de acceso compartido en dispositivos móviles.", "spec": "Derivación unívoca isAuthenticated / isAnonymous, purga atómica de claves base y scoped en localStorage e IndexedDB."}, {"id": "ENH-020", "cat": "core", "icon": "👤", "title": "Unificación de Sesión & Acceso Directo Inmediato", "user_val": "Acceso en 1-tap a 'Mi Sesión' desde la cabecera con botón de cierre de sesión de alta visibilidad.", "biz_val": "Reduce la fricción de soporte técnico y confusión sobre el estado de la cuenta.", "spec": "Modo 'session' en AuthModal, botón de 48px [→ CERRAR SESIÓN] en bloodNeon y botón 1-tap en BrutalistHeader."}, {"id": "ENH-018", "cat": "core", "icon": "🔄", "title": "Arquitectura Dual: Modo Prueba vs Modo Real", "user_val": "Permite alternar entre un entorno de demostración con datos simulados y el entorno real de producción sin riesgo de mezclar datos.", "biz_val": "Facilita demostraciones impecables a inversores sin ensuciar la base de datos real de usuarios.", "spec": "Segregación estricta de almacenamiento con prefijos test_* y real_*. Aislamiento de perfiles, chats, álbumes y estados corporales."}, {"id": "FEAT-072", "cat": "admin", "icon": "🛡️", "title": "Portal de Administración & Personal (VESSEL OPS // COMMAND)", "user_val": "Garantía de que una infraestructura profesional y humana vigila la seguridad, calidad y autenticidad de la comunidad las 24 horas.", "biz_val": "Consola ejecutiva indispensable para escalar la operación a múltiples ciudades con control total de métricas y seguridad.", "spec": "Ruta dedicada /admin con control de acceso basado en roles (RBAC: Superadmin, Moderator, Support), telemetría en tiempo real y registro de auditoría."}, {"id": "FEAT-072B", "cat": "admin", "icon": "📊", "title": "Dashboard Analítico de Telemetría & KPIs en Tiempo Real", "user_val": "Monitoreo de estabilidad y salud comunitaria para una experiencia de usuario óptima y sin interrupciones.", "biz_val": "Visibilidad ejecutiva instantánea de MRR, ARR proyectado, tasa de conversión Free a Unlimited y usuarios activos en radar.", "spec": "Métricas reactivas calculadas local-first: MRR estimado, distribución de estados corporales y gráficos demográficos."}, {"id": "FEAT-072C", "cat": "admin", "icon": "👥", "title": "Consola de Gestión 360° de Usuarios & Biometría", "user_val": "Protección activa contra abusadores, estafadores o cuentas denunciadas.", "biz_val": "Capacidad de respuesta inmediata ante incidentes, reduciendo el riesgo reputacional y legal de la plataforma.", "spec": "Búsqueda en vivo O(1), drawer 360° de inspección con comparativa de foto vs selfie 3D liveness, calibrador de karma (+15/-10) y sanciones disciplinarias."}, {"id": "FEAT-072D", "cat": "admin", "icon": "⚙️", "title": "Calibración Centralizada de Cuotas de Membresía", "user_val": "Permite ajustar las ventajas de planes para premiar a la comunidad y activar promociones especiales.", "biz_val": "Optimización de la conversión y monetización ajustando límites del plan gratuito (radio del radar, álbumes públicos/privados).", "spec": "Consola reactiva en /admin para modificar cuotas globales y otorgar membresías VESSEL UNLIMITED de cortesía con justificación de auditoría."}, {"id": "FEAT-072E", "cat": "admin", "icon": "🚨", "title": "Cola de Moderación & Triage de Denuncias Comunitarias", "user_val": "Respuestas rápidas a reportes de catfish, acoso o abuso de funciones tácticas.", "biz_val": "Mantiene el ecosistema limpio y seguro, convirtiendo la moderación en una ventaja competitiva frente a Grindr.", "spec": "Triage de reportes clasificados por gravedad con comparativa de denunciante/denunciado, snippet de chat y resolución en 1-tap."}, {"id": "FEAT-072F", "cat": "admin", "icon": "🔑", "title": "Control de Acceso Basado en Roles (RBAC)", "user_val": "Privacidad protegida: el personal de soporte solo accede a los datos necesarios para resolver consultas sin ver chats privados.", "biz_val": "Cumplimiento estricto del principio de mínimo privilegio exigido por normativas de seguridad ISO/IEC 27001.", "spec": "3 roles jerárquicos: superadmin (acceso total), moderator (confianza, fotos y reportes) y support (asistencia y perfiles)."}, {"id": "FEAT-072G", "cat": "admin", "icon": "📜", "title": "Registro de Auditoría Inmutable (Audit Trail) & Exportador", "user_val": "Seguridad de que ninguna acción administrativa arbitraria queda impune.", "biz_val": "Trazabilidad forense legal inmutable de cada baneo, calibración de karma o cambio de cuota con exportación a JSON estándar.", "spec": "Log inmutable que registra operador, rol, usuario afectado, fecha/hora y justificación. Descarga directa en un solo clic."}, {"id": "FIX-002", "cat": "admin", "icon": "💾", "title": "Motor de Bóvedas IndexedDB de Gran Capacidad", "user_val": "Subí todas las fotos privadas y videos que desees sin errores de almacenamiento lleno ni cuotas de disco en tu navegador.", "biz_val": "Erradica el QuotaExceededError en navegadores móviles (Safari/Chrome), desbloqueando la experiencia premium sin caídas.", "spec": "Capa de persistencia híbrida en IndexedDB con soporte para cientos de megabytes de medios cifrados y fallback transparente a localStorage."}, {"id": "ARCH-001", "cat": "admin", "icon": "🏗️", "title": "Descomposición Arquitectónica en 7 Dominios (Composite Facade)", "user_val": "La aplicación responde instantáneamente sin lentitud ni pantallas congeladas al navegar entre pestañas.", "biz_val": "Arquitectura modular escalable de nivel empresarial que reduce la deuda técnica y permite que múltiples desarrolladores trabajen en paralelo.", "spec": "Descomposición de VesselContext en 7 dominios aislados (Auth, Navigation, Radar, Encounters, Settings, Chat, Admin) unificados bajo una fachada reactiva."}, {"id": "ARCH-003", "cat": "admin", "icon": "🧪", "title": "Infraestructura de Calidad con 162 Tests Automatizados", "user_val": "Cero regresiones, cero errores inesperados al actualizar la app y máxima confiabilidad en situaciones críticas.", "biz_val": "Velocidad de entrega (speed-to-market) acelerada con verificación continua en Vitest y TypeScript estricto al 100%.", "spec": "Suite de 162 tests unitarios y de integración cubriendo autenticación, deduplicación de alias, DRM, algoritmos de radar y componentes visuales."}];
+
+    // 2. Web Audio API Sub-Bass Synthesizer (55-80Hz)
+    let audioCtx = null;
+    let audioEnabled = true;
+
+    function playSubBass(freq = 55, duration = 0.18) {
+      if (!audioEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + duration);
+
+        gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // Audio policy fallback
+      }
+    }
+
+    document.getElementById('audio-toggle').addEventListener('click', () => {
+      audioEnabled = !audioEnabled;
+      const icon = document.getElementById('audio-icon');
+      if (audioEnabled) {
+        icon.textContent = '🔊';
+        playSubBass(70, 0.2);
+      } else {
+        icon.textContent = '🔇';
+      }
+    });
+
+    // 3. Complete Dual Presentation Mode System (User vs Investor)
+    let currentMode = 'user'; // default to user for engaging experience
+
+    function switchPresentationMode(mode) {
+      playSubBass(60);
+      currentMode = mode;
+      document.body.dataset.mode = mode;
+
+      // Update button styling
+      const btnUser = document.getElementById('btn-mode-user');
+      const btnInvestor = document.getElementById('btn-mode-investor');
+
+      if (mode === 'user') {
+        btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 bg-rawAmber text-black shadow-amber-glow";
+        btnInvestor.className = "px-2.5 sm:px-3 py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 text-neutral-400 hover:text-white";
+        document.getElementById('page-title').textContent = "VESSEL // Encuentros sin Vueltas · Fotos Blindadas";
+      } else {
+        btnInvestor.className = "px-2.5 sm:px-3 py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 bg-rawAmber text-black shadow-amber-glow";
+        btnUser.className = "px-2.5 sm:px-3 py-1.5 rounded-lg font-mono text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1.5 text-neutral-400 hover:text-white";
+        document.getElementById('page-title').textContent = "VESSEL // Strategic Pitch Deck & Investor Suite";
+      }
+
+      // Update URL without reload
+      try {
+        const url = new URL(window.location);
+        url.searchParams.set('mode', mode);
+        window.history.replaceState({}, '', url);
+      } catch (e) {}
+
+      // Re-render features with the new lens
+      renderFeatures(activeCategory, document.getElementById('feature-search').value);
+      updateSimulatorInsight();
+    }
+
+    function togglePresentationMode() {
+      switchPresentationMode(currentMode === 'user' ? 'investor' : 'user');
+    }
+
+    // 4. Interactive Simulator Screen Switcher (7 Screens)
+    let currentSimScreen = 'grid';
+
+    const simInsights = {
+      grid: {
+        user: {
+          title: "Matriz Táctica 2/3 & Borde Neón VIP",
+          desc: "Así ves a tu próximo match: con su rol (Activo/Pasivo/Versátil), si tiene lugar, su protocolo (¿Puntual o mimos?) y borde giratorio neón VIP si es miembro exclusivo."
+        },
+        investor: {
+          title: "Conversión a Suscripción & GPU Border Beam",
+          desc: "Estatus social perimetral acelerado por GPU que impulsa la conversión al plan VESSEL UNLIMITED ($14.99/mes), reduciendo el churn por vanidad y visibilidad."
+        }
+      },
+      radar: {
+        user: {
+          title: "Radar de Proximidad Polar (Discreto)",
+          desc: "Buscá quién está cerca en tu zona o boliche sin que nadie sepa la dirección exacta de tu casa gracias a la discretización inteligente Google S2."
+        },
+        investor: {
+          title: "Discretización S2 ~152m & Inmunidad Legal",
+          desc: "Cero responsabilidad legal por stalking o triangulación: la discretización matemática protege la privacidad del usuario y anula demandas civiles."
+        }
+      },
+      nightlife: {
+        user: {
+          title: "Cruces en la Pista (48h) & Baliza Óptica",
+          desc: "Reencontrá a quien te miró en el boliche y levantá tu pantalla con destello estroboscópico para ubicarte al instante en la oscuridad."
+        },
+        investor: {
+          title: "K-Factor Viral 0.72 & Adquisición Phygital",
+          desc: "Mecanismo de crecimiento orgánico que reduce el CAC a $0.45 USD activando usuarios dentro de eventos masivos de la comunidad."
+        }
+      },
+      profile: {
+        user: {
+          title: "Ficha Táctica & Acuerdos Claros",
+          desc: "Todo claro de entrada: fetiches en común por doble consentimiento secreto, comodidades del depto y límites para que la cita sea perfecta."
+        },
+        investor: {
+          title: "Kink Blind-Match ZK & Reducción de Churn",
+          desc: "El matching criptográfico de deseos sin exposición pública aumenta el match rate en un 3.4x, convirtiendo a VESSEL en el CRM íntimo del usuario."
+        }
+      },
+      chat: {
+        user: {
+          title: "Darkroom Chat & Waypoint Seguro en 2 Fases",
+          desc: "Fotos efímeras que se queman al verlas, bloqueo total de capturas y la dirección exacta solo se libera cuando llegás a la esquina."
+        },
+        investor: {
+          title: "Reducción del 98% en Incidentes de Seguridad",
+          desc: "El protocolo de entrega de dirección en 2 etapas elimina emboscadas, falsas citas y extorsiones, blindando la reputación institucional de la marca."
+        }
+      },
+      admin: {
+        user: {
+          title: "Centro de Confianza & Comunidad Verificada",
+          desc: "Moderación activa 24/7 y validación facial 3D para que nadie te estafe, te falte el respeto ni use fotos de otra persona."
+        },
+        investor: {
+          title: "Portal OPS /admin: Telemetría & Scalability",
+          desc: "Panel de control en tiempo real con MRR ($14,820 USD), 1,248 receptáculos, 0 alertas de coacción y trazabilidad RBAC inmutable para escalar a millones de usuarios."
+        }
+      },
+      vaults: {
+        user: {
+          title: "Tus Bóvedas Privadas en tu Teléfono",
+          desc: "Guardá tus mejores fotos en tu propio teléfono. Vos decidís a quién prestarle la llave y podés revocarla con un solo toque cuando quieras."
+        },
+        investor: {
+          title: "94% Ahorro de Servidor (IndexedDB Local-First)",
+          desc: "Almacenar fotos pesadas en el IndexedDB del cliente erradica costos en AWS S3/Firebase y garantiza 0% de liability en caso de filtraciones."
+        }
+      }
+    };
+
+    function setSimScreen(screenName) {
+      playSubBass(55);
+      currentSimScreen = screenName;
+      document.querySelectorAll('.sim-screen').forEach(s => s.classList.add('hidden'));
+      const target = document.getElementById('screen-' + screenName);
+      if (target) target.classList.remove('hidden');
+
+      document.querySelectorAll('.sim-btn').forEach(btn => {
+        if (btn.dataset.screen === screenName) {
+          btn.className = "sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-rawAmber/15 border-rawAmber text-rawAmber font-bold shadow-amber-glow";
+        } else {
+          btn.className = "sim-btn w-full p-2.5 rounded-xl border text-left font-mono text-xs transition-all flex items-center justify-between active:scale-[0.98] bg-neutral-900 border-neutral-800 text-neutral-300 hover:border-neutral-700";
+        }
+      });
+
+      updateSimulatorInsight();
+    }
+
+    function updateSimulatorInsight() {
+      const insight = simInsights[currentSimScreen];
+      if (insight) {
+        const lens = insight[currentMode] || insight.user;
+        document.getElementById('insight-title').textContent = lens.title;
+        document.getElementById('insight-desc').textContent = lens.desc;
+      }
+    }
+
+    function triggerCardClick(name) {
+      playSubBass(65);
+      setSimScreen('profile');
+    }
+
+    function toggleSimPopover(e) {
+      e.stopPropagation();
+      playSubBass(60);
+      const popover = document.getElementById('sim-pill-popover');
+      if (popover) popover.classList.toggle('hidden');
+    }
+
+    function closeSimPopover(e) {
+      e.stopPropagation();
+      const popover = document.getElementById('sim-pill-popover');
+      if (popover) popover.classList.add('hidden');
+    }
+
+    function unlockWaypointPhase2() {
+      playSubBass(75);
+      const text = document.getElementById('waypoint-text');
+      const tag = document.getElementById('waypoint-phase-tag');
+      const btn = document.getElementById('waypoint-btn');
+
+      text.innerHTML = "<strong>Piso 4, Depto B // Timbre 12</strong><br><span class='text-[10px] text-amber-300'>Ascensor a la derecha. Portero eléctrico habilitado.</span>";
+      tag.textContent = "FASE 2 (DESBLOQUEADA)";
+      tag.className = "px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[8px] font-bold";
+      btn.textContent = "✓ Dirección Precisa Revelada con Éxito";
+      btn.className = "w-full py-1.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-mono text-[9px] font-bold";
+    }
+
+    // 5. Render Features Matrix with Search and Category Filtering
+    let activeCategory = 'all';
+
+    function filterCategory(cat) {
+      playSubBass(50);
+      activeCategory = cat;
+      document.querySelectorAll('.cat-chip').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = "cat-chip px-3 py-1.5 rounded-lg bg-rawAmber text-black font-bold border border-rawAmber transition-all shadow-amber-glow";
+        } else {
+          btn.className = "cat-chip px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/10 transition-all";
+        }
+      });
+      renderFeatures(cat, document.getElementById('feature-search').value);
+    }
+
+    document.getElementById('feature-search').addEventListener('input', (e) => {
+      renderFeatures(activeCategory, e.target.value);
+    });
+
+    function renderFeatures(cat = 'all', query = '') {
+      const grid = document.getElementById('features-grid');
+      const q = query.toLowerCase().trim();
+
+      const filtered = FEATURES.filter(f => {
+        const matchesCat = (cat === 'all' || f.cat === cat);
+        const matchesQuery = !q || (
+          f.id.toLowerCase().includes(q) ||
+          f.title.toLowerCase().includes(q) ||
+          f.user_val.toLowerCase().includes(q) ||
+          f.biz_val.toLowerCase().includes(q)
+        );
+        return matchesCat && matchesQuery;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full p-10 text-center font-mono text-xs text-neutral-500 bg-neutral-900/40 rounded-2xl border border-white/5">
+            No se encontraron características que coincidan con la búsqueda.
+          </div>
+        `;
+        return;
+      }
+
+      const isUser = (currentMode === 'user');
+
+      grid.innerHTML = filtered.map(f => {
+        return `
+          <div class="p-5 rounded-2xl bg-obsidian-surface border border-white/10 hover:border-rawAmber/40 transition-all space-y-3 flex flex-col justify-between shadow-card-elevation group">
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl">${f.icon}</span>
+                  <span class="font-mono text-xs text-rawAmber font-bold">${f.id}</span>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                  ${isUser ? '✓ DISPONIBLE EN APP' : '100% PRODUCCIÓN'}
+                </span>
+              </div>
+
+              <h4 class="font-mono font-bold text-sm text-white group-hover:text-rawAmber transition-colors">
+                ${f.title}
+              </h4>
+
+              <!-- Value Box tailored to audience -->
+              ${isUser ? `
+                <div class="p-3 rounded-xl bg-neutral-900/90 border border-white/5 text-xs font-sans">
+                  <div class="text-[9px] font-mono font-bold text-rawAmber uppercase pb-1 flex items-center gap-1">
+                    <span>✨ QUÉ GANÁS VOS:</span>
+                  </div>
+                  <p class="text-neutral-300 text-[11px] leading-relaxed">
+                    ${f.user_val}
+                  </p>
+                </div>
+              ` : `
+                <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/20 text-xs font-sans">
+                  <div class="text-[9px] font-mono font-bold text-emerald-400 uppercase pb-1 flex items-center gap-1">
+                    <span>💼 MOAT & NEGOCIO:</span>
+                  </div>
+                  <p class="text-neutral-300 text-[11px] leading-relaxed">
+                    ${f.biz_val}
+                  </p>
+                </div>
+              `}
+            </div>
+
+            <button type="button" onclick="inspectFeature('${f.id}')" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white font-mono text-xs flex items-center justify-center gap-1 transition-all">
+              <span>${isUser ? 'Ver Detalles de la Función' : 'Inspeccionar Ficha Técnica'}</span>
+              <span>→</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Modal Inspection for any feature
+    function inspectFeature(id) {
+      playSubBass(60);
+      const f = FEATURES.find(item => item.id === id);
+      if (!f) return;
+
+      document.getElementById('modal-icon').textContent = f.icon;
+      document.getElementById('modal-id').textContent = f.id;
+      document.getElementById('modal-title').textContent = f.title;
+      document.getElementById('modal-user-val').textContent = f.user_val;
+      document.getElementById('modal-biz-val').textContent = f.biz_val;
+      document.getElementById('modal-spec').textContent = f.spec;
+
+      document.getElementById('feature-modal').classList.remove('hidden');
+    }
+
+    function closeFeatureModal() {
+      document.getElementById('feature-modal').classList.add('hidden');
+    }
+
+    function openContactModal() {
+      playSubBass(65);
+      document.getElementById('contact-modal').classList.remove('hidden');
+    }
+
+    function closeContactModal() {
+      document.getElementById('contact-modal').classList.add('hidden');
+    }
+
+    function handleContactSubmit(e) {
+      e.preventDefault();
+      playSubBass(75);
+      alert('✓ Solicitud de reunión registrada con éxito. Un socio fundador de VESSEL te contactará en menos de 4 horas.');
+      closeContactModal();
+    }
+
+    function downloadMemo() {
+      playSubBass(60);
+      const memoData = {
+        company: "VESSEL TECHNOLOGIES INC.",
+        thesis: "The Next-Generation Queer Intimacy & Nightlife Ecosystem",
+        round: "Seed Round 2026",
+        target: "$2,500,000 USD",
+        equity: "15%",
+        metrics: {
+          TAM: "$3.8B+ USD",
+          K_Factor: 0.72,
+          ARPPU_multiplier: "3.4x vs Grindr",
+          gross_margin: "88.5%",
+          CAC: "$0.45 USD",
+          LTV: "$68.50 USD",
+          LTV_CAC_ratio: "15.2x"
+        },
+        features_count: FEATURES.length,
+        features: FEATURES
+      };
+
+      const blob = new Blob([JSON.stringify(memoData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "VESSEL_Investment_Memo_2026.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 6. Interactive Financial Sliders Calculator (Investor Mode)
+    const sliderMau = document.getElementById('slider-mau');
+    const sliderSaas = document.getElementById('slider-saas');
+    const sliderPasses = document.getElementById('slider-passes');
+    const sliderVenues = document.getElementById('slider-venues');
+
+    function calculateFinancials() {
+      if (!sliderMau) return;
+      const mau = parseInt(sliderMau.value);
+      const saasRate = parseFloat(sliderSaas.value) / 100;
+      const passes = parseInt(sliderPasses.value);
+      const venues = parseInt(sliderVenues.value);
+
+      document.getElementById('label-mau').textContent = mau.toLocaleString('en-US');
+      document.getElementById('label-saas').textContent = (saasRate * 100).toFixed(1) + '%';
+      document.getElementById('label-passes').textContent = passes.toLocaleString('en-US') + ' pases';
+      document.getElementById('label-venues').textContent = venues + ' locales';
+
+      const saasUsers = Math.round(mau * saasRate);
+      const saasMonthlyRev = saasUsers * 14.99;
+      const passesMonthlyRev = passes * 2.49;
+      const b2bMonthlyRev = venues * 350;
+
+      const mrr = saasMonthlyRev + passesMonthlyRev + b2bMonthlyRev;
+      const arr = mrr * 12;
+
+      const totalPayingUsers = Math.max(1, saasUsers + Math.round(passes * 0.45));
+      const arppu = (mrr / totalPayingUsers);
+
+      document.getElementById('output-mrr').textContent = '$' + Math.round(mrr).toLocaleString('en-US') + ' USD';
+      document.getElementById('output-arr').textContent = '$' + Math.round(arr).toLocaleString('en-US') + ' USD';
+      document.getElementById('output-arppu').textContent = '$' + arppu.toFixed(2) + ' / mes';
+    }
+
+    if (sliderMau) {
+      [sliderMau, sliderSaas, sliderPasses, sliderVenues].forEach(s => {
+        s.addEventListener('input', () => {
+          calculateFinancials();
+        });
+      });
+    }
+
+    // 7. Initialize SPA with URL parameter detection (?mode=investor or #investor)
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlMode = params.get('mode') || (window.location.hash.includes('investor') ? 'investor' : (window.location.hash.includes('user') ? 'user' : 'user'));
+      
+      switchPresentationMode(urlMode);
+      calculateFinancials();
+    });
+  </script>
+</body>
+</html>
