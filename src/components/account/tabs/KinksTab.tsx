@@ -1,14 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { KINK_ITEMS_CATALOG } from "@/data/energyCatalog";
+import { getActiveKinks, KINKS_UPDATED_EVENT } from "@/lib/kinks/kinkAdminService";
+import { KinkItemDefinition } from "@/data/energyCatalog";
 import { Flame } from "lucide-react";
 import { TacticalBadge, SectionHeroHeader } from "@/components/ui";
 
 export const KinksTab: React.FC = () => {
   const { myKinkMatrix, setKinkPreference } = useVessel();
+  const [activeKinksList, setActiveKinksList] = useState<KinkItemDefinition[]>(() => getActiveKinks());
+
+  useEffect(() => {
+    setActiveKinksList(getActiveKinks());
+    const handleUpdate = () => {
+      setActiveKinksList(getActiveKinks());
+    };
+    window.addEventListener(KINKS_UPDATED_EVENT, handleUpdate);
+    return () => window.removeEventListener(KINKS_UPDATED_EVENT, handleUpdate);
+  }, []);
 
   const activeKinksCount = Object.values(myKinkMatrix).filter(
     (v) => v !== "pass"
@@ -18,19 +29,19 @@ export const KinksTab: React.FC = () => {
     <div className="space-y-4 animate-fade-in">
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-4 shadow-card-elevation backdrop-blur-md relative overflow-hidden">
         <SectionHeroHeader
-          title="KINK MATRIX CIEGA // AFINIDAD"
-          tag={`${activeKinksCount} / ${KINK_ITEMS_CATALOG.length} ACTIVOS`}
-          subtitle="Tus gustos no son públicos. Solo se revelan ante coincidencia mutua química."
+          title="QUÉ TE MORBOSEA 😈 // MORBOS"
+          tag={`${activeKinksCount} / ${activeKinksList.length} ACTIVOS`}
+          subtitle="Tus gustos no son públicos. Solo se revelan ante coincidencia mutua de morbo."
           variant="blood"
           icon={<Flame className="w-4 h-4 fill-current text-bloodNeon-glow" />}
         />
 
         <div className="p-3 rounded-2xl bg-purple-950/20 border border-electricViolet/20 text-neutral-300 text-xs font-mono leading-relaxed">
-          🔒 <strong>Regla Cero de Discreción:</strong> Ningún usuario puede ver tus respuestas en tu perfil. Cuando chatees o abras el perfil de alguien que también marcó un fetiche en <em>"Me encanta"</em> o <em>"Curioso"</em>, la app iluminará un sello secreto de afinidad química.
+          🔒 <strong>Regla Cero de Discreción:</strong> Ningún usuario puede ver tus respuestas en tu perfil. Cuando chatees o abras el perfil de alguien que también marcó un morbo en <em>"Me encanta"</em> o <em>"Curioso"</em>, la app iluminará un sello de morbo mutuo 🔥.
         </div>
 
         <div className="space-y-2.5 pt-1">
-          {KINK_ITEMS_CATALOG.map((kink) => {
+          {activeKinksList.map((kink) => {
             const currentPref = myKinkMatrix[kink.id] || "pass";
 
             return (

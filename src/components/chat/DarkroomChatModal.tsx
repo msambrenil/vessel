@@ -37,6 +37,7 @@ import {
   MapPin,
   MoreVertical,
   Mic,
+  Plus,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
@@ -52,6 +53,7 @@ import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { ChatMediaAttachment, ExitProtocol } from "@/types/vessel";
 import { PreFlightCard } from "./PreFlightCard";
+import { RendezvousSheet } from "./RendezvousSheet";
 
 interface DarkroomChatModalProps {
   profileId: string;
@@ -108,7 +110,9 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const [isBoundaryModalOpen, setIsBoundaryModalOpen] = useState(false);
   const [showRespectToast, setShowRespectToast] = useState(false);
   const [isTacticalMenuOpen, setIsTacticalMenuOpen] = useState(false);
+  const [isRendezvousSheetOpen, setIsRendezvousSheetOpen] = useState(false);
   const [quickBarMode, setQuickBarMode] = useState<"quick" | "antiGhost">("quick");
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
 
   // Estado de Waypoint Seguro en 2 Fases
   const [isWaypointModalOpen, setIsWaypointModalOpen] = useState(false);
@@ -345,7 +349,22 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
 
           {/* CINTA DE ACCIONES TÁCTICAS (Primaria PIN + Menú Flotante) */}
           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
-            {/* 1. Botón Rendezvous PIN / Punto de Encuentro (Acción Principal) */}
+            {/* 0. Botón Unificado Coordinar Cita (RendezvousSheet) */}
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playPulse();
+                setIsRendezvousSheetOpen(true);
+              }}
+              aria-label="Coordinar cita segura"
+              className="px-2.5 py-1.5 min-h-[36px] sm:min-h-[38px] flex items-center gap-1.5 rounded-full transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm bg-electricViolet text-white hover:bg-electricViolet/90 font-mono text-xs font-bold"
+              title="Asistente Integral de Encuentros (Sintonía + Lugar + Guardián SOS)"
+            >
+              <span className="text-sm leading-none">⚡</span>
+              <span className="hidden xs:inline sm:inline">Cita</span>
+            </button>
+
+            {/* 1. Botón Rendezvous PIN / Punto de Encuentro (Acción Rápida) */}
             <button
               type="button"
               onClick={handleSendPin}
@@ -404,6 +423,29 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                     <span>Herramientas Tácticas</span>
                     <span className="text-electricViolet-glow font-bold">VESSEL</span>
                   </div>
+
+                  {/* HERO FASE 2: Coordinar Cita (3 en 1) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      setIsTacticalMenuOpen(false);
+                      setIsRendezvousSheetOpen(true);
+                    }}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-electricViolet/30 to-bloodNeon/20 hover:from-electricViolet/40 hover:to-bloodNeon/30 border border-electricViolet/50 transition-all group cursor-pointer text-left shadow-violet-soft"
+                    role="menuitem"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-electricViolet text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">
+                        ⚡
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-white block leading-tight">Coordinar Cita (3 en 1)</span>
+                        <span className="text-[10px] text-neutral-300 block leading-tight">Sintonía + Lugar/PIN + Blindaje SOS</span>
+                      </div>
+                    </div>
+                    <span className="text-[9px] font-mono font-bold text-electricViolet-glow px-1.5 py-0.5 rounded bg-black/40 border border-electricViolet/40 flex-shrink-0">WIZARD</span>
+                  </button>
 
                   {/* 0. Pre-Flight Checklist (Sintonía) */}
                   <button
@@ -1468,109 +1510,190 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                 />
               </div>
             ) : (
-            <form
-              onSubmit={handleSend}
-              className="p-2.5 sm:p-3 flex items-center gap-2 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
-            >
-              {/* TOGGLE MODO EFÍMERO (BURN-ON-VIEW) */}
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playStateSwitch("occupied");
-                  setIsBurnMode(!isBurnMode);
-                }}
-                aria-label={isBurnMode ? "Desactivar modo efímero" : "Activar mensaje efímero de vista única"}
-                aria-pressed={isBurnMode}
-                className={`p-2.5 min-w-[42px] min-h-[42px] flex items-center justify-center rounded-2xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 ${
-                  isBurnMode
-                    ? "bg-bloodNeon text-white border-bloodNeon shadow-blood-glow"
-                    : "border-white/10 bg-white/5 text-neutral-400 hover:text-bloodNeon hover:border-bloodNeon/50"
-                }`}
-                title={t.chat.burnModeActive}
-              >
-                <Flame className="w-4 h-4" />
-              </button>
+            <div className="flex flex-col">
+              {/* Drawer Táctico Desplegable del Botón + */}
+              {isPlusMenuOpen && (
+                <div className="p-2.5 sm:p-3 bg-[#0c0c10] border-b border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in slide-in-from-bottom-2 duration-150">
+                  {/* 1. Coordinar Cita Segura */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      setIsPlusMenuOpen(false);
+                      setIsRendezvousSheetOpen(true);
+                    }}
+                    className="flex items-center gap-2 p-2 rounded-xl bg-electricViolet/15 border border-electricViolet/30 text-white hover:bg-electricViolet/25 transition-all text-left cursor-pointer active:scale-95"
+                  >
+                    <div className="p-1.5 rounded-lg bg-electricViolet/20 text-electricViolet-glow flex-shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-mono font-bold uppercase truncate text-white">Coordinar Cita</span>
+                      <span className="text-[9px] text-neutral-400 truncate">Punto seguro & Yendo</span>
+                    </div>
+                  </button>
 
-              {/* BOTÓN ADJUNTAR FOTO / VIDEO / ÁLBUM */}
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setIsSendMediaModalOpen(true);
-                }}
-                aria-label={t.chat.attachMediaTooltip}
-                className="p-2.5 min-w-[42px] min-h-[42px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-electricViolet-glow hover:border-electricViolet/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
-                title={t.chat.attachMediaTooltip}
-              >
-                <ImageIcon className="w-4 h-4" />
-              </button>
+                  {/* 2. Mensaje Efímero (Burn-on-View) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playStateSwitch("occupied");
+                      setIsBurnMode(!isBurnMode);
+                      setIsPlusMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-left cursor-pointer active:scale-95 ${
+                      isBurnMode
+                        ? "bg-bloodNeon/25 border-bloodNeon text-bloodNeon shadow-blood-glow"
+                        : "bg-white/5 border-white/10 text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg flex-shrink-0 ${isBurnMode ? "bg-bloodNeon/30 text-white" : "bg-white/5 text-bloodNeon"}`}>
+                      <Flame className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-mono font-bold uppercase truncate">
+                        {isBurnMode ? "Efímero: ON" : "Modo Efímero"}
+                      </span>
+                      <span className="text-[9px] text-neutral-400 truncate">1 sola vista</span>
+                    </div>
+                  </button>
 
-              {/* BOTÓN WAYPOINT SEGURO (2 FASES) */}
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setIsWaypointModalOpen(true);
-                }}
-                aria-label="Enviar Waypoint Seguro en 2 Fases"
-                className="p-2.5 min-w-[42px] min-h-[42px] flex items-center justify-center rounded-2xl border border-electricViolet/30 bg-electricViolet/10 text-electricViolet-glow hover:border-electricViolet/60 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
-                title="Enviar Waypoint Seguro (Liberación progresiva en 2 fases)"
-              >
-                <MapPin className="w-4 h-4" />
-              </button>
+                  {/* 3. Pre-Flight Checklist (Sintonía) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      setIsPlusMenuOpen(false);
+                      openPreFlightModal(profile);
+                    }}
+                    className="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all text-left cursor-pointer active:scale-95"
+                  >
+                    <div className="p-1.5 rounded-lg bg-white/5 text-amber-300 flex-shrink-0">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-mono font-bold uppercase truncate">Pre-Flight</span>
+                      <span className="text-[9px] text-neutral-400 truncate">Sintonía erótica</span>
+                    </div>
+                  </button>
 
-              {/* BOTÓN GRABACIÓN DE VOZ */}
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setIsVoiceRecording(true);
-                }}
-                aria-label={t.chat.voiceTapToRecord}
-                className="p-2.5 min-w-[42px] min-h-[42px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-mintNeon hover:border-mintNeon/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95"
-                title={t.chat.voiceTapToRecord}
-              >
-                <Mic className="w-4 h-4" />
-              </button>
+                  {/* 4. Guardián Silencioso */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      setIsPlusMenuOpen(false);
+                      openSafetyBeaconModal();
+                    }}
+                    className="flex items-center gap-2 p-2 rounded-xl bg-red-950/20 border border-red-500/30 text-red-300 hover:bg-red-950/40 transition-all text-left cursor-pointer active:scale-95"
+                  >
+                    <div className="p-1.5 rounded-lg bg-red-950/40 text-bloodNeon flex-shrink-0">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[11px] font-mono font-bold uppercase truncate">Guardián SOS</span>
+                      <span className="text-[9px] text-neutral-400 truncate">Dead-man switch</span>
+                    </div>
+                  </button>
+                </div>
+              )}
 
-              {/* INPUT DE TEXTO BRUTALISTA */}
-              <input
-                type="text"
-                aria-label="Escribir mensaje"
-                placeholder={
-                  activeBoundary?.chatStatus === "muted"
-                    ? t.chat.mutedPlaceholder
-                    : isBurnMode
-                    ? t.chat.burnModeActive
-                    : t.chat.normalPlaceholder
-                }
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                className={`flex-1 bg-black/50 border rounded-2xl text-white text-xs px-4 py-3 placeholder:text-neutral-500 focus:outline-none focus-visible:ring-2 transition-all ${
-                  isBurnMode
-                    ? "border-bloodNeon/60 focus:border-bloodNeon focus-visible:ring-bloodNeon/60"
-                    : "border-white/10 focus:border-electricViolet focus-visible:ring-electricViolet/60"
-                }`}
-              />
-
-              {/* BOTÓN ENVIAR CON MICRO-INTERACCIÓN DE LANZAMIENTO */}
-              <button
-                type="submit"
-                disabled={!inputMessage.trim() && !isSendingMessage}
-                aria-label="Enviar mensaje"
-                className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-90 ${
-                  inputMessage.trim()
-                    ? "bg-electricViolet hover:bg-electricViolet-glow text-white shadow-[0_0_18px_rgba(139,92,246,0.5)] scale-100"
-                    : "bg-white/10 text-neutral-500 cursor-not-allowed opacity-40 scale-95"
-                }`}
+              <form
+                onSubmit={handleSend}
+                className="p-2 sm:p-2.5 flex items-center gap-1.5 sm:gap-2 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
               >
-                <Send
-                  className={`w-4 h-4 fill-current transition-transform ${
-                    isSendingMessage ? "animate-plane-launch" : ""
+                {/* BOTÓN + (MENÚ TÁCTICO) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playPulse();
+                    setIsPlusMenuOpen(!isPlusMenuOpen);
+                  }}
+                  aria-label="Menú de herramientas tácticas"
+                  aria-expanded={isPlusMenuOpen}
+                  className={`p-2 min-w-[38px] sm:min-w-[42px] min-h-[38px] sm:min-h-[42px] flex items-center justify-center rounded-2xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0 ${
+                    isPlusMenuOpen
+                      ? "bg-electricViolet text-white border-electricViolet shadow-violet-glow"
+                      : isBurnMode
+                      ? "bg-bloodNeon/20 border-bloodNeon text-bloodNeon shadow-blood-glow"
+                      : "border-white/10 bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10"
                   }`}
-                />
-              </button>
-            </form>
+                  title="Herramientas tácticas (+)"
+                >
+                  <Plus className={`w-4 h-4 transition-transform duration-200 ${isPlusMenuOpen ? "rotate-45" : ""}`} />
+                </button>
+
+                {/* BOTÓN ADJUNTAR FOTO / VIDEO / ÁLBUM */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playPulse();
+                    setIsSendMediaModalOpen(true);
+                  }}
+                  aria-label={t.chat.attachMediaTooltip}
+                  className="p-2 min-w-[38px] sm:min-w-[42px] min-h-[38px] sm:min-h-[42px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-electricViolet-glow hover:border-electricViolet/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0"
+                  title={t.chat.attachMediaTooltip}
+                >
+                  <ImageIcon className="w-4 h-4" />
+                </button>
+
+                {/* INPUT DE TEXTO BRUTALISTA AMPLIO */}
+                <div className="relative flex-1 min-w-0">
+                  <input
+                    type="text"
+                    aria-label="Escribir mensaje"
+                    placeholder={
+                      activeBoundary?.chatStatus === "muted"
+                        ? t.chat.mutedPlaceholder
+                        : isBurnMode
+                        ? t.chat.burnModeActive
+                        : t.chat.normalPlaceholder || "Escribí algo piola..."
+                    }
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    className={`w-full bg-black/50 border rounded-2xl text-white text-xs px-3.5 py-2.5 sm:py-3 placeholder:text-neutral-500 focus:outline-none focus-visible:ring-2 transition-all ${
+                      isBurnMode
+                        ? "border-bloodNeon/60 focus:border-bloodNeon focus-visible:ring-bloodNeon/60 pr-8"
+                        : "border-white/10 focus:border-electricViolet focus-visible:ring-electricViolet/60"
+                    }`}
+                  />
+                  {isBurnMode && (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs select-none pointer-events-none" title="Modo efímero activo">
+                      🔥
+                    </span>
+                  )}
+                </div>
+
+                {/* BOTÓN REACTIVO: SI HAY TEXTO -> ENVIAR; SI ESTÁ VACÍO -> MICRÓFONO */}
+                {inputMessage.trim() ? (
+                  <button
+                    type="submit"
+                    disabled={isSendingMessage}
+                    aria-label="Enviar mensaje"
+                    className="p-2 min-w-[40px] sm:min-w-[44px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center rounded-2xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-90 bg-electricViolet hover:bg-electricViolet-glow text-white shadow-[0_0_18px_rgba(139,92,246,0.5)] flex-shrink-0"
+                  >
+                    <Send
+                      className={`w-4 h-4 fill-current transition-transform ${
+                        isSendingMessage ? "animate-plane-launch" : ""
+                      }`}
+                    />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      setIsVoiceRecording(true);
+                    }}
+                    aria-label={t.chat.voiceTapToRecord}
+                    className="p-2 min-w-[38px] sm:min-w-[42px] min-h-[38px] sm:min-h-[42px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-mintNeon hover:border-mintNeon/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95 flex-shrink-0"
+                    title={t.chat.voiceTapToRecord}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                )}
+              </form>
+            </div>
             )}
           </div>
         )}
@@ -1893,6 +2016,13 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
           </div>
         </aside>
       </div>
+
+      {/* ASISTENTE UNIFICADO DE ENCUENTROS (FASE 2) */}
+      <RendezvousSheet
+        isOpen={isRendezvousSheetOpen}
+        onClose={() => setIsRendezvousSheetOpen(false)}
+        targetProfile={profile}
+      />
     </div>
   );
 };

@@ -65,10 +65,15 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const verdictMeta = dossier?.rating ? DOSSIER_VERDICT_CONFIG[dossier.rating] : null;
 
   const isImmediateHost =
-    profile.mobility === "Tengo depto / lugar" ||
-    profile.mobility === "Tengo sitio" ||
-    profile.mobility === "Tengo lugar y me muevo" ||
-    profile.mobility === "Tengo sitio/me desplazo";
+    Boolean(
+      profile.mobility?.toLowerCase().includes("casa") ||
+      profile.mobility === "Tengo depto / lugar" ||
+      profile.mobility === "Tengo sitio" ||
+      profile.mobility === "Tengo lugar y me muevo" ||
+      profile.mobility === "Tengo sitio/me desplazo" ||
+      profile.mobility?.toLowerCase().includes("lugar") ||
+      profile.mobility?.toLowerCase().includes("depto")
+    );
   const isAttenuated = boundary?.radarVisibility === "attenuated";
 
   // Protocolo de Salida táctico elevado a la zona superior izquierda
@@ -504,7 +509,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           {/* Chip de Hospedaje Inmediato en Fila de Identidad */}
           {isImmediateHost && (
             <span
-              title={profile.hostCard?.amenities?.showerReady ? (language === "es" ? "Tiene lugar propio + Ducha lista" : "Has place + Shower ready") : (t.card?.immediateHost || "Tiene Lugar")}
+              title={profile.hostCard?.amenities?.showerReady ? (language === "es" ? "Con lugar propio + Ducha lista" : "Has place + Shower ready") : (t.card?.immediateHost || "Con Lugar")}
               className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-amber-500/25 border border-amber-400/40 text-[9px] font-bold text-amber-300 flex-shrink-0 shadow-xs"
             >
               <span>🏠</span>
@@ -723,7 +728,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
             {isImmediateHost && (
               <div className="flex items-center gap-2 font-medium leading-tight">
                 <span className="text-xs leading-none flex-shrink-0">🏠</span>
-                <span>{t.card.immediateHostBadge || "Tiene lugar propio"}</span>
+                <span>{t.card.immediateHostBadge || "Con Lugar"}</span>
               </div>
             )}
             {profile.privateVault && profile.privateVault.length > 0 && (

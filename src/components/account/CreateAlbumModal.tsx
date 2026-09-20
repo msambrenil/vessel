@@ -453,9 +453,9 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
                   </span>
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-white">Bóveda Privada</div>
+                  <div className="font-bold text-xs text-white">Álbum Privado (Nudes 🔒)</div>
                   <div className="text-[10px] text-neutral-400 mt-0.5 leading-tight">
-                    Cifrada con llave bajo autorización y temporizador efímero.
+                    Cifrado bajo autorización y temporizador efímero.
                   </div>
                 </div>
               </button>
@@ -473,8 +473,8 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
               onChange={(e) => setTitle(e.target.value)}
               placeholder={
                 privacy === "public"
-                  ? "Ej. Sesión Nocturna // Kreuzberg"
-                  : "Ej. Bóveda Privada // Arnés, Tensión & Darkroom"
+                  ? "Ej. Sesión Nocturna // Palermo"
+                  : "Ej. Álbum de Nudes // Arnés, Tensión & Darkroom"
               }
               className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-medium"
             />

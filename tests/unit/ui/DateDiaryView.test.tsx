@@ -179,10 +179,10 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     vi.clearAllMocks();
   });
 
-  it("debe renderizar la cabecera táctica con el título 'Bitácora // Encuentros' y credencial AES-256", () => {
+  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas 📖 (Diario)' y credencial AES-256", () => {
     render(<DateDiaryView />);
 
-    expect(screen.getByText(/Bitácora \/\/ Encuentros/i)).toBeInTheDocument();
+    expect(screen.getByText(/Chongos & Citas/i)).toBeInTheDocument();
     expect(screen.getByText(/AES-256 VAULT/i)).toBeInTheDocument();
     expect(screen.getByText(/Documentar Encuentro/i)).toBeInTheDocument();
   });
@@ -199,7 +199,7 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
   it("debe renderizar la sección de valoraciones recibidas sobre mí con testimonios", () => {
     render(<DateDiaryView />);
 
-    expect(screen.getByText(/Valoraciones de la Comunidad Sobre Mí/i)).toBeInTheDocument();
+    expect(screen.getByText(/Valoraciones de Onda & Confianza/i)).toBeInTheDocument();
     expect(screen.getByText(/Increíble anfitrión, lugar súper prolijo/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Excelente Host/i).length).toBeGreaterThan(0);
   });
@@ -233,5 +233,35 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     fireEvent.click(docBtn);
 
     expect(mockOpenCreateDiaryModal).toHaveBeenCalledTimes(1);
+  });
+
+  it("debe conmutar entre la pestaña 'Bitácora de Citas' y 'Salud & Cuidado'", () => {
+    render(<DateDiaryView />);
+
+    // Por defecto estamos en Bitácora de Citas
+    expect(screen.getByText(/Total Encuentros/i)).toBeInTheDocument();
+
+    // Hacemos clic en la pestaña Salud & Cuidado
+    const healthTabBtn = screen.getByRole("button", { name: /Salud & Cuidado/i });
+    fireEvent.click(healthTabBtn);
+
+    // Debe mostrar las secciones clínicas de Salud & Cuidado
+    expect(screen.getByText(/Control & Calendario PrEP/i)).toBeInTheDocument();
+    expect(screen.getByText(/Alerta de Exposición a ITS/i)).toBeInTheDocument();
+    expect(screen.getByText(/Reducción de Daños/i)).toBeInTheDocument();
+  });
+
+  it("debe invocar openItsExposureModal al hacer clic en Emitir Alerta Anónima", () => {
+    render(<DateDiaryView />);
+
+    // Ir a pestaña Salud & Cuidado
+    const healthTabBtn = screen.getByRole("button", { name: /Salud & Cuidado/i });
+    fireEvent.click(healthTabBtn);
+
+    // Botón de emitir alerta
+    const alertBtn = screen.getByRole("button", { name: /Emitir Alerta Anónima/i });
+    fireEvent.click(alertBtn);
+
+    expect(mockOpenItsExposureModal).toHaveBeenCalledTimes(1);
   });
 });

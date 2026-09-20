@@ -178,7 +178,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
               </div>
 
               <p className="text-xs text-neutral-200 leading-relaxed font-sans italic">
-                "{testimonial.content}"
+                &quot;{testimonial.content}&quot;
               </p>
 
               {/* Tags del testimonio */}

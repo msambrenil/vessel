@@ -980,6 +980,190 @@ Historial cronológico estricto de las decisiones técnicas y de producto adopta
   - **Opción A (En el registro)**: Suma campos a un formulario que debe ser mínimo. Riesgo de abandono.
   - **Opción B (Solo drawer)**: El filtro se resetea al cerrar sesión. No hay memoria de preferencia. UX frustrante.
 
+### [ADR-088] · [2026-09-19 19:05] Auditoría Integral, Saneamiento de Inconsistencias y Poda Inteligente a 27 Skills
+- **Decisión**:
+  1. **Armonización de Reglas de Agente & Fast-Path**:
+     - Corrección en `.agents/rules/antigravity_global_rules.md` (§6): Se sustituyó la directiva contradictoria `npm run build` por `npm run typecheck` (o `npx tsc --noEmit`) para la vía rápida, respetando la prohibición taxativa de compilación en caliente con el servidor de desarrollo activo.
+  2. **Actualización de Stack y Paridad de Dependencias**:
+     - Sincronización de `docs/contexto/arquitectura.md` a `Firebase SDK v12` (acorde a `"firebase": "^12.18.0"` en `package.json`).
+     - Integración de la suite de 194 tests automatizados en Vitest en los comandos rápidos de `GEMINI.md` y `docs/contexto/flujo-de-trabajo.md` (`npm run test` y `npm run validate`).
+  3. **Corrección de Router SPA y Erradicación de Redundancias en Arquitectura**:
+     - Corrección en `docs/contexto/arquitectura.md` reflejando la estructura real de 5 accesos en `BrutalistNav` (`grid`, `pulses`, `chat`, `diary`, `account`), eliminando la entrada legacy de `radar` y purgando la duplicación tipográfica de la vista `chat`.
+  4. **Unificación Semántica Definitiva a Electric Violet**:
+     - Sustitución de residuos de `rawAmber` como acento visual en `arquitectura.md` y `errores-conocidos.md` (`focus-visible:ring-electricViolet`), alineando la documentación con la paleta de tokens oficial de `tailwind.config.ts`.
+  5. **Precisión Geoespacial Google S2**:
+     - Clarificación técnica en `REGLAS_DE_NEGOCIO.md` y `arquitectura.md` especificando `Google S2 (Nivel 16) / Geohash 7 (~152m)` para evitar la confusión matemática con el Nivel 14.
+  6. **Poda Inteligente y Curaduría de Skills (`.agents/skills/`)**:
+     - Poda de 12 skills incompatibles o superfluas (`tailwind-patterns` de v4, `native-data-fetching` de Expo, `frontend-data-contracts`, `frontend-optimistic-mutations`, `frontend-observability`, `react-state-management`, `writing-plans`, `simplify-code`, `design-taste-frontend`, `favicon`, `web-performance-optimization`, `react-patterns`).
+     - Incorporación de `firebase` y `progressive-web-app` desde `sickn33/agentic-awesome-skills`, consolidando exactamente 27 skills hiper-calibradas para el stack de VESSEL.
+- **Motivación**:
+  Eliminar cualquier fricción, inconsistencia o ambigüedad conceptual en las directivas del proyecto, garantizando coherencia absoluta entre las reglas operativas, los documentos de contexto vivo y la implementación en código.
+
+### [ADR-089] · [2026-09-19 19:30] Migración Mayor y Blindaje de Runtime: Next.js 16, Tailwind CSS v4, TypeScript 7 y Flat Config ESLint
+- **Decisión**:
+  1. **TypeScript 7 (`typescript@^7.0.2`)**:
+     - Incorporación de `src/types/declarations.d.ts` con declaración ambiental para imports de CSS (`declare module "*.css";`), resolviendo TS2882 sin alterar la verificación estricta de tipos.
+  2. **Next.js 16 (`next@^16.3.5` & `eslint-config-next@^16.3.5`)**:
+     - Actualización a Next.js 16. App Router validado para todas las vistas SPA híbridas (`page.tsx`, `admin/page.tsx`, `layout.tsx`).
+     - Reemplazo del script `"lint": "next lint"` por `"lint": "eslint ."` en `package.json` debido a la descontinuación del comando en Next 16.
+  3. **ESLint con Flat Config (`eslint.config.mjs`)**:
+     - Eliminación de `.eslintrc.json` legado y migración completa a `eslint.config.mjs` plano con `@next/eslint-plugin-next`.
+     - Corrección de entidades JSX sin escapar (`&quot;`, `&apos;`) en `MissedConnectionsModal.tsx`, `TestimonialsSection.tsx`, `EnRouteTrackerModal.tsx` y `CalculatorCoverScreen.tsx`.
+     - Integración con `eslint@^9.39.5` (LTS con compatibilidad completa con el ecosistema de plugins React/Next), logrando 0 errores en `npm run lint`.
+  4. **Tailwind CSS v4 (`tailwindcss@^4.3.3` + `@tailwindcss/postcss@^4.3.3`)**:
+     - Actualización de `postcss.config.mjs` a `@tailwindcss/postcss`.
+     - Modernización de `src/app/globals.css` mediante `@import "tailwindcss";` y bloque declarativo `@theme` que preserva el 100% de los tokens de diseño brutalistas (`obsidian`, `electricViolet`, `mintNeon`, `bloodNeon`, `concrete`) y el Anti-Grindr Shield (`amber-*` remapeado a la gama violeta).
+  5. **Verificación Total**:
+     - `npm run validate` (`tsc --noEmit && vitest run`) superado al 100% (27 suites, 194 pruebas unitarias e integración).
+- **Motivación**:
+  Modernizar de forma segura las 4 dependencias estructurales más críticas del stack sin romper el servidor dev local, protegiendo la identidad visual, la calidad estática del código y la estabilidad de producción.
+
+### [ADR-090] · [2026-09-19 19:44] Creación y Formalización de los 20 Arquetipos de Usuario para el Lanzamiento en Argentina
+- **Decisión**:
+  1. **Documento Maestro de Psicografía de Mercado**: Creación de `docs/contexto/arquetipos.md` con 20 perfiles tácticos representativos para el mercado argentino (CABA, Gran Buenos Aires, Córdoba, Rosario, Mendoza).
+  2. **Análisis Multidimensional por Arquetipo**: Cobertura exhaustiva de:
+     - Perfil sociodemográfico, económico y cultural local.
+     - Parque de dispositivos reales en Argentina (iPhone 11-15 Pro, Androids gama media Samsung Galaxy A / Xiaomi Poco / Moto G, salud de batería, redes 4G/5G).
+     - Gustos, música, circuitos nocturnos reales (Under Club, Crobar, Cocoliche, Plop, bares de Palermo/San Telmo/Chacarita).
+     - Dolores dominantes con apps hegemónicas (Grindr, Scruff, Tinder): hostilidad visual, drenaje de batería, ghosteo crónico, estafas/catfish, miedo a la exposición o extorsión.
+     - Puntos de contacto con VESSEL (Modo Niebla, BatteryStateEngine, No Ghost & Respect Karma, Google S2 Geohashing, Rendezvous PIN, Pre-Flight Checklist, Host Card, Safety Beacon, Salas de Sesión, Modo Dúo, Botiquín Doxy-PEP y PrEP).
+     - Oportunidades de producto y backlog para optimizar la app y la conversión a `VESSEL UNLIMITED`.
+  3. **Indexación y Vinculación Contextual**:
+     - Actualización de `GEMINI.md` para consagrar `arquetipos.md` como el 8vo documento nuclear de contexto del sistema.
+     - Sincronización en `.agents/rules/antigravity_global_rules.md` (§5) y `docs/contexto/glosario.md` (§1).
+- **Motivación**:
+  Contar con una referencia empírica inmutable sobre quiénes son los usuarios reales en el territorio de lanzamiento, permitiendo validar cada futura feature, flujo UX de Impeccable UI, microinteracción háptica o ajuste de rendimiento frente a necesidades humanas y técnicas concretas.
+
+### [ADR-091] · [2026-09-19 19:48] Principio Invariante de Validación Permanente por Arquetipos de Usuario
+- **Decisión**:
+  1. **Obligatoriedad Operativa en Reglas Globales**:
+     - Se elevó a rango de **Invariante Obligatoria** en `.agents/rules/antigravity_global_rules.md` (§1 y §3) el principio de validación contra los 20 arquetipos de usuario (`docs/contexto/arquetipos.md`) para cada tarea, feature, ajuste de diseño Impeccable UI, micro-interacción o refactor arquitectónico.
+  2. **Integración en el Definition of Done (DoD)**:
+     - Actualización de `docs/contexto/flujo-de-trabajo.md` (§3): Ninguna tarea se considera completa sin explicitar a qué arquetipo(s) beneficia el cambio y verificar que no introduzca fricción o regresión en arquetipos sensibles (perfiles discretos, conexiones móviles oscilantes, batería degradada o accesibilidad).
+- **Motivación**:
+  Asegurar que cada decisión técnica, estética o de negocio responda a personas de carne y hueso en el contexto argentino, erradicando el desarrollo especulativo y garantizando que VESSEL mantenga un valor diferencial superior y sostenido en la experiencia de usuario.
+
+### [ADR-092] · [2026-09-19 20:05] Descongestión Táctica de Cabecera y Consolidación de Navegación a 4 Pestañas (Fase 1)
+- **Decisión**:
+  1. **Limpieza de Cabecera Móvil (`BrutalistHeader.tsx`)**:
+     - Se eliminó el switch de desarrollo `TEST/REAL` de la barra pública. Toda la selección de entorno y reseteo de datos permanece segura y accesible en `AppSettingsSection.tsx` a través del toque en el logo de VESSEL.
+     - Se retiraron botones estáticos no críticos (`FIESTAS` y `GUARDIÁN` en reposo) y toggles directos de sonido, modo sigilo y logout en la cabecera fija para evitar toques involuntarios en pantallas táctiles de 375-390px.
+     - La zona central se reservó exclusivamente para widgets vivos de estado crítico (*Rendezvous PIN en curso*, *Guardián Countdown activo* y *Reducción de Daños*).
+  2. **Consolidación de Barra Inferior a 4 Pestañas (`BrutalistNav.tsx`)**:
+     - Se reorganizó la barra de 5 a 4 pestañas: `Cerca` (grid), `Mensajes` (chat), `Diario` (diary) y `Perfil` (account).
+     - Se amplió la superficie táctil de cada botón en un +25% ($\ge 48\times 48\text{px}$), optimizada para el *Thumb Zone* bajo el Modo `Operate` de Impeccable UI v4.3.1.
+     - Se unificó el contador de no leídos en la pestaña de Mensajes (mensajes + pulsos entrantes).
+  3. **Integración de la Bandeja de Pulsos en el Hub de Mensajes (`DarkroomListView.tsx`)**:
+     - Se implementó un selector segmentado superior: `Conversaciones` vs `Pulsos`.
+     - La sección de Pulsos incorpora la gestión completa de pulsos recibidos y emitidos, marcación automática de leídos, devolución en 1-tap, badges y tiempos relativos.
+     - Se agregó un riel/banner hero en la vista de chats para acceder instantáneamente a nuevos pulsos recibidos.
+  4. **Retrocompatibilidad en Enrutamiento (`page.tsx`)**:
+     - Se mapeó `activeView === "pulses"` para renderizar `DarkroomListView` con la sección de pulsos preseleccionada, preservando la compatibilidad de atajos y enlaces internos.
+- **Motivación**:
+  Reducir la sobrecarga cognitiva en la cabecera móvil, aumentar la ergonomía táctil en la zona del pulgar y centralizar toda la interacción social entrante en un único centro de comunicaciones fluido.
+
+### [ADR-093] · [2026-09-19 20:15] Unificación del Flujo de Encuentros (RendezvousSheet 3 en 1 — Fase 2)
+- **Decisión**:
+  1. **Consolidación de Modales Fragmentados en `RendezvousSheet.tsx`**:
+     - Se unificaron 5 modales anteriormente dispersos (*PreFlightChecklistModal*, *WaypointModal*, *RendezvousPinModal*, *SafetyBeaconModal*, *EnRouteModal*) en un bottom sheet fluido estructurado en 3 pasos lógicos bajo el estándar Impeccable UI v4.3.1:
+       - **Paso 1 (Sintonía)**: Ritmo/duración de encuentro, dinámicas sexuales deseadas, barreras y vibra.
+       - **Paso 2 (Lugar & Logística)**: Modalidad de hospedaje (mi lugar, su lugar, esquina neutra, PIN efímero) y Waypoint en 2 fases (esquina pública + dirección exacta con notas de acceso que se liberan solo al arribar).
+       - **Paso 3 (Blindaje SOS & Trayecto)**: Dead-Man Switch (0, 45, 60, 90 min con contacto de confianza local-first) y telemetría opcional de tiempo en camino ("Voy en camino" / ETA).
+  2. **Despacho Atómico en 1 Tap**:
+     - Confirmación unificada con el botón `Confirmar y Blindar Encuentro 🔥` que despacha concurrentemente los acuerdos al chat (`sendPreFlightChecklist`, `sendSecureWaypoint`/`sendRendezvousPin`), inicializa la alarma local (`startSafetyBeacon`) y sincroniza el trayecto (`startEnRoute`), activando el feedback sonoro sub-bass analógico (`playSignalSent`).
+  3. **Puntos de Contacto Ergonómicos en Chat (`DarkroomChatModal.tsx`)**:
+     - Botón directo `⚡ Cita` en la cinta de acciones del chat.
+     - Elemento destacado `Coordinar Cita (3 en 1)` dentro del menú táctico flotante.
+  4. **Blindaje de Tipado y Tests**:
+     - Verificación estricta de TypeScript 7 (0 errores).
+     - Cobertura con 6 tests unitarios dedicados (`tests/unit/ui/RendezvousSheet.test.tsx`), alcanzando un total de 200 tests pasando en la suite de Vitest.
+- **Motivación**:
+  Eliminar la fatiga de coordinación previa al encuentro, reduciendo de 5 interacciones fragmentadas a 1 solo flujo paso a paso con confirmación atómica y blindaje físico instantáneo para usuarios en situaciones de alta movilidad o urgencia.
+
+### [ADR-094] · [2026-09-19 20:25] Refactor Ergonómico de ProfileDetailModal en 3 Pestañas Tácticas (Fase 3)
+- **Decisión**:
+  1. **Segmentación Táctica en 3 Pestañas (`ProfileDetailModal.tsx`)**:
+     - Se reemplazó el scroll vertical monolítico por una navegación segmentada superior de alto contraste (`vibe` | `logistics` | `trust`):
+       - **`Vibe`**: Identidad, bio, HUD de rol sexual, deseos de hoy, límites claros, prácticas/kinks y nota de voz efímera.
+       - **`Logística`**: Hospedaje táctico (`HostCard`: si tiene lugar, comodidades, movilidad), distancia ofuscada, On-The-Clock, atmósfera de sustancias, match kink secreto encriptado, Dossier privado de notas de usuario y botón CTA de acceso rápido a coordinar cita en el chat.
+       - **`Confianza`**: Liveness 3D / verificación humana, Protocolo Anti-Ghost con Karma Score de Respeto, estado de salud preventiva (PrEP/VIH), testimonios validados entre pares y bóveda privada de fotos.
+  2. **Poda de Microinteracciones Lentas y Fricción Cognitiva**:
+     - Se eliminó el componente `FillMeter` que exigía mantener presionado 2 segundos para enviar un pulso (fricción en frío o movimiento). Reemplazado por un botón de acción cinética de 1-tap (`audioEngine.playPulse`), con feedback táctil inmediato.
+     - Se eliminó la reproducción continua de frecuencias en loop (`ambientVibe`), erradicando colisiones de audio con apps de música en segundo plano y eliminando gasto innecesario de batería en dispositivos con recursos limitados.
+  3. **Dock Inferior Ergonómico Fijo (Thumb Zone)**:
+     - Dock fijo en el tercio inferior con 4 acciones esenciales con targets $\ge 44\times 44\text{px}$: Enviar Pulso Instantáneo, Solicitar/Compartir Ubicación & PIN, Registrar en Diario Íntimo, y Chatear / Desbloquear Acceso.
+  4. **Blindaje de Tipado y Pruebas Unitarias**:
+     - Validación con TypeScript 7 (`npm run typecheck` 0 errores).
+     - Creación de suite unitaria dedicada (`tests/unit/ui/ProfileDetailModal.test.tsx`, 5 tests pasando).
+     - Total de la suite de pruebas alcanzado: 29 suites y 205 tests pasando al 100%.
+- **Motivación**:
+  Eliminar la fatiga de scroll infinito en pantallas móviles, resolver problemas de rendimiento auditivo y de batería, y permitir que el usuario acceda de forma inmediata y sin fricción a la información logística y de confianza antes de iniciar un contacto íntimo.
+
+### [ADR-095] · [2026-09-19 20:30] Desmonolitización de page.tsx y Orquestador de Modales Desacoplado (ModalHost — Fase 4)
+- **Decisión**:
+  1. **Desmonolitización del Archivo Raíz (`src/app/page.tsx`)**:
+     - Se extrajo el montaje de más de 25 modales y overlays del archivo raíz hacia `src/components/modals/ModalHost.tsx`.
+     - `page.tsx` se redujo de 293 a 78 líneas (-73% de código), eliminando 24 declaraciones `dynamic()` y dejando el componente principal enfocado exclusivamente en la distribución de vistas (`BrutalistHeader`, `EnRouteBanner`, `StatusToggle`, contenedor `main`, `BrutalistNav` y `<ModalHost />`).
+  2. **Encapsulamiento y Code-Splitting en `ModalHost.tsx`**:
+     - Componente memoizado con `React.memo` que organiza los modales en 5 dominios semánticos (Core Overlays, Auth/Identidad, Seguridad/Camuflaje, Suite Táctica y Utilidades/Salud) cargados bajo demanda con `{ ssr: false }`.
+  3. **Aislamiento de Re-renders & Rendimiento**:
+     - Se aisló la reconciliación del árbol de modales respecto de la navegación principal, evitando reevaluar 25 ramas condicionales en el componente raíz en cada actualización de estado global de `useVessel()`.
+  4. **Blindaje con Tests Unitarios**:
+     - Creación de suite dedicada en `tests/unit/ui/ModalHost.test.tsx` (6 tests unitarios pasando).
+     - Cobertura global alcanzada: 30 suites y 211 tests pasando al 100% en Vitest.
+- **Motivación**:
+  Prevenir degradación de rendimiento y parpadeos en dispositivos móviles con batería baja o recursos limitados (arquetipo *Facundo en Tren Roca*) y garantizar transiciones fluidas a 120 FPS en pantallas ProMotion (arquetipo *Mateo en Palermo*), cumpliendo las mejores prácticas de arquitectura Next.js 16 y React 19.
+
+### [ADR-096] · [2026-09-19 21:00] Auditoría Integral, Localización Rioplatense Gay 2026 y Simplificación de Flujos (Fases 1 a 5)
+- **Decisión**:
+  1. **Estandarización de Vocabulario Rioplatense Gay 2026**:
+     - Consagración estricta de **`"Con Lugar"`** como el único término autorizado para disponibilidad de hospedaje / lugar propio en toda la app (filtros, tarjetas, bio, chat).
+     - Consagración del término **`"Me Hotea 🔥"` / `"Hotea"`** para la atracción sexual y física real (*"me calienta, me gusta y me da ganas de tener algo con él"*), utilizándolo en pulsos, reacciones de afinidad y chat.
+     - Incorporación de modismos contemporáneos del ambiente gay argentino: *"Pinta YA"*, *"Cero Ghosteo"*, *"Cierre piola"*, *"Bóveda Íntima"*, *"Fotos Privadas con Llave"*.
+  2. **Recuperación del 30% del Viewport en Matriz**:
+     - Rediseño de `StatusToggle.tsx` hacia una micro-barra táctil de alta densidad (~38px), eliminando el bloqueo visual que empujaba la grilla y dejando el protagonismo en las fotos.
+     - Poda de popovers superpuestos en `ProfileCard.tsx` e integración de badges directos `"CON LUGAR"` y botón `"🔥 Me Hotea"`.
+  3. **Barra de Input Simplificada en Chat Darkroom**:
+     - Sustitución de 5 botones apretados por botón táctico `[ + ]` con Bottom Sheet ergonómico, input amplio y botón reactivo Audio/Enviar según presencia de texto.
+  4. **Rediseño de Protocolo / Mi Cuenta en 3 Macro-Paneles**:
+     - `ProtocolView.tsx` reestructurado en 3 pestañas: *Presencia Pública* (Bio + Kinks), *Bóvedas & Archivo* (Álbumes privados y llaves) y *Soberanía & Seguridad* (Límites, Anti-Ghost y Camuflaje).
+     - Poda del selector técnico "Modo Prueba vs Modo Real" de `AppSettingsSection.tsx`, reservándolo para `/admin`.
+  5. **Segmentación de Date Diary en Citas vs Salud & Cuidado**:
+     - `DateDiaryView.tsx` dividido en dos pestañas superiores:
+       - *"Bitácora de Citas"*: KPIs de telemetría, testimonios comunitarios y lista de encuentros pasados/futuros con notas confidenciales.
+       - *"Salud & Cuidado"*: Botiquín clínico Doxy-PEP (ventana 72h), calendario y control trimestral de PrEP (90 días), Alerta de exposición a ITS 100% anónima y protocolo de reducción de daños Chem-Chill.
+  6. **Escudo de Camuflaje Unificado & Poda de Modales de Baja Adopción**:
+     - `AppDisguiseSection` modernizado con dark luxury, feedback auditivo y duress PIN.
+     - Retiro de `SessionRoomModal` y `DuoLinkModal` del orquestador central `ModalHost.tsx`.
+  7. **Blindaje de Calidad y Validación**:
+     - TypeScript 7: 0 errores (`npm run typecheck`).
+     - Vitest: 31 suites y 219 tests pasando al 100% (`npm run test`).
+- **Motivación**:
+  Alinear completamente VESSEL con el código sociocultural y lingüístico real de la comunidad gay en Argentina (2026), eliminar la sobrecarga cognitiva y la fatiga visual de scroll, recuperar área de pantalla para la interacción humana y proveer una experiencia de salud preventiva y soberanía de datos sin precedentes.
+
+### [ADR-097] · [2026-09-20 01:15] Gestor Dinámico de Morbos en Panel Admin, Rediseño Continuo de Perfil y Estandarización Rioplatense Gay 2026
+- **Decisión**:
+  1. **Gestor Dinámico de Morbos en Panel de Administración (`/admin`)**:
+     - Implementación del servicio reactivo `kinkAdminService.ts` y componente `KinksManagementTab.tsx` integrado en `AdminNav.tsx` y `src/app/admin/page.tsx`.
+     - Capacidad de agregar nuevos morbos/fetiches personalizados con categoría y nivel de intensidad, activar/desactivar cualquier morbo existente con persistencia local y sincronización reactiva mediante el evento `vessel_kinks_updated`.
+     - Registro de auditoría estricto (`AuditLog`) de cada operación realizada por operadores del staff (`KINK_CREATED`, `KINK_UPDATED`, `KINK_TOGGLED`, `KINK_DELETED`).
+  2. **Estandarización Léxica Rioplatense Gay 2026**:
+     - Supresión estricta de cualquier uso de "choza" u otros localismos ajenos a la escena gay porteña/argentina contemporánea, consagrando de manera uniforme:
+       - *"Tiene Casa 🏠"* / *"Pongo Casa 🏠"* / *"Voy a la tuya / Viajo 🚗"* / *"Pongo casa o viajo 🏠/🚗"* / *"En boliche / cruising / telo"*.
+       - *"Mi Perfil"* (eliminando "Mi Ficha Carnal").
+       - *"Qué te morbosea 😈"* / *"Morbos"* (en reemplazo de "Qué te morbea").
+       - *"Álbum de Nudes 🔒"* / *"Álbum Privado"* (en reemplazo de "Bóveda de Nudes").
+       - *"A pelo / Bareback (PrEP al día)"* (en reemplazo de "Sin goma / Bareback").
+       - *"Terminar bien la charla ✌️"* (en reemplazo de "Cortar la onda bien").
+  3. **Rediseño Ergonómico de `ProfileDetailModal` a Scroll Continuo**:
+     - Eliminación del conmutador de 3 pestañas (`vibe`, `logistics`, `trust`) en el detalle del perfil inspeccionado.
+     - Presentación unificada en bottom sheet vertical fluido: Identidad & Bio ➔ Disponibilidad de Casa & Distancia ➔ Coincidencia de Morbos Mutua ➔ Protocolo Anti-Ghost & Verificación ➔ Dock Kinetic inferior para acción rápida.
+  4. **Blindaje de Calidad y Pruebas**:
+     - TypeScript estricto: 0 errores (`npm run typecheck`).
+     - Vitest: 31 suites y 219 tests pasando al 100% (`npm run test`).
+     - Linter Next.js: 0 errores (`npm run lint`).
+- **Motivación**:
+  Cumplir fielmente las directivas del usuario sobre autenticidad del lenguaje gay rioplatense (2026), dotar a los administradores de control dinámico y en tiempo real sobre el catálogo de fetiches/morbos sin depender de despliegues de código, y simplificar la experiencia de inspección de perfiles eliminando barreras de pestañas innecesarias.
 
 
 

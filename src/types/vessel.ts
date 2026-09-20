@@ -12,6 +12,10 @@ export type RoleType =
   | "Oral Focus";
 
 export type MobilityType =
+  | "Pongo casa 🏠"
+  | "Voy a la tuya / Viajo 🚗"
+  | "Pongo casa o viajo 🏠/🚗"
+  | "En boliche / cruising / telo"
   | "Tengo depto / lugar"
   | "Me muevo / voy"
   | "Tengo lugar y me muevo"

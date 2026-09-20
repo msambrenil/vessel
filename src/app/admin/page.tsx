@@ -38,6 +38,7 @@ import { MembershipsTab } from "@/components/admin/tabs/MembershipsTab";
 import { ModerationTab } from "@/components/admin/tabs/ModerationTab";
 import { StaffManagementTab } from "@/components/admin/tabs/StaffManagementTab";
 import { AuditLogsTab } from "@/components/admin/tabs/AuditLogsTab";
+import { KinksManagementTab } from "@/components/admin/tabs/KinksManagementTab";
 
 export default function AdminConsolePage() {
   const [activeTab, setActiveTab] = useState<AdminTabId>("dashboard");
@@ -276,6 +277,10 @@ export default function AdminConsolePage() {
             onChangePlan={handleChangePlan}
             onClearDuress={handleClearDuress}
           />
+        )}
+
+        {activeTab === "kinks" && (
+          <KinksManagementTab currentStaff={currentStaff} />
         )}
 
         {activeTab === "memberships" && (

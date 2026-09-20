@@ -98,3 +98,23 @@ Todo botón, chip o elemento interactivo implementa explícitamente sus 5 estado
 4. **Respuestas Anti-Ghosting con Onda**:
    - Salidas amables y transparentes en 1 toque (*"Sos un fuego total, pero hoy no tengo chispa..."*, *"Che, sigo de largo por hoy..."*, *"Re linda vibra, pero hoy ando buscando otra cosa..."*).
 
+---
+
+## 7. Filosofía Impeccable UI & Modos de Superficie (Máxima Prioridad)
+
+Para garantizar consistencia de clase mundial, VESSEL adopta la skill **Impeccable** (`.agents/skills/impeccable`, v4.3.1) como **autoridad prioritaria e ineludible** para cualquier decisión de diseño e interfaz:
+
+1. **Modos de Superficie en VESSEL**:
+   - **Modo `Operate`** (App Principal, Radar Matrix, Consola de Chat, Perfiles, Ajustes): La tarea principal del usuario es operar con rapidez y sin distracción. Priman la escaneabilidad visual inmediata, la tipografía jerárquica clara, los blancos y contrastes tácticos, los targets mínimos de 44×44px y la ergonomía pulgar (*Thumb Zone*).
+   - **Modo `Persuade` / `Experience`** (Landing Page, Visual Showcase, Onboarding de Bienvenida): Inmersión sensorial cinemática, contrastes profundos *Dark Luxury* y narrativa de vanguardia nocturna.
+2. **Ciclo de Comandos de Refinamiento**:
+   - `shape`: Planificación ergonómica y espacial antes de codificar componentes.
+   - `critique`: Evaluación heurística de usabilidad, densidad de información y puntos de fricción.
+   - `polish`: Ajuste final de micro-animaciones, estados *hover/active/focus* y alineaciones sub-píxel.
+   - `audit`: Chequeo riguroso de accesibilidad (WCAG AA), tiempos de carga, responsive layout y contraste.
+   - `harden`: Blindaje de estados vacíos (Empty), estados de carga (Loading/Skeleton) y manejo de errores.
+   - `distill`: Eliminación de bordes, sombras o textos redundantes; mantener solo lo esencial.
+3. **El Craft Floor (Invariantes Estéticas)**:
+   - Todo fondo utiliza la paleta semántica `obsidian-*`.
+   - Se prohíbe el uso de bordes o tarjetas genéricas grises; todo elemento visual debe alinearse con la identidad brutalista y queer de VESSEL.
+

@@ -33,11 +33,6 @@ export const BrutalistNav: React.FC = () => {
         icon: LayoutGrid,
       },
       {
-        id: "pulses",
-        label: t.nav.pulses,
-        icon: Activity,
-      },
-      {
         id: "chat",
         label: t.nav.chat,
         icon: MessageCircle,
@@ -53,7 +48,7 @@ export const BrutalistNav: React.FC = () => {
         icon: User,
       },
     ],
-    [t.nav.account, t.nav.chat, t.nav.diary, t.nav.grid, t.nav.pulses]
+    [t.nav.account, t.nav.chat, t.nav.diary, t.nav.grid]
   );
 
   return (
@@ -62,8 +57,8 @@ export const BrutalistNav: React.FC = () => {
       aria-label="Navegación Principal de VESSEL"
       className="fixed bottom-0 left-0 right-0 z-40 bg-obsidian-deep border-t border-white/10 select-none shadow-[0_-8px_30px_rgba(0,0,0,0.9)] pb-[max(env(safe-area-inset-bottom,0px),8px)]"
     >
-      <div className="w-full max-w-4xl mx-auto px-1 sm:px-2">
-        <div className="grid grid-cols-5 pt-1 pb-1">
+      <div className="w-full max-w-4xl mx-auto px-1.5 sm:px-3">
+        <div className="grid grid-cols-4 pt-1 pb-1">
           {tabs.map((tab) => {
             const isActive = activeView === tab.id;
             const IconComp = tab.icon;
@@ -76,7 +71,7 @@ export const BrutalistNav: React.FC = () => {
                   if (!isActive) audioEngine.playPulse();
                   setActiveView(tab.id);
                 }}
-                className={`relative flex flex-col items-center justify-center w-full py-1 h-[50px] sm:h-[52px] rounded-xl transition-all duration-150 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet/70 active:scale-90 ${
+                className={`relative flex flex-col items-center justify-center w-full py-1 h-[52px] sm:h-[54px] rounded-xl transition-all duration-150 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet/70 active:scale-90 ${
                   isActive
                     ? "text-electricViolet-glow bg-electricViolet/[0.06]"
                     : "text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.02]"
@@ -86,7 +81,7 @@ export const BrutalistNav: React.FC = () => {
               >
                 {/* Indicador Micro-Pill Superior Activa con Resplandor Violeta */}
                 <span
-                  className={`absolute -top-1 w-7 h-0.5 rounded-full transition-all duration-200 pointer-events-none ${
+                  className={`absolute -top-1 w-8 h-0.5 rounded-full transition-all duration-200 pointer-events-none ${
                     isActive
                       ? "bg-electricViolet shadow-violet-glow opacity-100 scale-100"
                       : "opacity-0 scale-50"
@@ -102,17 +97,23 @@ export const BrutalistNav: React.FC = () => {
                     }`}
                   />
                   
-                  {/* Badge de Pulsos no leídos */}
-                  {tab.id === "pulses" && unreadPulsesCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] bg-bloodNeon text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 shadow-[0_0_8px_rgba(255,30,56,0.8)] animate-pulse pointer-events-none">
-                      {unreadPulsesCount > 9 ? "9+" : unreadPulsesCount}
-                    </span>
-                  )}
-
-                  {/* Badge de Mensajes no leídos */}
-                  {tab.id === "chat" && unreadMessagesCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] bg-bloodNeon text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 shadow-[0_0_8px_rgba(255,30,56,0.8)] animate-pulse pointer-events-none">
-                      {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                  {/* Badge de Mensajes / Pulsos no leídos unificado */}
+                  {tab.id === "chat" && (unreadMessagesCount > 0 || unreadPulsesCount > 0) && (
+                    <span
+                      className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 animate-pulse pointer-events-none ${
+                        unreadMessagesCount > 0
+                          ? "bg-bloodNeon shadow-[0_0_8px_rgba(255,30,56,0.8)]"
+                          : "bg-electricViolet shadow-violet-soft"
+                      }`}
+                      title={
+                        unreadMessagesCount > 0
+                          ? `${unreadMessagesCount} mensajes sin leer`
+                          : `${unreadPulsesCount} pulsos entrantes`
+                      }
+                    >
+                      {unreadMessagesCount > 0
+                        ? unreadMessagesCount > 9 ? "9+" : unreadMessagesCount
+                        : unreadPulsesCount > 9 ? "9+" : unreadPulsesCount}
                     </span>
                   )}
 
@@ -123,7 +124,7 @@ export const BrutalistNav: React.FC = () => {
                 </div>
 
                 <span
-                  className={`text-[8.5px] sm:text-[9px] font-mono uppercase tracking-wider mt-1 truncate transition-colors ${
+                  className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider mt-1 truncate transition-colors ${
                     isActive ? "text-electricViolet-glow font-black" : "text-neutral-400 font-bold group-hover:text-neutral-200"
                   }`}
                 >

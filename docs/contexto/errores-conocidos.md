@@ -26,7 +26,7 @@ Registro de problemas comunes de usabilidad, contraste, foco en teclado y ajuste
 
 - **Gotcha**: Botones estilizados con `outline-none` que pierden visibilidad al navegar con tecla Tab o lectores de pantalla.
 - **Solución**:
-  - Aplicar `focus-visible:ring-2 focus-visible:ring-rawAmber focus-visible:ring-offset-2 focus-visible:ring-offset-black` en todos los elementos interactivos.
+  - Aplicar `focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black` en todos los elementos interactivos.
   - Los modales implementan captura de tecla `Escape` y cierre al tocar fuera del contenedor principal.
 
 ---
@@ -203,5 +203,19 @@ Registro de problemas comunes de usabilidad, contraste, foco en teclado y ajuste
   - Se implementó un visor de pantalla completa directo y permanente para el propietario con soporte de fotos y clips de video, controles de audio, opción de selección de portada y cierre manual sin límites de tiempo.
   - Se adaptó `PrivateVault.tsx` con la propiedad `isOwner` para que la vista previa de perfil propio (`ProfileDetailModal.tsx`) tampoco bloquee al usuario.
 
+---
 
-
+## 19. Turbopack Panic en Next.js 16 con PostCSS y Tailwind CSS v4 (`TurbopackInternalError: node process exited before we could connect to it with exit status: 0`)
+- **Síntoma / Diagnóstico**: Al ingresar a la aplicación en desarrollo (`http://localhost:3001/`), el navegador muestra una pantalla negra con el mensaje en texto plano `"Internal Server Error"` (HTTP 500).
+- **Causa Raíz Detallada**:
+  - En Next.js 16, Turbopack (`--turbopack`) está habilitado por defecto para el comando `next dev`.
+  - Al procesar `src/app/globals.css` mediante `@tailwindcss/postcss`, el evaluador de loaders de Turbopack (`evaluate_webpack_loader`) genera un proceso hijo de Node que sale con código 0 antes de establecer el canal IPC, provocando un panic interno en el motor de Rust (`TurbopackInternalError: Failed to write app endpoint /page`).
+- **Solución Definitiva**:
+  - Configurar explícitamente el compilador Webpack en el script de desarrollo en `package.json`:
+    ```json
+    "scripts": {
+      "dev": "next dev --webpack -p 3001"
+    }
+    ```
+  - Purgar la caché previa de desarrollo: `rm -rf .next`.
+  - Bajo Webpack, Next.js 16 compila de forma determinista `@tailwindcss/postcss` y todos los tokens `@theme` de Tailwind v4, sirviendo la aplicación con código HTTP 200 OK.

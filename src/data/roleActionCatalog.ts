@@ -15,10 +15,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Bottom",
       icon: "🍑",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 🍑",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(251,146,60,0.6)] border-orange-400/60 text-orange-300",
     },
     en: {
@@ -35,10 +35,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Vers Bottom",
       icon: "🍑",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 🍑",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(251,146,60,0.6)] border-orange-400/60 text-orange-300",
     },
     en: {
@@ -55,10 +55,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Top",
       icon: "🍆",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 🍆",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(168,85,247,0.6)] border-purple-400/60 text-purple-300",
     },
     en: {
@@ -75,10 +75,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Vers Top",
       icon: "🍆",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 🍆",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(168,85,247,0.6)] border-purple-400/60 text-purple-300",
     },
     en: {
@@ -95,10 +95,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Versatile",
       icon: "⚡",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado ⚡",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-violet-soft border-electricViolet text-electricViolet",
     },
     en: {
@@ -115,10 +115,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Side",
       icon: "🫦",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 🫦",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(244,114,182,0.6)] border-pink-400/60 text-pink-300",
     },
     en: {
@@ -135,10 +135,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Oral Focus",
       icon: "👅",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 👅",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(239,68,68,0.6)] border-red-400/60 text-red-300",
     },
     en: {
@@ -155,10 +155,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Dominant",
       icon: "⛓️",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado ⛓️",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(139,92,246,0.6)] border-electricViolet/60 text-violet-300",
     },
     en: {
@@ -175,10 +175,10 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     es: {
       role: "Submissive",
       icon: "🧎",
-      actionLabel: "Mandar Pulso",
-      shortLabel: "Pulso",
-      sentLabel: "Pulso enviado 🧎",
-      tooltipTemplate: "Mandar pulso a {name}",
+      actionLabel: "Me Hotea 🔥",
+      shortLabel: "Hotea",
+      sentLabel: "Te Hotea 🔥",
+      tooltipTemplate: "Avisale a {name} que te hotea",
       glowClass: "shadow-[0_0_12px_rgba(96,165,250,0.6)] border-blue-400/60 text-blue-300",
     },
     en: {
@@ -236,15 +236,15 @@ export const getRoleActionMeta = (
   return {
     role: role || (language === "en" ? "Versatile" : "Versátil"),
     icon: "⚡",
-    actionLabel: language === "es" ? "Mandar Pulso" : "Send Pulse",
-    shortLabel: language === "es" ? "Pulso" : "Pulse",
-    sentLabel: language === "es" ? "Pulso enviado ⚡" : "Pulse sent ⚡",
+    actionLabel: language === "es" ? "Me Hotea 🔥" : "Send Pulse",
+    shortLabel: language === "es" ? "Hotea" : "Pulse",
+    sentLabel: language === "es" ? "Te Hotea 🔥" : "Pulse sent ⚡",
     tooltipTemplate: targetName
       ? language === "es"
-        ? `Mandar pulso a ${targetName}`
+        ? `Avisale a ${targetName} que te hotea`
         : `Send pulse to ${targetName}`
       : language === "es"
-      ? "Mandar Pulso"
+      ? "Me Hotea 🔥"
       : "Send Pulse",
     glowClass: "shadow-violet-soft border-electricViolet text-electricViolet",
   };

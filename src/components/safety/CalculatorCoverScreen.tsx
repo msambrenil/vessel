@@ -95,7 +95,7 @@ export const CalculatorCoverScreen: React.FC = () => {
       {/* Footer bar */}
       <div className="h-6 bg-[#141414] border-t border-neutral-800 px-4 flex items-center justify-between text-[10px] text-neutral-500">
         <span>READY // INS</span>
-        <span className="text-neutral-600">Tip: Tip tap on logo or type ':exit' to return</span>
+        <span className="text-neutral-600">Tip: Tip tap on logo or type &apos;:exit&apos; to return</span>
       </div>
     </div>
   );

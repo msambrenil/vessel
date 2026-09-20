@@ -139,7 +139,7 @@ export const MissedConnectionsModal: React.FC = () => {
                     {conn.pulseReceived && conn.pulseNote && (
                       <div className="mt-2 p-2 rounded-lg bg-purple-950/40 border border-purple-500/30 text-[11px] text-purple-200 flex items-start gap-1.5">
                         <span className="text-purple-400 text-xs">💬</span>
-                        <span className="italic">"{conn.pulseNote}"</span>
+                        <span className="italic">&quot;{conn.pulseNote}&quot;</span>
                       </div>
                     )}
                   </div>

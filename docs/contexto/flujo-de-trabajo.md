@@ -13,8 +13,14 @@ npm run dev
 # Verificación de tipos en caliente (Seguro con dev server activo, no toca .next)
 npm run typecheck
 
+# Suite de pruebas unitarias y de integración (Vitest, 194 tests)
+npm run test
+
 # Análisis estático de código (Linter)
 npm run lint
+
+# Validación completa previa a push (Tipos + Tests)
+npm run validate
 
 # Compilación y empaquetado de producción (Solo con servidor dev detenido)
 npm run build
@@ -45,7 +51,7 @@ flowchart LR
   2. **Propose / Spec**: Especificación de requisitos y confirmación de reglas de negocio.
   3. **Tasks**: Desglose secuencial de tareas.
   4. **Apply**: Implementación modular respetando los 5 estados de componentes y tokens de diseño.
-  5. **Verify**: Validación técnica (0 errores TS vía `npx tsc --noEmit`) y sensorial (audio sub-bass + WCAG AA).
+  5. **Verify**: Validación técnica (0 errores TS vía `npm run typecheck` y suite de tests verde vía `npm run test`) y sensorial (audio sub-bass + WCAG AA).
   6. **Archive**: Registro en Engram (`mem_save`) y actualización de `docs/contexto/decisiones.md`.
 
 ---
@@ -54,12 +60,13 @@ flowchart LR
 
 Antes de dar por concluida cualquier entrega:
 
-1. [ ] **Justificación de Producto**: Explicar el **POR QUÉ (Why)** antes del **CÓMO (How)**.
-2. [ ] **Fidelidad UX/UI**: Correspondencia exacta con los principios de diseño y componentes de Figma.
-3. [ ] **Integridad de Código**: Verificación estricta de tipos (`npm run typecheck`) y linting (`npm run lint`). **Prohibido correr `next build` en caliente con `next dev` activo**.
+1. [ ] **Justificación de Producto y Arquetipos**: Explicar el **POR QUÉ (Why)** antes del **CÓMO (How)** y validar explícitamente a qué arquetipos de usuario (`docs/contexto/arquetipos.md`) beneficia o impacta el cambio.
+2. [ ] **Fidelidad UX/UI**: Correspondencia exacta con los principios de diseño Impeccable y componentes de Figma.
+3. [ ] **Integridad de Código**: Verificación estricta de tipos (`npm run typecheck`), ejecución de suite de pruebas (`npm run test`) y linting (`npm run lint`). **Prohibido correr `next build` en caliente con `next dev` activo**.
 4. [ ] **Prueba de Responsive**: Comportamiento verificado en viewport móvil (320px-430px) y desktop sin desborde horizontal (`overflow-x` limpio).
 5. [ ] **Accesibilidad & 5 Estados UI**: Contraste WCAG AA (4.5:1 / 3:1), áreas táctiles mínimas de 44×44px y estados *Default, Hover, Active, Focus, Disabled*.
-6. [ ] **Persistencia y Memoria**: Registro proactivo en Engram (`mem_save`) y actualización en `docs/contexto/decisiones.md` (ADR-XXX) y `docs/contexto/errores-conocidos.md`.
+6. [ ] **No Regresión en Perfiles Sensibles**: Verificar que la solución no penalice terminales con batería crítica (`BatteryStateEngine`), planes de datos medidos ni comprometa la discreción de perfiles reservados.
+7. [ ] **Persistencia y Memoria**: Registro proactivo en Engram (`mem_save`) y actualización en `docs/contexto/decisiones.md` (ADR-XXX) y `docs/contexto/errores-conocidos.md`.
 
 ---
 

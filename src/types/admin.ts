@@ -76,7 +76,11 @@ export type AuditActionType =
   | "STAFF_CREATED"
   | "STAFF_ROLE_CHANGED"
   | "STAFF_DEACTIVATED"
-  | "QUOTA_SETTINGS_UPDATED";
+  | "QUOTA_SETTINGS_UPDATED"
+  | "KINK_CREATED"
+  | "KINK_UPDATED"
+  | "KINK_TOGGLED"
+  | "KINK_DELETED";
 
 export interface AdminAuditLogEntry {
   id: string;

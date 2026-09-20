@@ -19,7 +19,6 @@ import {
   LogOut,
   UserCheck,
   Zap,
-  FlaskConical,
   CheckCircle2,
   LayoutDashboard,
   Terminal,
@@ -28,9 +27,6 @@ import Link from "next/link";
 
 export const AppSettingsSection: React.FC = () => {
   const {
-    appMode,
-    setAppMode,
-    resetModeData,
     appSettings,
     updateAppSettings,
     language,
@@ -92,95 +88,6 @@ export const AppSettingsSection: React.FC = () => {
         </div>
       )}
 
-      {/* 0. ENTORNO OPERATIVO: MODO DE PRUEBA VS MODO REAL */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold font-mono uppercase tracking-wider text-white">
-            {appMode === "real" ? (
-              <Zap className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
-            ) : (
-              <FlaskConical className="w-4 h-4 text-electricViolet-glow" />
-            )}
-            <span>{language === "es" ? "Entorno Operativo" : "Operating Environment"}</span>
-          </div>
-
-          <span
-            className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold border ${
-              appMode === "real"
-                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
-                : "bg-electricViolet/20 text-electricViolet-glow border-electricViolet/40 font-bold"
-            }`}
-          >
-            {appMode === "real" ? "⚡ MODO REAL (PRODUCCIÓN)" : "🧪 MODO PRUEBA (MOCK DATA)"}
-          </span>
-        </div>
-
-        <div className="bg-white/5 rounded-2xl p-3.5 border border-white/5 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (appMode !== "test") {
-                  audioEngine.playSubBass(60);
-                  setAppMode("test");
-                }
-              }}
-              aria-pressed={appMode === "test"}
-              className={`p-3 min-h-[44px] rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-98 ${
-                appMode === "test"
-                  ? "bg-electricViolet/15 border-electricViolet text-electricViolet-glow shadow-[0_0_10px_rgba(139,92,246,0.2)] font-extrabold"
-                  : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
-              }`}
-            >
-              <FlaskConical className="w-3.5 h-3.5" />
-              <span>{language === "es" ? "🧪 Modo Prueba" : "🧪 Test Mode"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (appMode !== "real") {
-                  audioEngine.playSubBass(80);
-                  setAppMode("real");
-                }
-              }}
-              aria-pressed={appMode === "real"}
-              className={`p-3 min-h-[44px] rounded-xl border text-xs font-mono font-bold flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-98 ${
-                appMode === "real"
-                  ? "bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.2)] font-extrabold"
-                  : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{language === "es" ? "⚡ Modo Real" : "⚡ Real Mode"}</span>
-            </button>
-          </div>
-
-          <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10.5px]">
-            <span className="text-neutral-400 font-mono">
-              Namespace: <code className="text-white">{appMode === "real" ? "vessel_real_*" : "vessel_test_*"}</code>
-            </span>
-
-            <button
-              type="button"
-              onClick={() => {
-                const msg =
-                  language === "es"
-                    ? `¿Vaciar caché local del modo '${appMode}'? La app se reiniciará limpia.`
-                    : `Clear local cache for '${appMode}'? App will reload fresh.`;
-                if (window.confirm(msg)) {
-                  audioEngine.playPulse();
-                  resetModeData();
-                }
-              }}
-              className="text-bloodNeon hover:text-bloodNeon-glow font-bold font-mono hover:underline cursor-pointer flex items-center gap-1"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>{language === "es" ? "Vaciar Caché Modo" : "Clear Mode Cache"}</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* 1. PREFERENCIAS GENERALES: IDIOMA & UNIDADES */}
       <div className="space-y-4">

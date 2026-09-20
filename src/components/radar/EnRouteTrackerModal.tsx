@@ -151,7 +151,7 @@ export const EnRouteTrackerModal: React.FC = () => {
                 onClick={handleStart}
                 className="w-full py-3 bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-violet-soft active:scale-95 transition-all"
               >
-                Iniciar Modo "Voy en Camino" 🚗
+                Iniciar Modo &quot;Voy en Camino&quot; 🚗
               </button>
             </div>
           )}

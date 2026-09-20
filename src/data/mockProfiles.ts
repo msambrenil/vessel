@@ -61,6 +61,10 @@ export const YO_SOY_OPTIONS = [
 ] as const;
 
 export const MOBILITY_OPTIONS = [
+  "Pongo casa 🏠",
+  "Voy a la tuya / Viajo 🚗",
+  "Pongo casa o viajo 🏠/🚗",
+  "En boliche / cruising / telo",
   "Tengo depto / lugar",
   "Me muevo / voy",
   "Tengo lugar y me muevo",

@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { VoiceVibePlayer } from "@/components/profile/VoiceVibePlayer";
 
-type ProfileSubTab = "bio" | "albums" | "kinks" | "reputation" | "boundaries";
+type ProtocolMacroTab = "public" | "vaults" | "security";
 
 export const ProtocolView: React.FC = () => {
   const {
@@ -57,7 +57,9 @@ export const ProtocolView: React.FC = () => {
     t,
   } = useVessel();
 
-  const [activeSubTab, setActiveSubTab] = useState<ProfileSubTab>("bio");
+  const [activeMacroTab, setActiveMacroTab] = useState<ProtocolMacroTab>("public");
+  const [presenceSubView, setPresenceSubView] = useState<"bio" | "kinks">("bio");
+  const [securitySubView, setSecuritySubView] = useState<"boundaries" | "reputation">("boundaries");
   const [isCoverSelectorOpen, setIsCoverSelectorOpen] = useState(false);
 
   // Estados locales para edición inline de nombre en Hero Banner
@@ -327,8 +329,20 @@ export const ProtocolView: React.FC = () => {
               </div>
             </div>
 
-            {/* Badges de Verificación y Respeto */}
+            {/* Badges de Verificación, Lugar y Respeto */}
             <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+              {(myProfile.mobility?.toLowerCase().includes("casa") ||
+                myProfile.mobility?.toLowerCase().includes("lugar") ||
+                myProfile.mobility?.toLowerCase().includes("depto") ||
+                myProfile.mobility?.toLowerCase().includes("sitio")) ? (
+                <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                  🏠 Pongo Casa
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono font-bold text-neutral-300 bg-white/5 border border-white/15 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  🚗 Voy a la tuya
+                </span>
+              )}
               {myProfile.verification?.isVerified && (
                 <VerificationBadge verification={myProfile.verification} size="xs" showLabel />
               )}
@@ -522,43 +536,45 @@ export const ProtocolView: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          2. CONMUTADOR SEGMENTADO TÁCTIL (5 SUB-PESTAÑAS ESTANDARIZADAS)
+          2. CONMUTADOR SEGMENTADO TÁCTIL (3 MACRO-PANELES PRINCIPALES)
           ========================================================================= */}
       <div className="bg-obsidian-surface/90 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md shadow-card-elevation">
-        <div className="grid grid-cols-5 gap-1">
+        <div className="grid grid-cols-3 gap-1.5">
+          {/* Pestaña 1: Mi Presencia */}
           <button
             type="button"
             onClick={() => {
-              setActiveSubTab("bio");
+              setActiveMacroTab("public");
               audioEngine.playPulse();
             }}
-            className={`py-2.5 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-              activeSubTab === "bio"
+            className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+              activeMacroTab === "public"
                 ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             }`}
           >
-            <Sliders className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Bio</span>
+            <User className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{language === "es" ? "Mi Perfil" : "My Profile"}</span>
           </button>
 
+          {/* Pestaña 2: Bóvedas Íntimas / Álbumes */}
           <button
             type="button"
             onClick={() => {
-              setActiveSubTab("albums");
+              setActiveMacroTab("vaults");
               audioEngine.playPulse();
             }}
-            className={`py-2.5 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-              activeSubTab === "albums"
+            className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+              activeMacroTab === "vaults"
                 ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             }`}
           >
             <FolderLock className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Álbumes</span>
+            <span className="truncate">{language === "es" ? "Álbumes" : "Albums"}</span>
             <span
               className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
-                activeSubTab === "albums"
+                activeMacroTab === "vaults"
                   ? "bg-white/20 text-white font-extrabold"
                   : "bg-white/10 text-neutral-300"
               }`}
@@ -567,78 +583,123 @@ export const ProtocolView: React.FC = () => {
             </span>
           </button>
 
+          {/* Pestaña 3: Soberanía & Seguridad */}
           <button
             type="button"
             onClick={() => {
-              setActiveSubTab("kinks");
+              setActiveMacroTab("security");
               audioEngine.playPulse();
             }}
-            className={`py-2.5 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-              activeSubTab === "kinks"
-                ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Flame className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Kinks</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab("reputation");
-              audioEngine.playPulse();
-            }}
-            className={`py-2.5 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-              activeSubTab === "reputation"
+            className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+              activeMacroTab === "security"
                 ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             }`}
           >
             <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Seguridad</span>
-            {pendingTestimonialsCount > 0 && (
+            <span className="truncate">{language === "es" ? "Seguridad" : "Security"}</span>
+            {pendingTestimonialsCount > 0 ? (
               <span className="w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow animate-pulse" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveSubTab("boundaries");
-              audioEngine.playPulse();
-            }}
-            className={`py-2.5 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-              activeSubTab === "boundaries"
-                ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <SlidersHorizontal className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Límites</span>
-            {activeBoundariesCount > 0 && (
+            ) : activeBoundariesCount > 0 ? (
               <span
                 className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
-                  activeSubTab === "boundaries"
+                  activeMacroTab === "security"
                     ? "bg-white/20 text-white font-extrabold"
                     : "bg-purple-500/20 text-purple-300"
                 }`}
               >
                 {activeBoundariesCount}
               </span>
-            )}
+            ) : null}
           </button>
         </div>
       </div>
 
       {/* =========================================================================
-          3. CONTENIDO MODULAR POR SUB-PESTAÑAS
+          3. CONTENIDO MODULAR POR MACRO-PANELES
           ========================================================================= */}
-      {activeSubTab === "bio" && <BioTab />}
-      {activeSubTab === "albums" && <AlbumsTab />}
-      {activeSubTab === "kinks" && <KinksTab />}
-      {activeSubTab === "reputation" && <ReputationTab />}
-      {activeSubTab === "boundaries" && <BoundariesTab />}
+      {/* PANEL 1: PRESENCIA PÚBLICA (Ficha, Bio & Kink Matrix) */}
+      {activeMacroTab === "public" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setPresenceSubView("bio");
+                audioEngine.playPulse();
+              }}
+              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                presenceSubView === "bio"
+                  ? "bg-white/15 text-white shadow-sm border border-white/20"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>{language === "es" ? "Datos & Bio" : "Bio & Details"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPresenceSubView("kinks");
+                audioEngine.playPulse();
+              }}
+              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                presenceSubView === "kinks"
+                  ? "bg-bloodNeon/20 text-bloodNeon border border-bloodNeon/40 font-extrabold shadow-sm"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>{language === "es" ? "Qué te morbosea 😈" : "Blind Kink Matrix 😈"}</span>
+            </button>
+          </div>
+
+          {presenceSubView === "bio" ? <BioTab /> : <KinksTab />}
+        </div>
+      )}
+
+      {/* PANEL 2: BÓVEDAS & ARCHIVO (Álbumes privados, llaves y revocación) */}
+      {activeMacroTab === "vaults" && <AlbumsTab />}
+
+      {/* PANEL 3: SOBERANÍA & SEGURIDAD (Límites, Reputación y Respeto) */}
+      {activeMacroTab === "security" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setSecuritySubView("boundaries");
+                audioEngine.playPulse();
+              }}
+              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                securitySubView === "boundaries"
+                  ? "bg-white/15 text-white shadow-sm border border-white/20"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>{language === "es" ? "Límites & Privacidad" : "Boundaries & Privacy"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSecuritySubView("reputation");
+                audioEngine.playPulse();
+              }}
+              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                securitySubView === "reputation"
+                  ? "bg-mintNeon/15 text-mintNeon border border-mintNeon/40 font-extrabold shadow-sm"
+                  : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{language === "es" ? "Anti-Ghost & Karma" : "Anti-Ghost & Karma"}</span>
+            </button>
+          </div>
+
+          {securitySubView === "boundaries" ? <BoundariesTab /> : <ReputationTab />}
+        </div>
+      )}
 
       {/* Banner al pie para Configuración del Sistema */}
       <div className="bg-obsidian-surface/90 rounded-2xl p-3.5 border border-white/10 flex items-center justify-between gap-3 backdrop-blur-md shadow-card-elevation">
@@ -672,7 +733,7 @@ export const ProtocolView: React.FC = () => {
         <CoverPhotoSelectorModal
           onClose={() => setIsCoverSelectorOpen(false)}
           onGoToAlbums={() => {
-            setActiveSubTab("albums");
+            setActiveMacroTab("vaults");
             audioEngine.playPulse();
           }}
         />

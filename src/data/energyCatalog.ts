@@ -254,6 +254,8 @@ export interface KinkItemDefinition {
   category: "bdsm" | "sensual" | "roleplay" | "dynamics" | "safety" | "gear" | "bodily";
   emoji: string;
   description: string;
+  isActive?: boolean;
+  isCustom?: boolean;
 }
 
 export const KINK_ITEMS_CATALOG: KinkItemDefinition[] = [
@@ -290,6 +292,6 @@ export const KINK_ITEMS_CATALOG: KinkItemDefinition[] = [
   { id: "toys", name: "Juguetes & Dildos", category: "sensual", emoji: "⚡", description: "Incorporación de juguetes eróticos y estimulación prostática" },
   { id: "sensual_slow", name: "Masaje & Tántrico", category: "sensual", emoji: "🕯️", description: "Caricias lentas, aceites corporales y respiración compartida" },
   { id: "rough", name: "Rough / Intenso", category: "dynamics", emoji: "💥", description: "Intensidad física alta, empujones y fuerza pactada" },
-  { id: "bareback", name: "Bareback (PrEP/TasP)", category: "safety", emoji: "🛡️", description: "Sexo sin preservativo bajo protocolo preventivo biomédico" },
+  { id: "bareback", name: "A pelo / Bareback (PrEP al día)", category: "safety", emoji: "🛡️", description: "Sexo sin preservativo bajo protocolo preventivo biomédico" },
   { id: "condom_only", name: "Preservativo Obligatorio", category: "safety", emoji: "🔒", description: "Uso estricto de condón y barreras de látex sin excepción" },
 ];

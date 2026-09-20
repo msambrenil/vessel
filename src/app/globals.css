@@ -1,6 +1,92 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-obsidian: #09090B;
+  --color-obsidian-deep: #040405;
+  --color-obsidian-surface: #121216;
+  --color-obsidian-card: #18181D;
+  --color-obsidian-hover: #22222A;
+
+  /* Token Primario Unificado (Electric Violet / Dark Luxury) */
+  --color-primary: #8B5CF6;
+  --color-primary-glow: #A78BFA;
+  --color-primary-dim: #6D28D9;
+  --color-primary-subtle: rgba(139, 92, 246, 0.14);
+  --color-primary-border: rgba(139, 92, 246, 0.35);
+
+  /* Anulación global del espectro Amber (anti-Grindr Shield) */
+  --color-amber-50: #FAF5FF;
+  --color-amber-100: #F3E8FF;
+  --color-amber-200: #E9D5FF;
+  --color-amber-300: #D8B4FE;
+  --color-amber-400: #A78BFA;
+  --color-amber-500: #8B5CF6;
+  --color-amber-600: #7C3AED;
+  --color-amber-700: #6D28D9;
+  --color-amber-800: #5B21B6;
+  --color-amber-900: #4C1D95;
+  --color-amber-950: #1A0F2E;
+
+  --color-rawAmber: #8B5CF6;
+  --color-rawAmber-glow: #A78BFA;
+  --color-rawAmber-dim: #6D28D9;
+  --color-rawAmber-subtle: rgba(139, 92, 246, 0.14);
+  --color-rawAmber-border: rgba(139, 92, 246, 0.35);
+
+  --color-electricViolet: #8B5CF6;
+  --color-electricViolet-glow: #A78BFA;
+  --color-electricViolet-dim: #6D28D9;
+  --color-electricViolet-subtle: rgba(139, 92, 246, 0.14);
+  --color-electricViolet-border: rgba(139, 92, 246, 0.35);
+
+  --color-mintNeon: #10B981;
+  --color-mintNeon-glow: #34D399;
+  --color-mintNeon-dim: #047857;
+  --color-mintNeon-subtle: rgba(16, 185, 129, 0.14);
+  --color-mintNeon-border: rgba(16, 185, 129, 0.35);
+
+  --color-champagneGold: #F59E0B;
+  --color-champagneGold-glow: #FBBF24;
+  --color-champagneGold-dim: #B45309;
+  --color-champagneGold-subtle: rgba(245, 158, 11, 0.14);
+  --color-champagneGold-border: rgba(245, 158, 11, 0.35);
+
+  --color-bloodNeon: #E61937;
+  --color-bloodNeon-glow: #FF2A4B;
+  --color-bloodNeon-dim: #8A021A;
+  --color-bloodNeon-subtle: rgba(230, 25, 55, 0.15);
+  --color-bloodNeon-border: rgba(230, 25, 55, 0.4);
+
+  --color-concrete: #24242B;
+  --color-concrete-dark: #141418;
+  --color-concrete-mid: #2A2A33;
+  --color-concrete-light: #3F3F4D;
+  --color-concrete-border: rgba(255, 255, 255, 0.08);
+  --color-concrete-subtle: rgba(255, 255, 255, 0.04);
+
+  --shadow-primary-glow: 0 0 25px -2px rgba(139, 92, 246, 0.4);
+  --shadow-violet-glow: 0 0 25px -2px rgba(139, 92, 246, 0.4);
+  --shadow-violet-soft: 0 4px 20px 0 rgba(139, 92, 246, 0.22);
+  --shadow-mint-glow: 0 0 25px -2px rgba(16, 185, 129, 0.4);
+  --shadow-gold-glow: 0 0 20px -2px rgba(245, 158, 11, 0.4);
+  --shadow-amber-glow: 0 0 25px -2px rgba(139, 92, 246, 0.4);
+  --shadow-amber-soft: 0 4px 20px 0 rgba(139, 92, 246, 0.22);
+  --shadow-blood-glow: 0 0 25px -2px rgba(230, 25, 55, 0.4);
+  --shadow-card-elevation: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+
+  --animate-radar-sweep: radar-sweep 4s linear infinite;
+  --animate-spin-slow: spin-slow 7s linear infinite;
+
+  @keyframes radar-sweep {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes spin-slow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+}
 
 :root {
   --background: #09090B;
@@ -185,4 +271,3 @@ body {
 .animate-lock-rotate {
   animation: lock-rotate 0.4s ease-in-out;
 }
-

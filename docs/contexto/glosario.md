@@ -6,6 +6,10 @@ Definición de términos del dominio, arquetipos de usuario, datos de muestra y 
 
 ## 1. Arquetipos de Usuario ("Personas")
 
+> 💡 **Nota de Cobertura Completa**: Para el análisis exhaustivo de los **20 Arquetipos Tácticos de Usuario** para el lanzamiento en Argentina (hardware, hábitos, conectividad, dolores y oportunidades de mejora), consultar el documento dedicado: [@docs/contexto/arquetipos.md](./arquetipos.md).
+
+A continuación se resumen los 3 arquetipos de muestra representativos de partida:
+
 1. **Alex (Pasivo enfocado en rol definido, 28 años)**:
    - *Contexto*: Profesional, navega en entornos con poca luz (en la cama o en transporte público con datos móviles).
    - *Necesidad*: Operación con una sola mano, sin distracciones ni anuncios, información clara sobre roles (`Bottom`, `Versatile`), intenciones inmediatas y hosting.

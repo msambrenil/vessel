@@ -79,7 +79,7 @@ Este documento establece las reglas de negocio, políticas de producto y restric
 ## 6. Escudo Anti-Triangulación y Arquitectura Geoespacial
 
 * **Prohibición de Coordenadas Crudas**: Las coordenadas de latitud/longitud exactas nunca se envían al cliente de otros usuarios.
-* **Discretización Google S2**: Todas las posiciones se indexan en celdas espaciales de Nivel 14 (~152m).
+* **Discretización Google S2**: Todas las posiciones se indexan en celdas espaciales de Nivel 16 / Geohash 7 (~152m).
 * **Unidades de Distancia**: Formateo dinámico reactivo según la preferencia del usuario (*Métrico: metros/km* vs *Imperial: pies/millas*).
 
 ---

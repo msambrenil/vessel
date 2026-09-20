@@ -5,6 +5,7 @@ import { StaffRole } from "@/types/admin";
 import {
   LayoutDashboard,
   Users,
+  Flame,
   CreditCard,
   ShieldAlert,
   UserCog,
@@ -14,6 +15,7 @@ import {
 export type AdminTabId =
   | "dashboard"
   | "users"
+  | "kinks"
   | "memberships"
   | "moderation"
   | "staff"
@@ -26,6 +28,7 @@ interface AdminNavProps {
   pendingReportsCount: number;
   totalUsersCount: number;
   unlimitedCount: number;
+  kinksCount?: number;
 }
 
 export const AdminNav: React.FC<AdminNavProps> = ({
@@ -35,6 +38,7 @@ export const AdminNav: React.FC<AdminNavProps> = ({
   pendingReportsCount,
   totalUsersCount,
   unlimitedCount,
+  kinksCount,
 }) => {
   const tabs = [
     {
@@ -48,6 +52,13 @@ export const AdminNav: React.FC<AdminNavProps> = ({
       label: "Gestión de Usuarios",
       icon: Users,
       badge: totalUsersCount,
+      roles: ["superadmin", "moderator", "support"],
+    },
+    {
+      id: "kinks" as AdminTabId,
+      label: "Morbos & Fetiches",
+      icon: Flame,
+      badge: kinksCount,
       roles: ["superadmin", "moderator", "support"],
     },
     {

@@ -97,8 +97,8 @@ export const UserAlbumManager: React.FC = () => {
             </h3>
             <p className="text-[10px] text-neutral-400">
               {isUnlimited
-                ? 'VESSEL UNLIMITED: "Álbumes, bóvedas y señales ilimitadas."'
-                : "Plan Gratuito: 1 Álbum Público • 1 Bóveda Privada"}
+                ? 'VESSEL UNLIMITED: "Álbumes públicos, privados y señales ilimitadas."'
+                : "Plan Gratuito: 1 Álbum Público • 1 Álbum Privado (Nudes)"}
             </p>
           </div>
         </div>
@@ -301,7 +301,7 @@ export const UserAlbumManager: React.FC = () => {
                 onClick={() => handleOpenCreateModal("private")}
                 className="text-bloodNeon font-bold hover:underline flex items-center gap-0.5 mt-0.5"
               >
-                + Crear bóveda
+                + Crear álbum privado
               </button>
             )}
           </div>
@@ -326,13 +326,13 @@ export const UserAlbumManager: React.FC = () => {
           </div>
 
           <p className="text-[11px] text-neutral-300 italic">
-            "Álbumes, bóvedas y señales ilimitadas."
+            "Álbumes, nudes y señales ilimitadas."
           </p>
 
           <div className="grid grid-cols-2 gap-2 text-[10px] text-neutral-300 pt-1">
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-electricViolet-glow flex-shrink-0" />
-              <span>Multi-Bóvedas Ilimitadas</span>
+              <span>Multi-Álbumes Ilimitados</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Film className="w-3 h-3 text-bloodNeon flex-shrink-0" />
