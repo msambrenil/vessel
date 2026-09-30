@@ -9,10 +9,12 @@ import {
   PreFlightChecklist,
   SecureWaypoint,
   VesselProfile,
+  EncounterTicket,
 } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   subscribeToChatMessages,
+  subscribeToUserActiveChats,
   sendCloudMessage,
   burnCloudMessage,
   revokeCloudSharedAlbum,
@@ -66,6 +68,7 @@ export interface ChatContextType {
     profileId: string,
     checklist: Omit<PreFlightChecklist, "id" | "senderId" | "receiverId" | "createdAt">
   ) => void;
+  sendEncounterTicketMessage: (profileId: string, ticket: EncounterTicket) => void;
   isSendMediaModalOpen: boolean;
   openSendMediaModal: () => void;
   closeSendMediaModal: () => void;
@@ -100,6 +103,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
   const [activeChatProfileId, setActiveChatProfileId] = useState<string | null>(null);
+  const [discoveredPartnerIds, setDiscoveredPartnerIds] = useState<string[]>([]);
   const [chatRetentionMode, setChatRetentionMode] = useState<"ephemeral" | "persistent">("persistent");
   const [perChatRetention, setPerChatRetention] = useState<Record<string, "ephemeral" | "persistent">>({});
   const [activeRendezvous, setActiveRendezvous] = useState<RendezvousPin | null>(null);
@@ -134,40 +138,72 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
     if (localWaypoints) setSecureWaypoints(localWaypoints);
   }, []);
 
-  // Suscripción aislada a mensajes en Firestore para el chat activo
+  // Descubrimiento en tiempo real de todos los canales de chat donde participa el usuario
   useEffect(() => {
-    if (!activeChatProfileId || !authUser || authUser.uid === "local-user") return;
+    if (!authUser || authUser.uid === "local-user") return;
+    const unsubActiveChats = subscribeToUserActiveChats(authUser.uid, (partnerUids) => {
+      setDiscoveredPartnerIds(partnerUids);
+    });
+    return () => {
+      unsubActiveChats();
+    };
+  }, [authUser]);
+
+  // Suscripción en tiempo real a mensajes para todos los chats activos descubiertos y el chat abierto
+  useEffect(() => {
+    if (!authUser || authUser.uid === "local-user") return;
 
     const myUid = authUser.uid;
-    const targetUid = activeChatProfileId;
-    const chatId = [myUid, targetUid].sort().join("_");
+    const allTargets = new Set<string>(discoveredPartnerIds);
+    if (activeChatProfileId) allTargets.add(activeChatProfileId);
 
-    const unsubChat = subscribeToChatMessages(chatId, (cloudMsgs) => {
-      if (!cloudMsgs || cloudMsgs.length === 0) return;
-      setChatMessages((prev) => {
-        const localList = prev[targetUid] || [];
-        const mergedMap = new Map<string, ChatMessage>();
-        localList.forEach((m) => mergedMap.set(m.id, m));
-        cloudMsgs.forEach((m) => {
-          const existing = mergedMap.get(m.id);
-          const isRead = existing?.isRead || m.senderId === myUid || m.senderId === "me";
-          mergedMap.set(m.id, {
-            ...m,
-            senderId: m.senderId === myUid ? "me" : m.senderId,
-            isRead,
+    if (allTargets.size === 0) return;
+
+    const unsubscribers: (() => void)[] = [];
+
+    allTargets.forEach((targetUid) => {
+      const chatId = [myUid, targetUid].sort().join("_");
+      const unsub = subscribeToChatMessages(chatId, (cloudMsgs) => {
+        if (!cloudMsgs || cloudMsgs.length === 0) return;
+        setChatMessages((prev) => {
+          const localList = prev[targetUid] || [];
+          const existingIds = new Set(localList.map((m) => m.id));
+          let hasNewIncoming = false;
+
+          const mergedMap = new Map<string, ChatMessage>();
+          localList.forEach((m) => mergedMap.set(m.id, m));
+          cloudMsgs.forEach((m) => {
+            const existing = mergedMap.get(m.id);
+            const isFromMe = m.senderId === myUid || m.senderId === "me";
+            if (!existingIds.has(m.id) && !isFromMe) {
+              hasNewIncoming = true;
+            }
+            const isRead =
+              existing?.isRead || isFromMe || activeChatProfileId === targetUid;
+            mergedMap.set(m.id, {
+              ...m,
+              senderId: isFromMe ? "me" : m.senderId,
+              isRead,
+            });
           });
+
+          if (hasNewIncoming) {
+            audioEngine.playNudgeReceived();
+          }
+
+          const mergedList = Array.from(mergedMap.values());
+          const next = { ...prev, [targetUid]: mergedList };
+          saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+          return next;
         });
-        const mergedList = Array.from(mergedMap.values());
-        const next = { ...prev, [targetUid]: mergedList };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
-        return next;
       });
+      unsubscribers.push(unsub);
     });
 
     return () => {
-      unsubChat();
+      unsubscribers.forEach((fn) => fn());
     };
-  }, [activeChatProfileId, authUser]);
+  }, [activeChatProfileId, discoveredPartnerIds, authUser]);
 
   const getChatChannelId = useCallback((targetProfileId: string) => {
     const myUid = authUser?.uid || "local-user";
@@ -202,7 +238,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         isBurnOnView,
         isBurned: false,
         isRead: true,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       };
 
       setChatMessages((prev) => {
@@ -245,7 +281,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         isBurnOnView,
         isBurned: false,
         isRead: true,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       };
 
       setChatMessages((prev) => {
@@ -289,7 +325,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         isBurnOnView: false,
         isBurned: false,
         isRead: true,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       };
 
       const sysMsg: ChatMessage = {
@@ -356,7 +392,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         isRendezvousPin: true,
         rendezvousData: pin,
         isRead: true,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       };
 
       setChatMessages((prev) => {
@@ -396,7 +432,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       setChatMessages((prev) => {
         const thread = prev[profileId] || [];
         const updated = thread.map((m) =>
-          m.id === messageId ? { ...m, isBurned: true, text: "[CONTENIDO DESTRUIDO // BURN-ON-VIEW]" } : m
+          m.id === messageId ? { ...m, isBurned: true, text: "[CONTENIDO AUTODESTRUIDO TRAS LECTURA]" } : m
         );
         const next = { ...prev, [profileId]: updated };
         saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
@@ -424,7 +460,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         isBurnOnView: media.mode === "view_once",
         isBurned: false,
         isRead: true,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
       };
 
       setChatMessages((prev) => {
@@ -880,7 +916,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       const msg: ChatMessage = {
         id: `msg-preflight-${Date.now()}`,
         senderId: "me",
-        text: "📋 Checklist Pre-Flight de Encuentro enviado.",
+        text: "📋 Acuerdo previo de encuentro enviado.",
         isPreFlightChecklist: true,
         preFlightData: fullChecklist,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -900,6 +936,32 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       setIsPreFlightModalOpen(false);
     },
     [currentUserUid]
+  );
+
+  const sendEncounterTicketMessage = useCallback(
+    (profileId: string, ticket: EncounterTicket) => {
+      const msg: ChatMessage = {
+        id: `msg-ticket-${Date.now()}`,
+        senderId: "me",
+        text: `🎫 Ticket de Encuentro: ${ticket.scheduledDate} a las ${ticket.scheduledTime} hs en ${ticket.locationName}`,
+        isEncounterTicket: true,
+        encounterTicketData: ticket,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        isRead: true,
+      };
+
+      setChatMessages((prev) => {
+        const next = {
+          ...prev,
+          [profileId]: [...(prev[profileId] || []), msg],
+        };
+        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        return next;
+      });
+
+      audioEngine.playSignalSent();
+    },
+    []
   );
 
   const openSendMediaModal = useCallback(() => setIsSendMediaModalOpen(true), []);
@@ -1070,6 +1132,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       sendSecureWaypoint,
       unlockPhase2Waypoint,
       cancelSecureWaypoint,
+      sendEncounterTicketMessage,
     }),
     [
       chatMessages,
@@ -1118,6 +1181,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       sendSecureWaypoint,
       unlockPhase2Waypoint,
       cancelSecureWaypoint,
+      sendEncounterTicketMessage,
     ]
   );
 

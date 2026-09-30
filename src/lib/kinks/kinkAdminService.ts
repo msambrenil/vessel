@@ -142,3 +142,134 @@ export function resetKinksToDefault(): KinkItemDefinition[] {
   saveKinksCatalog(initial);
   return initial;
 }
+
+/**
+ * Mapa de IDs canónicos a keys del namespace `t.kinks`.
+ */
+const KINK_KEY_MAP: Record<string, string> = {
+  "raw-carnal": "rawCarnal",
+  "dominant": "dominant",
+  "submissive": "submissive",
+  "switch": "switch",
+  "physical-wrestling": "physicalWrestling",
+  "leather": "leather",
+  "rubber-latex": "rubberLatex",
+  "sport-gear": "sportGear",
+  "harness": "harness",
+  "leather-harness": "leather",
+  "boots": "boots",
+  "darkroom": "darkroom",
+  "techno-afters": "technoAfters",
+  "immediate-host": "immediateHost",
+  "car-outdoor": "carOutdoor",
+  "stealth-discrete": "stealthDiscrete",
+  "sensory-deprivation": "sensoryDeprivation",
+  "bondage-rope": "bondageRope",
+  "bondage": "bondage",
+  "sweat-scent": "sweatScent",
+  "oral-worship": "oralWorship",
+  "endurance": "endurance",
+  "breathplay": "breathplay",
+  "armpits": "armpits",
+  "musk": "musk",
+  "jockstrap": "jockstrap",
+  "thongs": "thongs",
+  "sweaty_gear": "sweatyGear",
+  "feet": "feet",
+  "body_worship": "bodyWorship",
+  "bears": "bears",
+  "rubber": "rubber",
+  "uniforms": "uniforms",
+  "bdsm": "bdsm",
+  "spanking": "spanking",
+  "choking": "choking",
+  "chastity": "chastity",
+  "fisting": "fisting",
+  "waterplay": "waterplay",
+  "verbal": "verbal",
+  "cruising": "cruising",
+  "gloryhole": "gloryhole",
+  "group": "group",
+  "cuckold": "cuckold",
+  "voyeurism": "voyeurism",
+  "exhibitionism": "exhibitionism",
+  "roleplay": "roleplay",
+  "daddy_boy": "daddyBoy",
+  "pup_play": "pupPlay",
+  "edging": "edging",
+  "toys": "toys",
+  "sensual_slow": "sensualSlow",
+  "rough": "rough",
+  "bareback": "bareback",
+  "condom_only": "condomOnly",
+  "domination": "dominant",
+};
+
+/**
+ * Mapa de arquetipos "Yo Soy" a keys del namespace `t.yoSoy`.
+ */
+const YO_SOY_KEY_MAP: Record<string, string> = {
+  "musculoso / gym": "musculosoGym",
+  "musculado / gym": "musculosoGym",
+  "leather / arnés": "leatherArnes",
+  "nutria / peludo": "nutriaPeludo",
+  "nutria / otter": "nutriaPeludo",
+  "oso / bear": "osoBear",
+  "atlético / deportista": "atleticoDeportista",
+  "atlético / jock": "atleticoDeportista",
+  "twink / joven": "twinkJoven",
+  "joven / twink": "twinkJoven",
+  "maduro / daddy": "maduroDaddy",
+  "dominante / amo": "dominanteAmo",
+  "dominante / master": "dominanteAmo",
+  "sumiso / entregado": "sumisoEntregado",
+  "receptivo / sub": "sumisoEntregado",
+  "pup / fetish": "pupFetish",
+  "discreto / perfil bajo": "discretoPerfilBajo",
+  "discreto / casual": "discretoPerfilBajo",
+  "morbo / carnal": "morboCarnal",
+  "darkroom / carnal": "darkroomCarnal",
+};
+
+/**
+ * Devuelve la etiqueta traducida y profesional de un morbo o fetiche
+ * utilizando el diccionario tipado de i18n (`t.kinks`).
+ */
+export function getKinkLocalizedLabel(
+  kinkId: string,
+  t?: { kinks?: Record<string, string> },
+  fallbackName?: string
+): string {
+  const normalized = kinkId.trim().toLowerCase();
+  const key = KINK_KEY_MAP[normalized];
+  if (key && t?.kinks && t.kinks[key]) {
+    return t.kinks[key];
+  }
+
+  // Buscar en catálogo de morbos si hay un custom o fallback
+  if (fallbackName) return fallbackName;
+  const def = getAllKinks().find((k) => k.id === kinkId || k.id === normalized);
+  if (def?.name) return def.name;
+
+  return kinkId.replace(/-/g, " ");
+}
+
+/**
+ * Devuelve la etiqueta traducida y profesional del arquetipo "Yo Soy"
+ * utilizando el diccionario tipado de i18n (`t.yoSoy`).
+ */
+export function getYoSoyLocalizedLabel(
+  yoSoy: string | undefined,
+  t?: { yoSoy?: Record<string, string> }
+): string {
+  if (!yoSoy) return "";
+  const normalized = yoSoy.trim().toLowerCase();
+  const key = YO_SOY_KEY_MAP[normalized];
+  if (key && t?.yoSoy && t.yoSoy[key]) {
+    return t.yoSoy[key];
+  }
+  return yoSoy;
+}
+
+
+

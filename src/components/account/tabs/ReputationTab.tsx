@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { IdentityVerificationCard } from "../IdentityVerificationCard";
 import { PendingTestimonialsManager } from "../PendingTestimonialsManager";
 import { ExitProtocolSelector } from "@/components/profile/ExitProtocolSelector";
 import { SubstanceAtmosphereSelector } from "@/components/profile/SubstanceAtmosphereSelector";
-import { AppDisguiseSection } from "@/components/safety/AppDisguiseModal";
+import { AppDisguiseSection } from "@/components/safety/AppDisguiseSection";
 import { Ghost, Zap, HeartHandshake } from "lucide-react";
 import { TacticalBadge, SectionHeroHeader } from "@/components/ui";
 
@@ -16,12 +16,10 @@ export const ReputationTab: React.FC = () => {
     myProfile,
     toggleNoGhostMode,
     openHostCardModal,
-    openVoiceRecorder,
-    myVoiceVibe,
     openSafetyBeaconModal,
     openDuressPinSettings,
-    openDuoModal,
-    openVaultAuditModal,
+    t,
+    language,
   } = useVessel();
 
   return (
@@ -36,29 +34,31 @@ export const ReputationTab: React.FC = () => {
         <div className="absolute top-0 right-0 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <SectionHeroHeader
-          title="CULTURA DEL RESPETO // ANTI-GHOST"
-          tag={`${myProfile.respectScore || 98}% KARMA`}
-          subtitle="Gana puntos de visibilidad y confianza cerrando chats con amabilidad"
+          title={language === "es" ? "CULTURA DEL RESPETO & CERO PLANTONES" : "RESPECT CULTURE & ANTI-GHOST"}
+          tag={`${myProfile.respectScore || 98}% ${language === "es" ? "RESPETO" : "KARMA"}`}
+          subtitle={language === "es" ? "Ganás puntos de visibilidad y confianza cerrando chats con amabilidad" : "Earn visibility and trust points by closing chats politely"}
           variant="mint"
           icon={<Ghost className="w-4 h-4 stroke-[2.3] text-mintNeon" />}
         />
 
-        {/* Switch Modo No Ghost activado por default */}
+        {/* Switch Modo Cero Plantones activado por default */}
         <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between gap-3">
           <div className="space-y-0.5 min-w-0">
             <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
-              <span>Modo No Ghost</span>
+              <span>{t.account.noGhostMode}</span>
               <TacticalBadge variant="emerald" size="sm">
-                Por Defecto
+                {t.account.noGhostDefault}
               </TacticalBadge>
             </div>
             <p className="text-[10px] text-neutral-400 font-mono">
-              Sugerencias de salida amable y sexy en 1 tap al cerrar chats
+              {t.account.noGhostDesc}
             </p>
           </div>
 
           <button
             type="button"
+            role="switch"
+            aria-checked={Boolean(myProfile.noGhostMode)}
             onClick={() => {
               toggleNoGhostMode();
               audioEngine.playPulse();
@@ -66,7 +66,7 @@ export const ReputationTab: React.FC = () => {
             className={`w-12 h-7 rounded-full transition-colors relative p-1 flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               myProfile.noGhostMode ? "bg-emerald-500 shadow-sm" : "bg-neutral-800"
             }`}
-            aria-label="Conmutar Modo No Ghost"
+            aria-label={t.account.noGhostMode}
           >
             <div
               className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
@@ -82,9 +82,11 @@ export const ReputationTab: React.FC = () => {
             <Zap className="w-4 h-4 text-electricViolet-glow flex-shrink-0" />
             <div>
               <span className="text-[9px] text-neutral-400 block uppercase font-mono font-bold">
-                Visibilidad en Radar
+                {t.account.radarBoost}
               </span>
-              <span className="text-xs font-mono font-bold text-electricViolet-glow">+35% Boost Activo</span>
+              <span className="text-xs font-mono font-bold text-electricViolet-glow">
+                {t.account.boostActive}
+              </span>
             </div>
           </div>
 
@@ -92,9 +94,11 @@ export const ReputationTab: React.FC = () => {
             <HeartHandshake className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <div>
               <span className="text-[9px] text-neutral-400 block uppercase font-mono font-bold">
-                Insignia Anti-Fantasma
+                {t.account.badgeVisible}
               </span>
-              <span className="text-xs font-mono font-bold text-white">Visible en Perfil</span>
+              <span className="text-xs font-mono font-bold text-white">
+                {t.account.badgeVisibleSub}
+              </span>
             </div>
           </div>
         </div>
@@ -109,42 +113,74 @@ export const ReputationTab: React.FC = () => {
             </div>
             <div>
               <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                Herramientas Tácticas de Encuentro
+                {language === "es" ? "Herramientas Tácticas de Encuentro" : "Tactical Encounter Suite"}
               </h3>
               <p className="text-[10px] text-neutral-400 font-mono">
-                Logística, acuerdos de salida, seguridad física y discreción
+                {language === "es"
+                  ? "Logística, acuerdos de salida, seguridad física y discreción"
+                  : "Logistics, exit agreements, physical safety, and discretion"}
               </p>
             </div>
           </div>
           <TacticalBadge variant="violet" size="sm">
-            SUITE ACTIVA
+            {language === "es" ? "HERRAMIENTAS LISTAS" : "SUITE ACTIVE"}
           </TacticalBadge>
         </div>
 
-        {/* Ficha de Hospedaje & Voice Vibe */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Ficha de Hospedaje, Guardián Silencioso & PIN de Coacción */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => openHostCardModal()}
             className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-electricViolet/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.98]"
           >
             <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">🏠 Ficha de Hospedaje</span>
-              <span className="text-[10px] text-neutral-500">Configurar depto, insumos y ducha</span>
+              <span className="font-mono text-xs font-bold text-neutral-200 block">
+                {language === "es" ? "🏠 Ficha de Hospedaje" : "🏠 Host Logistics Card"}
+              </span>
+              <span className="text-[10px] text-neutral-500">
+                {language === "es" ? "Configurar depto, insumos y ducha" : "Configure place, supplies & shower"}
+              </span>
             </div>
-            <span className="text-xs font-mono text-electricViolet-glow">Editar →</span>
+            <span className="text-xs font-mono text-electricViolet-glow">
+              {language === "es" ? "Editar →" : "Edit →"}
+            </span>
           </button>
 
           <button
             type="button"
-            onClick={() => openVoiceRecorder()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-electricViolet/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.98]"
+            onClick={() => openSafetyBeaconModal()}
+            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-red-500/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
           >
             <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">🎙️ Voice Vibe (Audio 5s)</span>
-              <span className="text-[10px] text-neutral-500">{myVoiceVibe ? "Audio registrado ✓" : "Grabar audio de voz"}</span>
+              <span className="font-mono text-xs font-bold text-neutral-200 block">
+                🛡️ {t.safety?.guardianLabel || "Guardián Silencioso"}
+              </span>
+              <span className="text-[10px] text-neutral-500">
+                {language === "es" ? "Apagado de seguridad & Contacto" : "Safety shutoff & Contact"}
+              </span>
             </div>
-            <span className="text-xs font-mono text-electricViolet-glow">{myVoiceVibe ? "Cambiar →" : "Grabar →"}</span>
+            <span className="text-xs font-mono text-red-400">
+              {language === "es" ? "Abrir →" : "Open →"}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openDuressPinSettings()}
+            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-red-500/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
+          >
+            <div>
+              <span className="font-mono text-xs font-bold text-neutral-200 block">
+                {language === "es" ? "🔐 PIN de Coacción" : "🔐 Duress PIN"}
+              </span>
+              <span className="text-[10px] text-neutral-500">
+                {language === "es" ? "Alerta silenciosa y señuelo" : "Silent alert & decoy vault"}
+              </span>
+            </div>
+            <span className="text-xs font-mono text-neutral-400">
+              {language === "es" ? "Configurar →" : "Configure →"}
+            </span>
           </button>
         </div>
 
@@ -158,62 +194,8 @@ export const ReputationTab: React.FC = () => {
           <SubstanceAtmosphereSelector />
         </div>
 
-        {/* Guardián Silencioso & PIN de Coacción */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => openSafetyBeaconModal()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-red-500/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
-          >
-            <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">🛡️ Guardián Silencioso</span>
-              <span className="text-[10px] text-neutral-500">Dead-Man Switch & Contacto Local</span>
-            </div>
-            <span className="text-xs font-mono text-red-400">Abrir →</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => openDuressPinSettings()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-red-500/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
-          >
-            <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">🔐 PIN de Coacción</span>
-              <span className="text-[10px] text-neutral-500">Alerta silenciosa y señuelo</span>
-            </div>
-            <span className="text-xs font-mono text-neutral-400">Configurar →</span>
-          </button>
-        </div>
-
         {/* Camuflaje de App & Bloc de Notas */}
         <AppDisguiseSection />
-
-        {/* Modo Dúo & Auditoría de Bóvedas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => openDuoModal()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-electricViolet/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.98]"
-          >
-            <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">👥 Modo Dúo (Pareja)</span>
-              <span className="text-[10px] text-neutral-500">Vincular cuenta para buscar tríos</span>
-            </div>
-            <span className="text-xs font-mono text-electricViolet-glow">Gestionar →</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => openVaultAuditModal()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-electricViolet/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.98]"
-          >
-            <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">👁️ Auditoría de Bóvedas</span>
-              <span className="text-[10px] text-neutral-500">Registro de quién vio tus fotos</span>
-            </div>
-            <span className="text-xs font-mono text-electricViolet-glow">Ver Logs →</span>
-          </button>
-        </div>
       </div>
 
       {/* Bandeja de Testimonios Recibidos y Moderación */}

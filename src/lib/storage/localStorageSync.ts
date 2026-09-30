@@ -5,16 +5,25 @@ export type AppMode = "test" | "real";
 
 export const APP_MODE_STORAGE_KEY = "vessel_app_mode";
 
-let currentActiveAppMode: AppMode = "test";
+const isUnitTestEnv = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
+let currentActiveAppMode: AppMode = isUnitTestEnv ? "test" : "real";
 
 /**
  * Obtiene el modo de la aplicación activo (test vs real)
- * Prioridad: URL param (?mode=test|real) > localStorage > fallback default ('test')
+ * Prioridad: URL param (?mode=test|real o ?vip=CODIGO) > localStorage > fallback default ('real' en app, 'test' en Vitest)
  */
 export const getActiveAppMode = (): AppMode => {
   if (typeof window === "undefined") return currentActiveAppMode;
   try {
     const urlParams = new URLSearchParams(window.location.search);
+    const vipParam = urlParams.get("vip") || urlParams.get("invite");
+    if (vipParam) {
+      window.localStorage.setItem("vessel_pending_vip_code", vipParam.trim().toUpperCase());
+      window.localStorage.setItem(APP_MODE_STORAGE_KEY, "real");
+      currentActiveAppMode = "real";
+      return "real";
+    }
+
     const modeParam = urlParams.get("mode");
     if (modeParam === "real" || modeParam === "test") {
       window.localStorage.setItem(APP_MODE_STORAGE_KEY, modeParam);
@@ -283,4 +292,5 @@ export const STORAGE_KEYS = {
   QUOTA_SETTINGS: "vessel_quota_settings_v1",
   STAFF_SESSION: "vessel_staff_session_v1",
   SUBSCRIPTION_RECEIPTS: "vessel_subscription_receipts_v1",
+  FAVORITES: "vessel_favorite_profiles_v1",
 };

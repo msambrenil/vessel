@@ -129,15 +129,15 @@ describe("StatusToggle — Botón Listo YA con Reloj Fucsia Neón Dinámico", ()
     expect(mockStopOnTheClock).toHaveBeenCalled();
   });
 
-  it("renderiza la cabecera 'MI ESTADO' y los 3 estados claros: ACTIVO, OCUPADO, INCÓGNITO", () => {
+  it("renderiza la cabecera 'MI ESTADO' y los 3 estados claros: DISPONIBLE, OCUPADO, INCÓGNITO", () => {
     render(<StatusToggle />);
 
     // Cabecera táctica sin confusión con "disponibilidad"
     expect(screen.getByText("MI ESTADO")).toBeInTheDocument();
-    expect(screen.getByText(/EMITIENDO:/)).toBeInTheDocument();
+    expect(screen.getByText(/ESTADO:/)).toBeInTheDocument();
 
-    // Segmented control y píldora de emisión: ACTIVO (aparece en ambos), OCUPADO, INCÓGNITO
-    expect(screen.getAllByText("ACTIVO").length).toBe(2);
+    // Segmented control y píldora de emisión: DISPONIBLE (aparece en ambos), OCUPADO, INCÓGNITO
+    expect(screen.getAllByText("DISPONIBLE").length).toBe(2);
     expect(screen.getByText("Visible en radar")).toBeInTheDocument();
 
     expect(screen.getByText("OCUPADO")).toBeInTheDocument();

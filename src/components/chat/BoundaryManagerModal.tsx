@@ -36,6 +36,51 @@ interface BoundaryManagerModalProps {
   onClose: () => void;
 }
 
+const PROTOCOL_NAMES: Record<"es" | "en", Record<string, string>> = {
+  es: {
+    polite_archive: "Cierre Respetuoso",
+    pause: "Pausa Temporal",
+    stealth_fade: "Modo Sigilo",
+    hard_boundary: "Límite Estricto",
+    custom: "Personalizado",
+  },
+  en: {
+    polite_archive: "Respectful Closure",
+    pause: "Temporary Pause",
+    stealth_fade: "Stealth Fade",
+    hard_boundary: "Hard Boundary",
+    custom: "Custom",
+  },
+};
+
+const CHAT_STATUS_NAMES: Record<"es" | "en", Record<string, string>> = {
+  es: {
+    active: "Activo",
+    muted: "Silenciado",
+    readonly: "Solo Lectura",
+    disconnected: "Desconectado",
+  },
+  en: {
+    active: "Active",
+    muted: "Muted",
+    readonly: "Read-Only",
+    disconnected: "Disconnected",
+  },
+};
+
+const RADAR_VISIBILITY_NAMES: Record<"es" | "en", Record<string, string>> = {
+  es: {
+    normal: "Normal",
+    attenuated: "Atenuado",
+    hidden: "Invisible",
+  },
+  en: {
+    normal: "Normal",
+    attenuated: "Attenuated",
+    hidden: "Hidden",
+  },
+};
+
 export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
   profileId,
   onClose,
@@ -46,7 +91,9 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
     applyBoundaryProtocol,
     removeBoundaryProtocol,
     t,
+    language,
   } = useVessel();
+  const lang = language === "en" ? "en" : "es";
 
   const profile = profiles.find((p) => p.id === profileId);
   const existingBoundary = getBoundaryForProfile(profileId);
@@ -154,8 +201,8 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Cerrar modal de gestión de límites"
-            className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            aria-label={lang === "en" ? "Close boundary manager modal" : "Cerrar modal de gestión de límites"}
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
           >
             <X className="w-4 h-4" />
           </button>
@@ -167,10 +214,10 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Protocolo Activo: {existingBoundary.protocol.toUpperCase()}</span>
+                <span>{lang === "en" ? "Active Protocol:" : "Protocolo Activo:"} {PROTOCOL_NAMES[lang][existingBoundary.protocol] || existingBoundary.protocol}</span>
               </div>
               <span className="text-[10px] text-neutral-300 block">
-                Chat: {existingBoundary.chatStatus} • Radar: {existingBoundary.radarVisibility} • Desde {existingBoundary.appliedAt}
+                Chat: {CHAT_STATUS_NAMES[lang][existingBoundary.chatStatus] || existingBoundary.chatStatus} • Radar: {RADAR_VISIBILITY_NAMES[lang][existingBoundary.radarVisibility] || existingBoundary.radarVisibility} • {lang === "en" ? "Since" : "Desde"} {existingBoundary.appliedAt}
               </span>
             </div>
 
@@ -178,7 +225,7 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
               type="button"
               onClick={handleRestoreConnection}
               aria-label={t.boundaries.restoreBtn}
-              className="px-2.5 py-1.5 min-h-[36px] bg-white/10 hover:bg-mintNeon hover:text-obsidian-deep border border-white/15 text-white rounded-lg text-[10px] font-black flex items-center gap-1 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95"
+              className="px-3 py-2 min-w-[44px] min-h-[44px] bg-white/10 hover:bg-mintNeon hover:text-obsidian-deep border border-white/15 text-white rounded-lg text-[10px] font-black flex items-center gap-1 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95"
               title={t.boundaries.restoreBtn}
             >
               <RotateCcw className="w-3 h-3" />
@@ -259,7 +306,7 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
                             </span>
                             {preset.karmaBonus && (
                               <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/15 px-1 rounded">
-                                +{preset.karmaBonus} Karma
+                                +{preset.karmaBonus} Respeto
                               </span>
                             )}
                           </div>
@@ -431,7 +478,7 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
               <div className="grid grid-cols-3 gap-2 text-xs">
                 {[
                   { id: "normal", label: "Normal", desc: "Visibilidad total" },
-                  { id: "attenuated", label: "Atenuado", desc: "Ghost-signal sutil" },
+                  { id: "attenuated", label: "Atenuado", desc: "Señal atenuada sutil" },
                   { id: "hidden", label: "Invisible", desc: "Fuera de radar" },
                 ].map((vis) => (
                   <button
@@ -455,7 +502,7 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
             {/* Motivo Opcional */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-white block">
-                Motivo / Nota Confidencial (Solo para ti)
+                Nota Confidencial de Motivo (Solo para ti)
               </label>
               <input
                 type="text"

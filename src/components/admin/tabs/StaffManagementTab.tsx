@@ -256,7 +256,7 @@ export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Ej: FRAN // SAFETY_OPS"
+                  placeholder="Ej: FRAN - OPERACIONES_SEGURIDAD"
                   className="w-full bg-obsidian-deep border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-electricViolet"
                 />
               </div>

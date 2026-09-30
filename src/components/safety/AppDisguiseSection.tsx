@@ -5,25 +5,15 @@ import { useVessel } from "@/context/VesselContext";
 import { AppDisguiseMode } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 
-export const AppDisguiseModal: React.FC = () => {
-  const {
-    appDisguise,
-    setAppDisguiseMode,
-    setCoverScreenActive,
-    t,
-  } = useVessel();
-
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  // Selector global o accesible desde settings
-  return null; // Exportamos AppDisguiseModalConfigurable si se necesita
-};
-
+/**
+ * AppDisguiseSection — Configuración de camuflaje, pantalla señuelo y activación de sigilo
+ */
 export const AppDisguiseSection: React.FC = () => {
   const {
     appDisguise,
     setAppDisguiseMode,
     setCoverScreenActive,
+    toggleStealthMode,
     openDuressPinSettings,
     language,
     t,
@@ -31,11 +21,11 @@ export const AppDisguiseSection: React.FC = () => {
 
   return (
     <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-4 shadow-card-elevation backdrop-blur-md">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="font-mono font-bold text-white text-xs uppercase tracking-wider flex items-center gap-2">
             <span>🛡️</span>
-            <span>{language === "es" ? "Escudo de Camuflaje // Discreción" : "Camouflage Shield // Stealth"}</span>
+            <span>{language === "es" ? "Escudo de Camuflaje y Discreción" : "Camouflage Shield and Stealth"}</span>
           </h3>
           <p className="text-[10px] text-neutral-400 font-mono mt-0.5">
             {language === "es"
@@ -43,17 +33,32 @@ export const AppDisguiseSection: React.FC = () => {
               : "Disguise the app on your home screen and activate decoy screens"}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            audioEngine.playPulse();
-            setCoverScreenActive(true);
-          }}
-          className="px-3 py-1.5 min-h-[38px] bg-white/10 hover:bg-white/20 border border-white/15 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-sm"
-        >
-          <span>🛡️</span>
-          <span>{language === "es" ? "Probar Cobertura" : "Test Decoy"}</span>
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              audioEngine.playPulse();
+              setCoverScreenActive(true);
+            }}
+            className="px-3 py-1.5 min-h-[38px] bg-white/10 hover:bg-white/20 border border-white/15 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-sm"
+          >
+            <span>🛡️</span>
+            <span>{language === "es" ? "Señuelo" : "Decoy"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              audioEngine.playError();
+              toggleStealthMode();
+            }}
+            className="px-3 py-1.5 min-h-[38px] bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-sm"
+            title="Bloquear pantalla con PIN inmediatamente"
+          >
+            <span>🔒</span>
+            <span>{language === "es" ? "Bloqueo Sigilo" : "Stealth Lock"}</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 pt-1">
@@ -94,10 +99,10 @@ export const AppDisguiseSection: React.FC = () => {
         <div className="flex items-center justify-between">
           <span className="text-white font-bold flex items-center gap-1.5">
             <span>⚡</span>
-            <span>Flip-to-Cover (Sensor de Giro):</span>
+            <span>{t.safety?.flipToCover || (language === "es" ? "Voltear para Cubrir (Sensor de Giro):" : "Flip to Cover (Gyroscope Sensor):")}</span>
           </span>
           <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
-            ACTIVO
+            {t.system?.active || "ACTIVO"}
           </span>
         </div>
         <p className="text-neutral-400 text-[10px] leading-relaxed">
@@ -119,7 +124,7 @@ export const AppDisguiseSection: React.FC = () => {
           }}
           className="px-3 py-1.5 rounded-xl bg-purple-950/40 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/30 text-[10px] font-mono font-bold transition-all cursor-pointer"
         >
-          {language === "es" ? "Configurar PIN Duress" : "Configure Duress PIN"}
+          {t.safety?.emergencyPinLabel || (language === "es" ? "Configurar PIN de Emergencia" : "Configure Duress PIN")}
         </button>
       </div>
     </div>

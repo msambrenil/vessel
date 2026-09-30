@@ -11,7 +11,7 @@ interface VoiceVibePlayerProps {
 }
 
 export const VoiceVibePlayer: React.FC<VoiceVibePlayerProps> = ({ voice, compact = false }) => {
-  const { activePlayingVoiceId, playVoiceVibe, stopVoiceVibe, t } = useVessel();
+  const { activePlayingVoiceId, playVoiceVibe, stopVoiceVibe, language, t } = useVessel();
   const [progress, setProgress] = useState(0);
 
   const isPlaying = voice ? activePlayingVoiceId === voice.id : false;
@@ -102,14 +102,14 @@ export const VoiceVibePlayer: React.FC<VoiceVibePlayerProps> = ({ voice, compact
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-mono text-xs font-bold text-neutral-200 uppercase tracking-wider">
-                Voice Vibe
+                {language === "es" ? "Audio de Presentación" : "Voice Note"}
               </span>
               <span className="px-1.5 py-0.2 rounded bg-neutral-800 font-mono text-[9px] text-purple-200">
                 {voice.durationSeconds || 5}s
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 truncate max-w-[180px]">
-              {voice.label || "Audio de voz // Tono auténtico"}
+              {voice.label || "Nota de voz auténtica"}
             </p>
           </div>
         </div>

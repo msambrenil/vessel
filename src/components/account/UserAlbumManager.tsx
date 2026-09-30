@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useVessel, FREE_TIER_LIMITS } from "@/context/VesselContext";
 import { UserAlbum, AlbumPrivacy } from "@/types/vessel";
+import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { CreateAlbumModal } from "./CreateAlbumModal";
 import { AlbumDetailModal } from "./AlbumDetailModal";
 import {
@@ -30,12 +31,13 @@ export const UserAlbumManager: React.FC = () => {
   const {
     userAlbums,
     userPlan,
-    setUserPlan,
+    openUnlimitedModal,
     myProfile,
     setProfileCoverPhoto,
     revokeAlbumAccessGlobally,
     unshareAlbumGlobally,
     getSharedChatIdsForAlbum,
+    language,
   } = useVessel();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -88,36 +90,33 @@ export const UserAlbumManager: React.FC = () => {
           </div>
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <span>Gestor de Álbumes // Media Vault</span>
+              <span>Gestor de Álbumes // Bóveda de Fotos</span>
               {isUnlimited && (
                 <span className="text-[9px] px-2 py-0.5 rounded-full bg-electricViolet text-white font-extrabold shadow-violet-soft">
-                  UNLIMITED
+                  TOTAL
                 </span>
               )}
             </h3>
             <p className="text-[10px] text-neutral-400">
               {isUnlimited
-                ? 'VESSEL UNLIMITED: "Álbumes públicos, privados y señales ilimitadas."'
-                : "Plan Gratuito: 1 Álbum Público • 1 Álbum Privado (Nudes)"}
+                ? 'VESSEL TOTAL: "Álbumes públicos, privados y señales ilimitadas."'
+                : "Plan Gratuito: 1 Álbum Público • 1 Álbum Privado (Íntimo)"}
             </p>
           </div>
         </div>
 
-        {/* Badge del Plan con toggle interactivo para testing */}
-        <button
-          type="button"
-          onClick={() => setUserPlan(isUnlimited ? "free" : "unlimited")}
-          className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all border ${
+        {/* Badge del Plan */}
+        <div
+          className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 border select-none ${
             isUnlimited
               ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
-              : "bg-white/5 border-white/15 text-neutral-300 hover:border-electricViolet/50"
+              : "bg-white/5 border-white/15 text-neutral-300"
           }`}
-          title="Toca para alternar entre Plan Gratuito y VESSEL UNLIMITED"
         >
           {isUnlimited ? (
             <>
               <Crown className="w-3.5 h-3.5 fill-current" />
-              <span>Vessel Unlimited</span>
+              <span>Vessel Total</span>
             </>
           ) : (
             <>
@@ -125,7 +124,7 @@ export const UserAlbumManager: React.FC = () => {
               <span>Plan Gratuito</span>
             </>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Sección Foto de Portada Principal */}
@@ -350,7 +349,7 @@ export const UserAlbumManager: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setUserPlan("unlimited")}
+            onClick={() => openUnlimitedModal()}
             className="w-full py-3 bg-gradient-to-r from-electricViolet via-purple-500 to-electricViolet hover:from-purple-500 hover:to-electricViolet text-white font-black rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(139,92,246,0.6)] border border-purple-400/50 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer mt-1"
           >
             <Crown className="w-4 h-4 fill-current animate-pulse text-amber-300" />
@@ -378,7 +377,7 @@ export const UserAlbumManager: React.FC = () => {
             type="button"
             onClick={() => setFilterPrivacy("public")}
             aria-selected={filterPrivacy === "public"}
-            className={`px-3 py-1.5 min-h-[38px] rounded-lg transition-all font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+            className={`px-3 py-1.5 min-h-[44px] rounded-lg transition-all font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
               filterPrivacy === "public"
                 ? "bg-electricViolet text-white font-bold"
                 : "text-neutral-400 hover:text-white"
@@ -390,7 +389,7 @@ export const UserAlbumManager: React.FC = () => {
             type="button"
             onClick={() => setFilterPrivacy("private")}
             aria-selected={filterPrivacy === "private"}
-            className={`px-3 py-1.5 min-h-[38px] rounded-lg transition-all font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon ${
+            className={`px-3 py-1.5 min-h-[44px] rounded-lg transition-all font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon ${
               filterPrivacy === "private"
                 ? "bg-bloodNeon text-white font-bold"
                 : "text-neutral-400 hover:text-white"
@@ -406,7 +405,7 @@ export const UserAlbumManager: React.FC = () => {
           onClick={() => handleOpenCreateModal(isPublicLimitReached ? "private" : "public")}
           disabled={isAllLimitsReached}
           aria-label="Crear nuevo álbum o bóveda"
-          className={`px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 ${
+          className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95 ${
             isAllLimitsReached
               ? "bg-white/5 text-neutral-500 border border-white/5 cursor-not-allowed"
               : "bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft font-extrabold"
@@ -433,7 +432,7 @@ export const UserAlbumManager: React.FC = () => {
             <button
               type="button"
               onClick={() => handleOpenCreateModal(filterPrivacy === "private" ? "private" : "public")}
-              className="mt-2 px-4 py-2 min-h-[40px] bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+              className="mt-2 px-4 py-2 min-h-[44px] bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
             >
               + Crear Álbum
             </button>
@@ -527,7 +526,7 @@ export const UserAlbumManager: React.FC = () => {
                       {photos === 0 && videos === 0 && "0 medios"}
                     </span>
                     <span>•</span>
-                    <span>{album.createdAt}</span>
+                    <span>{formatDiaryDateDisplay(album.createdAt, language)}</span>
                   </div>
                 </div>
 

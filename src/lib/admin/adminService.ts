@@ -16,7 +16,14 @@ import {
   loadFromStorage,
   saveToStorage,
   STORAGE_KEYS,
+  getActiveAppMode,
+  AppMode,
 } from "@/lib/storage/localStorageSync";
+import { VesselProfile } from "@/types/vessel";
+import { isGhostOrMockProfile } from "@/lib/firebase/matrixService";
+import { collection, doc, setDoc, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+import { sanitizeForFirestore } from "@/lib/firebase/firestoreSanitizer";
 
 export const DEFAULT_STAFF_MEMBERS: StaffMember[] = [
   {
@@ -118,31 +125,161 @@ export const INITIAL_AUDIT_LOGS: AdminAuditLogEntry[] = [
 ];
 
 /* -------------------------------------------------------------
- * GESTIÓN DE PERSONAL & SESIÓN (RBAC)
+ * GESTIÓN DE PERSONAL & SESIÓN (RBAC) & AUTORIZACIÓN
  * ------------------------------------------------------------- */
 
-export const getStaffMembers = (): StaffMember[] => {
-  return loadFromStorage<StaffMember[]>(STORAGE_KEYS.STAFF_MEMBERS, DEFAULT_STAFF_MEMBERS);
+/**
+ * Valida si un email o passcode cuenta con autorización para acceder a la consola administrativa.
+ * En producción/modo real, solo emails en la lista blanca de NEXT_PUBLIC_ADMIN_EMAILS
+ * o portadores del passcode maestro NEXT_PUBLIC_ADMIN_PASSCODE obtienen acceso.
+ */
+export const checkIsAdminAuthorized = (
+  userEmail?: string | null,
+  passcode?: string | null
+): boolean => {
+  const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
+  const allowedEmails = envEmails
+    ? envEmails.split(",").map((e) => e.trim().toLowerCase())
+    : ["admin@vessel.network", "ojitos@vessel.app", "msambrenil@gmail.com"];
+
+  const isEmailMatch = Boolean(
+    userEmail && allowedEmails.includes(userEmail.trim().toLowerCase())
+  );
+
+  const configuredPasscode = process.env.NEXT_PUBLIC_ADMIN_PASSCODE?.trim();
+  // Si se provee passcode, solo es válido si coincide con la clave configurada explícitamente y el email pertenece al staff
+  if (passcode && configuredPasscode) {
+    return isEmailMatch && passcode.trim() === configuredPasscode;
+  }
+
+  return isEmailMatch;
 };
 
-export const saveStaffMembers = (staff: StaffMember[]): void => {
-  saveToStorage(STORAGE_KEYS.STAFF_MEMBERS, staff);
+export const STAFF_COLLECTION = "vessel_staff";
+
+export const getStaffMembers = (
+  mode: AppMode = getActiveAppMode(),
+  authUser?: { uid?: string; email?: string | null; displayName?: string | null } | null
+): StaffMember[] => {
+  if (mode === "real") {
+    const realStaff = loadFromStorage<StaffMember[]>(STORAGE_KEYS.STAFF_MEMBERS, [], "real");
+    const filteredReal = (realStaff || []).filter(
+      (s) => s.id !== "staff-01" && s.id !== "staff-02" && s.id !== "staff-03"
+    );
+
+    if (filteredReal.length > 0) {
+      return filteredReal;
+    }
+
+    // Inicialización del Fundador como Superadmin principal en Modo Real
+    const founderEmail = authUser?.email || "msambrenil@gmail.com";
+    const founderName =
+      authUser?.displayName?.toUpperCase() ||
+      `${founderEmail.split("@")[0].toUpperCase()} // COMMAND_ROOT`;
+    const founderId = authUser?.uid || "staff-founder-01";
+
+    const initialFounderStaff: StaffMember[] = [
+      {
+        id: founderId,
+        name: founderName,
+        email: founderEmail.toLowerCase(),
+        role: "superadmin",
+        avatarUrl:
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        lastLoginAt: "En línea",
+        notes: "Superadministrador Principal y Fundador del Sistema VESSEL.",
+      },
+    ];
+
+    saveToStorage(STORAGE_KEYS.STAFF_MEMBERS, initialFounderStaff, "real");
+    if (typeof window !== "undefined") {
+      setDoc(
+        doc(db, STAFF_COLLECTION, founderId),
+        sanitizeForFirestore(initialFounderStaff[0]),
+        { merge: true }
+      ).catch(() => {});
+    }
+
+    return initialFounderStaff;
+  }
+
+  // Modo Prueba: Personal de demostración
+  return loadFromStorage<StaffMember[]>(
+    STORAGE_KEYS.STAFF_MEMBERS,
+    DEFAULT_STAFF_MEMBERS,
+    "test"
+  );
 };
 
-export const getActiveStaffSession = (): StaffMember => {
-  const staffList = getStaffMembers();
-  const savedStaffId = loadFromStorage<string | null>(STORAGE_KEYS.STAFF_SESSION, null);
+export const saveStaffMembers = (
+  staff: StaffMember[],
+  mode: AppMode = getActiveAppMode()
+): void => {
+  saveToStorage(STORAGE_KEYS.STAFF_MEMBERS, staff, mode);
+
+  if (mode === "real" && typeof window !== "undefined") {
+    for (const member of staff) {
+      const staffRef = doc(db, STAFF_COLLECTION, member.id);
+      setDoc(staffRef, sanitizeForFirestore(member), { merge: true }).catch((err) =>
+        console.warn("[VESSEL Admin] Error sincronizando miembro de staff en Firestore:", err)
+      );
+    }
+  }
+};
+
+/**
+ * Carga los miembros reales del equipo desde Firestore en segundo plano
+ */
+export const fetchRealStaffFromCloud = async (): Promise<StaffMember[]> => {
+  if (typeof window === "undefined") return [];
+  try {
+    const q = collection(db, STAFF_COLLECTION);
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const cloudStaff = snap.docs.map((d) => d.data() as StaffMember);
+      saveToStorage(STORAGE_KEYS.STAFF_MEMBERS, cloudStaff, "real");
+      return cloudStaff;
+    }
+  } catch (err) {
+    console.warn("[VESSEL Admin] Lectura de personal desde Firestore:", err);
+  }
+  return [];
+};
+
+export const getActiveStaffSession = (
+  mode: AppMode = getActiveAppMode(),
+  authUser?: { uid?: string; email?: string | null } | null
+): StaffMember => {
+  const staffList = getStaffMembers(mode, authUser);
+
+  if (mode === "real" && authUser) {
+    // Si el usuario autenticado coincide con un miembro del staff, asignarlo de forma prioritaria
+    const me = staffList.find(
+      (s) =>
+        (authUser.email && s.email.toLowerCase() === authUser.email.toLowerCase()) ||
+        (authUser.uid && s.id === authUser.uid)
+    );
+    if (me) return me;
+  }
+
+  const savedStaffId = loadFromStorage<string | null>(STORAGE_KEYS.STAFF_SESSION, null, mode);
   if (savedStaffId) {
     const found = staffList.find((s) => s.id === savedStaffId);
     if (found) return found;
   }
+
   return staffList[0] || DEFAULT_STAFF_MEMBERS[0];
 };
 
-export const setActiveStaffSession = (staffId: string): StaffMember => {
-  const staffList = getStaffMembers();
+export const setActiveStaffSession = (
+  staffId: string,
+  mode: AppMode = getActiveAppMode()
+): StaffMember => {
+  const staffList = getStaffMembers(mode);
   const target = staffList.find((s) => s.id === staffId) || staffList[0];
-  saveToStorage(STORAGE_KEYS.STAFF_SESSION, target.id);
+  saveToStorage(STORAGE_KEYS.STAFF_SESSION, target.id, mode);
   return target;
 };
 
@@ -150,14 +287,19 @@ export const setActiveStaffSession = (staffId: string): StaffMember => {
  * REGISTRO DE AUDITORÍA (AUDIT TRAIL)
  * ------------------------------------------------------------- */
 
-export const getAdminAuditLogs = (): AdminAuditLogEntry[] => {
-  return loadFromStorage<AdminAuditLogEntry[]>(STORAGE_KEYS.ADMIN_AUDIT, INITIAL_AUDIT_LOGS);
+export const getAdminAuditLogs = (mode: "test" | "real" = getActiveAppMode()): AdminAuditLogEntry[] => {
+  if (mode === "real") {
+    const realLogs = loadFromStorage<AdminAuditLogEntry[]>(STORAGE_KEYS.ADMIN_AUDIT, [], "real");
+    return (realLogs || []).filter((l) => l.id !== "aud-001" && l.id !== "aud-002");
+  }
+  return loadFromStorage<AdminAuditLogEntry[]>(STORAGE_KEYS.ADMIN_AUDIT, INITIAL_AUDIT_LOGS, "test");
 };
 
 export const logAdminAction = (
   entry: Omit<AdminAuditLogEntry, "id" | "timestamp">
 ): AdminAuditLogEntry => {
-  const currentLogs = getAdminAuditLogs();
+  const mode = getActiveAppMode();
+  const currentLogs = getAdminAuditLogs(mode);
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
   const newEntry: AdminAuditLogEntry = {
@@ -167,7 +309,7 @@ export const logAdminAction = (
   };
 
   const updated = [newEntry, ...currentLogs.slice(0, 199)];
-  saveToStorage(STORAGE_KEYS.ADMIN_AUDIT, updated);
+  saveToStorage(STORAGE_KEYS.ADMIN_AUDIT, updated, mode);
   return newEntry;
 };
 
@@ -175,12 +317,16 @@ export const logAdminAction = (
  * REPORTES DE MODERACIÓN
  * ------------------------------------------------------------- */
 
-export const getModerationReports = (): ModerationReport[] => {
-  return loadFromStorage<ModerationReport[]>(STORAGE_KEYS.ADMIN_REPORTS, INITIAL_MOCK_REPORTS);
+export const getModerationReports = (mode: "test" | "real" = getActiveAppMode()): ModerationReport[] => {
+  if (mode === "real") {
+    const realReports = loadFromStorage<ModerationReport[]>(STORAGE_KEYS.ADMIN_REPORTS, [], "real");
+    return (realReports || []).filter((r) => r.id !== "rep-001" && r.id !== "rep-002");
+  }
+  return loadFromStorage<ModerationReport[]>(STORAGE_KEYS.ADMIN_REPORTS, INITIAL_MOCK_REPORTS, "test");
 };
 
 export const saveModerationReports = (reports: ModerationReport[]): void => {
-  saveToStorage(STORAGE_KEYS.ADMIN_REPORTS, reports);
+  saveToStorage(STORAGE_KEYS.ADMIN_REPORTS, reports, getActiveAppMode());
 };
 
 export const updateReportStatus = (
@@ -190,7 +336,8 @@ export const updateReportStatus = (
   notes: string,
   operator: StaffMember
 ): ModerationReport | null => {
-  const reports = getModerationReports();
+  const mode = getActiveAppMode();
+  const reports = getModerationReports(mode);
   const index = reports.findIndex((r) => r.id === reportId);
   if (index === -1) return null;
 
@@ -247,8 +394,35 @@ export const saveGlobalQuotaSettings = (
  * GESTIÓN DE USUARIOS (MANAGED PROFILES)
  * ------------------------------------------------------------- */
 
-export const getManagedProfiles = (): ManagedUserProfile[] => {
-  const custom = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, []);
+export const getManagedProfiles = (
+  mode: "test" | "real" = getActiveAppMode(),
+  liveRealProfiles: VesselProfile[] = []
+): ManagedUserProfile[] => {
+  if (mode === "real") {
+    const savedRealOverrides = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, [], "real");
+    const overrideMap = new Map<string, ManagedUserProfile>();
+    for (const item of savedRealOverrides || []) {
+      if (!isGhostOrMockProfile(item)) {
+        overrideMap.set(item.id, item);
+      }
+    }
+
+    const realManaged: ManagedUserProfile[] = [];
+    for (const p of liveRealProfiles) {
+      if (isGhostOrMockProfile(p)) continue;
+      const override = overrideMap.get(p.id);
+      realManaged.push({
+        ...p,
+        ...override,
+        moderationStatus: override?.moderationStatus || "active",
+        moderationNotes: override?.moderationNotes || [],
+        forcedFogMode: override?.forcedFogMode ?? p.isFogMode ?? false,
+      });
+    }
+    return realManaged;
+  }
+
+  const custom = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, [], "test");
   if (!custom || custom.length === 0) {
     return MOCK_PROFILES.map((p) => ({
       ...p,
@@ -562,16 +736,17 @@ export const calculateDashboardMetrics = (
   }
 
   const pendingReps = reports.filter((r) => r.status === "pending" || r.status === "investigating").length;
-  const avgKarma = total > 0 ? Math.round(totalKarma / total) : 85;
+  const avgKarma = total > 0 ? Math.round(totalKarma / total) : 100;
   const conversionRate = total > 0 ? Math.round((unlimitedCount / total) * 100) : 0;
   const estimatedMrr = unlimitedCount * 14.99;
+  const isRealMode = getActiveAppMode() === "real";
 
   return {
     totalUsers: total,
     activeUsersNow: activeNow,
     unlimitedUsers: unlimitedCount,
     freeUsers: freeCount,
-    weekendPassUsers: 3,
+    weekendPassUsers: isRealMode ? 0 : 3,
     estimatedMrrUsd: estimatedMrr,
     conversionRatePercent: conversionRate,
     avgRespectKarma: avgKarma,

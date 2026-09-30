@@ -1165,5 +1165,391 @@ Historial cronológico estricto de las decisiones técnicas y de producto adopta
 - **Motivación**:
   Cumplir fielmente las directivas del usuario sobre autenticidad del lenguaje gay rioplatense (2026), dotar a los administradores de control dinámico y en tiempo real sobre el catálogo de fetiches/morbos sin depender de despliegues de código, y simplificar la experiencia de inspección de perfiles eliminando barreras de pestañas innecesarias.
 
+### [ADR-098] · [2026-09-20 11:30] Auditoría de Características Desconectadas y Reconexión Global en la App
+- **Decisión**:
+  1. **Reconexión de Modales en `ModalHost.tsx`**:
+     - Montaje de `DuoLinkModal` para el flujo de vinculación de cuentas compartidas / perfiles de pareja (invocado desde `ReputationTab.tsx` vía `openDuoModal`).
+     - Creación e integración de `HotspotsModal.tsx` como interfaz visual para el catálogo táctico de saunas, darkrooms, sex clubs y cruising (`hotspotService.ts`), con check-in anónimo y visualización en tiempo real.
+  2. **Puntos de Entrada para Biometría Facial 3D (`LivenessVerificationModal`)**:
+     - Conexión de `openLivenessModal()` en `IdentityVerificationCard.tsx` (tanto en estado no verificado como en revalidación).
+     - Conexión de `openLivenessModal()` en `ProfileDetailModal.tsx` cuando el usuario autenticado inspecciona su propia ficha sin verificación activa.
+  3. **Puntos de Entrada para Modo Viajero (`TravelModeModal`) y Calibración GPS (`GeoBatteryModal`)**:
+     - Agregado de botones tácticos en `LocationPrivacySection.tsx` dentro de Mi Cuenta.
+     - Agregado de la sección 10 "Exploración Táctica & Cruising" en `DynamicFilterDrawer.tsx`, permitiendo acceder a Modo Viajero, Puntos de Cruising y Diagnóstico de Batería/GPS.
+  4. **Bloqueo Sigilo Inmediato (`StealthLockScreen`)**:
+     - Agregado del botón interactivo `[ 🔒 Bloqueo Sigilo ]` en `AppDisguiseModal.tsx` (`AppDisguiseSection`), permitiendo al usuario activar la pantalla de camuflaje de emergencia con 1 solo toque.
+  5. **Selector de Entorno (`AppModeModal`) en Ajustes**:
+     - Habilitación del modal `AppModeModal` desde `AppSettingsSection.tsx` mediante el botón `[ MODO DE ENTORNO (REAL / TEST) ]`.
+  6. **Restitución Táctica de Fiestas (`NightlifeModal`)**:
+     - Inclusión de la píldora `"🎉 Fiestas"` en el carrusel de filtros de `ProfileGrid.tsx`.
+  7. **Pestaña de Métricas (`DiaryInsights`) en Bitácora**:
+     - Incorporación de la pestaña `"Métricas"` en `DateDiaryView.tsx` renderizando `DiaryInsights` para análisis de recurrencia, química y salud sexual.
+  8. **Purga de Archivos Huérfanos**:
+     - Eliminación física de 4 archivos muertos: `FillMeter.tsx`, `PulsesView.tsx`, `SmartCalendarGrid.tsx` y `DiaryTimeline.tsx`.
+  9. **Validación**:
+     - TypeScript estricto validado con 0 errores (`npm run typecheck`).
+     - 227/227 tests unitarios pasando al 100% en Vitest.
+- **Motivación**:
+  Garantizar que ninguna funcionalidad de alto valor implementada en el sistema quede inaccesible u olvidada en el código tras las limpiezas de cabecera y desmonolitización de vistas, dotando a los 20 arquetipos tácticos de accesos ergonómicos y contextuales dentro de su flujo natural de uso.
 
+### [ADR-099] · [2026-09-20 11:45] Saneamiento de Redundancias de UI y Jerarquía Ergonómica Impeccable
+- **Decisión**:
+  1. **Erradicación del Botón de Configuración Triplicado en `ProtocolView.tsx`**:
+     - Retiro del botón absoluto flotante `top-3.5 right-3.5` que invadía la foto de perfil en la tarjeta de identidad.
+     - Retiro de la tarjeta horizontal fija al pie de pantalla que duplicaba el acceso a ajustes.
+     - Preservación exclusiva del botón canónico en la cabecera `SectionHeroHeader` (`[ 🎛️ Configuración de la Aplicación ]`).
+  2. **Eliminación de Filtros Duplicados en `ProfileGrid.tsx`**:
+     - Supresión de la píldora redundante `[ Más Filtros ]` del carrusel de filtros rápidos, consolidando la apertura del drawer en el botón sticky `[ FILTROS ]` con contador dinámico de la barra de búsqueda superior.
+  3. **Unificación de Edición de Alias**:
+     - Consolidación del flujo de edición en el botón táctico `[ ✏️ Editar ]` de la tarjeta de identidad, eliminando el evento `onClick` duplicado sobre el encabezado `h1`.
+  4. **Poda de Botones Secundarios en la Cabecera de la Bitácora (`DateDiaryView.tsx`)**:
+     - Retiro de los accesos comprimidos de Doxy-PEP y Alerta ITS del `SectionHeroHeader`, manteniendo únicamente el botón de acción principal `[ + Agendar Cita ]` y canalizando el seguimiento clínico en la pestaña *"Salud & Cuidado"*.
+  5. **Navegación Canónica del Logo en `BrutalistHeader.tsx`**:
+     - Modificación del tap en el logo de VESSEL para navegar a la Matriz (`setActiveView("grid")`) en lugar de abrir el modal de ajustes.
+  6. **Consolidación de Acciones de Cita en `DarkroomChatModal.tsx`**:
+     - Retiro del botón aislado de PIN en la cabecera del chat, unificando la coordinación de encuentros bajo el botón `[ ⚡ Cita ]` (`RendezvousSheet`).
+  7. **Blindaje de Calidad**:
+     - TypeScript estricto con 0 errores (`npm run typecheck`).
+     - 227/227 tests pasando al 100% en Vitest (31 archivos).
+- **Motivación**:
+  Eliminar la fatiga visual, las colisiones de layout en pantallas móviles y la duplicación de controles (Craft Floor de Impeccable UI), ofreciendo una experiencia táctica de navegación predecible, sobria y limpia.
 
+### [ADR-100] · [2026-09-20 11:48] Saneamiento Sistémico de Viewport y Despeje Inferior Global (Thumb Clearance)
+- **Decisión**:
+  1. **Aumento del Despeje Inferior en Vistas con Dock de Navegación**:
+     - `BrutalistNav.tsx` posee una altura base de 54px + 8px de padding + hasta 34px de safe area inferior en iOS (`env(safe-area-inset-bottom)`), más una sombra difusa que proyecta 30px hacia arriba (`shadow-[0_-8px_30px_rgba(0,0,0,0.9)]`), cubriendo efectivamente entre 70px y 96px de alto visible.
+     - Se ajustó el padding inferior de los contenedores con scroll de `pb-28` (112px) a `pb-48 sm:pb-56` (192px-224px) en:
+       - `DateDiaryView.tsx` (Bitácora de Citas).
+       - `DarkroomListView.tsx` (Lista de Chats / Mensajes).
+       - `ProfileGrid.tsx` (Matriz de Perfiles).
+       - `ProtocolView.tsx` (Mi Cuenta) elevado a `pb-52 sm:pb-60`.
+  2. **Espaciadores Tácticos en Sub-Pistas y Secciones**:
+     - Inclusión de `pb-12` en `DiaryHealthSection.tsx` y `DiaryInsights.tsx` para evitar que las tarjetas de "Reducción de Daños", PrEP y métricas de recurrencia queden cortadas por la mitad al scrollear al final.
+     - Inclusión de espaciadores de cierre `<div className="h-16" />` en las pestañas `BioTab.tsx`, `KinksTab.tsx`, `ReputationTab.tsx` y `BoundariesTab.tsx`.
+  3. **Ajuste de Scroll y Safe Area en `DynamicFilterDrawer.tsx`**:
+     - Inclusión de `pb-16` en el contenedor scrolleable de categorías y `pb-[calc(1rem+env(safe-area-inset-bottom,0px))]` en la barra pegajosa de aplicación.
+  4. **Blindaje de Calidad**:
+     - TypeScript estricto con 0 errores (`npm run typecheck`).
+     - 227/227 tests unitarios en verde en Vitest (31 archivos).
+- **Motivación**:
+  Garantizar el cumplimiento estricto del *Craft Floor* de Impeccable UI, asegurando que ningún usuario en dispositivos móviles o escritorio vea elementos truncados o inaccesibles detrás del dock flotante inferior de la aplicación.
+
+### [ADR-101] · [2026-09-20 11:55] Jerarquía de Stacking de Modales y Visualización de Perfil desde Chat Darkroom
+- **Decisión**:
+  1. **Orden de Renderizado en `ModalHost.tsx`**:
+     - Situar `ProfileDetailModal` después de `DarkroomChatModal` en el JSX.
+     - Ambos componentes operan con `z-50`; al colocarse después en el DOM, el perfil se superpone limpiamente a la conversación de chat sin que este último lo tape.
+     - Al cerrar el perfil (`onClose`), `selectedProfile` se anula y la conversación en `DarkroomChatModal` reaparece intacta sin recargar ni perder el hilo ni el estado del scroll.
+  2. **Acceso Táctico Móvil en Menú `[ ⋯ ]`**:
+     - Agregar el botón *"Ver Perfil Completo"* en el menú táctico de `DarkroomChatModal.tsx`, permitiendo a usuarios en pantallas móviles (donde el panel lateral `lg:` está oculto) acceder al perfil con un solo tap adicional.
+  3. **Blindaje con Pruebas**:
+     - Nuevo test en `ModalHost.test.tsx` validando que ante la coexistencia de `activeChatProfileId` y `selectedProfile`, ambos se rendericen y `ProfileDetailModal` aparezca con un índice posterior en el DOM.
+     - 228/228 tests en Vitest pasando al 100%.
+- **Motivación**:
+  Resolver el bug donde pulsar *"Ver Perfil Completo"* o la foto del contacto no generaba ningún cambio visual debido a que el modal del perfil quedaba oculto detrás del chat activo por el orden de stacking CSS.
+
+### [ADR-102] · [2026-09-20 12:15] Gobernanza Híbrida Comunitaria y Moderación de Puntos Tácticos & Cruising (Hotspots)
+- **Decisión**:
+  1. **Adopción del Modelo de Gobernanza Híbrida (Opción 2)**:
+     - Se descentraliza la creación de puntos tácticos, saunas, darkrooms y espacios de cruising permitiendo que cualquier usuario proponga nuevos lugares desde la app (`HotspotsModal.tsx`), complementado con validación por quórum comunitario y moderación soberana desde `/admin`.
+  2. **Ciclo de Vida de 4 Estados**:
+     - `proposed` (En Validación): El punto es propuesto por un usuario y nace con 1 confirmación inicial asignada a su creador.
+     - `active` (Activo & Verificado): Al acumular 3 confirmaciones de usuarios distintos (o mediante aprobación manual en `/admin`), el punto se promueve automáticamente a verificado.
+     - `flagged` (Alerta Preventiva Comunitaria): Si un punto recibe 2 o más denuncias, se activa un estado de alerta preventiva visible en la app con acordeón de advertencias para proteger a los usuarios de redadas policiales, inseguridad o cierres.
+     - `suspended` (Suspendido / Oculto): Si acumula 4 o más denuncias o un administrador lo suspende, el punto deja de ser visible para la comunidad general.
+  3. **Calificación con Estrellas (1-5) y Tags Tácticos**:
+     - Permite evaluar la calidad, discreción y seguridad del punto. Los usuarios pueden actualizar su puntuación en cualquier momento sin duplicar el contador general, recalculando el promedio ponderado en tiempo real.
+  4. **Denuncias Tipificadas con Justificación Obligatoria**:
+     - Clasificación por causales estructuradas (`safety_hazard`, `police_raid`, `closed_permanently`, `private_property`, `fake_troll`, `other`) y exigencia de comentario explicativo de al menos 10 caracteres para evitar troleo o reportes maliciosos sin sustento.
+  5. **Panel de Gestión y Moderación en `/admin`**:
+     - Pestaña *"Puntos & Cruising"* (`HotspotsManagementTab.tsx`) con métricas de salud en tiempo real, visor de motivos y comentarios de denuncias, y botones tácticos de acción rápida (`Aprobar`, `Alerta`, `Suspender`, `Limpiar Denuncias`, `Eliminar`).
+  6. **Blindaje de Calidad y Pruebas**:
+     - Tests de integración en `LogisticsHotspots.test.tsx` cubriendo todo el ciclo de vida, prevención de votos duplicados, umbrales de alerta y herramientas de moderación.
+     - TypeScript estricto con 0 errores (`npm run typecheck`).
+     - 234/234 tests unitarios e integración pasando en verde al 100% en Vitest.
+- **Motivación**:
+  Equilibrar la expansión comunitaria y descentralizada de la red de cruising y puntos tácticos de VESSEL con mecanismos preventivos de seguridad física, discreción y mitigación de spam, asegurando que los usuarios cuenten con información fidedigna y verificada antes de desplazarse.
+
+### [ADR-103] · [2026-09-20 12:35] Bisección de la Matrix en Personas/Lugares con Single Sticky Header y Acceso a Modo Viajero
+- **Decisión**:
+  1. **Arquitectura de Navegación Dual en Matrix (`ProfileGrid.tsx`)**:
+     - Dividir la pantalla principal en dos vistas estratégicas de alto nivel (`matrixTab: "people" | "places"`) mediante un switcher segmentado de contraste elevado situado en la parte superior.
+     - Centralizar `matrixTab` y `setMatrixTab` dentro de `RadarMatrixContext` para que el estado persista y pueda ser reactivamente accedido o modificado desde cualquier punto de la aplicación.
+  2. **Patrón de Single Sticky Header Contextual**:
+     - Mantener un único contenedor sticky superior (`sticky top-[52px] sm:top-[56px]`) en `ProfileGrid.tsx` que altera condicionalmente sus filas de control según la pestaña activa:
+       - **Pestaña Personas**: Muestra la barra de búsqueda por posición/preferencias/alias, el botón del drawer de filtros avanzados con contador de activos, el carrusel de píldoras rápidas de perfiles, y la fila de ordenamiento táctico (`📍 Cerca`, `⚡ Activos`, `🔥 Afinidad`).
+       - **Pestaña Lugares**: Oculta completamente los filtros y búsquedas de personas. Despliega la barra de búsqueda especializada en espacios y fiestas, el botón destacado `[ + Proponer Lugar ]`, el carrusel horizontal de categorías (`Cruising`, `Fiestas`, `Darkrooms`, `Saunas`, `Bares`), y la fila de ordenamiento por distancia, calificación y concurrencia.
+     - El componente `PlacesGrid.tsx` acepta la prop `hideStickyHeader={true}` para desacoplar el renderizado del feed respecto al control del header, eliminando duplicación de inputs y evitando desajustes de scroll.
+  3. **Acceso Táctico a Modo Viajero (1-Tap)**:
+     - Ubicar el botón de teletransporte `[ ✈️ Viajero ]` / `[ ✈️ {Ciudad} • ON ]` en la Fila 3 de ordenamiento en ambas pestañas.
+     - Permite a usuarios frecuentes y viajeros consultar perfiles y puntos tácticos de otras ciudades antes de llegar a destino sin tener que profundizar en submenús de configuración.
+  4. **Blindaje de Calidad y Pruebas**:
+     - Creación del suite unitario `ProfileGrid.test.tsx` verificando la alternancia entre pestañas, la apertura de `TravelModeModal` y el aislamiento de controles contextuales.
+     - `npm run typecheck` con 0 errores y 239/239 tests en verde al 100% en Vitest.
+- **Motivación**:
+  Dar protagonismo central a los puntos de cruising, saunas y eventos de nightlife que antes estaban ocultos o dispersos en la experiencia, optimizando la ergonomía de búsqueda tanto para usuarios locales como para viajeros.
+
+### [ADR-104] · [2026-09-20 12:45] Saneamiento de Redundancias en Filtros Dinámicos y Protocolo de Evidencia Visual Antes/Después
+- **Decisión**:
+  1. **Depuración de Secciones Redundantes en `DynamicFilterDrawer.tsx`**:
+     - Se removieron completamente la sección 9 (*Vida Nocturna & Fiestas* / *Cartelera de Fiestas y Boliches*) y las opciones de *Puntos Tácticos & Cruising* y *Modo Viajero* que estaban ubicadas en el drawer de filtros de la Matrix de personas.
+     - Estas opciones ya disponen de máxima visibilidad e interacción en la pestaña `Lugares & Fiestas` y en la Fila 3 del header principal.
+     - Se conservó y condensó la opción técnica de *Calibrar Sensor GPS & Batería* como control de telemetría de hardware directamente asociado al slider de distancia.
+  2. **Invariante Obligatoria de Producto: Evidencia Visual (Antes y Después)**:
+     - Se incorporó formalmente en `.agents/rules/antigravity_global_rules.md` (Sección 3) y en `docs/contexto/flujo-de-trabajo.md` (DoD) el requisito mandatorio de capturar o registrar imágenes del ANTES y del DESPUÉS ante cualquier cambio sustancial en la interfaz o navegación de VESSEL.
+     - Se guardan los respaldos visuales en `docs/evidence/` y en los artifacts del brain (`walkthrough.md`).
+  3. **Blindaje de Calidad y Pruebas**:
+     - `npm run typecheck` validado con 0 errores.
+     - 239/239 tests unitarios e integración en verde (100%) en Vitest.
+- **Motivación**:
+  Eliminar la polución visual y cognitiva en los filtros avanzados de perfiles, enfocándolos exclusivamente en criterios humanos (roles, kinks, estados corporales, distancias), y dotar al proceso de desarrollo de un control de calidad visual riguroso e inquebrantable mediante capturas contrastadas de antes y después.
+
+### [ADR-105] · [2026-09-20 13:12] Auditoría Integral de VESSEL: Saneamiento Lingüístico 100% Español y Eliminación de Características Redundantes
+- **Decisión**:
+  1. **Saneamiento Lingüístico y Erradicación de Spanglish y Slashes**:
+     - Eliminación total de terminología en inglés no traducida y eliminación de barras decorativas (`//` o `/`) en catálogos y componentes (`kinkCatalog.ts`, `energyCatalog.ts`, `translations.ts`, `DateDiaryView.tsx`, `BioTab.tsx`, `ProtocolView.tsx`).
+     - Adopción estricta de Español Rioplatense natural y accesible en todos los textos de la interfaz.
+  2. **Poda Aprobada de Redundancias y Código Huérfano**:
+     - **DEL-01**: Eliminación del reproductor secundario de audio en `ProfileDetailModal.tsx`, consolidando toda la presencia sonora del usuario en la "Nota de Voz del Perfil" (`VoiceVibePlayer`).
+     - **DEL-02**: Eliminación de `PreFlightChecklistModal.tsx` por duplicación con el flujo 3-en-1 de `RendezvousSheet.tsx` (sintonía erótica, logística en 2 fases y guardián SOS).
+     - **DEL-03**: Eliminación del botón duplicado "Límites & Desconexión" en el menú táctico de `DarkroomChatModal.tsx`.
+     - **DEL-04**: Eliminación del bloque superfluo de "Deseos & Búsqueda" en `ProfileDetailModal.tsx` y `BioTab.tsx`, unificando los intereses en "Intenciones Claras" y "Vibe / Energía".
+     - **DEL-05**: Eliminación del modal no integrado `DuoLinkModal.tsx` y su botón en `ReputationTab.tsx`.
+  3. **Reestructuración Ergonómica del Menú Táctico de Chat**:
+     - Organización del menú `[ ⋯ ]` de `DarkroomChatModal.tsx` en 3 categorías semánticas limpias: `⚡ Coordinación & Logística`, `🛡️ Seguridad & Respeto` y `📓 Perfil & Bitácora`.
+  4. **Blindaje de Calidad y Pruebas**:
+     - `npm run typecheck` estricto con 0 errores.
+     - 239/239 tests en verde al 100% en Vitest (32 archivos).
+     - Evidencia visual Antes/Después archivada en `docs/evidence/AUDIT_before.png` y `docs/evidence/AUDIT_after.png`.
+- **Motivación**:
+  Cumplir la directriz del usuario de brindar coherencia lingüística absoluta en español, erradicar la sobrecarga cognitiva provocada por características duplicadas o a medio integrar, y ofrecer una experiencia táctica rápida, fluida y predecible adaptada a la zona del pulgar.
+
+### [ADR-106] · [2026-09-20 20:30] Auditoría Impeccable Fase 2: Poda de 4 Modales Huérfanos, Erradicación Integral de Spanglish y Ergonomía de Tarjetas y Perfil
+- **Decisión**:
+  1. **Poda de 4 Modales Huérfanos/Redundantes Aprobada por el Usuario**:
+     - `HotspotsModal.tsx`: Eliminado; sus funciones están consolidadas en `PlacesGrid.tsx`.
+     - `VaultAuditModal.tsx`: Eliminado; sustituido en `ReputationTab.tsx` por revocación directa 1-tap con sub-bass.
+     - `ClubFloorRadarModal.tsx`: Eliminado; sustituido por insignias de zona en `NightlifeEventsModal.tsx` y `EventDetailModal.tsx`.
+     - `StealthLockScreen.tsx`: Eliminado; unificado el camuflaje total en `CalculatorCoverScreen.tsx` mediante `SafetyContext.tsx`.
+  2. **Erradicación de Spanglish en Toda la Superficie de la App**:
+     - Filtros rápidos y categorías: `Cruising` ➔ `Al Aire Libre`, `Darkrooms` ➔ `Salas Oscuras`, `Tops` ➔ `Activos`, `Bottoms` ➔ `Pasivos`.
+     - Insignia de Respeto: `Anti-Ghost` ➔ `Sin Plantones`, `Respect Score:` ➔ `Puntaje de Respeto:`, `Modo No Ghost:` ➔ `Modo Cero Plantones:`.
+     - Pronombres en perfiles y autenticación: eliminación de `"Él / He / Him"` y `"Elle / They / Them"` ➔ `"Él"` y `"Elle"`.
+     - Fuga de enums en inglés (`Top`, `Versatile`, `Bottom`) eliminada en `DarkroomListView.tsx`, `EventDetailModal.tsx`, `AuthModal.tsx`, `CreateDiaryEntryModal.tsx` y `ProtocolView.tsx`, canalizados con `getRoleDisplayLabel(role, language)`.
+     - Erradicación de `"media vault"` en subtítulo de Mi Perfil ➔ `"fotos y bóvedas cifradas"`.
+  3. **Solución a Colisiones Visuales y Ergonomía Móvil (Thumb Zone)**:
+     - `ProfileCard.tsx`: Badge `⚡ YA` compacto en móviles (evita colisión con `< 150m` en tarjetas de ~115px); `⚡ LISTO YA` en sm+.
+     - Expansión de targets táctiles en botones de acción rápida a 44×44px (`after:-inset-1.5`).
+     - `DarkroomListView.tsx`: Función segura `formatMessageTime()` que erradica `🕒 Invalid Date`; botón `Abrir` compacto para evitar truncamiento.
+  4. **Rediseño Táctico de Mi Perfil**:
+     - Conmutador macro en 3 pestañas: `Mi Ficha`, `Fotos & Bóvedas` y `Privacidad & Respeto`, con etiquetas responsivas que no se truncan en móviles.
+     - Barra compacta Listo YA en `BioTab.tsx`: reemplazó la tarjeta invasiva de 75 líneas por una barra táctica de 1 toque que ahorra 200px y prioriza los datos vitales.
+  5. **Blindaje de Calidad y Pruebas**:
+     - `npm run typecheck` limpio con 0 errores.
+     - 239/239 tests en verde al 100% en Vitest (32 suites).
+     - Validación visual en caliente por Chrome DevTools MCP en móvil (393×852) y escritorio (1280×800).
+- **Motivación**:
+  Garantizar pureza lingüística total en español, eliminar colisiones en pantallas móviles angostas (115px por tarjeta), simplificar la edición del perfil y asegurar una ergonomía táctil óptima de 44×44px bajo los estándares Impeccable UI.
+
+### [ADR-107] · [2026-09-20 21:40] Unificación Táctica de Cards en TacticalProfileModal y Erradicación de Bloques Muertos en Mi Perfil
+- **Decisión**:
+  1. **Modal Táctico Unificado en Portal (`TacticalProfileModal.tsx`)**:
+     - Sustitución de los popovers `absolute` internos (`isCapsuleOpen` e `isTelemetryOpen`) en `ProfileCard.tsx` por un modal dedicado renderizado en React Portal (`createPortal(..., document.body)`).
+     - **Causa Raíz del Truncamiento Resuelta**: Las tarjetas de perfil cuentan con `aspect-[2/3]` y `overflow-hidden`. Los menús o popovers internos que intentaban posicionarse absolutamente quedaban inevitablemente recortados por el contenedor padre ("PROTOCOI...", "ENCUENTF..."). El Portal escapa por completo del contexto de recorte del card sin romper su estructura flex/grid.
+     - **Animación Origin-Aware**: Se captura la posición del bounding client rect del botón/píldora pulsado y se calcula su punto central (`modalOrigin: { x, y }`). El modal aplica CSS dinámico `transformOrigin: '${origin.x}px ${origin.y}px'` para expandirse con curva elástica spring desde la píldora física y contraerse suavemente al cerrarse (`isAnimatingOut`), tanto con el botón `[ X ]` como al pulsar el backdrop o presionar `Escape`.
+     - **Consolidación de Protocolo + Telemetría & Radar**: El modal unifica los Acuerdos de Salida y Sellos de Verificación con la Telemetría de Discretización Google S2 (~152m), Estado Corporal en vivo, Alcance Satelital de Radio, Puntaje Anti-Plantones, Casa Propia y Morbos Mutuos, permitiendo tomar una decisión de contacto completa y legible en menos de 2 segundos.
+  2. **Erradicación de Bloques Muertos ("Dead Space") en Mi Perfil y Seguridad**:
+     - **Causa Raíz Identificada**: Cada una de las pestañas internas (`BioTab`, `KinksTab`, `BoundariesTab`, `ReputationTab`) contenía al final un espaciador estático `<div className="h-16" />` (64px). Al apilarse verticalmente dentro de `ProtocolView` (`space-y-6 pt-3 border-t`), se acumulaban más de 108px de espacio negro vacío entre el botón de guardado y el encabezado de "Qué te morbosea (Kinks)", generando la falsa impresión de que la página había terminado o se había roto el scroll.
+     - **Saneamiento**: Se eliminaron los cuatro espaciadores redundantes en las pestañas y se ajustó el contenedor en `ProtocolView.tsx` a `space-y-4 pt-2 border-t border-white/5` con despeje inferior normalizado a `pb-28 sm:pb-32`.
+  3. **Blindaje de Calidad y Pruebas**:
+     - 0 errores en verificación de tipos de TypeScript (`npm run typecheck`).
+     - 240/240 tests pasando en verde al 100% en Vitest (32 suites), con tests unitarios específicos en `tests/unit/ui/ProfileCard.test.tsx` para apertura, visualización y cierre del modal.
+     - Pruebas visuales con Chrome DevTools en mobile (`393×852`) y desktop (`1280×800`).
+- **Motivación**:
+  Brindar una experiencia táctica de primer nivel (Impeccable UI), eliminando truncamientos de texto y desprolijidades de layout en pantallas táctiles, garantizando ergonomía de pulgar, fluidez en las animaciones físicas y ritmo visual continuo y compacto sin espacios muertos.
+
+### [ADR-108] · [2026-09-21 00:35] Cuota de Exploración de la Matriz Estilo Grindr (99 Perfiles Gratuitos + Card Promocional + 110 Mock)
+- **Decisión**:
+  1. **Cuota Gratuita Formal de 99 Perfiles (`maxFreeProfilesInMatrix: 99`)**:
+     - Integración de la constante en `FREE_TIER_LIMITS` y en `REGLAS_DE_NEGOCIO.md`. Las primeras 99 personas (índices 0 a 98) son 100% accesibles e interactivas para cualquier usuario sin importar su plan.
+  2. **Inserción de Card Promocional Táctica tras el Perfil 99 (`MatrixUnlimitedPromoCard.tsx`)**:
+     - Renderizada en la grilla justo después del perfil 99 (posición visual 100) en cuentas gratuitas (`!isUnlimited`), informando el límite de radar con diseño Dark Luxury brutalista y CTA táctil hacia `UnlimitedPaywallModal`.
+     - Ocultamiento automático para usuarios con membresía activa (`isUnlimited === true`).
+  3. **Bloqueo Interactivo de Perfiles 100+**:
+     - Perfiles con índice >= 99 en plan gratuito muestran badge `🔒 99+ MEMBRESÍA` y velo táctico; cualquier click en la tarjeta, cápsula o telemetría intercepta la navegación y abre el modal de membresía sin abrir la ficha.
+  4. **Dataset de Prueba de 110 Perfiles (`MOCK_PROFILES`) y Ajuste de Query Firestore**:
+     - Expansión de `mockProfiles.ts` a 110 perfiles completos y aumento del query limit en `matrixService.ts` a `limit(200)`.
+- **Motivación**:
+  Alinear la experiencia de exploración con las expectativas y hábitos de los usuarios de aplicaciones queer líderes (Grindr), incentivando orgánicamente la suscripción a `VESSEL UNLIMITED` de forma transparente y sin anuncios invasivos.
+
+### [ADR-109] · [2026-09-21 01:05] Sistema Táctico de Favoritos en Matriz y Encuentros (1-Tap Toggle, Filtrado Inmediato y Agendamiento Rápido)
+- **Decisión**:
+  1. **Marcado Táctico de Favoritos (★) en 1-Tap**:
+     - Botón de estrella dorada con target mínimo de 44×44px integrado en `ProfileCard`, cabecera de `TacticalProfileModal` y cabecera de `ProfileDetailModal`.
+     - Feedback auditivo y háptico inmediato mediante `audioEngine.playPulse()`.
+  2. **Persistencia Local-First Reactiva**:
+     - Almacenamiento desacoplado con la llave `vessel_favorite_profiles_v1` en `RadarMatrixContext`, garantizando sincronización instantánea entre la Matrix y Encuentros sin dependencias de red.
+  3. **Filtrado Rápido en la Matriz**:
+     - Píldora de filtro `[⭐ Favoritos]` en la barra de búsqueda y filtros de `ProfileGrid`, con contador dinámico de perfiles marcados.
+  4. **Bandeja de Acceso Rápido y Agendamiento en 1 Toque en Encuentros (`DateDiaryView`)**:
+     - Carrusel horizontal "Tus Favoritos (Acceso Rápido)" mostrando foto, codename y botón `+ Cita` que dispara `openCreateDiaryModal(profileId)` preseleccionando directamente al usuario.
+     - Botón de filtro `Solo Favoritos` en el feed de la bitácora de encuentros.
+  5. **Priorización de Favoritos en Selector de Citas (`CreateDiaryEntryModal`)**:
+     - Ordenamiento automático de favoritos al tope del selector de contactos con badge de estrella dorada, sumado a un botón toggle `[⭐ Solo Favoritos (N)]`.
+- **Motivación**:
+  Brindar a los usuarios una manera rápida y discreta de marcar perfiles de interés en el radar para no perderlos de vista y poder agendar o documentar encuentros con ellos inmediatamente desde la sección de Citas/Diario sin tener que buscarlos manualmente cada vez.
+
+### [ADR-110] · [2026-09-21 01:15] Reestructuración de la Cuadrícula de la Matriz (2 en Mobile / 3 en Desktop)
+- **Decisión**:
+  1. **Migración a Cuadrícula Táctica Bimodal (`grid-cols-2 sm:grid-cols-3`)**:
+     - Sustitución de `grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5` en `ProfileGrid.tsx` y `ProfileGridSkeleton.tsx`.
+     - En mobile (< 640px), se fuerza exactamente 2 columnas sin importar la resolución del smartphone. El ancho de tarjeta sube de ~118px a ~180px (+52%).
+     - En desktop (>= 640px dentro de `max-w-4xl`), se fuerza exactamente 3 columnas. El ancho de tarjeta sube a ~285px (+70%).
+  2. **Erradicación del Truncamiento Mutilado del Rol (`roleDisplay`)**:
+     - Con 180px en mobile, el cluster de 3 botones táctiles (★ Favorito, 💬 Chat, 🍆 Pulso) ocupa 92px y deja más de 72px libres para el rol, permitiendo que "Activo", "Pasivo", "Versátil" y "Dominante" se lean 100% completos sin truncarse a una sola letra (`A...`, `P...`, `V...`).
+  3. **Ampliación de la Cápsula Táctica de Protocolos**:
+     - Se expande el límite de ancho de la etiqueta de protocolo en `ProfileCard.tsx` a `max-w-[130px] sm:max-w-[170px]`, impidiendo que acuerdos de conexión ("⏱ PUNTUAL | 🛡 BIO", "🫂 MIMOS", "🌙 DORMIR") sufran recortes.
+  4. **Preservación de la Ergonomía y Touch Targets (Impeccable UI)**:
+     - El mayor ancho por tarjeta elimina el riesgo de toques erróneos ("fat-finger error") entre tarjetas adyacentes manteniendo targets accesibles de 44×44px vía pseudo-elementos (`after:-inset-1.5`).
+- **Motivación**:
+  La cuadrícula previa de 3 columnas en smartphones estándar (390px-430px) provocaba un colapso severo de información, mutilando palabras fundamentales y degradando la calidad visual del feed. La nueva distribución garantiza legibilidad instantánea, estética Dark Luxury editorial y navegación fluida con una sola mano.
+
+### [ADR-111] · [2026-09-21 12:15] Auditoría TIER 1, Coherencia Lingüística 100% Español y Desacople de Navegación de Pulsos
+- **Decisión**:
+  1. **Desacoplamiento del Tab de Pulsos en Navegación Principal (`BrutalistNav.tsx`)**:
+     - Incorporación del 5° tab dedicado a "Pulsos" (`pulses`) con icono de actividad de pulso cardíaco en la barra inferior (distribución equilibrada de 5 columnas: Matriz, Pulsos, Chat, Citas/Diario, Perfil).
+     - Separación de insignias de actividad: el tab de Pulsos muestra su contador de pulsos no leídos en violeta eléctrico (`bg-electricViolet`), mientras que el tab de Chat muestra exclusivamente mensajes de chat no leídos en rojo neón (`bg-bloodNeon`).
+  2. **Simplificación de Pestañas en la Bandeja de Mensajes (`DarkroomListView.tsx`)**:
+     - Reducción de los sub-filtros a solo 2 categorías esenciales: "Activos" y "Con Casa". Los pulsos ya no se mezclan con los chats, erradicando la confusión y sobrecarga cognitiva.
+  3. **Purificación Lingüística 100% Español**:
+     - Sustitución de todo remanente de inglés y spanglish en el modo en español: "VER FICHA" en vez de "DOSSIER", "Cero Plantones" en vez de "Anti-Ghost", "Anti-Triangulación (~152m)" en vez de "Google S2 · Nivel 15", "SESIÓN ACTIVA" en vez de "ACTIVE OPERATIVE", "1 TOQUE REAL" en vez de "1-CLICK REAL", "MEMBRESÍA TOTAL" en vez de "FULL MEMBERSHIP", "Modo Sigilo Quirúrgico" en vez de "Stealth Pro", "Modo Viajero" en vez de "Travel Mode".
+  4. **Erradicación de Diálogos Nativos Invasivos (`window.confirm`)**:
+     - Sustitución del diálogo nativo del navegador para vaciar chats por un modal accesible brutalista integrado con confirmación visual de dos toques.
+  5. **Deduplicación de Tipos de Dominio (`vessel.ts`)**:
+     - Limpieza de `HivStatusType` y `YoSoyType`, eliminando variantes redundantes en minúsculas y duplicados en inglés sin uso en producción.
+  6. **Resiliencia y Accesibilidad en Verificación de Identidad y Prueba de Vida Facial**:
+     - Inclusión de botón para volver a las opciones de verificación, reintento de cámara tras denegación accidental de permisos y etiquetas `aria-label` en la transmisión de video.
+- **Motivación**:
+  Garantizar una experiencia de usuario completamente inmersiva, clara y respetuosa con el idioma local, reduciendo pasos innecesarios para llegar a los pulsos y protegiendo la coherencia de diseño brutalista sin alertas feas del navegador ni textos técnicos en inglés.
+
+### [ADR-112] · [2026-09-21 12:35] Auditoría TIER 2: Diferenciadores Competitivos, Purificación Lingüística y Simplificación de Seguridad
+- **Decisión**:
+  1. **Ocultamiento de Hashes Crudos y Humanización Geoespacial (`GeoBatteryModal.tsx`)**:
+     - Eliminación de la cuadrícula técnica de 8 celdas vecinas con tokens alfanuméricos de Google S2 (`s2Token`).
+     - Sustitución por indicadores humanos directos: "Área protegida (~152m × 152m)", "Protección Anti-Triangulación", "Modo Inteligente" y "Sensor Físico Conectado".
+  2. **Eliminación de Controles Duplicados y Archivos Redundantes**:
+     - Removido el toggle de "Listo YA" en la pestaña de Biografía (`BioTab.tsx`), consolidando toda la activación en la cabecera táctica del radar (`StatusToggle.tsx`).
+     - Eliminado el archivo re-export `SecureMeetingSheet.tsx` para evitar dispersión de código y concentrar la suite de encuentros en `RendezvousSheet.tsx`.
+  3. **Repensado Semántico de Estados Corporales**:
+     - El estado `open` pasa a etiquetarse como "DISPONIBLE" en español (anteriormente "ACTIVO"), eliminando la confusión generalizada con el rol sexual ("Activo/Top"). La cabecera se actualiza a "ESTADO:".
+  4. **Rediseño Conceptual de Encuentros y Seguridad**:
+     - "Pre-Flight" evoluciona a "Sintonía Previa de Encuentro" / "Sintonía Mutua", con acuerdos sanitarios claros ("PrEP e I=I", "420 / Cannabis 🌿").
+     - "Rendezvous PIN" evoluciona a "PIN de Encuentro Seguro (<50m)".
+     - En el chat modal, el menú contextual `+` incorpora el botón de acción directa **"PIN Seguro (1-Tap)"** para despachar el PIN efímero sin obligar a abrir la hoja modal completa.
+  5. **Purificación Lingüística de Módulos Críticos**:
+     - `SafetyBeaconModal.tsx`: "GUARDIÁN SILENCIOSO ACTIVO", "COMPARTIR" en vez de "SHARE", "Se activa en:" en vez de "Expira en:".
+     - `ReputationTab.tsx`: "% RESPETO" en vez de "% KARMA", "HERRAMIENTAS LISTAS" en vez de "SUITE ACTIVA", "Audio de Presentación (5s)" en vez de "Nota de Voz (Audio 5s)".
+     - `LocationPrivacySection.tsx`: "Modo Ahorro de Energía" en vez de "Modo Eco-Saver".
+- **Motivación**:
+  Eliminar la sobrecarga cognitiva en funciones de seguridad y geolocalización, evitar ambigüedades sexuales en el estado de presencia, agilizar la coordinación de encuentros físicos en 1 tap y ofrecer una interfaz 100% en español rioplatense sin jerga técnica que distancie a los usuarios.
+
+### [ADR-113] · [2026-09-21 13:00] Auditoría TIER 3: Profundidad de Experiencia, Modo Dúo, Calculadora Funcional y Purificación Lingüística
+- **Decisión**:
+  1. **Directiva Estricta de Disponibilidad Residencial ("TENGO LUGAR" / "SIN LUGAR")**:
+     - En `HostCardModal.tsx` y `HostCardBadge.tsx`, fijar la nomenclatura exacta solicitada por el usuario: `"TENGO LUGAR"` (verde esmeralda brutalista) y `"SIN LUGAR"` (carbón sutil). Climas de síntesis acústica en español rioplatense/latino ("Tecno Oscuro", "Industrial Berlín", "Downtempo Sensual", "Ambiente Calmo").
+  2. **Poda de Controles Residuales y Huérfanos (DEL-1, DEL-2, DEL-3)**:
+     - DEL-1: Removido el toggle de desarrollo de plan en `UserAlbumManager.tsx`. Sustituido por badge informativo no-clicable y trigger a `openUnlimitedModal()`.
+     - DEL-2: Eliminado el archivo stub `AppDisguiseModal.tsx` que solo retornaba `null`.
+     - DEL-3: Erradicado el diálogo `window.confirm` en `AppSettingsSection.tsx`, sustituido por confirmación inline brutalista de dos toques ("Cancelar" / "Sí, Purgar").
+  3. **Rediseño Bimodal de Pantalla de Camuflaje (`CalculatorCoverScreen.tsx` - RED-1)**:
+     - Si `appDisguise.mode === "calculator"`, renderiza una calculadora aritmética real y completamente interactiva con display LCD, operaciones (+, −, ×, ÷, %, ±, C), respuesta háptica y código secreto `0000=` o triple tap para retornar a la app.
+     - Si `appDisguise.mode !== "calculator"`, renderiza un bloc de notas corporativo 100% en español (*Archivo, Edición, Formato, Ver, Ayuda*, `NOTAS_DEL_SISTEMA.TXT // MEMORIA LOCAL`).
+  4. **Activación y Conexión de Modo Dúo (`DuoLinkModal.tsx` - RED-2)**:
+     - Creado `DuoLinkModal.tsx` montado en `ModalHost.tsx` y conectado a `BioTab.tsx` para vincular parejas o relaciones no monógamas éticas (Arquetipo #8: Ariel y Lucas), permitiendo seleccionar vínculos de favoritos o búsqueda con título personalizado.
+  5. **Purificación Lingüística 100% Español**:
+     - `PlacesGrid.tsx`: Botón de presencia en puntos de encuentro a `"Llegué"` / `"Presente ✓"`, `"⚡ SALA OSCURA ACTIVA"`, `"Pista de Baile"`.
+     - `CreateDiaryEntryModal.tsx`: Presets a `"Atmósfera Íntima"` y avatares artísticos localizados.
+- **Motivación**:
+  Cumplir la directiva estricta de no mostrar términos en inglés cuando la app está en español, eliminar controles residuales de depuración que exponían cambios de estado de testing en la UI real, dotar al camuflaje de discreción de una calculadora auténtica y operable ante miradas indiscretas, y habilitar el Modo Dúo que existía en el modelo de datos pero carecía de interfaz para el usuario final.
+
+### [ADR-114] · [2026-09-21 13:15] Auditoría TIER 4: Contexto y Retención a Largo Plazo, Humanización de Desconexión, Expansión de Modo Viajero y Purificación Lingüística
+- **Decisión**:
+  1. **Refactor y Supresión de Archivo Mal Nombrado (DEL-1)**:
+     - Eliminar `AppDisguiseModal.tsx` y migrar su lógica limpia a `AppDisguiseSection.tsx`, actualizando su import en `ReputationTab.tsx`.
+  2. **Humanización de Desconexión Gradual y Soft-Block (DEL-2)**:
+     - En `BoundaryManagerModal.tsx` y `BoundariesTab.tsx`, erradicar la exposición de variables crudas en inglés (`POLITE_ARCHIVE`, `readonly`, `attenuated`, `muted`, `disconnected`).
+     - Sustituir por etiquetas humanas en español: *"Cierre Respetuoso"*, *"Solo Lectura"*, *"Silenciado"*, *"Atenuado"*, *"Desconectado"*.
+     - Reemplazar `+5 Karma` por `+5 Respeto` y *"Ghost-signal sutil"* por *"Señal atenuada sutil"*.
+  3. **Expansión Federal del Modo Viajero (`TravelModeModal.tsx`)**:
+     - Incorporar polos tácticos y turísticos de Argentina: **Córdoba**, **Rosario**, **Mendoza** y **Mar del Plata**, sumados a los destinos internacionales.
+     - Traducir pie de página a `"Modo Viajero"`.
+  4. **Purificación Lingüística en Salud Sexual (`DiaryHealthSection.tsx` & `DoxyPepTrackerCard.tsx`)**:
+     - Reemplazar `"Nuevo Tracker"` por `"Nuevo Recordatorio"`.
+     - Reemplazar alias `"CONTACTO_NUEVO"` por `"Contacto del Encuentro"`.
+     - Eliminar slashes en `DoxyPepTrackerCard.tsx`.
+  5. **Doble Consentimiento en Testimonios (`PendingTestimonialsManager.tsx`)**:
+     - Sustituir `"Ocultar (+1 ID)"` por `"Guardar Privado"` y suprimir slashes en subtítulos.
+  6. **Localización de Audio de Presentación (`VoiceVibePlayer.tsx` & `VoiceVibeRecorderModal.tsx`)**:
+     - Sustituir `"Voice Vibe"` por `"Audio de Presentación"` y `"Escuchar Preview"` por `"Escuchar Grabación"`.
+  7. **PIN de Coacción y Pantalla Señuelo (`DuressPinSettingsModal.tsx`)**:
+     - Clarificar que ante una coacción se activa la pantalla de camuflaje activa (Calculadora o Notas) emitiendo la alerta silenciosa.
+- **Motivación**:
+  Eliminar la jerga técnica y anglicismos residuales en las áreas de salud, consentimiento y desconexión, permitir que los usuarios argentinos exploren comunidades del interior antes de viajar, y asegurar coherencia lingüística absoluta en español.
+
+### [ADR-115] · [2026-09-21 23:45] Estandarización de Terminología a "Zumbido" (ES) / "Nudge" (EN) e Integración de Respuesta Háptica Física Tipo Zumbido
+- **Decisión**:
+  1. **Estandarización de Nomenclatura**:
+     - En Español: Reemplazo sistemático del término "Pulso" por **"Zumbido"** en todos los componentes de interfaz, modales tácticos, selector segmentado de Darkroom, tarjetas de matriz, cruces de pista y diccionarios de internacionalización (`translations.ts`).
+     - En Inglés: Estandarización formal bajo el término **"Nudge"** (y plural **"Nudges"**) para toda la terminología en inglés ("Send Nudge", "Nudge sent", "Nudges Received", "Nudges Sent", "Mutual Nudge", "Re-encounter Nudge", "Priority Nudge").
+  2. **Motor Sensorial y Háptica de Zumbido (`SubBassAudioEngine.ts`)**:
+     - Incorporación del método `triggerNudgeHaptic()` que emite una vibración física repetitiva en dispositivos móviles compatibles (`navigator.vibrate([70, 45, 70, 45, 120])`), transmitiendo una sensación inequívoca de "bzzz-bzzz-bzzzzz".
+     - Creación de `playNudgeReceived()` que unifica la vibración física con una modulación analógica sub-bass (~68Hz a 45Hz con envolvente analógica).
+  3. **Recepción Reactiva en RadarMatrixContext**:
+     - Integración en `subscribeToIncomingPulses` para que ante la llegada de nuevos zumbidos no leídos en tiempo real desde Firestore, se invoque inmediatamente `audioEngine.playNudgeReceived()`.
+  4. **Herramienta de Prueba en Ajustes**:
+     - En `AppSettingsSection.tsx`, el botón de prueba sonora ejecuta directamente `playNudgeReceived()`, permitiendo al usuario probar y sentir el zumbido físico y el tono sub-bass.
+- **Motivación**:
+  Cumplir la solicitud expresa del usuario de renombrar "Pulso" a "Zumbido" en español y "Nudge" en inglés, adaptando el feedback sensorial para que el usuario que recibe un zumbido sea advertido físicamente mediante una vibración táctil característica además del sonido analógico de la app.
+
+### [ADR-116] · [2026-09-22 02:00] Auditoría Integral, Rediseño Modular y Purificación Idiomática de la Agenda de Encuentros (DateDiaryView)
+- **Decisión**:
+  1. **Desacoplamiento Modular en 4 Solapas Táctiles**:
+     - Fragmentación del archivo monolítico de casi 1.900 líneas en 4 solapas modulares: `DiaryScheduleSection.tsx` (Citas), `DiaryLoversVaultSection.tsx` (Agenda Íntima), `DiaryHealthSection.tsx` (Salud & Cuidados) y `DiaryInsights.tsx` (Métricas).
+  2. **Nomenclatura Aprobada por el Usuario**:
+     - La solapa 2 y el archivo privado de amantes se bautizan oficialmente como **"Agenda Íntima"** (y en subtítulos/descripciones como **"Agenda de Amantes"**), erradicando definitivamente "Bóveda Íntima" y "The Black Vault".
+     - El botón de reencuentro se bautiza oficialmente como **"Quiero la Revancha"**, erradicando "El Botón del Morbo" o "Revancha Táctica".
+  3. **Simplificación del Wizard de Creación**:
+     - En `CreateDiaryEntryModal.tsx`, las citas agendadas a futuro (`isUpcoming === true`) se completan en 2 pasos directos sin requerir evaluación prematura de química ni satisfacción.
+  4. **Componente Atómico `DiaryEntryCard.tsx`**:
+     - Creación de tarjetas independientes con targets táctiles ≥44px, fechas relativas amigables ("Hoy", "Mañana"), notas confidenciales cifradas y botón directo "Evaluar Cita".
+  5. **Erradicación Sistemática de Spanglish**:
+     - 100% de coherencia en español para todos los modales vinculados (`LoverDossierModal`, `DoxyPepTrackerCard`, `ItsExposureModal`, `VesselWrappedModal`).
+- **Motivación**:
+  Eliminar el scroll excesivo previo (más de 1.000px antes de ver una cita), resolver la incoherencia lógica del formulario de creación y garantizar una experiencia en español impecable, pulcra y sin anglicismos fuera de lugar.
+
+### [ADR-117] · [2026-09-22 02:20] Micro-Evaluación en 1 Toque, Respaldo Cifrado Soberano (PBKDF2 + AES-GCM), Calendario RFC 5545 y Sincronización Automática
+- **Decisión**:
+  1. **Micro-Evaluación en 1 Toque para Citas Pasadas (`DiaryEntryCard.tsx`)**:
+     - Implementar en las tarjetas de citas pasadas no evaluadas un selector inmediato de 3 botones táctiles (`🔥 Explosiva`, `👍 Buena`, `👎 Sin onda`), eliminando la fricción de abrir un modal complejo tras una cita de madrugada.
+  2. **Respaldo Cifrado Soberano Local (`src/lib/security/diaryBackupCrypto.ts` & `DiaryLoversVaultSection.tsx`)**:
+     - Utilizar exclusivamente Web Crypto API nativa con PBKDF2 (100.000 iteraciones SHA-256) y AES-GCM de 256 bits para exportar e importar el historial completo de citas, fichas y notas íntimas en archivos `.json` protegidos con contraseña personal, 100% independiente de la nube.
+  3. **Generador y Exportador Nativo de Calendario (`src/lib/calendar/icsExport.ts`)**:
+     - Generación de archivos `.ics` estándar RFC 5545 con camuflaje de privacidad ("Reunión Privada") que omite nombres sensibles, compatible con Apple Calendar, Google Calendar y Outlook.
+  4. **Sincronización Automática Chat ➔ Agenda (`RendezvousSheet.tsx` & `DiaryContext.tsx`)**:
+     - Al confirmar y blindar un Ticket de Encuentro en el chat, la cita se registra de forma 100% automática en la Agenda (`isUpcoming = true`) sin duplicar pasos ni formularios.
+- **Motivación**:
+  Cumplir con las prioridades de producto solicitadas y aprobadas por el usuario en la auditoría de la Agenda de Encuentros, reduciendo drásticamente la fricción operativa y blindando la soberanía y privacidad de los datos personales.
+### [ADR-118] · [2026-09-30 02:45] Blindaje de Seguridad y Preparación para Despliegue con Usuarios Reales
+- **Decisión**:
+  1. **Mitigación CWE-287 en Firestore Rules (`firestore.rules`)**:
+     - Exigir `request.auth.token.email_verified == true` en `isAdmin()` para impedir ataques de suplantación de identidad mediante registro libre de cuentas sin verificar.
+  2. **Endurecimiento de Storage Rules (`storage.rules`)**:
+     - Eliminar el permiso global permisivo `allow read, write: if request.auth != null`, estableciendo Default Deny, propiedad obligatoria `isOwner(userId)` y cuota de 15MB.
+  3. **Remoción de Credenciales Hardcodeadas en Bundle Cliente (`src/lib/admin/adminService.ts`)**:
+     - Eliminar el fallback inseguro `"VESSEL-ROOT-2026"` y limitar el acceso administrativo exclusivamente a identidades autenticadas de la lista blanca.
+  4. **Eliminación de Antipatrón de Purgado en Cliente (`src/lib/firebase/matrixService.ts`)**:
+     - Reemplazar mutaciones `deleteDoc` dentro de listeners en tiempo real por filtrado puro en memoria.
+  5. **Corrección de Cifrado Soberano del Diario (`src/lib/security/encryptedPhotoService.ts`)**:
+     - Estandarizar la derivación de claves criptográficas a `local-sovereign-user` con soporte retroactivo para imágenes previamente cifradas con alias anteriores.
+- **Motivación**:
+  Garantizar un estándar de seguridad de nivel bancario y cero brechas OWASP antes de exponer la aplicación en producción a usuarios reales.

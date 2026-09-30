@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { getActiveKinks, KINKS_UPDATED_EVENT } from "@/lib/kinks/kinkAdminService";
+import { getActiveKinks, KINKS_UPDATED_EVENT, getKinkLocalizedLabel } from "@/lib/kinks/kinkAdminService";
 import { KinkItemDefinition } from "@/data/energyCatalog";
 import { Flame } from "lucide-react";
 import { TacticalBadge, SectionHeroHeader } from "@/components/ui";
 
 export const KinksTab: React.FC = () => {
-  const { myKinkMatrix, setKinkPreference } = useVessel();
+  const { myKinkMatrix, setKinkPreference, t } = useVessel();
   const [activeKinksList, setActiveKinksList] = useState<KinkItemDefinition[]>(() => getActiveKinks());
 
   useEffect(() => {
@@ -29,8 +29,8 @@ export const KinksTab: React.FC = () => {
     <div className="space-y-4 animate-fade-in">
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-4 shadow-card-elevation backdrop-blur-md relative overflow-hidden">
         <SectionHeroHeader
-          title="QUÉ TE MORBOSEA 😈 // MORBOS"
-          tag={`${activeKinksCount} / ${activeKinksList.length} ACTIVOS`}
+          title="QUÉ TE MORBOSEA 😈"
+          tag={`${activeKinksCount} DE ${activeKinksList.length} ACTIVOS`}
           subtitle="Tus gustos no son públicos. Solo se revelan ante coincidencia mutua de morbo."
           variant="blood"
           icon={<Flame className="w-4 h-4 fill-current text-bloodNeon-glow" />}
@@ -54,7 +54,7 @@ export const KinksTab: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="text-xs font-mono font-bold text-white tracking-wide">
-                        {kink.name}
+                        {getKinkLocalizedLabel(kink.id, t, kink.name)}
                       </h4>
                     </div>
                     <p className="text-[10px] text-neutral-400 font-mono truncate">
@@ -63,21 +63,21 @@ export const KinksTab: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Selector de 3 Estados Impeccable */}
-                <div className="flex items-center gap-1 self-end sm:self-center bg-white/5 p-1 rounded-xl border border-white/10 flex-shrink-0">
+                {/* Selector de 3 Estados Impeccable (44x44px WCAG 2.5.5) */}
+                <div className="grid grid-cols-3 sm:flex items-center gap-1 w-full sm:w-auto self-stretch sm:self-center bg-white/5 p-1 rounded-xl border border-white/10 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => {
                       audioEngine.playPulse();
                       setKinkPreference(kink.id, "love");
                     }}
-                    className={`px-3 py-1.5 min-h-[36px] rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.96] ${
+                    className={`px-3 py-2 min-h-[44px] rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-[0.96] ${
                       currentPref === "love"
-                        ? "bg-bloodNeon text-white font-black shadow-blood-glow scale-105"
+                        ? "bg-emerald-500 text-black font-black shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-[1.02]"
                         : "text-neutral-400 hover:text-white hover:bg-white/5"
                     }`}
                   >
-                    🔥 Me encanta
+                    {t.tacticalSuite?.kinkMatrix?.love || "🔥 Me encanta"}
                   </button>
 
                   <button
@@ -86,13 +86,13 @@ export const KinksTab: React.FC = () => {
                       audioEngine.playPulse();
                       setKinkPreference(kink.id, "curious");
                     }}
-                    className={`px-3 py-1.5 min-h-[36px] rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.96] ${
+                    className={`px-3 py-2 min-h-[44px] rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-[0.96] ${
                       currentPref === "curious"
-                        ? "bg-electricViolet text-white font-black shadow-violet-soft scale-105"
+                        ? "bg-amber-400 text-black font-black shadow-[0_0_15px_rgba(251,191,36,0.4)] scale-[1.02]"
                         : "text-neutral-400 hover:text-white hover:bg-white/5"
                     }`}
                   >
-                    👀 Curioso
+                    {t.tacticalSuite?.kinkMatrix?.curious || "👀 Curioso"}
                   </button>
 
                   <button
@@ -101,13 +101,13 @@ export const KinksTab: React.FC = () => {
                       audioEngine.playPulse();
                       setKinkPreference(kink.id, "pass");
                     }}
-                    className={`px-3 py-1.5 min-h-[36px] rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.96] ${
+                    className={`px-3 py-2 min-h-[44px] rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.96] ${
                       currentPref === "pass"
-                        ? "bg-neutral-800 text-neutral-300 font-bold border border-white/10"
+                        ? "bg-bloodNeon text-white font-black shadow-blood-glow scale-[1.02]"
                         : "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
                     }`}
                   >
-                    ✕ Paso
+                    {t.tacticalSuite?.kinkMatrix?.pass || "✕ Paso"}
                   </button>
                 </div>
               </div>

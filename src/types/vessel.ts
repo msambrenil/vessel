@@ -20,6 +20,7 @@ export type MobilityType =
   | "Me muevo / voy"
   | "Tengo lugar y me muevo"
   | "En boliche / darkroom / cruising"
+  | "En boliche / sala oscura / aire libre"
   | "Tengo sitio"
   | "Me muevo"
   | "Tengo sitio/me desplazo"
@@ -30,12 +31,7 @@ export type HivStatusType =
   | "Negativo en PrEP"
   | "Positivo Indetectable (I=I)"
   | "VIH Positivo"
-  | "Lo charlamos por privado"
-  | "VIH negativo"
-  | "Negativo bajo PrEP"
-  | "Positivo Indetectable"
-  | "VIH positivo"
-  | "Lo guardo para mí";
+  | "Lo charlamos por privado";
 
 export type YoSoyType =
   | "Musculoso / Gym"
@@ -50,13 +46,6 @@ export type YoSoyType =
   | "Pup / Fetish"
   | "Discreto / Perfil bajo"
   | "Morbo / Carnal"
-  | "Musculado / Gym"
-  | "Nutria / Otter"
-  | "Atlético / Jock"
-  | "Joven / Twink"
-  | "Dominante / Master"
-  | "Receptivo / Sub"
-  | "Discreto / Casual"
   | "Darkroom / Carnal";
 
 export type IntensityLevel = 1 | 2 | 3 | 4; // 1: Sensual, 2: Carnal, 3: Raw, 4: Extreme
@@ -249,6 +238,10 @@ export interface VesselProfile {
   nightlifeCheckin?: EventCheckin; // Check-in activo en evento o boliche
   userPlan?: UserSubscriptionTier; // Plan de suscripción ('free' | 'unlimited' | 'pro')
   isUnlimited?: boolean; // Flag de membresía activa VESSEL UNLIMITED
+  lastActiveAt?: number; // Timestamp UNIX (ms) de última apertura de la app / ping GPS
+  presenceExpiresAt?: number; // Timestamp UNIX (ms) en que el perfil expira de la Matrix (30m normal o 4h en fiesta)
+  isPartyAnchored?: boolean; // Indica si el usuario confirmó "Llegué" en una fiesta (GPS en hibernación y posición anclada)
+  partyVenueName?: string; // Nombre del club o fiesta donde está anclado
 }
 
 export interface FilterState {
@@ -266,6 +259,7 @@ export interface FilterState {
   onlyVerified?: boolean;
   onlyMutualKinks?: boolean;
   genderInterests?: GenderInterest[];
+  onlyFavorites?: boolean;
 }
 
 export interface RendezvousPin {
@@ -328,6 +322,8 @@ export interface ChatMessage {
     durationSeconds: number;
     waveform: number[]; // Alturas normalizadas [20, 80, 45, 100, 60...]
   };
+  isEncounterTicket?: boolean;
+  encounterTicketData?: EncounterTicket;
 }
 
 // ==========================================
@@ -369,10 +365,28 @@ export interface DiarySatisfaction {
   wouldRepeat: DiaryWouldRepeat;
 }
 
+export interface EncounterTicket {
+  id: string;
+  senderId: string;
+  partnerId: string;
+  scheduledDate: string; // Formato YYYY-MM-DD
+  scheduledTime: string; // Formato HH:mm
+  locationCategory: DiaryLocationCategory;
+  locationName: string;
+  exitProtocol?: ExitProtocol;
+  notes?: string;
+  status: "proposed" | "confirmed" | "declined" | "completed" | "cancelled";
+  h2ConfirmedByUser?: boolean;
+  h2ConfirmedByPartner?: boolean;
+  createdAt: string;
+}
+
 export interface DiaryPersonProfile {
   profileId?: string; // Vinculado a un VesselProfile existente
   codename: string;
   avatarUrl?: string;
+  sharedPhotos?: string[]; // Bóveda visual de fotos archivadas de esta persona (desde el chat o dossier)
+  badges?: string[]; // Medallas íntimas otorgadas (ej: "Química Nuclear", "Top Tier")
   age?: number;
   role?: RoleType;
   yoSoy?: YoSoyType;
@@ -391,6 +405,8 @@ export interface DiaryEntry {
   satisfaction?: DiarySatisfaction; // Opcional si es futura o aún no evaluada
   privateNotes: string; // Bitácora personal privada confidencial
   tags: string[]; // Ej: ["Química Brutal", "Puntual", "Protección Acordada", "Darkroom"]
+  attachedPhotos?: string[]; // Fotos archivadas específicas de este encuentro
+  ticketId?: string; // Vinculación a un Ticket de Encuentro si provino de chat
   healthRoutineReminder?: {
     enabled: boolean;
     dueDate: string; // Ej: "2026-11-23" para control a 90 días
@@ -399,6 +415,36 @@ export interface DiaryEntry {
   };
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ConquestZone {
+  zoneName: string; // Ej: "Palermo Soho", "Recoleta", "San Telmo"
+  encounterCount: number;
+  percentage: number;
+  lastDate: string;
+}
+
+export interface VesselWrappedMetrics {
+  period: "month" | "year";
+  periodLabel: string;
+  totalEncounters: number;
+  uniquePartnersCount: number;
+  topRankPercentile: number; // Ej: 5 (Top 5% de la ciudad)
+  averageChemistry: number;
+  repeatRatePercentage: number;
+  mvpPartner?: {
+    codename: string;
+    avatarUrl?: string;
+    encountersCount: number;
+    chemistry: number;
+  };
+  wildestNight?: {
+    date: string;
+    encountersCount: number;
+    description: string;
+  };
+  dominantRole: string; // Ej: "Versátil Dominante", "Explorador Carnal"
+  topConquestZones: ConquestZone[];
 }
 
 export interface DiaryStats {
@@ -550,6 +596,13 @@ export interface ProfileDossier {
   rankingTier?: ProfileRankingTier; // Tier táctico (S/A/B/C/D/F)
   redFlags: string[]; // Banderas rojas / alertas preventivas
   greenFlags: string[]; // Banderas verdes / puntos positivos
+  sharedPhotos?: string[]; // Bóveda fotográfica secreta (fotos del chat o añadidas al dossier)
+  chemistryLevel?: number; // 1 a 5 o 1 a 10
+  badges?: string[]; // Medallas de desempeño ("Química Nuclear", "Dios Oral", etc.)
+  preferredRoles?: string[]; // Roles reales practicados ("Activo", "Pasivo", "Versátil", "Side")
+  favoriteKinks?: string[]; // Fetiches acordados exitosos
+  lastEncounterDate?: string; // Última fecha de encuentro YYYY-MM-DD
+  encounterCount?: number; // Cantidad total de encuentros
   updatedAt: string; // ISO timestamp
 }
 
@@ -562,9 +615,19 @@ export type ActiveNavView = "grid" | "pulses" | "chat" | "diary" | "account";
 export interface ReceivedPulse {
   id: string;
   fromProfileId: string;
+  fromCodename?: string; // Fallback de identidad cuando el pulso viene de Firestore
   timestamp: string; // ISO string
   isRead: boolean;
   returned?: boolean; // True si el usuario ya le devolvió el pulso
+  contextTag?: "radar" | "nightlife_reencounter" | "qr_beacon";
+  note?: string;
+}
+
+export interface SentPulseMeta {
+  profileId: string;
+  count: number;
+  lastSentAt: string; // ISO string
+  syncStatus?: "synced" | "queued_offline";
 }
 
 // ==========================================
@@ -740,6 +803,33 @@ export interface DuoLink {
 
 export type HotspotCategory = "sauna" | "darkroom_club" | "cruising_area" | "queer_bar";
 
+export type HotspotStatus = "proposed" | "active" | "flagged" | "suspended";
+
+export type HotspotReportReason =
+  | "safety_hazard"
+  | "police_raid"
+  | "closed_permanently"
+  | "private_property"
+  | "fake_troll"
+  | "other";
+
+export interface HotspotRating {
+  userId: string;
+  userAlias?: string;
+  score: number; // 1 a 5 estrellas
+  tags?: string[];
+  timestamp: string; // ISO
+}
+
+export interface HotspotReport {
+  id: string;
+  userId: string;
+  userAlias?: string;
+  reason: HotspotReportReason;
+  comment: string; // Justificación obligatoria
+  timestamp: string; // ISO
+}
+
 export interface TacticalHotspot {
   id: string;
   name: string;
@@ -753,6 +843,19 @@ export interface TacticalHotspot {
   geohash: string;
   description: string;
   isCheckedIn: boolean;
+  status: HotspotStatus;
+  confirmationsCount: number;
+  confirmedByUserIds: string[];
+  rating: number; // promedio 1.0 - 5.0
+  ratingsCount: number;
+  ratings?: HotspotRating[];
+  reportsCount: number;
+  reports?: HotspotReport[];
+  creatorUserId?: string;
+  creatorAlias?: string;
+  discretionLevel?: "high" | "medium" | "low";
+  bestHours?: string;
+  createdAt: string;
 }
 
 // ==========================================

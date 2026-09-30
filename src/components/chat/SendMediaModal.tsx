@@ -35,21 +35,21 @@ const SAMPLE_PHOTOS = [
     id: "sample-1",
     url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1000&auto=format&fit=crop&q=80",
     badge: "ESTUDIO",
-    label: "Retrato Estudio // Contrast",
+    label: "Retrato Estudio - Contraste",
     mediaType: "photo" as const,
   },
   {
     id: "sample-2",
     url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&auto=format&fit=crop&q=80",
     badge: "SILUETA",
-    label: "Torso & Sombra // Silhouette",
+    label: "Torso y Sombra - Silueta",
     mediaType: "photo" as const,
   },
   {
     id: "sample-3",
     url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1000&auto=format&fit=crop&q=80",
     badge: "RAW",
-    label: "Perfil Brutalista // Amber",
+    label: "Perfil Brutalista - Ámbar",
     mediaType: "photo" as const,
   },
 ];
@@ -60,9 +60,9 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
   targetProfileId,
   targetCodename,
 }) => {
-  const { t, userAlbums, sendMediaChatMessage, registerAlbumSharedWith, chatMessages } = useVessel();
+  const { t, language, userAlbums, sendMediaChatMessage, registerAlbumSharedWith, chatMessages } = useVessel();
 
-  const [activeTab, setActiveTab] = useState<"device" | "albums">("device");
+  const [activeTab, setActiveTab] = useState<"albums" | "device">("albums");
   const [selectedFileUrl, setSelectedFileUrl] = useState<string>("");
   const [selectedMediaType, setSelectedMediaType] = useState<"photo" | "video">("photo");
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
@@ -244,6 +244,7 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
   };
 
   const resetForm = () => {
+    setActiveTab("albums");
     setSelectedFileUrl("");
     setSelectedSampleId(null);
     setCaption("");
@@ -283,43 +284,31 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                   {t.chat.sendMediaTitle}
                 </h3>
                 <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-electricViolet-glow border border-electricViolet/30 font-bold">
-                  TRANSMIT
+                  {language === "en" ? "TRANSMIT" : "TRANSMISIÓN"}
                 </span>
               </div>
               <p className="text-[10px] font-mono text-neutral-400 flex items-center gap-1.5 mt-0.5">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                DESTINATARIO: <strong className="text-electricViolet-glow font-bold">{targetCodename}</strong>
+                {language === "en" ? "RECIPIENT:" : "DESTINATARIO:"} <strong className="text-electricViolet-glow font-bold">{targetCodename}</strong>
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-            aria-label="Cerrar modal"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            aria-label={language === "en" ? "Close modal" : "Cerrar modal"}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* CONMUTADOR SEGMENTADO DE PESTAÑAS */}
+        {/* CONMUTADOR SEGMENTADO DE PESTAÑAS (MIS ÁLBUMES PRIMERO PARA FLUJO RÁPIDO) */}
         <div className="p-2.5 border-b border-white/10 bg-obsidian-deep/60">
           <div className="bg-obsidian-card p-1 rounded-2xl border border-white/5 flex gap-1.5">
             <button
-              onClick={() => {
-                setActiveTab("device");
-                audioEngine.playPulse();
-              }}
-              className={`flex-1 py-2.5 px-3 text-xs font-mono font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                activeTab === "device"
-                  ? "bg-white/10 text-electricViolet-glow border border-electricViolet/40 shadow-violet-soft"
-                  : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
-              }`}
-            >
-              <UploadCloud className="w-4 h-4" />
-              {t.chat.tabDevice}
-            </button>
-            <button
+              type="button"
+              data-testid="send-media-tab-albums"
               onClick={() => {
                 setActiveTab("albums");
                 audioEngine.playPulse();
@@ -332,6 +321,22 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
             >
               <FolderLock className="w-4 h-4" />
               {t.chat.tabMyAlbums} ({userAlbums.length})
+            </button>
+            <button
+              type="button"
+              data-testid="send-media-tab-device"
+              onClick={() => {
+                setActiveTab("device");
+                audioEngine.playPulse();
+              }}
+              className={`flex-1 py-2.5 px-3 text-xs font-mono font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                activeTab === "device"
+                  ? "bg-white/10 text-electricViolet-glow border border-electricViolet/40 shadow-violet-soft"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              <UploadCloud className="w-4 h-4" />
+              {t.chat.tabDevice}
             </button>
           </div>
         </div>
@@ -435,7 +440,7 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                               {photo.badge}
                             </span>
                             <span className="text-[9px] font-mono font-bold text-white line-clamp-2 leading-tight">
-                              {photo.label.split("//")[0].trim()}
+                              {photo.label.split(" - ")[0].trim()}
                             </span>
                           </div>
                         </button>

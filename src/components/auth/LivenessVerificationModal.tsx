@@ -130,7 +130,7 @@ export const LivenessVerificationModal: React.FC = () => {
             <span className="text-xl">🛡️</span>
             <div>
               <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-electricViolet-glow">
-                Liveness 3D // Anti-Catfish
+                Prueba de Vida Facial 3D
               </h2>
               <p className="text-[11px] text-neutral-400">
                 Prueba biométrica de presencia real y cámara en vivo
@@ -140,6 +140,7 @@ export const LivenessVerificationModal: React.FC = () => {
           <button
             type="button"
             onClick={closeLivenessModal}
+            aria-label="Cerrar prueba de vida facial"
             className="w-8 h-8 rounded-lg bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100 flex items-center justify-center text-sm font-mono transition-all cursor-pointer"
           >
             ✕
@@ -155,6 +156,7 @@ export const LivenessVerificationModal: React.FC = () => {
               autoPlay
               playsInline
               muted
+              aria-label="Transmisión en directo de la cámara frontal para prueba de vida facial"
               className={`absolute inset-0 w-full h-full object-cover -scale-x-100 transition-opacity duration-300 ${
                 hasCameraAccess ? "opacity-90" : "opacity-0"
               }`}
@@ -197,9 +199,19 @@ export const LivenessVerificationModal: React.FC = () => {
 
           {/* Aviso de error de cámara si lo hubiere */}
           {cameraError && (
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono flex items-center gap-2 max-w-xs text-left">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{cameraError}</span>
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono flex items-center justify-between gap-2 max-w-xs text-left w-full">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{cameraError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={startCamera}
+                className="p-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 transition-colors flex-shrink-0"
+                title="Reintentar cámara"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
 

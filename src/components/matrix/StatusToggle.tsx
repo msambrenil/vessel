@@ -115,7 +115,7 @@ export const StatusToggle: React.FC = () => {
   }[] = [
     {
       id: "open",
-      label: language === "es" ? "ACTIVO" : "ACTIVE",
+      label: language === "es" ? "DISPONIBLE" : "AVAILABLE",
       sublabel: t.bodyState?.open || (language === "es" ? "Visible en radar" : "Visible on radar"),
       icon: Activity,
       dotColor: "bg-electricViolet shadow-violet-glow animate-pulse",
@@ -147,36 +147,27 @@ export const StatusToggle: React.FC = () => {
   return (
     <section
       role="region"
-      aria-label="Consola de Transmisión de Señal Propia en el Radar"
+      aria-label={language === "es" ? "Tu estado y disponibilidad en el radar" : "Your status and radar visibility"}
       className="w-full px-2 sm:px-3 pt-1.5 pb-1 bg-obsidian-deep select-none"
     >
-      <div className="max-w-4xl mx-auto rounded-xl bg-obsidian-surface/60 border border-electricViolet/20 p-1.5 sm:p-2 shadow-xs space-y-1">
-        {/* Micro-Cabecera Táctica Compacta */}
-        <div className="flex items-center justify-between gap-1.5 text-[9.5px] font-mono">
-          <div className="flex items-center gap-1 font-bold uppercase text-neutral-300">
-            <Radio className="w-3 h-3 text-electricViolet animate-pulse flex-shrink-0" />
-            <span className="text-white font-black tracking-wider">
-              {language === "es" ? "MI ESTADO" : "MY STATUS"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 text-[8.5px] font-mono uppercase bg-black/40 border border-white/10 px-1.5 py-0.2 rounded-full flex-shrink-0">
-            <span className={`w-1.5 h-1.5 rounded-full ${activeStateInfo.dotColor}`} />
-            <span className="text-neutral-400 font-medium">
-              {language === "es" ? "EMITIENDO:" : "BROADCAST:"}
-            </span>
-            <span className="text-electricViolet-glow font-black truncate">
-              {activeStateInfo.label}
-            </span>
-          </div>
+      <div className="max-w-4xl mx-auto rounded-xl bg-obsidian-surface/60 border border-electricViolet/20 p-1 sm:p-1.5 shadow-xs">
+        {/* Micro-Cabecera Accesible (sr-only para ahorrar +26px verticales sin perder semántica ARIA) */}
+        <div className="sr-only">
+          <span>{language === "es" ? "MI ESTADO" : "MY STATUS"}</span>
+          <span>{language === "es" ? "ESTADO:" : "STATUS:"}</span>
+          <span>{activeStateInfo.label}</span>
         </div>
 
-        {/* Fila de Controles */}
+        {/* Fila Única de Controles Tácticos */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Segmented Control Compacto de 1 Fila */}
           <div
             role="radiogroup"
-            aria-label="Estado de disponibilidad de mi perfil"
+            aria-label={
+              language === "es"
+                ? "Estado de disponibilidad de mi perfil"
+                : "My profile availability status"
+            }
             className="flex-1 bg-obsidian-deep/90 p-0.5 rounded-lg border border-white/10 flex items-center gap-0.5 shadow-inner min-w-0"
           >
             {states.map((st) => {
@@ -192,18 +183,22 @@ export const StatusToggle: React.FC = () => {
                     audioEngine.playStateSwitch(st.id);
                     setMyBodyState(st.id);
                   }}
-                  title={`${st.label} (${st.sublabel}) — Tocar para cambiar cómo te ven`}
-                  className={`flex-1 min-h-[30px] sm:min-h-[32px] py-1 px-1 sm:px-1.5 rounded-md flex items-center justify-center gap-1 transition-all text-[9.5px] sm:text-[10px] font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${st.focusColor} active:scale-95 ${
+                  title={
+                    language === "es"
+                      ? `${st.label} (${st.sublabel}) — Tocar para cambiar cómo te ven`
+                      : `${st.label} (${st.sublabel}) — Tap to change your visibility`
+                  }
+                  className={`flex-1 min-h-[36px] sm:min-h-[38px] py-1 px-1.5 sm:px-2 rounded-md flex items-center justify-center gap-1 transition-all text-[10px] sm:text-[10.5px] font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${st.focusColor} active:scale-95 ${
                     isActive
                       ? `${st.activeBg} border shadow-xs font-black`
                       : "text-neutral-400 hover:text-white hover:bg-white/5 border border-transparent font-medium"
                   }`}
                 >
-                  <Icon className={`w-3 h-3 flex-shrink-0 ${isActive ? "text-current" : "text-neutral-400"}`} />
+                  <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? "text-current" : "text-neutral-400"}`} />
                   <span className="truncate tracking-wider uppercase font-bold">
                     {st.label}
                   </span>
-                  <span className="hidden md:inline text-[8px] opacity-70 font-sans normal-case truncate">
+                  <span className="hidden md:inline text-[8.5px] opacity-70 font-sans normal-case truncate">
                     ({st.sublabel})
                   </span>
                   <span className="sr-only">{st.sublabel}</span>
@@ -227,15 +222,21 @@ export const StatusToggle: React.FC = () => {
             aria-pressed={myOnTheClock.isActive}
             aria-label={
               myOnTheClock.isActive
-                ? `Modo Listo YA activo. Restan ${countdownLabel}. Tocar para desactivar.`
-                : "Activar modo Listo YA (prioridad en la matriz durante 60 minutos)"
+                ? language === "es"
+                  ? `Modo Listo YA activo. Restan ${countdownLabel}. Tocar para desactivar.`
+                  : `Ready NOW mode active. ${countdownLabel} left. Tap to deactivate.`
+                : language === "es"
+                  ? "Activar modo Listo YA (prioridad en la matriz durante 60 minutos)"
+                  : "Activate Ready NOW mode (matrix priority for 60 minutes)"
             }
             title={
               myOnTheClock.isActive
-                ? `LISTO YA ACTIVO · ${countdownLabel} restantes // Tocar para apagar`
-                : "Activar Listo YA // Destaca tu perfil en la matriz durante 1 hora"
+                ? `${language === "es" ? "LISTO YA ACTIVO" : "READY NOW ACTIVE"} · ${countdownLabel}`
+                : language === "es"
+                  ? "Activar Listo YA - Destaca tu perfil en la matriz durante 1 hora"
+                  : "Activate Ready NOW - Highlight your profile in the matrix for 1 hour"
             }
-            className={`group relative overflow-hidden min-h-[30px] sm:min-h-[32px] px-2.5 sm:px-3 py-1 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 font-mono text-[9.5px] sm:text-[10px] font-black tracking-wider uppercase transition-all cursor-pointer active:scale-95 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff007f] ${
+            className={`group relative overflow-hidden min-h-[36px] sm:min-h-[38px] px-2.5 sm:px-3 py-1 rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 font-mono text-[10px] sm:text-[10.5px] font-black tracking-wider uppercase transition-all cursor-pointer active:scale-95 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff007f] ${
               myOnTheClock.isActive
                 ? "bg-gradient-to-r from-obsidian-deep via-[#1a0011] to-obsidian-deep text-white shadow-[0_0_15px_rgba(255,0,127,0.35)]"
                 : "bg-white/5 border border-fuchsia-500/30 text-neutral-200 hover:text-white hover:bg-fuchsia-950/20 hover:border-[#ff007f] hover:shadow-[0_0_12px_rgba(255,0,127,0.2)]"
@@ -260,7 +261,7 @@ export const StatusToggle: React.FC = () => {
             )}
 
             <Zap
-              className={`w-3 h-3 flex-shrink-0 relative z-20 ${
+              className={`w-3.5 h-3.5 flex-shrink-0 relative z-20 ${
                 myOnTheClock.isActive
                   ? "fill-[#ff007f] text-[#ff2a85] animate-pulse drop-shadow-[0_0_6px_rgba(255,0,127,0.9)]"
                   : "text-[#ff007f] group-hover:scale-110 transition-transform"
@@ -268,8 +269,8 @@ export const StatusToggle: React.FC = () => {
             />
             <span className="relative z-20 font-black tracking-wider whitespace-nowrap">
               {myOnTheClock.isActive
-                ? `LISTO YA · ${countdownLabel}`
-                : t.bodyState?.boostBtn || "LISTO YA"}
+                ? `${language === "es" ? "LISTO YA" : "READY NOW"} · ${countdownLabel}`
+                : t.bodyState?.boostBtn || (language === "es" ? "LISTO YA" : "READY NOW")}
             </span>
           </button>
         </div>

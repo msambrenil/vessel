@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   setDoc,
+  deleteDoc,
   getDocs,
   onSnapshot,
   query,
@@ -18,8 +19,52 @@ import { MOCK_PROFILES } from "@/data/mockProfiles";
 const PROFILES_COLLECTION = "vessel_profiles";
 
 /**
+ * Detecta si un documento de perfil corresponde a un bot de prueba, cuenta dev (@vessel.dev),
+ * sesión sin configurar (VESSEL_USER), foto de stock de Unsplash o coordenada fantasma (Berlín 52.52 / Null Island).
+ */
+export const isGhostOrMockProfile = (p: Partial<VesselProfile> | undefined | null): boolean => {
+  if (!p || !p.id || !p.codename) return true;
+  const id = p.id.trim();
+  const code = p.codename.trim().toUpperCase();
+
+  if (
+    id.startsWith("vessel-") ||
+    id.startsWith("mock_") ||
+    id === "local-user" ||
+    id === "unauthenticated" ||
+    id === "me"
+  ) {
+    return true;
+  }
+
+  // Perfil por defecto sin configurar o presets de prueba rápida
+  if (
+    code === "VESSEL_USER" ||
+    code === "VESSEL_TOP" ||
+    code === "VESSEL_VERS" ||
+    code === "VESSEL_BOT"
+  ) {
+    return true;
+  }
+
+  // Cualquier perfil con foto de stock de Unsplash pertenece a los mocks/demos
+  if (typeof p.avatarUrl === "string" && p.avatarUrl.includes("images.unsplash.com")) {
+    return true;
+  }
+
+  // Coordenadas fantasmas (Null Island 0,0 o el antiguo fallback de Berlín 52.52, 13.405 que daba >12121 km)
+  const lat = p.coordinates?.lat;
+  const lng = p.coordinates?.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") return true;
+  if (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01) return true;
+  if (Math.abs(lat - 52.52) < 0.05 && Math.abs(lng - 13.405) < 0.05) return true;
+
+  return false;
+};
+
+/**
  * Escucha en tiempo real todos los perfiles de la matriz
- * En modo real: Solo retorna perfiles reales de usuarios y no siembra datos mock.
+ * En modo real: Solo retorna perfiles reales de usuarios, filtra y purga cualquier documento fantasma/mock.
  * En modo prueba: Retorna perfiles de prueba como fallback.
  */
 export const subscribeToMatrixProfiles = (
@@ -27,23 +72,26 @@ export const subscribeToMatrixProfiles = (
   mode: "test" | "real" = "test"
 ): Unsubscribe => {
   const profilesRef = collection(db, PROFILES_COLLECTION);
-  const q = query(profilesRef, limit(50));
+  const q = query(profilesRef, limit(200));
 
   return onSnapshot(
     q,
     (snapshot) => {
       if (!snapshot.empty) {
-        let validProfiles: VesselProfile[] = snapshot.docs
-          .map((d) => d.data() as VesselProfile)
-          .filter((p) => p && p.id && p.codename && p.coordinates && typeof p.coordinates.lat === "number");
+        const allDocs = snapshot.docs.map((d) => ({
+          docId: d.id,
+          data: d.data() as VesselProfile,
+        }));
 
         if (mode === "real") {
-          // Filtrar perfiles simulados (ej: vessel-01..08 o mock_) para garantizar entorno 100% limpio
-          validProfiles = validProfiles.filter(
-            (p) => !p.id.startsWith("vessel-") && !p.id.startsWith("mock_")
-          );
-          onUpdate(validProfiles);
+          const realProfiles = allDocs
+            .map((item) => item.data)
+            .filter((p) => !isGhostOrMockProfile(p));
+          onUpdate(realProfiles);
         } else {
+          const validProfiles = allDocs
+            .map((item) => item.data)
+            .filter((p) => p && p.id && p.codename && p.coordinates && typeof p.coordinates.lat === "number");
           onUpdate(validProfiles.length > 0 ? validProfiles : MOCK_PROFILES);
         }
       } else {

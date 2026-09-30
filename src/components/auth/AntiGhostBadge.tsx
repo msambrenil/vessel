@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useVessel } from "@/context/VesselContext";
 import {
   Ghost,
   ShieldCheck,
@@ -31,6 +32,16 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
 }) => {
   const [showModal, setShowModal] = useState(false);
 
+  let language = "es";
+  try {
+    const vessel = useVessel();
+    if (vessel?.language) language = vessel.language;
+  } catch {
+    // Fallback if rendered outside VesselProvider in isolated tests
+  }
+
+  const isEs = language === "es";
+
   const iconSizes = {
     xs: "w-3 h-3",
     sm: "w-3.5 h-3.5",
@@ -52,7 +63,11 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
         className={`inline-flex items-center gap-1 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 rounded-full px-2 py-0.5 font-bold shadow-sm transition-all select-none ${
           interactive ? "cursor-pointer hover:bg-emerald-500/25 hover:border-emerald-400" : ""
         } ${className}`}
-        title={`Insignia Anti-Fantasma // ${respectScore}% Respect Score`}
+        title={
+          isEs
+            ? `Insignia Sin Plantones - ${respectScore}% Nivel de Respeto`
+            : `Anti-Ghost Badge - ${respectScore}% Respect Score`
+        }
       >
         <div className="relative flex items-center justify-center">
           <Ghost className={`${iconSizes[size]} text-emerald-400 stroke-[2.3]`} />
@@ -61,7 +76,7 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
 
         {showLabel && (
           <span className="text-[10px] uppercase font-mono tracking-tight font-extrabold text-white">
-            Anti-Ghost • {respectScore}%
+            {isEs ? "Sin Plantones" : "Anti-Ghost"} • {respectScore}%
           </span>
         )}
       </div>
@@ -87,16 +102,16 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
-                    Insignia Anti-Fantasma
+                    {isEs ? "Insignia Sin Plantones" : "Anti-Ghost Badge"}
                   </h3>
                   <p className="text-[10px] text-emerald-400 font-mono">
-                    Cultura del Respeto & Cero Ghosteo
+                    {isEs ? "Cultura del Respeto & Cero Plantones" : "Respect Culture & Zero Ghosting"}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all"
+                className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -106,27 +121,27 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
             <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-neutral-400 font-medium">
-                  Respect Score:
+                  {isEs ? "Puntaje de Respeto:" : "Respect Score:"}
                 </span>
                 <span className="text-xs font-extrabold text-emerald-400 font-mono bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                  {respectScore}% EXCELENCIA
+                  {respectScore}% {isEs ? "EXCELENCIA" : "EXCELLENCE"}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-neutral-400 font-medium">
-                  Respuesta Rápida:
+                  {isEs ? "Respuesta Rápida:" : "Fast Response:"}
                 </span>
                 <span className="text-xs font-bold text-white flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>~{responseRateMinutes} min promedio</span>
+                  <span>~{responseRateMinutes} {isEs ? "min promedio" : "min avg"}</span>
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-neutral-400 font-medium">
-                  Modo No Ghost:
+                  {isEs ? "Modo Cero Plantones:" : "Anti-Ghost Mode:"}
                 </span>
                 <span className="text-xs font-mono text-emerald-300 font-bold">
-                  ACTIVADO POR DEFECTO
+                  {isEs ? "ACTIVADO POR DEFECTO" : "ENABLED BY DEFAULT"}
                 </span>
               </div>
             </div>
@@ -135,17 +150,33 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-white">
                 <HeartHandshake className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>Pacto de Transparencia & Salidas Amables</span>
+                <span>{isEs ? "Pacto de Transparencia & Salidas Amables" : "Transparency Pact & Polite Exits"}</span>
               </div>
               <p className="text-[10px] text-neutral-300 leading-relaxed font-sans">
-                Este perfil utiliza el <strong>Protocolo Anti-Ghosteo</strong> de VESSEL. Si no hay química o desea cerrar una conversación, envía una salida amable y sexy en lugar de desaparecer, ganando puntos de visibilidad y respeto mutuo.
+                {isEs ? (
+                  <>
+                    Este perfil utiliza el <strong>Protocolo Cero Plantones</strong> de VESSEL. Si no hay química o desea cerrar una conversación, envía una salida amable en lugar de desaparecer, ganando puntos de visibilidad y respeto mutuo.
+                  </>
+                ) : (
+                  <>
+                    This profile uses VESSEL's <strong>Anti-Ghost Protocol</strong>. If there is no chemistry or they wish to close a conversation, they send a polite exit message instead of disappearing, earning visibility and mutual respect.
+                  </>
+                )}
               </p>
             </div>
 
             <div className="bg-electricViolet/10 border border-electricViolet/30 rounded-2xl p-3 flex items-center gap-2.5">
               <Zap className="w-4 h-4 text-electricViolet-glow flex-shrink-0" />
               <div className="text-[10px] text-neutral-200">
-                <strong className="text-electricViolet-glow">Visibilidad Aumentada:</strong> Los usuarios con insignia Anti-Fantasma tienen prioridad de transmisión en el radar y la matriz de cuerpos.
+                {isEs ? (
+                  <>
+                    <strong className="text-electricViolet-glow">Visibilidad Aumentada:</strong> Los usuarios con insignia Sin Plantones tienen prioridad de transmisión en el radar y la matriz de cuerpos.
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-electricViolet-glow">Increased Visibility:</strong> Users with the Anti-Ghost badge have transmission priority on the radar and matrix.
+                  </>
+                )}
               </div>
             </div>
 
@@ -153,9 +184,9 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+              className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
             >
-              Comprendido
+              {isEs ? "Comprendido" : "Understood"}
             </button>
           </div>
         </div>

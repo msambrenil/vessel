@@ -108,27 +108,29 @@ async function ensureUserDocInFirestore(user: User, additionalData?: { codename?
       const initialPayload = {
         profile: {
           codename,
-          role: additionalData?.role || "Versatile",
-          age: 26,
+          role: (additionalData?.role || "") as any,
+          age: 0,
           showAge: true,
           twitterHandle: "",
-          yoSoy: "Atlético / Gym",
-          mobility: "Tengo depto / lugar",
-          hivStatus: "Negativo en PrEP",
-          genderIdentity: "Cis Man",
-          pronouns: "He / Him",
-          desires: ["Encuentros reales", "Buena vibra"],
-          intentions: ["Right Now"],
-          boundaries: ["Consentimiento explícito"],
-          energyVibes: ["Chill", "Direct"],
+          yoSoy: "" as any,
+          mobility: "" as any,
+          hivStatus: "" as any,
+          genderIdentity: "",
+          pronouns: "",
+          genderInterests: [],
+          desires: [],
+          intentions: [],
+          boundaries: [],
+          energyVibes: [],
           noGhostMode: true,
           respectScore: 100,
           isAntiGhost: true,
-          heightCm: 178,
-          weightKg: 75,
-          avatarUrl: user.photoURL || "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
+          heightCm: 0,
+          weightKg: 0,
+          avatarUrl: user.photoURL || "",
           isStylizedAvatar: false,
           isFogMode: false,
+          isProfileCustomized: false,
           verification: {
             isVerified: true,
             method: user.providerData.some((p) => p.providerId === "google.com") ? "oauth_google" : "id_document",
@@ -141,6 +143,7 @@ async function ensureUserDocInFirestore(user: User, additionalData?: { codename?
           totalEncountersVerified: 0,
           authProvider: user.providerData.some((p) => p.providerId === "google.com") ? "google" : "direct",
         },
+        kinkMatrix: {},
         bodyState: "open",
         userPlan: "free",
         createdAt: serverTimestamp(),
@@ -154,6 +157,45 @@ async function ensureUserDocInFirestore(user: User, additionalData?: { codename?
         authProvider: user.providerData[0]?.providerId || "google.com",
       });
       return true;
+    } else {
+      // Si el documento ya existe pero tenía los valores de muestra pre-cargados y el usuario aún no personalizó su ficha, los limpiamos
+      const data = snap.data();
+      const prof = data?.profile;
+      const isLegacyTemplate =
+        prof &&
+        !prof.isProfileCustomized &&
+        ((prof.age === 26 && prof.heightCm === 178 && prof.weightKg === 75) ||
+          (prof.age === 28 && prof.heightCm === 180 && prof.weightKg === 78) ||
+          (prof.age === 25 && prof.heightCm === 175 && prof.weightKg === 70));
+
+      if (isLegacyTemplate) {
+        const cleanedProfile = {
+          ...prof,
+          age: 0,
+          yoSoy: "",
+          mobility: "",
+          hivStatus: "",
+          genderIdentity: "",
+          pronouns: "",
+          genderInterests: [],
+          desires: [],
+          intentions: [],
+          boundaries: [],
+          energyVibes: [],
+          heightCm: 0,
+          weightKg: 0,
+          avatarUrl: prof.avatarUrl?.includes("images.unsplash.com") ? (user.photoURL || "") : (prof.avatarUrl || ""),
+        };
+        await setDoc(
+          userRef,
+          sanitizeForFirestore({
+            profile: cleanedProfile,
+            kinkMatrix: {},
+            updatedAt: serverTimestamp(),
+          }),
+          { merge: true }
+        );
+      }
     }
     return false;
   } catch (err) {
@@ -161,6 +203,8 @@ async function ensureUserDocInFirestore(user: User, additionalData?: { codename?
     return false;
   }
 }
+
+export { checkCodenameAvailability, claimCodename };
 
 /**
  * Inicia sesión o registra al usuario mediante Google 1-Click

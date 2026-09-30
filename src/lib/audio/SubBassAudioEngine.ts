@@ -63,6 +63,11 @@ class SubBassAudioEngine {
     this.triggerHaptic(12);
   }
 
+  // Vibración táctil física tipo Zumbido (Nudge): ráfaga intermitente (bzzz-bzzz-bzzzzz)
+  public triggerNudgeHaptic() {
+    this.triggerHaptic([70, 45, 70, 45, 120]);
+  }
+
   // Doble pulso de alerta táctil (20ms vibración, 35ms pausa, 20ms vibración)
   public triggerWarningHaptic() {
     this.triggerHaptic([20, 35, 20]);
@@ -76,6 +81,50 @@ class SubBassAudioEngine {
   // Patrón de emergencia táctica / Alerta SOS de alta prioridad
   public triggerEmergencyBurst() {
     this.triggerHaptic([80, 40, 80, 40, 120]);
+  }
+
+  /**
+   * Patrón háptico identitario de VESSEL ("The Vessel Swell / Crescendo"):
+   * 6 pulsos ascendentes (15ms -> 180ms) mientras las pausas se acortan (90ms -> 30ms),
+   * simulando un contenedor cargándose de presión física hasta el desborde.
+   */
+  public triggerVesselCrescendoHaptic() {
+    this.triggerHaptic([15, 90, 25, 75, 40, 60, 65, 45, 100, 30, 180]);
+  }
+
+  /**
+   * Alerta sensorial completa Crescendo VESSEL:
+   * Ejecuta la vibración creciente acompañada de una rampa sub-grave analógica (45Hz -> 88Hz).
+   */
+  public playVesselCrescendoAlert() {
+    this.triggerVesselCrescendoHaptic();
+
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const filter = this.ctx.createBiquadFilter();
+
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(280, now);
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(45, now);
+    osc.frequency.exponentialRampToValueAtTime(88, now + 0.85);
+
+    gain.gain.setValueAtTime(0.02, now);
+    gain.gain.linearRampToValueAtTime(0.42, now + 0.75);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.96);
   }
 
   // Sutil sonido mecánico de switch para cambios de estado corporal
@@ -222,6 +271,42 @@ class SubBassAudioEngine {
   // Pulso general de interfaz o mensaje
   public playPulse() {
     this.playRadarPing();
+  }
+
+  /**
+   * Notificación sensorial de Zumbido (Nudge) entrante.
+   * Emite una vibración física tipo zumbido intermitente y una modulación acústica sub-bass analógica (~68Hz -> 45Hz).
+   */
+  public playNudgeReceived() {
+    this.triggerNudgeHaptic();
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const subOsc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(75, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.32);
+
+    subOsc.type = "sine";
+    subOsc.frequency.setValueAtTime(60, now);
+    subOsc.frequency.exponentialRampToValueAtTime(35, now + 0.35);
+
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+    osc.connect(gain);
+    subOsc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    subOsc.start(now);
+    osc.stop(now + 0.38);
+    subOsc.stop(now + 0.38);
   }
 
   // Pulso profundo de sub-bajo a medida (ej: 45Hz)

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { NightlifeEvent } from "@/types/vessel";
 import { EventDetailModal } from "./EventDetailModal";
-import { ClubFloorRadarModal } from "./ClubFloorRadarModal";
 import { MissedConnectionsModal } from "./MissedConnectionsModal";
 import { OpticalBeaconModal } from "./OpticalBeaconModal";
 import { AfterHoursModal } from "./AfterHoursModal";
@@ -44,7 +43,6 @@ export const NightlifeEventsModal: React.FC = () => {
   } = useVessel();
 
   const [selectedEvent, setSelectedEvent] = useState<NightlifeEvent | null>(null);
-  const [isFloorRadarOpen, setIsFloorRadarOpen] = useState(false);
   const [filterDarkroom, setFilterDarkroom] = useState(false);
 
   const filteredEvents = nightlifeEvents.filter((ev) => {
@@ -101,13 +99,9 @@ export const NightlifeEventsModal: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsFloorRadarOpen(true)}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-mono text-xs font-bold rounded-lg transition-all shadow-md active:scale-95 cursor-pointer"
-              >
-                Abrir Radar de Pista ➔
-              </button>
+              <span className="px-2.5 py-1 bg-mintNeon/20 border border-mintNeon/40 text-mintNeon font-mono text-xs font-bold rounded-lg shadow-sm">
+                En el lugar ✓
+              </span>
             </div>
           )}
 
@@ -275,18 +269,8 @@ export const NightlifeEventsModal: React.FC = () => {
         <EventDetailModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
-          onOpenFloorRadar={() => {
-            setSelectedEvent(null);
-            setIsFloorRadarOpen(true);
-          }}
         />
       )}
-
-      {/* Modal de Radar de Pista en el Local */}
-      <ClubFloorRadarModal
-        isOpen={isFloorRadarOpen}
-        onClose={() => setIsFloorRadarOpen(false)}
-      />
 
       {/* Modales Complementarios */}
       <MissedConnectionsModal />

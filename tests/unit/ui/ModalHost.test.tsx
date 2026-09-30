@@ -70,10 +70,8 @@ describe("ModalHost — Orquestador Desacoplado de Modales (Fase 4)", () => {
       isSafetyBeaconModalOpen: false,
       isDuressPinSettingsOpen: false,
       isLivenessModalOpen: false,
-      isSessionRoomModalOpen: false,
       isDuoModalOpen: false,
       isUnlimitedModalOpen: false,
-      isVaultAuditModalOpen: false,
       isTravelModalOpen: false,
       isHarmReductionModalOpen: false,
       isItsExposureModalOpen: false,
@@ -135,5 +133,25 @@ describe("ModalHost — Orquestador Desacoplado de Modales (Fase 4)", () => {
 
     const modal = await screen.findByTestId("calculator-cover-screen");
     expect(modal).toBeInTheDocument();
+  });
+
+  it("debe renderizar ProfileDetailModal encima (después en DOM) de DarkroomChatModal cuando ambos están activos para permitir ver el perfil desde el chat", async () => {
+    mockVesselState.activeChatProfileId = "user-99";
+    mockVesselState.selectedProfile = { id: "user-99", name: "RULOS" };
+
+    const { container } = render(<ModalHost />);
+
+    const chatModal = await screen.findByTestId("darkroom-chat-modal");
+    const profileModal = await screen.findByTestId("profile-detail-modal");
+
+    expect(chatModal).toBeInTheDocument();
+    expect(profileModal).toBeInTheDocument();
+
+    // Validar orden en el DOM: ProfileDetailModal debe aparecer después de DarkroomChatModal
+    const elements = Array.from(container.querySelectorAll("[data-testid]"));
+    const chatIndex = elements.indexOf(chatModal);
+    const profileIndex = elements.indexOf(profileModal);
+
+    expect(profileIndex).toBeGreaterThan(chatIndex);
   });
 });

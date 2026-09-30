@@ -21,6 +21,9 @@ import {
   encodeGeohash,
   discretizeDistance,
   calculateHaversineDistance,
+  computePresenceExpiry,
+  isProfileActiveInMatrix,
+  sortAndEnrichProfilesByProximity,
 } from "@/lib/geo/GeospatialEngine";
 import {
   subscribeToMatrixProfiles,
@@ -33,6 +36,7 @@ import {
   returnPulseInCloud,
   clearPulseInCloud,
 } from "@/lib/firebase/pulseService";
+import { saveFullUserDataToCloud, FullUserDataPayload } from "@/lib/firebase/userDataService";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
 import { checkGenderInterestMatch } from "@/data/genderCatalog";
 import { MOCK_PROFILES } from "@/data/mockProfiles";
@@ -121,11 +125,13 @@ export interface RadarMatrixContextType {
   selectedProfile: VesselProfile | null;
   setSelectedProfile: (profile: VesselProfile | null) => void;
   transmissions: Record<string, number>;
+  sentPulsesMeta: Record<string, { lastSentAt: string; syncStatus?: "synced" | "queued_offline" }>;
   transmitSignal: (profileId: string) => void;
   receivedPulses: ReceivedPulse[];
   returnPulse: (profileId: string) => void;
   markPulsesAsRead: () => void;
   clearPulse: (pulseId: string) => void;
+  clearAllReadPulses: () => void;
   unreadPulsesCount: number;
   isFilterDrawerOpen: boolean;
   setIsFilterDrawerOpen: (open: boolean) => void;
@@ -146,6 +152,11 @@ export interface RadarMatrixContextType {
   setMySubstanceAtmosphere: (atmosphere: SubstanceAtmosphere) => void;
   myFullProfile: VesselProfile;
   hasMutualPulse: (profileId: string) => boolean;
+  matrixTab: "people" | "places";
+  setMatrixTab: (tab: "people" | "places") => void;
+  favoriteProfileIds: string[];
+  toggleFavoriteProfile: (profileId: string) => void;
+  isFavoriteProfile: (profileId: string) => boolean;
 }
 
 const RadarMatrixContext = createContext<RadarMatrixContextType | undefined>(undefined);
@@ -195,6 +206,9 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     myExitProtocol,
     myDuoLink,
     nightlifeEvents,
+    activeCheckin,
+    isGpsHibernating,
+    lastGpsPingAt,
   } = useLogistics();
   const { language, userAlbums, appMode } = useSettings();
   const { stealthMode } = useSafety();
@@ -219,9 +233,9 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       };
     });
 
-    // Sanitizar localStorage automáticamente si contenía perfiles huérfanos o fantasmas
+    // Sanitizar localStorage automáticamente si contenía perfiles huérfanos o si se agregaron nuevos perfiles
     const hasGhostProfiles = localCustom.some((c) => !MOCK_PROFILES.some((m) => m.id === c.id));
-    if (hasGhostProfiles) {
+    if (hasGhostProfiles || localCustom.length < MOCK_PROFILES.length) {
       saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, validProfiles, "test");
     }
 
@@ -250,15 +264,54 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveNavView>("grid");
   const [selectedProfile, setSelectedProfile] = useState<VesselProfile | null>(null);
+  const [matrixTab, setMatrixTabState] = useState<"people" | "places">("people");
+
+  const [favoriteProfileIds, setFavoriteProfileIds] = useState<string[]>(() => {
+    return loadFromStorage<string[]>(STORAGE_KEYS.FAVORITES, [], getActiveAppMode());
+  });
+
+  const toggleFavoriteProfile = useCallback(
+    (profileId: string) => {
+      if (!profileId || profileId === "me") return;
+      setFavoriteProfileIds((prev) => {
+        const exists = prev.includes(profileId);
+        const next = exists ? prev.filter((id) => id !== profileId) : [...prev, profileId];
+        saveToStorage(STORAGE_KEYS.FAVORITES, next, getActiveAppMode());
+        if (currentUserUid && currentUserUid !== "local-user" && currentUserUid !== "unauthenticated") {
+          saveFullUserDataToCloud(currentUserUid, { favoriteProfileIds: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [currentUserUid]
+  );
+
+  const isFavoriteProfile = useCallback(
+    (profileId: string): boolean => {
+      return favoriteProfileIds.includes(profileId);
+    },
+    [favoriteProfileIds]
+  );
+
+  const setMatrixTab = useCallback((tab: "people" | "places") => {
+    setMatrixTabState(tab);
+    audioEngine.playPulse();
+  }, []);
 
   const [transmissions, setTransmissions] = useState<Record<string, number>>({});
+  const [sentPulsesMeta, setSentPulsesMeta] = useState<
+    Record<string, { lastSentAt: string; syncStatus?: "synced" | "queued_offline" }>
+  >({});
   const [receivedPulses, setReceivedPulses] = useState<ReceivedPulse[]>(() =>
     getActiveAppMode() === "real" ? [] : INITIAL_RECEIVED_PULSES
   );
 
   const [myOnTheClock, setMyOnTheClock] = useState<OnTheClockState>(INITIAL_ON_THE_CLOCK);
   const [isOnTheClockFilterActive, setIsOnTheClockFilterActive] = useState<boolean>(false);
-  const [myKinkMatrix, setMyKinkMatrix] = useState<KinkMatrixMap>(INITIAL_MY_KINK_MATRIX);
+  const [myKinkMatrix, setMyKinkMatrix] = useState<KinkMatrixMap>(() =>
+    getActiveAppMode() === "real" ? {} : INITIAL_MY_KINK_MATRIX
+  );
   const [myAmbientVibe, setMyAmbientVibeState] = useState<AmbientSoundVibeType>("subbass_50hz");
   const [isPlayingAmbientTone, setIsPlayingAmbientTone] = useState(false);
   const [mySubstanceAtmosphere, setMySubstanceAtmosphereState] = useState<SubstanceAtmosphere>("sober");
@@ -280,36 +333,125 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       setMyOnTheClock(localOnTheClock);
     }
 
-    const localKinkMatrix = loadFromStorage<KinkMatrixMap>(STORAGE_KEYS.KINK_MATRIX, INITIAL_MY_KINK_MATRIX, appMode);
-    if (localKinkMatrix) setMyKinkMatrix(localKinkMatrix);
+    const fallbackKinks = appMode === "real" ? {} : INITIAL_MY_KINK_MATRIX;
+    const localKinkMatrix = loadFromStorage<KinkMatrixMap>(STORAGE_KEYS.KINK_MATRIX, fallbackKinks, appMode);
+    if (localKinkMatrix) {
+      // Si en Modo Real quedaron guardados en localStorage los 3 morbos de muestra por defecto, limpiarlos a {}
+      const keys = Object.keys(localKinkMatrix);
+      const isLegacyMockKinks =
+        appMode === "real" &&
+        keys.length === 3 &&
+        localKinkMatrix.leather === "love" &&
+        localKinkMatrix.darkroom === "love" &&
+        localKinkMatrix["raw-carnal"] === "curious";
+      if (isLegacyMockKinks) {
+        setMyKinkMatrix({});
+        saveToStorage(STORAGE_KEYS.KINK_MATRIX, {}, "real");
+      } else {
+        setMyKinkMatrix(localKinkMatrix);
+      }
+    } else {
+      setMyKinkMatrix(fallbackKinks);
+    }
 
     const localAmbientVibe = loadFromStorage<AmbientSoundVibeType>(STORAGE_KEYS.AMBIENT_VIBE, "subbass_50hz", appMode);
     if (localAmbientVibe) setMyAmbientVibeState(localAmbientVibe);
 
     const localAtmosphere = loadFromStorage<SubstanceAtmosphere>(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, "sober", appMode);
     setMySubstanceAtmosphereState(localAtmosphere);
+
+    const localFavorites = loadFromStorage<string[]>(STORAGE_KEYS.FAVORITES, [], appMode);
+    setFavoriteProfileIds(localFavorites || []);
   }, [appMode, getSanitizedMockProfiles]);
+
+  // Sincronización reactiva desde Firestore cuando el usuario inicia sesión o cambia de cuenta
+  useEffect(() => {
+    const handleCloudHydrated = (e: Event) => {
+      const detail = (e as CustomEvent<{ uid: string; cloudData: FullUserDataPayload }>).detail;
+      if (!detail || !detail.cloudData) return;
+      const { cloudData } = detail;
+
+      const userKinks = cloudData.kinkMatrix || {};
+      setMyKinkMatrix(userKinks);
+      saveToStorage(STORAGE_KEYS.KINK_MATRIX, userKinks, appMode);
+
+      if (cloudData.ambientVibe) {
+        setMyAmbientVibeState(cloudData.ambientVibe);
+        saveToStorage(STORAGE_KEYS.AMBIENT_VIBE, cloudData.ambientVibe, appMode);
+      }
+
+      if (cloudData.substanceAtmosphere) {
+        setMySubstanceAtmosphereState(cloudData.substanceAtmosphere);
+        saveToStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, cloudData.substanceAtmosphere, appMode);
+      }
+
+      if (cloudData.favoriteProfileIds) {
+        setFavoriteProfileIds(cloudData.favoriteProfileIds);
+        saveToStorage(STORAGE_KEYS.FAVORITES, cloudData.favoriteProfileIds, appMode);
+      } else if (appMode === "real") {
+        setFavoriteProfileIds([]);
+      }
+
+      if (cloudData.profile?.seekingRoles && Array.isArray(cloudData.profile.seekingRoles)) {
+        setFilters((prev) => ({
+          ...prev,
+          roles: cloudData.profile!.seekingRoles!,
+        }));
+      }
+    };
+
+    const handleUserSwitched = () => {
+      const defaultKinks = appMode === "real" ? {} : INITIAL_MY_KINK_MATRIX;
+      setMyKinkMatrix(defaultKinks);
+      setFavoriteProfileIds([]);
+      setFilters(DEFAULT_FILTERS);
+    };
+
+    window.addEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
+    window.addEventListener("vessel:user-switched", handleUserSwitched);
+    return () => {
+      window.removeEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
+      window.removeEventListener("vessel:user-switched", handleUserSwitched);
+    };
+  }, [appMode]);
 
   // Suscripción a perfiles públicos de la matriz en Firestore (Estrictamente aislada a Modo Real)
   useEffect(() => {
     if (appMode !== "real") {
       // En Modo Prueba: Entorno sandbox 100% aislado en memoria/storage local, sin contaminación de Firestore
-      setProfiles(getSanitizedMockProfiles());
+      setProfiles(sortAndEnrichProfilesByProximity(getSanitizedMockProfiles(), myCoordinates));
       return;
     }
 
-    // En Modo Real: Suscripción en tiempo real a perfiles de usuarios reales en Firestore
+    // En Modo Real: Suscripción en tiempo real a perfiles de usuarios reales en Firestore con TTL de 30m y orden por cercanía
     const unsubMatrix = subscribeToMatrixProfiles((cloudProfiles) => {
-      const others = cloudProfiles.filter(
-        (cp) => cp.id !== currentUserUid && cp.id !== "me" && cp.id !== "unauthenticated"
+      const now = Date.now();
+      const activeOthers = cloudProfiles.filter(
+        (cp) =>
+          cp.id !== currentUserUid &&
+          cp.id !== "me" &&
+          cp.id !== "unauthenticated" &&
+          isProfileActiveInMatrix(cp, now)
       );
-      setProfiles(others);
+      setProfiles(sortAndEnrichProfilesByProximity(activeOthers, myCoordinates));
     }, "real");
+
+    // Barrido periódico cada 30s para expulsar de la Matrix perfiles cuyo TTL de 30 minutos haya expirado
+    const ttlSweepInterval = setInterval(() => {
+      const now = Date.now();
+      setProfiles((prev) =>
+        sortAndEnrichProfilesByProximity(
+          prev.filter((cp) => isProfileActiveInMatrix(cp, now)),
+          myCoordinates
+        )
+      );
+    }, 30000);
 
     return () => {
       unsubMatrix();
+      clearInterval(ttlSweepInterval);
     };
-  }, [currentUserUid, appMode, getSanitizedMockProfiles]);
+  }, [currentUserUid, appMode, getSanitizedMockProfiles, myCoordinates]);
 
   // Suscripción en tiempo real a pulsos entrantes en Firestore
   useEffect(() => {
@@ -318,6 +460,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     const unsubPulses = subscribeToIncomingPulses(currentUserUid, (cloudPulses) => {
       if (!cloudPulses || cloudPulses.length === 0) return;
       setReceivedPulses((prev) => {
+        const existingIds = new Set(prev.map((p) => p.id));
+        const hasNewIncoming = cloudPulses.some((p) => !existingIds.has(p.id) && !p.isRead);
+
+        if (hasNewIncoming) {
+          audioEngine.playNudgeReceived();
+        }
+
         const map = new Map<string, ReceivedPulse>();
         prev.forEach((p) => map.set(p.id, p));
         cloudPulses.forEach((p) => map.set(p.id, p));
@@ -332,12 +481,21 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     };
   }, [currentUserUid, authUser]);
 
-  // Publicar presencia en la nube cuando el usuario está autenticado y activo
+  // Publicar presencia en la nube cuando el usuario abre la app o confirma Modo Fiesta (TTL 30m o 4h en Fiesta)
   useEffect(() => {
-    if (!currentUserUid || currentUserUid === "local-user" || !authUser) return;
+    if (appMode !== "real") return;
+    if (!currentUserUid || currentUserUid === "local-user" || currentUserUid === "unauthenticated" || !authUser) return;
+    if (authUser.isAnonymous || authUser.email?.endsWith("@vessel.dev")) return;
+    const cleanCodename = (myProfile.codename || "").trim().toUpperCase();
+    if (!cleanCodename || cleanCodename === "VESSEL_USER") return;
+    if (myProfile.avatarUrl?.includes("images.unsplash.com")) return;
+
+    const isPartyAnchored = Boolean(activeCheckin) || isGpsHibernating;
+    const nowMs = lastGpsPingAt || Date.now();
+
     updateMyMatrixPresence(currentUserUid, {
       id: currentUserUid,
-      codename: myProfile.codename || "VESSEL_USER",
+      codename: myProfile.codename,
       age: myProfile.age || 28,
       role: myProfile.role || "Versátil",
       yoSoy: myProfile.yoSoy || "tranqui",
@@ -356,8 +514,23 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       desires: myProfile.desires || [],
       intentions: myProfile.intentions || [],
       boundaries: myProfile.boundaries || [],
+      lastActiveAt: nowMs,
+      presenceExpiresAt: computePresenceExpiry(isPartyAnchored, nowMs),
+      isPartyAnchored,
+      partyVenueName: activeCheckin?.venueName,
     });
-  }, [currentUserUid, authUser, myProfile, myBodyState, myCoordinates, myHostCard.hasPlace]);
+  }, [
+    appMode,
+    currentUserUid,
+    authUser,
+    myProfile,
+    myBodyState,
+    myCoordinates,
+    myHostCard.hasPlace,
+    activeCheckin,
+    isGpsHibernating,
+    lastGpsPingAt,
+  ]);
 
   // Timer aislado de expiración de On-The-Clock (cada 5s)
   useEffect(() => {
@@ -397,16 +570,31 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
   const transmitSignal = useCallback(
     (profileId: string) => {
+      const nowIso = new Date().toISOString();
       setTransmissions((prev) => ({
         ...prev,
         [profileId]: (prev[profileId] || 0) + 1,
       }));
+      setSentPulsesMeta((prev) => ({
+        ...prev,
+        [profileId]: { lastSentAt: nowIso, syncStatus: "synced" },
+      }));
       audioEngine.playSignalSent();
 
       if (currentUserUid && currentUserUid !== "local-user") {
-        sendPulseToCloud(currentUserUid, myProfile.codename || "VESSEL_USER", profileId).catch((err) =>
-          console.warn("Error enviando pulso a la nube:", err)
-        );
+        const senderId = currentUserUid || "me";
+        sendPulseToCloud(
+          currentUserUid,
+          senderId,
+          profileId,
+          myProfile.codename || "VESSEL_USER"
+        ).catch((err) => {
+          console.warn("Error enviando pulso a la nube:", err);
+          setSentPulsesMeta((prev) => ({
+            ...prev,
+            [profileId]: { lastSentAt: nowIso, syncStatus: "queued_offline" },
+          }));
+        });
       }
     },
     [currentUserUid, myProfile.codename]
@@ -414,16 +602,21 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
   const returnPulse = useCallback(
     (profileId: string) => {
+      const nowIso = new Date().toISOString();
       setTransmissions((prev) => ({
         ...prev,
         [profileId]: (prev[profileId] || 0) + 1,
+      }));
+      setSentPulsesMeta((prev) => ({
+        ...prev,
+        [profileId]: { lastSentAt: nowIso, syncStatus: "synced" },
       }));
       audioEngine.playSignalSent();
 
       let matchedPulseId: string | null = null;
       setReceivedPulses((prev) => {
         const next = prev.map((p) => {
-          if (p.fromProfileId === profileId) {
+          if (p.fromProfileId === profileId || p.fromCodename === profileId) {
             matchedPulseId = p.id;
             return { ...p, returned: true, isRead: true };
           }
@@ -434,7 +627,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       });
 
       if (currentUserUid && currentUserUid !== "local-user") {
-        sendPulseToCloud(currentUserUid, myProfile.codename || "VESSEL_USER", profileId).catch((err) =>
+        const senderId = currentUserUid || "me";
+        sendPulseToCloud(
+          currentUserUid,
+          senderId,
+          profileId,
+          myProfile.codename || "VESSEL_USER"
+        ).catch((err) =>
           console.warn("Error devolviendo pulso a la nube:", err)
         );
         if (matchedPulseId) {
@@ -481,19 +680,45 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     [currentUserUid]
   );
 
-  const unreadPulsesCount = useMemo(() => {
-    return receivedPulses.filter((p) => !p.isRead).length;
-  }, [receivedPulses]);
-
   const hasMutualPulse = useCallback(
     (profileId: string): boolean => {
       const hasSent = (transmissions[profileId] || 0) > 0;
-      const received = receivedPulses.find((p) => p.fromProfileId === profileId);
+      const received = receivedPulses.find(
+        (p) => p.fromProfileId === profileId || p.fromCodename === profileId
+      );
       if (!received) return false;
       return hasSent || Boolean(received.returned);
     },
     [transmissions, receivedPulses]
   );
+
+  const clearAllReadPulses = useCallback(() => {
+    setReceivedPulses((prev) => {
+      const toRemove = prev.filter(
+        (p) => p.isRead && !p.returned && (transmissions[p.fromProfileId] || 0) === 0
+      );
+      if (toRemove.length === 0) return prev;
+
+      if (currentUserUid && currentUserUid !== "local-user") {
+        toRemove.forEach((p) => {
+          clearPulseInCloud(p.id).catch((err) =>
+            console.warn("Error limpiando pulso visto en nube:", err)
+          );
+        });
+      }
+
+      const next = prev.filter(
+        (p) => !p.isRead || Boolean(p.returned) || (transmissions[p.fromProfileId] || 0) > 0
+      );
+      saveToStorage(STORAGE_KEYS.RECEIVED_PULSES, next);
+      return next;
+    });
+    audioEngine.playPulse();
+  }, [currentUserUid, transmissions]);
+
+  const unreadPulsesCount = useMemo(() => {
+    return receivedPulses.filter((p) => !p.isRead).length;
+  }, [receivedPulses]);
 
   const startOnTheClock = useCallback(
     (durationMinutes: number, note?: string) => {
@@ -523,14 +748,25 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     audioEngine.playPulse();
   }, []);
 
-  const setKinkPreference = useCallback((kinkId: string, level: KinkPreferenceLevel) => {
-    setMyKinkMatrix((prev) => {
-      const next = { ...prev, [kinkId]: level };
-      saveToStorage(STORAGE_KEYS.KINK_MATRIX, next);
-      return next;
-    });
-    audioEngine.playPulse();
-  }, []);
+  const setKinkPreference = useCallback(
+    (kinkId: string, level: KinkPreferenceLevel) => {
+      setMyKinkMatrix((prev) => {
+        const next = { ...prev };
+        if (!level || prev[kinkId] === level) {
+          delete next[kinkId];
+        } else {
+          next[kinkId] = level;
+        }
+        saveToStorage(STORAGE_KEYS.KINK_MATRIX, next, appMode);
+        if (currentUserUid && currentUserUid !== "local-user" && currentUserUid !== "unauthenticated") {
+          saveFullUserDataToCloud(currentUserUid, { kinkMatrix: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [currentUserUid, appMode]
+  );
 
   const getMutualKinkMatches = useCallback(
     (theirKinkMatrix?: KinkMatrixMap): KinkMutualMatch[] => {
@@ -555,11 +791,14 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   const setMyAmbientVibe = useCallback(
     (vibe: AmbientSoundVibeType) => {
       setMyAmbientVibeState(vibe);
-      saveToStorage(STORAGE_KEYS.AMBIENT_VIBE, vibe);
+      saveToStorage(STORAGE_KEYS.AMBIENT_VIBE, vibe, appMode);
       updateMyHostCard({ ambientVibe: vibe });
+      if (currentUserUid && currentUserUid !== "local-user" && currentUserUid !== "unauthenticated") {
+        saveFullUserDataToCloud(currentUserUid, { ambientVibe: vibe });
+      }
       audioEngine.playPulse();
     },
-    [updateMyHostCard]
+    [updateMyHostCard, currentUserUid, appMode]
   );
 
   const playAmbientTonePreview = useCallback((vibe: AmbientSoundVibeType) => {
@@ -575,10 +814,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   const setMySubstanceAtmosphere = useCallback(
     (vibe: SubstanceAtmosphere) => {
       setMySubstanceAtmosphereState(vibe);
-      saveToStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, vibe);
+      saveToStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, vibe, appMode);
       updateMyProfile({ substanceAtmosphere: vibe } as any);
+      if (currentUserUid && currentUserUid !== "local-user" && currentUserUid !== "unauthenticated") {
+        saveFullUserDataToCloud(currentUserUid, { substanceAtmosphere: vibe });
+      }
     },
-    [updateMyProfile]
+    [updateMyProfile, currentUserUid, appMode]
   );
 
   const processedProfiles = useMemo(() => {
@@ -784,6 +1026,10 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         }
       }
 
+      if (filters.onlyFavorites && !favoriteProfileIds.includes(p.id) && !p.isCurrentUser) {
+        return false;
+      }
+
       if (isOnTheClockFilterActive && !p.onTheClock?.isActive && !p.isCurrentUser) {
         return false;
       }
@@ -799,8 +1045,19 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       return true;
     });
 
-    return [myFullProfile, ...otherFilteredProfiles];
-  }, [processedProfiles, filters, profileDossiers, boundaries, myFullProfile, myKinkMatrix, nightlifeEvents, isOnTheClockFilterActive, myProfile]);
+    const hasValidRealSelfCard =
+      appMode === "test" ||
+      Boolean(
+        authUser &&
+          !authUser.isAnonymous &&
+          !authUser.email?.endsWith("@vessel.dev") &&
+          myProfile.codename &&
+          myProfile.codename.trim().toUpperCase() !== "VESSEL_USER" &&
+          !myProfile.avatarUrl?.includes("images.unsplash.com")
+      );
+
+    return hasValidRealSelfCard ? [myFullProfile, ...otherFilteredProfiles] : otherFilteredProfiles;
+  }, [processedProfiles, filters, profileDossiers, boundaries, myFullProfile, myKinkMatrix, nightlifeEvents, isOnTheClockFilterActive, myProfile, favoriteProfileIds, appMode, authUser]);
 
   const value = useMemo<RadarMatrixContextType>(
     () => ({
@@ -816,11 +1073,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       selectedProfile,
       setSelectedProfile,
       transmissions,
+      sentPulsesMeta,
       transmitSignal,
       receivedPulses,
       returnPulse,
       markPulsesAsRead,
       clearPulse,
+      clearAllReadPulses,
       unreadPulsesCount,
       isFilterDrawerOpen,
       setIsFilterDrawerOpen,
@@ -841,6 +1100,11 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       setMySubstanceAtmosphere,
       myFullProfile,
       hasMutualPulse,
+      matrixTab,
+      setMatrixTab,
+      favoriteProfileIds,
+      toggleFavoriteProfile,
+      isFavoriteProfile,
     }),
     [
       processedProfiles,
@@ -852,11 +1116,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       activeView,
       selectedProfile,
       transmissions,
+      sentPulsesMeta,
       transmitSignal,
       receivedPulses,
       returnPulse,
       markPulsesAsRead,
       clearPulse,
+      clearAllReadPulses,
       unreadPulsesCount,
       isFilterDrawerOpen,
       myOnTheClock,
@@ -875,6 +1141,11 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       setMySubstanceAtmosphere,
       myFullProfile,
       hasMutualPulse,
+      matrixTab,
+      setMatrixTab,
+      favoriteProfileIds,
+      toggleFavoriteProfile,
+      isFavoriteProfile,
     ]
   );
 

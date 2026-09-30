@@ -61,12 +61,12 @@ flowchart LR
 Antes de dar por concluida cualquier entrega:
 
 1. [ ] **Justificación de Producto y Arquetipos**: Explicar el **POR QUÉ (Why)** antes del **CÓMO (How)** y validar explícitamente a qué arquetipos de usuario (`docs/contexto/arquetipos.md`) beneficia o impacta el cambio.
-2. [ ] **Fidelidad UX/UI**: Correspondencia exacta con los principios de diseño Impeccable y componentes de Figma.
+2. [ ] **Fidelidad UX/UI y Evidencia Visual (Antes y Después)**: Correspondencia con Impeccable UI. En cambios de interfaz o flujos visuales, captura obligatoria de pantalla previa (**ANTES**) y posterior (**DESPUÉS**) documentada en el walkthrough y registro de entrega.
 3. [ ] **Integridad de Código**: Verificación estricta de tipos (`npm run typecheck`), ejecución de suite de pruebas (`npm run test`) y linting (`npm run lint`). **Prohibido correr `next build` en caliente con `next dev` activo**.
 4. [ ] **Prueba de Responsive**: Comportamiento verificado en viewport móvil (320px-430px) y desktop sin desborde horizontal (`overflow-x` limpio).
 5. [ ] **Accesibilidad & 5 Estados UI**: Contraste WCAG AA (4.5:1 / 3:1), áreas táctiles mínimas de 44×44px y estados *Default, Hover, Active, Focus, Disabled*.
 6. [ ] **No Regresión en Perfiles Sensibles**: Verificar que la solución no penalice terminales con batería crítica (`BatteryStateEngine`), planes de datos medidos ni comprometa la discreción de perfiles reservados.
-7. [ ] **Persistencia y Memoria**: Registro proactivo en Engram (`mem_save`) y actualización en `docs/contexto/decisiones.md` (ADR-XXX) y `docs/contexto/errores-conocidos.md`.
+7. [ ] **Persistencia y Memoria**: Registro proactivo en Engram (`mem_save`), actualización en `docs/contexto/decisiones.md` (ADR-XXX), `docs/contexto/registro-de-features.md` y `docs/contexto/errores-conocidos.md`.
 
 ---
 

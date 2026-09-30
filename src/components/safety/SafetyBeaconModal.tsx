@@ -64,10 +64,10 @@ export const SafetyBeaconModal: React.FC = () => {
             <div className="p-4 rounded-xl border border-red-500/40 bg-red-950/20 text-center space-y-2">
               <div className="flex items-center justify-center gap-2 text-red-400 font-mono font-bold text-xs uppercase">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-                <span>GUARDIÁN ACTIVO // SESIÓN MONITOREADA</span>
+                <span>GUARDIÁN SILENCIOSO ACTIVO</span>
               </div>
               <p className="text-[11px] text-neutral-300">
-                Expira en: <strong className="font-mono text-neutral-100">{safetyBeacon.expiresAt ? new Date(safetyBeacon.expiresAt).toLocaleTimeString() : "--:--"}</strong>
+                Se activa en: <strong className="font-mono text-neutral-100">{safetyBeacon.expiresAt ? new Date(safetyBeacon.expiresAt).toLocaleTimeString() : "--:--"}</strong>
               </p>
               <p className="text-[10px] text-neutral-400">
                 Contacto de auxilio: {safetyBeacon.emergencyContactName} ({safetyBeacon.emergencyContactPhone})
@@ -101,7 +101,7 @@ export const SafetyBeaconModal: React.FC = () => {
               className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(239,68,68,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
               <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-              <span>DISPARAR ALERTA SOS A CONTACTO (SMS / SHARE)</span>
+              <span>DISPARAR ALERTA SOS A CONTACTO (SMS / COMPARTIR)</span>
             </button>
 
             {/* Desactivación con PIN */}

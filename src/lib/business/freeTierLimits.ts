@@ -9,6 +9,7 @@ export const FREE_TIER_LIMITS = {
   maxBioLength: 280,
   canUseVideo: false,
   maxFreeRadarDistanceMeters: 1000,
+  maxFreeProfilesInMatrix: 99,
 } as const;
 
 export type FreeTierLimits = typeof FREE_TIER_LIMITS;

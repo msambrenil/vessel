@@ -9,6 +9,7 @@ import { RoleType, BodyState, EnergyVibe, SubstanceAtmosphere, GenderInterest } 
 import { SUBSTANCE_ATMOSPHERE_CATALOG } from "@/data/substanceCatalog";
 import { X, Check, RotateCcw, SlidersHorizontal, Ghost, Flame, Sparkles, ShieldCheck } from "lucide-react";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
+import { getKinkLocalizedLabel } from "@/lib/kinks/kinkAdminService";
 
 export const DynamicFilterDrawer: React.FC = () => {
   const {
@@ -21,6 +22,7 @@ export const DynamicFilterDrawer: React.FC = () => {
     t,
     formatDist,
     language,
+    openGeoBatteryModal,
   } = useVessel();
 
   if (!isFilterDrawerOpen) return null;
@@ -128,17 +130,17 @@ export const DynamicFilterDrawer: React.FC = () => {
         </div>
 
         {/* Contenido de Filtros */}
-        <div className="p-4 space-y-6 flex-1">
+        <div className="p-4 pb-16 space-y-6 flex-1">
           {/* 1. SECCIÓN DE ENERGÍA DESEADA (VIBES) */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-electricViolet" />
-                <span>Energía Deseada // Vibes</span>
+                <span>{t.card?.energyLabel || (language === "es" ? "Energía Deseada y Clima" : "Desired Energy and Vibe")}</span>
               </label>
               {filters.energyVibes.length > 0 && (
                 <span className="text-[10px] font-mono text-electricViolet-glow font-bold">
-                  {filters.energyVibes.length} seleccionada(s)
+                  {filters.energyVibes.length} {t.filters?.selectedCount || (language === "es" ? "seleccionada(s)" : "selected")}
                 </span>
               )}
             </div>
@@ -149,8 +151,10 @@ export const DynamicFilterDrawer: React.FC = () => {
                 return (
                   <button
                     key={vibe.id}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => toggleEnergyVibe(vibe.id)}
-                    className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all ${
+                    className={`p-2.5 min-h-[44px] rounded-xl border text-left flex items-center gap-2 transition-all ${
                       isSelected
                         ? `${vibe.tagColor} border-current font-bold shadow-sm ring-1 ring-white/20`
                         : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -177,21 +181,24 @@ export const DynamicFilterDrawer: React.FC = () => {
               </div>
               <div>
                 <div className="text-xs font-bold text-white flex items-center gap-1">
-                  <span>Solo Perfiles Anti-Fantasma</span>
+                  <span>{t.filters?.antiGhostShortTitle || (language === "es" ? "Solo Perfiles Anti-Plantón" : "Anti-Ghost Profiles Only")}</span>
                 </div>
                 <div className="text-[10px] text-neutral-400">
-                  Usuarios con 90%+ Respect Score y salidas amables
+                  {language === "es" ? `Usuarios con 90%+ ${t.card?.respectScore || "Puntaje de Respeto"} y salidas amables` : "Users with 90%+ Respect Score and kind departures"}
                 </div>
               </div>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={filters.onlyAntiGhost}
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
                   onlyAntiGhost: !prev.onlyAntiGhost,
                 }))
               }
-              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
+              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 cursor-pointer ${
                 filters.onlyAntiGhost ? "bg-emerald-500" : "bg-white/15"
               }`}
             >
@@ -211,15 +218,17 @@ export const DynamicFilterDrawer: React.FC = () => {
               </div>
               <div>
                 <div className="text-xs font-bold text-white flex items-center gap-1">
-                  <span>Solo Perfiles Verificados 3D</span>
+                  <span>{t.filters?.verified3dTitle || (language === "es" ? "Solo Perfiles Verificados 3D" : "3D Verified Profiles Only")}</span>
                 </div>
                 <div className="text-[10px] text-neutral-400">
-                  Identidad biometrizada contra estafas y bots
+                  {t.filters?.verified3dDesc || (language === "es" ? "Identidad biometrizada contra estafas y bots" : "Biometrically verified identity")}
                 </div>
               </div>
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={!!filters.onlyVerified}
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
@@ -246,15 +255,19 @@ export const DynamicFilterDrawer: React.FC = () => {
               </div>
               <div>
                 <div className="text-xs font-bold text-white flex items-center gap-1">
-                  <span>Solo con Deseos Mutuos</span>
+                  <span>{t.filters?.mutualDesiresTitle || (language === "es" ? "Solo con Deseos Mutuos" : "Mutual Desires Only")}</span>
                 </div>
                 <div className="text-[10px] text-neutral-400">
-                  Perfiles con al menos 1 coincidencia en Kink Matrix
+                  {language === "es"
+                    ? "Perfiles con al menos 1 coincidencia en morbos y preferencias mutuas"
+                    : "Profiles with at least 1 match in preferences"}
                 </div>
               </div>
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={!!filters.onlyMutualKinks}
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
@@ -276,7 +289,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           {/* 3. Estados de Disponibilidad */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-              Disponibilidad
+              {t.filters?.availabilityLabel || (language === "es" ? "Disponibilidad" : "Availability")}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(
@@ -290,8 +303,10 @@ export const DynamicFilterDrawer: React.FC = () => {
                 return (
                   <button
                     key={st.id}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => toggleBodyState(st.id)}
-                    className={`py-2 px-2 rounded-xl border text-center text-xs font-semibold transition-all ${
+                    className={`py-2 px-2 min-h-[44px] rounded-xl border text-center text-xs font-semibold transition-all ${
                       isSelected
                         ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -308,20 +323,23 @@ export const DynamicFilterDrawer: React.FC = () => {
           <div className="bg-obsidian-surface rounded-2xl p-4 border border-white/5 flex items-center justify-between">
             <div>
               <div className="text-xs font-bold text-white">
-                Host Inmediato
+                {t.card?.hostImmediate || (language === "es" ? "Anfitrión Inmediato" : "Immediate Host")}
               </div>
               <div className="text-[11px] text-neutral-400">
-                Mostrar solo con lugar disponible ahora
+                {t.filters?.immediateHostDesc || (language === "es" ? "Mostrar solo con lugar disponible ahora" : "Show only profiles with a place right now")}
               </div>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={filters.immediateHostOnly}
               onClick={() =>
                 setFilters((prev) => ({
                   ...prev,
                   immediateHostOnly: !prev.immediateHostOnly,
                 }))
               }
-              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
+              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 cursor-pointer ${
                 filters.immediateHostOnly ? "bg-electricViolet" : "bg-white/15"
               }`}
             >
@@ -337,7 +355,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                Intensidad Mínima
+                {t.filters?.minIntensityLabel || (language === "es" ? "Intensidad Mínima" : "Minimum Intensity")}
               </label>
               <span className="text-xs font-bold text-electricViolet-glow">
                 {INTENSITY_LABELS[filters.minIntensity].label}
@@ -348,8 +366,10 @@ export const DynamicFilterDrawer: React.FC = () => {
               {[1, 2, 3, 4].map((lvl) => (
                 <button
                   key={lvl}
+                  type="button"
+                  aria-pressed={filters.minIntensity === lvl}
                   onClick={() => setFilters((prev) => ({ ...prev, minIntensity: lvl }))}
-                  className={`py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                  className={`py-2.5 min-h-[44px] rounded-xl border text-xs font-bold transition-all ${
                     filters.minIntensity === lvl
                       ? lvl === 4
                         ? "bg-bloodNeon border-bloodNeon text-white shadow-blood-glow"
@@ -357,7 +377,7 @@ export const DynamicFilterDrawer: React.FC = () => {
                       : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  Nivel {lvl}
+                  {t.filters?.levelPrefix || (language === "es" ? "Nivel" : "Level")} {lvl}
                 </button>
               ))}
             </div>
@@ -366,7 +386,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           {/* 5.5. Intereses de Encuentro */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-              Intereses de Encuentro
+              {t.filters?.genderInterestLabel || (language === "es" ? "Intereses de Encuentro" : "Encounter Interests")}
             </label>
             <div className="flex flex-wrap gap-2">
               {GENDER_INTEREST_OPTIONS.map((interest) => {
@@ -374,8 +394,10 @@ export const DynamicFilterDrawer: React.FC = () => {
                 return (
                   <button
                     key={interest.id}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => toggleGenderInterest(interest.id)}
-                    className={`px-3 py-2 rounded-full border text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    className={`px-3 py-2 min-h-[40px] rounded-full border text-xs font-medium transition-all flex items-center gap-1.5 ${
                       isSelected
                         ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -392,7 +414,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           {/* 6. Roles / Posición */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-              Rol / Posición
+              {t.filters?.rolePositionLabel || (language === "es" ? "Rol / Posición" : "Role / Position")}
             </label>
             <div className="flex flex-wrap gap-2">
               {ROLE_OPTIONS.map((role) => {
@@ -400,8 +422,10 @@ export const DynamicFilterDrawer: React.FC = () => {
                 return (
                   <button
                     key={role}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => toggleRole(role as RoleType)}
-                    className={`px-3 py-2 rounded-full border text-xs font-medium transition-all ${
+                    className={`px-3 py-2 min-h-[40px] rounded-full border text-xs font-medium transition-all ${
                       isSelected
                         ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
                         : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -417,7 +441,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           {/* 7. Catálogo Kink & Tribus */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-              Fetiches & Tribus
+              {t.filters.kinksSection || "Fetiches & Tribus"}
             </label>
             <div className="flex flex-wrap gap-2">
               {KINK_CATALOG.map((kink) => {
@@ -425,14 +449,16 @@ export const DynamicFilterDrawer: React.FC = () => {
                 return (
                   <button
                     key={kink.id}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => toggleKink(kink.id)}
-                    className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 min-h-[38px] rounded-full border text-xs font-medium transition-all ${
                       isSelected
                         ? "bg-bloodNeon text-white border-bloodNeon font-semibold shadow-blood-glow"
                         : "bg-white/5 border-white/10 text-neutral-400 hover:border-bloodNeon/50 hover:text-white"
                     }`}
                   >
-                    {kink.label.toLowerCase()}
+                    {getKinkLocalizedLabel(kink.id, t)}
                   </button>
                 );
               })}
@@ -442,7 +468,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           {/* 7.1. Atmósfera de Sustancias */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-              🍸 Atmósfera de Consumo & Sustancias
+              {t.filters?.substanceSectionTitle || (language === "es" ? "🍸 Atmósfera de Consumo y Sustancias" : "🍸 Substance & Consumption Vibe")}
             </label>
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(SUBSTANCE_ATMOSPHERE_CATALOG) as SubstanceAtmosphere[]).map((key) => {
@@ -454,8 +480,9 @@ export const DynamicFilterDrawer: React.FC = () => {
                   <button
                     key={key}
                     type="button"
+                    aria-pressed={!!isSelected}
                     onClick={() => toggleSubstanceAtmosphere(key)}
-                    className={`p-2 rounded-xl border text-left text-xs transition-all flex items-center gap-2 ${
+                    className={`p-2 min-h-[44px] rounded-xl border text-left text-xs transition-all flex items-center gap-2 ${
                       isSelected
                         ? `${item.badgeClass} ring-1 ring-white/30 font-bold shadow-md`
                         : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -473,7 +500,7 @@ export const DynamicFilterDrawer: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                Distancia Máxima
+                {t.filters?.maxDistanceLabel || (language === "es" ? "Distancia Máxima" : "Maximum Distance")}
               </label>
               <span className="text-xs font-bold text-white">
                 {filters.maxDistanceKm} km
@@ -494,10 +521,35 @@ export const DynamicFilterDrawer: React.FC = () => {
               className="w-full accent-electricViolet bg-neutral-800 h-2 rounded-lg cursor-pointer"
             />
           </div>
+
+          {/* Calibración de Sensor GPS & Batería */}
+          <div className="pt-2 border-t border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setIsFilterDrawerOpen(false);
+                openGeoBatteryModal();
+              }}
+              className="w-full p-3 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 text-white flex items-center justify-between transition-all cursor-pointer group active:scale-98"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🛰️</span>
+                <div className="text-left">
+                  <span className="text-xs font-bold font-mono block text-white">
+                    {language === "es" ? "Calibrar Sensor GPS & Batería" : "Calibrate GPS & Battery Sensor"}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 block">
+                    {language === "es" ? "Satélite, telemetría y precisión de distancia" : "Satellite, telemetry & distance precision"}
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs text-neutral-400 group-hover:text-white transition-colors">⚙️</span>
+            </button>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/10 bg-obsidian/95 backdrop-blur-xl sticky bottom-0">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 bg-obsidian/95 backdrop-blur-xl sticky bottom-0">
           <button
             onClick={() => setIsFilterDrawerOpen(false)}
             className="w-full py-3.5 bg-electricViolet text-white font-bold text-xs rounded-xl uppercase tracking-wider hover:bg-electricViolet-glow transition-all shadow-violet-soft"

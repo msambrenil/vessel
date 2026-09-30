@@ -10,6 +10,7 @@ describe("Reglas de Negocio — FREE_TIER_LIMITS & Cuotas de Usuario", () => {
       expect(FREE_TIER_LIMITS.maxBioLength).toBe(280);
       expect(FREE_TIER_LIMITS.canUseVideo).toBe(false);
       expect(FREE_TIER_LIMITS.maxFreeRadarDistanceMeters).toBe(1000);
+      expect(FREE_TIER_LIMITS.maxFreeProfilesInMatrix).toBe(99);
     });
   });
 

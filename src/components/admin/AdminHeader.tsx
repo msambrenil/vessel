@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { StaffMember } from "@/types/admin";
 import { VesselLogo } from "@/components/brand/VesselLogo";
+import { useVessel } from "@/context/VesselContext";
+import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   ShieldAlert,
   Radio,
@@ -14,6 +16,7 @@ import {
   Sparkles,
   Shield,
   Headphones,
+  FlaskConical,
 } from "lucide-react";
 
 interface AdminHeaderProps {
@@ -31,6 +34,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   activeDuressCount,
   pendingReportsCount,
 }) => {
+  const { appMode, setAppMode } = useVessel();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [timeStr, setTimeStr] = useState<string>("");
 
@@ -98,15 +102,46 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             </div>
           </Link>
 
-          {/* Reloj HUD & Estado del Servidor */}
-          <div className="hidden md:flex items-center gap-3 pl-4 border-l border-white/10 text-xs font-mono">
-            <div className="flex items-center gap-1.5 text-neutral-400">
+          {/* Reloj HUD & Selector Táctico MODO REAL / MODO PRUEBA */}
+          <div className="flex items-center gap-3 pl-4 border-l border-white/10 text-xs font-mono">
+            <div className="hidden lg:flex items-center gap-1.5 text-neutral-400">
               <Clock className="w-3.5 h-3.5 text-electricViolet-glow" />
               <span>{timeStr || "00:00:00"} LOC</span>
             </div>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              SISTEMA EN VIVO
+
+            {/* Switch Directo Modo Real vs Modo Prueba en la Cabecera de /admin */}
+            <div className="flex items-center p-1 rounded-xl bg-black/80 border border-white/15 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAppMode("real");
+                  audioEngine.playVesselCrescendoAlert();
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                  appMode === "real"
+                    ? "bg-emerald-500/25 text-emerald-300 border border-emerald-400/60 shadow-sm"
+                    : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${appMode === "real" ? "bg-emerald-400 animate-pulse" : "bg-neutral-600"}`} />
+                <span>MODO REAL</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAppMode("test");
+                  audioEngine.playPulse();
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                  appMode === "test"
+                    ? "bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm"
+                    : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                <FlaskConical className="w-3 h-3" />
+                <span>MODO PRUEBA</span>
+              </button>
             </div>
           </div>
         </div>

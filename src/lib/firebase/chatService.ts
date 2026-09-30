@@ -76,7 +76,43 @@ export { sanitizeForFirestore };
 
 
 /**
- * Envía un mensaje a la conversación en Firestore
+ * Escucha todos los canales de chat donde participa el usuario actual
+ * Permite descubrir conversaciones entrantes sin haber abierto manualmente el modal del remitente
+ */
+export const subscribeToUserActiveChats = (
+  myUid: string,
+  onPartnersUpdate: (partnerUids: string[]) => void
+): Unsubscribe => {
+  if (!myUid || myUid === "local-user" || myUid === "unauthenticated") {
+    return () => {};
+  }
+
+  const chatsRef = collection(db, CHATS_COLLECTION);
+  const q = query(chatsRef, where("participants", "array-contains", myUid), limit(50));
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const partners = new Set<string>();
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        const list: string[] = Array.isArray(data.participants)
+          ? data.participants
+          : docSnap.id.split("_");
+        list.forEach((uid) => {
+          if (uid && uid !== myUid) partners.add(uid);
+        });
+      });
+      onPartnersUpdate(Array.from(partners));
+    },
+    (error) => {
+      console.warn("Aviso en suscripción de bandeja de chats activos:", error);
+    }
+  );
+};
+
+/**
+ * Envía un mensaje a la conversación en Firestore y actualiza el índice de participantes del canal
  */
 export const sendCloudMessage = async (
   chatId: string,
@@ -84,6 +120,22 @@ export const sendCloudMessage = async (
   customMessageId?: string
 ): Promise<string | null> => {
   try {
+    const participants = chatId.split("_").filter(Boolean);
+    const chatDocRef = doc(db, CHATS_COLLECTION, chatId);
+
+    // Registrar metadatos del canal padre para que aparezca en la bandeja del destinatario en tiempo real
+    await setDoc(
+      chatDocRef,
+      sanitizeForFirestore({
+        chatId,
+        participants,
+        lastSenderId: message.senderId,
+        lastMessagePreview: (message.text ?? "").slice(0, 80),
+        updatedAtRaw: serverTimestamp(),
+      }),
+      { merge: true }
+    ).catch(() => {});
+
     // Asegurar que text no sea undefined y sanitizar recursivamente para Firestore
     const payload = sanitizeForFirestore({
       ...message,
@@ -117,7 +169,7 @@ export const burnCloudMessage = async (
     const msgRef = doc(db, CHATS_COLLECTION, chatId, "messages", messageId);
     await updateDoc(msgRef, {
       isBurned: true,
-      text: "[MENSAJE AUTODESTRUIDO // BURNED]",
+      text: "[CONTENIDO AUTODESTRUIDO TRAS LECTURA]",
       mediaUrl: null,
       burnedAt: serverTimestamp(),
     });

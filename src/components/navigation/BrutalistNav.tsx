@@ -7,7 +7,7 @@ import { ActiveNavView } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 
 export const BrutalistNav: React.FC = () => {
-  const { activeView, setActiveView, chatMessages, diaryEntries, unreadPulsesCount, t } = useVessel();
+  const { activeView, setActiveView, chatMessages, diaryEntries, unreadPulsesCount, t, language } = useVessel();
 
   const unreadMessagesCount = useMemo(() => {
     return Object.values(chatMessages).reduce(
@@ -33,6 +33,11 @@ export const BrutalistNav: React.FC = () => {
         icon: LayoutGrid,
       },
       {
+        id: "pulses",
+        label: t.nav.pulses || (language === "es" ? "Zumbidos" : "Nudges"),
+        icon: Activity,
+      },
+      {
         id: "chat",
         label: t.nav.chat,
         icon: MessageCircle,
@@ -48,7 +53,7 @@ export const BrutalistNav: React.FC = () => {
         icon: User,
       },
     ],
-    [t.nav.account, t.nav.chat, t.nav.diary, t.nav.grid]
+    [t.nav.account, t.nav.chat, t.nav.diary, t.nav.grid, t.nav.pulses]
   );
 
   return (
@@ -58,7 +63,7 @@ export const BrutalistNav: React.FC = () => {
       className="fixed bottom-0 left-0 right-0 z-40 bg-obsidian-deep border-t border-white/10 select-none shadow-[0_-8px_30px_rgba(0,0,0,0.9)] pb-[max(env(safe-area-inset-bottom,0px),8px)]"
     >
       <div className="w-full max-w-4xl mx-auto px-1.5 sm:px-3">
-        <div className="grid grid-cols-4 pt-1 pb-1">
+        <div className="grid grid-cols-5 pt-1 pb-1">
           {tabs.map((tab) => {
             const isActive = activeView === tab.id;
             const IconComp = tab.icon;
@@ -97,23 +102,23 @@ export const BrutalistNav: React.FC = () => {
                     }`}
                   />
                   
-                  {/* Badge de Mensajes / Pulsos no leídos unificado */}
-                  {tab.id === "chat" && (unreadMessagesCount > 0 || unreadPulsesCount > 0) && (
+                  {/* Badge Exclusivo de Pulsos Entrantes */}
+                  {tab.id === "pulses" && unreadPulsesCount > 0 && (
                     <span
-                      className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 animate-pulse pointer-events-none ${
-                        unreadMessagesCount > 0
-                          ? "bg-bloodNeon shadow-[0_0_8px_rgba(255,30,56,0.8)]"
-                          : "bg-electricViolet shadow-violet-soft"
-                      }`}
-                      title={
-                        unreadMessagesCount > 0
-                          ? `${unreadMessagesCount} mensajes sin leer`
-                          : `${unreadPulsesCount} pulsos entrantes`
-                      }
+                      className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-electricViolet shadow-violet-soft animate-pulse pointer-events-none"
+                      title={language === "es" ? `${unreadPulsesCount} zumbidos entrantes` : `${unreadPulsesCount} incoming nudges`}
                     >
-                      {unreadMessagesCount > 0
-                        ? unreadMessagesCount > 9 ? "9+" : unreadMessagesCount
-                        : unreadPulsesCount > 9 ? "9+" : unreadPulsesCount}
+                      {unreadPulsesCount > 9 ? "9+" : unreadPulsesCount}
+                    </span>
+                  )}
+
+                  {/* Badge Exclusivo de Mensajes No Leídos */}
+                  {tab.id === "chat" && unreadMessagesCount > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-bloodNeon shadow-[0_0_8px_rgba(255,30,56,0.8)] animate-pulse pointer-events-none"
+                      title={`${unreadMessagesCount} mensajes sin leer`}
+                    >
+                      {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
                     </span>
                   )}
 

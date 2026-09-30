@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   HostCardInfo,
   VoiceSnippet,
@@ -12,6 +12,10 @@ import {
   SessionRoom,
   DuoLink,
   TacticalHotspot,
+  HotspotStatus,
+  HotspotReportReason,
+  HotspotRating,
+  HotspotReport,
   ExitProtocol,
   NightlifeEvent,
   EventCheckin,
@@ -25,12 +29,20 @@ import { audioPlayerService } from "@/lib/audio/audioPlayerService";
 import { getGeohashCell, calculateHaversineDistance } from "@/lib/geo/GeospatialEngine";
 import { batteryStateEngine, INITIAL_BATTERY_STATE } from "@/lib/geo/BatteryStateEngine";
 import { loadFromStorage, saveToStorage, removeFromStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
+import { saveFullUserDataToCloud, FullUserDataPayload } from "@/lib/firebase/userDataService";
 import { MOCK_HOTSPOTS } from "@/data/mockHotspots";
 import { MOCK_NIGHTLIFE_EVENTS, MOCK_INITIAL_MISSED_CONNECTIONS } from "@/data/mockNightlifeEvents";
 import {
   subscribeToHotspots,
   checkInHotspotCloud,
   checkOutHotspotCloud,
+  proposeHotspotCloud,
+  confirmHotspotCloud,
+  rateHotspotCloud,
+  reportHotspotCloud,
+  adminUpdateHotspotStatusCloud,
+  adminDismissReportsCloud,
+  adminDeleteHotspotCloud,
 } from "@/lib/firebase/hotspotService";
 import { useAuth } from "./AuthContext";
 import { useSettings } from "./SettingsContext";
@@ -133,6 +145,9 @@ export interface LogisticsContextType {
   isLocating: boolean;
   geoError: string | null;
   refreshRealGeolocation: () => Promise<boolean>;
+  isGpsHibernating: boolean;
+  lastGpsPingAt: number;
+  confirmPartyArrivalLock: (venueName?: string) => void;
 
   // Expectativa de Salida (Exit Protocol)
   myExitProtocol: ExitProtocol;
@@ -140,9 +155,6 @@ export interface LogisticsContextType {
 
   // Salas de Sesión & Modo Dúo
   sessionRooms: SessionRoom[];
-  isSessionRoomModalOpen: boolean;
-  openSessionRoomModal: () => void;
-  closeSessionRoomModal: () => void;
   createSessionRoom: (room: Omit<SessionRoom, "id" | "hostProfileId" | "hostCodename" | "hostAvatarUrl" | "guestIds" | "isActive" | "createdAt">) => void;
   joinSessionRoom: (roomId: string) => void;
   leaveSessionRoom: (roomId: string) => void;
@@ -163,6 +175,13 @@ export interface LogisticsContextType {
   openHotspotsModal: () => void;
   closeHotspotsModal: () => void;
   checkinHotspot: (hotspotId: string) => void;
+  proposeHotspot: (data: Partial<TacticalHotspot>) => Promise<TacticalHotspot>;
+  confirmHotspot: (hotspotId: string) => Promise<{ success: boolean; activated: boolean; alreadyConfirmed?: boolean }>;
+  rateHotspot: (hotspotId: string, score: number, tags?: string[]) => Promise<boolean>;
+  reportHotspot: (hotspotId: string, reason: HotspotReportReason, comment: string) => Promise<{ success: boolean; error?: string }>;
+  adminUpdateHotspotStatus: (hotspotId: string, status: HotspotStatus) => Promise<boolean>;
+  adminDismissReports: (hotspotId: string) => Promise<boolean>;
+  adminDeleteHotspot: (hotspotId: string) => Promise<boolean>;
 
   // Suite Nightlife
   nightlifeEvents: NightlifeEvent[];
@@ -240,12 +259,20 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
   const [geoPrivacyLevel, setGeoPrivacyLevelState] = useState<GeoPrivacyLevel>("exact_discretized");
   const [manualEcoSaver, setManualEcoSaver] = useState<boolean>(false);
   const [isGeoBatteryModalOpen, setIsGeoBatteryModalOpen] = useState<boolean>(false);
-  const [myCoordinates, setMyCoordinates] = useState<{ lat: number; lng: number }>(() =>
-    loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, {
-      lat: 52.52,
-      lng: 13.405,
-    })
-  );
+  const [myCoordinates, setMyCoordinates] = useState<{ lat: number; lng: number }>(() => {
+    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, {
+      lat: -34.588,
+      lng: -58.43,
+    });
+    if (
+      !stored ||
+      (Math.abs(stored.lat - 52.52) < 0.05 && Math.abs(stored.lng - 13.405) < 0.05) ||
+      (Math.abs(stored.lat) < 0.01 && Math.abs(stored.lng) < 0.01)
+    ) {
+      return { lat: -34.588, lng: -58.43 };
+    }
+    return stored;
+  });
   const [myGeohashCell, setMyGeohashCell] = useState<GeohashCell>(() =>
     getGeohashCell(myCoordinates.lat, myCoordinates.lng, 7)
   );
@@ -262,7 +289,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
 
   // Sessions & Duo
   const [sessionRooms, setSessionRooms] = useState<SessionRoom[]>([]);
-  const [isSessionRoomModalOpen, setIsSessionRoomModalOpen] = useState(false);
   const [myDuoLink, setMyDuoLink] = useState<DuoLink>(INITIAL_DUO_LINK);
   const [isDuoModalOpen, setIsDuoModalOpen] = useState(false);
 
@@ -270,6 +296,8 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
   const [tacticalHotspots, setTacticalHotspots] = useState<TacticalHotspot[]>(() =>
     getActiveAppMode() === "real" ? [] : MOCK_HOTSPOTS
   );
+  const tacticalHotspotsRef = useRef(tacticalHotspots);
+  tacticalHotspotsRef.current = tacticalHotspots;
   const [selectedHotspot, setSelectedHotspot] = useState<TacticalHotspot | null>(null);
   const [isHotspotsModalOpen, setIsHotspotsModalOpen] = useState(false);
 
@@ -381,14 +409,53 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     setMyGeohashCell(getGeohashCell(myCoordinates.lat, myCoordinates.lng, 7));
   }, [myCoordinates]);
 
-  const updateMyHostCard = useCallback((updates: Partial<HostCardInfo>) => {
-    setMyHostCard((prev) => {
-      const next = { ...prev, ...updates, updatedAt: new Date().toISOString() };
-      saveToStorage(STORAGE_KEYS.HOST_CARD, next);
-      return next;
-    });
-    audioEngine.playPulse();
-  }, []);
+  // Sincronizar HostCard y ExitProtocol con el documento en la nube del usuario activo
+  useEffect(() => {
+    const handleCloudHydrated = (e: Event) => {
+      const detail = (e as CustomEvent<{ uid: string; cloudData: FullUserDataPayload }>).detail;
+      if (!detail || !detail.cloudData) return;
+      const { cloudData } = detail;
+
+      if (cloudData.hostCard) {
+        setMyHostCard(cloudData.hostCard);
+        saveToStorage(STORAGE_KEYS.HOST_CARD, cloudData.hostCard, appMode);
+      } else if (appMode === "real") {
+        setMyHostCard(INITIAL_MY_HOST_CARD);
+      }
+
+      if (cloudData.exitProtocol) {
+        setMyExitProtocolState(cloudData.exitProtocol);
+        saveToStorage(STORAGE_KEYS.EXIT_PROTOCOL, cloudData.exitProtocol, appMode);
+      }
+    };
+
+    const handleUserSwitched = () => {
+      setMyHostCard(INITIAL_MY_HOST_CARD);
+      setMyExitProtocolState("fast_encounter");
+    };
+
+    window.addEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
+    window.addEventListener("vessel:user-switched", handleUserSwitched);
+    return () => {
+      window.removeEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
+      window.removeEventListener("vessel:user-switched", handleUserSwitched);
+    };
+  }, [appMode]);
+
+  const updateMyHostCard = useCallback(
+    (updates: Partial<HostCardInfo>) => {
+      setMyHostCard((prev) => {
+        const next = { ...prev, ...updates, updatedAt: new Date().toISOString() };
+        saveToStorage(STORAGE_KEYS.HOST_CARD, next, appMode);
+        if (currentUserUid && currentUserUid !== "local-user" && currentUserUid !== "unauthenticated") {
+          saveFullUserDataToCloud(currentUserUid, { hostCard: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [currentUserUid, appMode]
+  );
 
   const openHostCardModal = useCallback((profile?: VesselProfile) => {
     setSelectedHostCardProfile(profile || null);
@@ -506,6 +573,9 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     audioEngine.playPulse();
   }, [enRouteState.targetProfileId, onSendChatMessage]);
 
+  const [isGpsHibernating, setIsGpsHibernating] = useState<boolean>(false);
+  const [lastGpsPingAt, setLastGpsPingAt] = useState<number>(() => Date.now());
+
   const arrivedEnRoute = useCallback(() => {
     setEnRouteState((prev) => ({ ...prev, isArrived: true, distanceMeters: 25 }));
     if (enRouteState.targetProfileId && onSendChatMessage) {
@@ -514,7 +584,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         `📍 ¡Llegué al domicilio! Estoy a menos de 50 metros en la puerta.`
       );
     }
-    audioEngine.playSubBass(90);
+    audioEngine.playVesselCrescendoAlert();
   }, [enRouteState.targetProfileId, onSendChatMessage]);
 
   // Telemetría en Vivo de Viaje "En Camino" (Recálculo dinámico de ETA y Distancia)
@@ -582,6 +652,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
   }, []);
 
   const refreshRealGeolocation = useCallback(async (): Promise<boolean> => {
+    setLastGpsPingAt(Date.now());
     if (typeof window === "undefined" || !navigator.geolocation) {
       setGeoError("Tu dispositivo o navegador no soporta geolocalización GPS.");
       audioEngine.playError();
@@ -597,6 +668,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setMyCoordinates(coords);
           saveToStorage(STORAGE_KEYS.COORDINATES, coords);
+          setLastGpsPingAt(Date.now());
           setIsLocating(false);
           audioEngine.playSignalSent();
           resolve(true);
@@ -619,6 +691,31 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       );
     });
   }, []);
+
+  // Protocolo Wake-on-Open (Estilo Grindr / The Blowers):
+  // Cada vez que el usuario abre la app o vuelve a ponerla en primer plano, renueva el TTL de 30m y refresca el GPS (salvo hibernación en fiesta)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleAppWake = () => {
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      setLastGpsPingAt(Date.now());
+      if (!isGpsHibernating && appMode === "real") {
+        refreshRealGeolocation();
+      }
+    };
+
+    if (appMode === "real" && !isGpsHibernating) {
+      refreshRealGeolocation();
+    }
+
+    document.addEventListener("visibilitychange", handleAppWake);
+    window.addEventListener("focus", handleAppWake);
+    return () => {
+      document.removeEventListener("visibilitychange", handleAppWake);
+      window.removeEventListener("focus", handleAppWake);
+    };
+  }, [appMode, isGpsHibernating, refreshRealGeolocation]);
 
   const openGeoBatteryModal = useCallback(() => setIsGeoBatteryModalOpen(true), []);
   const closeGeoBatteryModal = useCallback(() => setIsGeoBatteryModalOpen(false), []);
@@ -670,15 +767,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     audioEngine.playPulse();
   }, []);
 
-  const openSessionRoomModal = useCallback(() => {
-    setIsSessionRoomModalOpen(true);
-    audioEngine.playPulse();
-  }, []);
-
-  const closeSessionRoomModal = useCallback(() => {
-    setIsSessionRoomModalOpen(false);
-  }, []);
-
   const createSessionRoom = useCallback(
     (roomData: Omit<SessionRoom, "id" | "hostProfileId" | "hostCodename" | "hostAvatarUrl" | "guestIds" | "isActive" | "createdAt">) => {
       const newRoom: SessionRoom = {
@@ -696,7 +784,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         createdAt: "Ahora",
       };
       setSessionRooms((prev) => [newRoom, ...prev]);
-      setIsSessionRoomModalOpen(false);
       audioEngine.playSubBass(85);
     },
     [currentUserUid, myProfile.codename, myProfile.avatarUrl]
@@ -801,6 +888,246 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
 
   const checkinHotspot = checkInHotspot;
 
+  const proposeHotspot = useCallback(
+    async (data: Partial<TacticalHotspot>): Promise<TacticalHotspot> => {
+      const userId = currentUserUid || "anon_user";
+      const userAlias = myProfile?.codename || "Vessel Explorer";
+      const newHotspot: TacticalHotspot = {
+        id: `hotspot_${Date.now()}`,
+        name: data.name?.trim() || "Nuevo Punto Táctico",
+        category: data.category || "cruising_area",
+        address: data.address?.trim() || "Zona Urbana",
+        activeVesselsCount: 0,
+        coordinates: data.coordinates || { lat: -34.5885, lng: -58.4376 },
+        geohash: data.geohash || "69y7pu2",
+        description: data.description?.trim() || "",
+        isCheckedIn: false,
+        status: "proposed",
+        confirmationsCount: 1,
+        confirmedByUserIds: [userId],
+        rating: 0,
+        ratingsCount: 0,
+        ratings: [],
+        reportsCount: 0,
+        reports: [],
+        creatorUserId: userId,
+        creatorAlias: userAlias,
+        discretionLevel: data.discretionLevel || "high",
+        bestHours: data.bestHours?.trim() || undefined,
+        createdAt: new Date().toISOString(),
+      };
+
+      setTacticalHotspots((prev) => {
+        const next = [newHotspot, ...prev];
+        tacticalHotspotsRef.current = next;
+        return next;
+      });
+      audioEngine.playSubBass(60);
+      proposeHotspotCloud(newHotspot).catch((err) => {
+        console.warn("Fallo al proponer hotspot en Firestore:", err);
+      });
+      return newHotspot;
+    },
+    [currentUserUid, myProfile]
+  );
+
+  const confirmHotspot = useCallback(
+    async (
+      hotspotId: string
+    ): Promise<{ success: boolean; activated: boolean; alreadyConfirmed?: boolean }> => {
+      const userId = currentUserUid || "anon_user";
+      const target = tacticalHotspotsRef.current.find((h) => h.id === hotspotId);
+      if (!target) {
+        return { success: false, activated: false };
+      }
+      if (target.confirmedByUserIds?.includes(userId)) {
+        return { success: false, activated: false, alreadyConfirmed: true };
+      }
+
+      const nextConfirmed = [...(target.confirmedByUserIds || []), userId];
+      const nextCount = nextConfirmed.length;
+      const willActivate = target.status === "proposed" && nextCount >= 3;
+
+      setTacticalHotspots((prev) => {
+        const next = prev.map((h) => {
+          if (h.id !== hotspotId) return h;
+          return {
+            ...h,
+            confirmedByUserIds: nextConfirmed,
+            confirmationsCount: nextCount,
+            status: willActivate ? "active" : h.status,
+          };
+        });
+        tacticalHotspotsRef.current = next;
+        return next;
+      });
+
+      audioEngine.playPulse();
+      confirmHotspotCloud(hotspotId, userId).catch((err) => {
+        console.warn("Fallo al confirmar hotspot en Firestore:", err);
+      });
+
+      return { success: true, activated: willActivate };
+    },
+    [currentUserUid]
+  );
+
+  const rateHotspot = useCallback(
+    async (hotspotId: string, score: number, tags?: string[]): Promise<boolean> => {
+      const userId = currentUserUid || "anon_user";
+      const userAlias = myProfile?.codename || "Vessel Explorer";
+      const newRating: HotspotRating = {
+        userId,
+        userAlias,
+        score,
+        tags,
+        timestamp: new Date().toISOString(),
+      };
+
+      setTacticalHotspots((prev) => {
+        const next = prev.map((h) => {
+          if (h.id !== hotspotId) return h;
+          const currentRatings = h.ratings || [];
+          const existingIdx = currentRatings.findIndex((r) => r.userId === userId);
+          let nextRatings: HotspotRating[];
+          if (existingIdx >= 0) {
+            nextRatings = [...currentRatings];
+            nextRatings[existingIdx] = newRating;
+          } else {
+            nextRatings = [...currentRatings, newRating];
+          }
+          const avg = Number(
+            (nextRatings.reduce((sum, r) => sum + r.score, 0) / nextRatings.length).toFixed(1)
+          );
+
+          return {
+            ...h,
+            ratings: nextRatings,
+            ratingsCount: nextRatings.length,
+            rating: avg,
+          };
+        });
+        tacticalHotspotsRef.current = next;
+        return next;
+      });
+
+      audioEngine.playSubBass(55);
+      rateHotspotCloud(hotspotId, newRating).catch((err) => {
+        console.warn("Fallo al calificar hotspot en Firestore:", err);
+      });
+      return true;
+    },
+    [currentUserUid, myProfile]
+  );
+
+  const reportHotspot = useCallback(
+    async (
+      hotspotId: string,
+      reason: HotspotReportReason,
+      comment: string
+    ): Promise<{ success: boolean; error?: string }> => {
+      if (!comment || comment.trim().length < 10) {
+        return {
+          success: false,
+          error: "El comentario de denuncia debe contener al menos 10 caracteres explicando el motivo.",
+        };
+      }
+
+      const userId = currentUserUid || "anon_user";
+      const userAlias = myProfile?.codename || "Vessel Explorer";
+      const newReport: HotspotReport = {
+        id: `rep_${Date.now()}`,
+        userId,
+        userAlias,
+        reason,
+        comment: comment.trim(),
+        timestamp: new Date().toISOString(),
+      };
+
+      setTacticalHotspots((prev) => {
+        const next = prev.map((h) => {
+          if (h.id !== hotspotId) return h;
+          const nextReports = [...(h.reports || []), newReport];
+          const nextCount = nextReports.length;
+          let nextStatus: HotspotStatus = h.status;
+          if (nextCount >= 4) {
+            nextStatus = "suspended";
+          } else if (nextCount >= 2) {
+            nextStatus = "flagged";
+          }
+
+          return {
+            ...h,
+            reports: nextReports,
+            reportsCount: nextCount,
+            status: nextStatus,
+          };
+        });
+        tacticalHotspotsRef.current = next;
+        return next;
+      });
+
+      audioEngine.playSubBass(80);
+      reportHotspotCloud(hotspotId, newReport).catch((err) => {
+        console.warn("Fallo al registrar denuncia en Firestore:", err);
+      });
+
+      return { success: true };
+    },
+    [currentUserUid, myProfile]
+  );
+
+  const adminUpdateHotspotStatus = useCallback(
+    async (hotspotId: string, status: HotspotStatus): Promise<boolean> => {
+      setTacticalHotspots((prev) => {
+        const next = prev.map((h) => (h.id === hotspotId ? { ...h, status } : h));
+        tacticalHotspotsRef.current = next;
+        return next;
+      });
+      audioEngine.playPulse();
+      adminUpdateHotspotStatusCloud(hotspotId, status).catch((err) => {
+        console.warn("Fallo al actualizar status admin de hotspot:", err);
+      });
+      return true;
+    },
+    []
+  );
+
+  const adminDismissReports = useCallback(async (hotspotId: string): Promise<boolean> => {
+    setTacticalHotspots((prev) => {
+      const next = prev.map((h) =>
+        h.id === hotspotId
+          ? {
+              ...h,
+              reports: [] as HotspotReport[],
+              reportsCount: 0,
+              status: "active" as HotspotStatus,
+            }
+          : h
+      );
+      tacticalHotspotsRef.current = next;
+      return next;
+    });
+    audioEngine.playPulse();
+    adminDismissReportsCloud(hotspotId).catch((err) => {
+      console.warn("Fallo al desestimar reportes en Firestore:", err);
+    });
+    return true;
+  }, []);
+
+  const adminDeleteHotspot = useCallback(async (hotspotId: string): Promise<boolean> => {
+    setTacticalHotspots((prev) => {
+      const next = prev.filter((h) => h.id !== hotspotId);
+      tacticalHotspotsRef.current = next;
+      return next;
+    });
+    audioEngine.playPulse();
+    adminDeleteHotspotCloud(hotspotId).catch((err) => {
+      console.warn("Fallo al eliminar hotspot en Firestore:", err);
+    });
+    return true;
+  }, []);
+
   const openNightlifeModal = useCallback((preselectedEventId?: string) => {
     setIsNightlifeModalOpen(true);
   }, []);
@@ -833,6 +1160,25 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     audioEngine.playSubBass(60);
   }, [currentUserUid]);
 
+  const confirmPartyArrivalLock = useCallback((venueName: string = "CLUB VESSEL") => {
+    setIsGpsHibernating(true);
+    setLastGpsPingAt(Date.now());
+    audioEngine.playVesselCrescendoAlert();
+    if (!activeCheckin) {
+      const autoCheckin: EventCheckin = {
+        eventId: "party-anchor-live",
+        eventName: venueName,
+        venueName,
+        zone: "dancefloor",
+        checkedInAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+        isIncognito: false,
+      };
+      setActiveCheckin(autoCheckin);
+      saveToStorage(STORAGE_KEYS.NIGHTLIFE_CHECKIN, autoCheckin);
+    }
+  }, [activeCheckin]);
+
   const checkInToEvent = useCallback((eventId: string, zone: ClubZoneType = "dancefloor", isIncognito: boolean = false) => {
     const ev = nightlifeEvents.find((e) => e.id === eventId);
     if (!ev) return;
@@ -842,16 +1188,20 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       venueName: ev.venueName,
       zone,
       checkedInAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 8 * 3600 * 1000).toISOString(),
+      expiresAt: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
       isIncognito,
     };
     setActiveCheckin(newCheckin);
     saveToStorage(STORAGE_KEYS.NIGHTLIFE_CHECKIN, newCheckin);
-    audioEngine.playSubBass(75);
+    // Confirmar presencia en la fiesta, activar Hibernación de GPS para ahorrar batería y disparar Crescendo Háptico VESSEL
+    setIsGpsHibernating(true);
+    setLastGpsPingAt(Date.now());
+    audioEngine.playVesselCrescendoAlert();
   }, [nightlifeEvents]);
 
   const checkOutOfEvent = useCallback(() => {
     setActiveCheckin(null);
+    setIsGpsHibernating(false);
     removeFromStorage(STORAGE_KEYS.NIGHTLIFE_CHECKIN);
     audioEngine.playSubBass(45);
   }, []);
@@ -880,7 +1230,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         return {
           ...conn,
           pulseSent: true,
-          pulseNote: note || "Te vi en la pista // Pulso de reencuentro",
+          pulseNote: note || "Te vi en la pista // Zumbido de reencuentro",
         };
       });
       saveToStorage(STORAGE_KEYS.MISSED_CONNECTIONS, next);
@@ -1015,12 +1365,12 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       isLocating,
       geoError,
       refreshRealGeolocation,
+      isGpsHibernating,
+      lastGpsPingAt,
+      confirmPartyArrivalLock,
       myExitProtocol,
       setMyExitProtocol,
       sessionRooms,
-      isSessionRoomModalOpen,
-      openSessionRoomModal,
-      closeSessionRoomModal,
       createSessionRoom,
       joinSessionRoom,
       leaveSessionRoom,
@@ -1039,6 +1389,13 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       openHotspotsModal,
       closeHotspotsModal,
       checkinHotspot,
+      proposeHotspot,
+      confirmHotspot,
+      rateHotspot,
+      reportHotspot,
+      adminUpdateHotspotStatus,
+      adminDismissReports,
+      adminDeleteHotspot,
       nightlifeEvents,
       activeCheckin,
       missedConnections,
@@ -1119,9 +1476,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       myExitProtocol,
       setMyExitProtocol,
       sessionRooms,
-      isSessionRoomModalOpen,
-      openSessionRoomModal,
-      closeSessionRoomModal,
       createSessionRoom,
       joinSessionRoom,
       leaveSessionRoom,
@@ -1133,10 +1487,20 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       unlinkDuoPartner,
       tacticalHotspots,
       selectedHotspot,
+      setSelectedHotspot,
       isHotspotsModalOpen,
       openHotspotsModal,
       closeHotspotsModal,
+      checkInHotspot,
+      checkOutHotspot,
       checkinHotspot,
+      proposeHotspot,
+      confirmHotspot,
+      rateHotspot,
+      reportHotspot,
+      adminUpdateHotspotStatus,
+      adminDismissReports,
+      adminDeleteHotspot,
       nightlifeEvents,
       activeCheckin,
       missedConnections,

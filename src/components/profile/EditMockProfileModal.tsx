@@ -5,6 +5,7 @@ import { VesselProfile, RoleType, BodyState, MobilityType } from "@/types/vessel
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { MOBILITY_OPTIONS } from "@/data/mockProfiles";
+import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import {
   X,
   User,
@@ -26,21 +27,21 @@ interface EditMockProfileModalProps {
 }
 
 const ROLE_OPTIONS: { id: RoleType; label: string }[] = [
-  { id: "Top", label: "Top (Activo)" },
-  { id: "Bottom", label: "Bottom (Pasivo)" },
-  { id: "Versatile", label: "Versatile (Versátil)" },
-  { id: "Vers Top", label: "Vers Top" },
-  { id: "Vers Bottom", label: "Vers Bottom" },
+  { id: "Top", label: "Activo" },
+  { id: "Bottom", label: "Pasivo" },
+  { id: "Versatile", label: "Versátil" },
+  { id: "Vers Top", label: "Versátil Activo" },
+  { id: "Vers Bottom", label: "Versátil Pasivo" },
   { id: "Side", label: "Side (Sin penetración)" },
-  { id: "Dominant", label: "Dominante / Master" },
-  { id: "Submissive", label: "Sumiso / Receptivo" },
-  { id: "Oral Focus", label: "Oral Focus" },
+  { id: "Dominant", label: "Dominante" },
+  { id: "Submissive", label: "Sumiso" },
+  { id: "Oral Focus", label: "Enfoque Oral / Morbo Oral" },
 ];
 
 const BODY_STATE_OPTIONS: { id: BodyState; label: string; sub: string }[] = [
-  { id: "open", label: "Activo (Open)", sub: "Visible en radar / abierto a conectar" },
-  { id: "occupied", label: "Ocupado (Busy)", sub: "No disponible ahora" },
-  { id: "dormant", label: "De incógnito (Dormant)", sub: "Oculto en el radar" },
+  { id: "open", label: "Visible en radar", sub: "Activo • Listo para recibir o salir" },
+  { id: "occupied", label: "Ocupado", sub: "No disponible ahora" },
+  { id: "dormant", label: "De incógnito", sub: "Oculto en el radar" },
 ];
 
 const PRESET_AVATARS = [
@@ -180,7 +181,7 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
           {/* 2. Rol Corporal */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-white uppercase font-mono tracking-wider block">
-              Rol / Dinámica en la Cama
+              {t.account.roleLabel || "Rol / Dinámica en la Cama"}
             </label>
             <div className="relative">
               <select
@@ -190,7 +191,7 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
               >
                 {ROLE_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id} className="bg-neutral-900 text-white">
-                    {opt.label}
+                    {getRoleDisplayLabel(opt.id, language)}
                   </option>
                 ))}
               </select>
@@ -202,7 +203,7 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-white uppercase font-mono tracking-wider block">
-                Edad
+                {t.account.ageLabel || "Edad"}
               </label>
               <input
                 type="number"
@@ -215,7 +216,7 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
 
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-white uppercase font-mono tracking-wider block">
-                Mostrar Edad
+                {t.account.showAgeLabel || "Mostrar Edad"}
               </label>
               <button
                 type="button"
@@ -226,7 +227,7 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
                     : "bg-white/5 border-white/10 text-neutral-500"
                 }`}
               >
-                <span>{showAge ? "Pública (Visible)" : "Oculta"}</span>
+                <span>{showAge ? (language === "es" ? "Pública (Visible)" : "Public (Visible)") : (language === "es" ? "Oculta" : "Hidden")}</span>
               </button>
             </div>
           </div>
@@ -234,7 +235,7 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
           {/* 4. Lugar / Movilidad */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-white uppercase font-mono tracking-wider block">
-              Lugar / Movilidad
+              {t.account.mobilityLabel || "Lugar / Movilidad"}
             </label>
             <div className="relative">
               <select
@@ -255,28 +256,33 @@ export const EditMockProfileModal: React.FC<EditMockProfileModalProps> = ({
           {/* 5. Estado Corporal */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-white uppercase font-mono tracking-wider block">
-              Estado Corporal Inmediato
+              {t.card.telemetryBodyState || "Estado Corporal Inmediato"}
             </label>
             <div className="grid grid-cols-3 gap-1.5">
-              {BODY_STATE_OPTIONS.map((st) => (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => setBodyState(st.id)}
-                  className={`p-2 min-h-[44px] rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-                    bodyState === st.id
-                      ? "bg-electricViolet text-white border-electricViolet font-bold shadow-violet-soft"
-                      : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  <span className="text-[10px] font-mono font-bold leading-tight block">
-                    {st.id.toUpperCase()}
-                  </span>
-                  <span className="text-[8px] opacity-80 leading-tight block truncate w-full">
-                    {st.label.split(" ")[0]}
-                  </span>
-                </button>
-              ))}
+              {BODY_STATE_OPTIONS.map((st) => {
+                const labelText =
+                  st.id === "open"
+                    ? t.bodyState.open
+                    : st.id === "occupied"
+                    ? t.bodyState.occupied
+                    : t.bodyState.dormant;
+                return (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setBodyState(st.id)}
+                    className={`p-2 min-h-[44px] rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                      bodyState === st.id
+                        ? "bg-electricViolet text-white border-electricViolet font-bold shadow-violet-soft"
+                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <span className="text-[10px] font-mono font-bold leading-tight block">
+                      {labelText}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

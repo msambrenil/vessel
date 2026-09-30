@@ -43,6 +43,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
     isAnonymous,
     openAuthModal,
     t,
+    language,
   } = useVessel();
 
   const [step, setStep] = useState<StepType>("oauth");
@@ -340,7 +341,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                   type="text"
                   value={codenameInput}
                   onChange={(e) => setCodenameInput(e.target.value)}
-                  placeholder="Ej. KLAUS_030 o VESSEL_BERLIN"
+                  placeholder="Ej. ALEX_01 o SANTI_BA"
                   className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-colors font-mono uppercase"
                 />
               </div>
@@ -366,7 +367,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                       <div className="font-bold text-xs flex items-center gap-1.5">
                         <span>Continuar con Google</span>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-mintNeon/20 text-mintNeon font-bold border border-mintNeon/30">
-                          1-CLICK REAL
+                          1 TOQUE REAL
                         </span>
                       </div>
                       <div className="text-[10px] text-neutral-400">
@@ -439,6 +440,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                   autoPlay
                   playsInline
                   muted
+                  aria-label="Transmisión en vivo de cámara frontal para prueba biométrica"
                   className={`absolute inset-0 w-full h-full object-cover -scale-x-100 transition-opacity duration-300 ${
                     hasCamera ? "opacity-90" : "opacity-0"
                   }`}
@@ -470,9 +472,19 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
 
               {/* Aviso de error de cámara si lo hubiere */}
               {cameraError && (
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono flex items-center gap-2 text-left">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{cameraError}</span>
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono flex items-center justify-between gap-2 text-left">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{cameraError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="p-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 transition-colors flex-shrink-0"
+                    title="Reintentar cámara"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
 
@@ -485,14 +497,26 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
 
               {/* Botón de Inicio de Escaneo */}
               {!isScanning && scanProgress === 0 && (
-                <button
-                  type="button"
-                  onClick={handleStartScan}
-                  className="w-full py-3.5 min-h-[48px] bg-electricViolet text-white hover:bg-electricViolet-glow rounded-2xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
-                >
-                  <Camera className="w-4 h-4 stroke-[2.5]" />
-                  <span>Iniciar Prueba de Vida (Liveness)</span>
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleStartScan}
+                    className="w-full py-3.5 min-h-[48px] bg-electricViolet text-white hover:bg-electricViolet-glow rounded-2xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                  >
+                    <Camera className="w-4 h-4 stroke-[2.5]" />
+                    <span>Iniciar Prueba de Vida Facial</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopCamera();
+                      setStep("oauth");
+                    }}
+                    className="w-full py-2 text-xs text-neutral-400 hover:text-white font-mono transition-colors cursor-pointer"
+                  >
+                    ← Volver a opciones de verificación
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -607,7 +631,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
                             <span className="text-[9px] font-bold text-white truncate">
-                              {avatar.name.split("//")[0].trim()}
+                              {(avatar.name.split(" - ")[0] || avatar.name).trim()}
                             </span>
                           </div>
                           {isSelected && (
@@ -710,7 +734,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                   <div className="flex items-center gap-2">
                     <VesselLogo size={18} showWordmark={true} />
                     <span className="text-[10px] font-mono uppercase text-neutral-400 font-semibold">
-                      ID CREDENTIAL
+                      {language === "es" ? "CREDENCIAL VESSEL" : "ID CREDENTIAL"}
                     </span>
                   </div>
                   <span className="text-[10px] font-mono font-bold text-mintNeon bg-mintNeon/15 px-2 py-0.5 rounded-full border border-mintNeon/30">
@@ -735,7 +759,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                     <div className="text-[11px] text-mintNeon font-medium flex items-center gap-1 mt-0.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>
-                        ID Verified // {isStylizedChoice ? "Avatar Estilizado" : isFogChoice ? "Modo Niebla" : "Público"}
+                        {language === "es" ? "Verificado // " : "ID Verified // "}{isStylizedChoice ? "Avatar Estilizado" : isFogChoice ? "Modo Niebla" : "Público"}
                       </span>
                     </div>
                     <div className="text-[10px] text-neutral-500 font-mono mt-0.5">

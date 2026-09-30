@@ -6,6 +6,7 @@
 
 # Testing & Coverage
 /coverage
+.vitest/
 
 # Next.js build output
 /.next/

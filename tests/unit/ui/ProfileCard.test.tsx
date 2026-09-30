@@ -86,7 +86,7 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
     expect(screen.getByText("~1.4km")).toBeInTheDocument();
   });
 
-  it("al presionar la píldora superior, debe abrir el popover de telemetría con explicación detallada", () => {
+  it("al presionar la foto o cuerpo de la card, abre la página del perfil completo llamando a onSelect", () => {
     const distantProfile = createMockProfile({ distanceMeters: 1500, bodyState: "open" });
     render(
       <ProfileCard
@@ -96,18 +96,14 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       />
     );
 
-    // Presionar la píldora superior derecha (aria-label="Telemetría & Radar")
-    const telemetryButton = screen.getByRole("button", { name: /telemetría & radar/i });
-    fireEvent.click(telemetryButton);
+    const baseButton = screen.getByRole("button", { name: /ver perfil de nox/i });
+    fireEvent.click(baseButton);
 
-    // Debe mostrar el popover de telemetría
-    expect(screen.getByText(/telemetría & radar/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/activo/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/discretización google s2/i)).toBeInTheDocument();
-    expect(screen.getByText(/señal remota \(> 1.0 km\)/i)).toBeInTheDocument();
+    expect(mockOnSelect).toHaveBeenCalledTimes(1);
+    expect(mockOnSelect).toHaveBeenCalledWith(distantProfile);
   });
 
-  it("al presionar el botón cerrar del popover de telemetría, debe cerrarse", () => {
+  it("al presionar la píldora de la distancia, no debe pasar nada (no abre perfil ni modales)", () => {
     const distantProfile = createMockProfile({ distanceMeters: 1500 });
     render(
       <ProfileCard
@@ -117,19 +113,14 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       />
     );
 
-    // Abrir popover
-    const telemetryButton = screen.getByRole("button", { name: /telemetría & radar/i });
-    fireEvent.click(telemetryButton);
-    expect(screen.getByText(/telemetría & radar/i)).toBeInTheDocument();
+    const distancePill = screen.getByTestId("distance-telemetry-pill");
+    fireEvent.click(distancePill);
 
-    // Cerrar popover (botón ✕ Cerrar)
-    const closeBtn = screen.getByRole("button", { name: /cerrar/i });
-    fireEvent.click(closeBtn);
-    // El popover se cierra, la descripción de estado corporal ya no está
-    expect(screen.queryByText(/disponible para encuentro/i)).toBeNull();
+    expect(mockOnSelect).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("en perfiles cercanos (<=1km), muestra la telemetría de radio local", () => {
+  it("en perfiles cercanos (<=1km), muestra la distancia en la píldora sin tag REMOTO y sin acción al clic", () => {
     const localProfile = createMockProfile({
       distanceMeters: 250,
       discretizedDistance: {
@@ -147,16 +138,12 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       />
     );
 
-    // No debe decir REMOTO
     expect(screen.queryByText("REMOTO")).toBeNull();
     expect(screen.getByText("250m")).toBeInTheDocument();
 
-    // Abrir popover
-    const telemetryButton = screen.getByRole("button", { name: /telemetría & radar/i });
-    fireEvent.click(telemetryButton);
-
-    // Debe indicar radio local táctico
-    expect(screen.getByText(/radio local táctico/i)).toBeInTheDocument();
+    const distancePill = screen.getByTestId("distance-telemetry-pill");
+    fireEvent.click(distancePill);
+    expect(mockOnSelect).not.toHaveBeenCalled();
   });
 
   it("renderiza el borde animado neón fucsia (border beam) en perfiles con membresía activa (userPlan: unlimited)", () => {
@@ -211,87 +198,7 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
     expect(gradient?.className).toContain("to-transparent");
   });
 
-  it("muestra el chip de verificación por email (MAIL) en la píldora de protocolo", () => {
-    const emailVerifiedProfile = createMockProfile({
-      verification: {
-        isVerified: true,
-        method: "email",
-        hasFacialPrivacy: false,
-        badgeLabel: "ID VERIFIED // EMAIL",
-        trustScore: 99,
-      },
-      exitProtocol: "fast_encounter",
-    });
-    render(
-      <ProfileCard
-        profile={emailVerifiedProfile}
-        onSelect={mockOnSelect}
-        onOpenChat={mockOnOpenChat}
-      />
-    );
-
-    const mailBadge = screen.getByTestId("capsule-verification-mail");
-    expect(mailBadge).toBeInTheDocument();
-    expect(mailBadge).toHaveTextContent("MAIL");
-    expect(screen.getByText("PUNTUAL")).toBeInTheDocument();
-  });
-
-  it("muestra el chip de verificación por SMS en la píldora de protocolo", () => {
-    const smsVerifiedProfile = createMockProfile({
-      verification: {
-        isVerified: true,
-        method: "phone_sms",
-        hasFacialPrivacy: false,
-        badgeLabel: "ID VERIFIED // SMS",
-        trustScore: 99,
-      },
-    });
-    render(
-      <ProfileCard
-        profile={smsVerifiedProfile}
-        onSelect={mockOnSelect}
-        onOpenChat={mockOnOpenChat}
-      />
-    );
-
-    const smsBadge = screen.getByTestId("capsule-verification-sms");
-    expect(smsBadge).toBeInTheDocument();
-    expect(smsBadge).toHaveTextContent("SMS");
-  });
-
-  it("cuando un perfil tiene protocolo, verificación y múltiples indicadores, compacta los extras en +N para no desbordar la tarjeta", () => {
-    const fullProfile = createMockProfile({
-      verification: {
-        isVerified: true,
-        method: "biometric_3d",
-        hasFacialPrivacy: false,
-        badgeLabel: "ID VERIFIED // BIO",
-        trustScore: 100,
-      },
-      exitProtocol: "fast_encounter",
-      isAntiGhost: true,
-      respectScore: 95,
-      isFogMode: true,
-      audioNote: { duration: "0:05", label: "Nota de voz" },
-      privateVault: [],
-    });
-    render(
-      <ProfileCard
-        profile={fullProfile}
-        onSelect={mockOnSelect}
-        onOpenChat={mockOnOpenChat}
-      />
-    );
-
-    // Debe mostrar protocolo y verificación
-    expect(screen.getByText("PUNTUAL")).toBeInTheDocument();
-    expect(screen.getByText("BIO")).toBeInTheDocument();
-
-    // Debe mostrar el badge compacto +3 para los indicadores restantes (antiGhost, fog, audio)
-    expect(screen.getByText("+3")).toBeInTheDocument();
-  });
-
-  it("al presionar la píldora de protocolo, el popover muestra la descripción detallada del protocolo", () => {
+  it("no renderiza la píldora de protocolo ni abre la ventana modal del protocolo", () => {
     const fullProfile = createMockProfile({
       verification: {
         isVerified: true,
@@ -310,13 +217,8 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       />
     );
 
-    // Presionar la píldora de protocolo
-    const capsuleButton = screen.getByRole("button", { name: /encuentro puntual/i });
-    fireEvent.click(capsuleButton);
-
-    // Debe mostrar la descripción enriquecida en el popover
-    expect(screen.getByText(/cita directa y eficiente sin sobremesa prolongada/i)).toBeInTheDocument();
-    expect(screen.getByText(/biometría facial 3d/i)).toBeInTheDocument();
+    expect(screen.queryByText("PUNTUAL")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: /dossier táctico/i })).toBeNull();
   });
 });
 

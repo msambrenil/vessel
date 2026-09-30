@@ -13,7 +13,7 @@ export interface RoleActionMeta {
 export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActionMeta }> = {
   Bottom: {
     es: {
-      role: "Bottom",
+      role: "Pasivo",
       icon: "🍑",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -24,16 +24,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Bottom",
       icon: "🍑",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 🍑",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 🍑",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(251,146,60,0.6)] border-orange-400/60 text-orange-300",
     },
   },
   "Vers Bottom": {
     es: {
-      role: "Vers Bottom",
+      role: "Versátil Pasivo",
       icon: "🍑",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -44,16 +44,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Vers Bottom",
       icon: "🍑",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 🍑",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 🍑",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(251,146,60,0.6)] border-orange-400/60 text-orange-300",
     },
   },
   Top: {
     es: {
-      role: "Top",
+      role: "Activo",
       icon: "🍆",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -64,16 +64,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Top",
       icon: "🍆",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 🍆",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 🍆",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(168,85,247,0.6)] border-purple-400/60 text-purple-300",
     },
   },
   "Vers Top": {
     es: {
-      role: "Vers Top",
+      role: "Versátil Activo",
       icon: "🍆",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -84,16 +84,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Vers Top",
       icon: "🍆",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 🍆",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 🍆",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(168,85,247,0.6)] border-purple-400/60 text-purple-300",
     },
   },
   Versatile: {
     es: {
-      role: "Versatile",
+      role: "Versátil",
       icon: "⚡",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -104,16 +104,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Versatile",
       icon: "⚡",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent ⚡",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent ⚡",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-violet-soft border-electricViolet text-electricViolet",
     },
   },
   Side: {
     es: {
-      role: "Side",
+      role: "Sin penetración",
       icon: "🫦",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -124,16 +124,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Side",
       icon: "🫦",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 🫦",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 🫦",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(244,114,182,0.6)] border-pink-400/60 text-pink-300",
     },
   },
   "Oral Focus": {
     es: {
-      role: "Oral Focus",
+      role: "Enfoque oral",
       icon: "👅",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -144,16 +144,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Oral Focus",
       icon: "👅",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 👅",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 👅",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(239,68,68,0.6)] border-red-400/60 text-red-300",
     },
   },
   Dominant: {
     es: {
-      role: "Dominant",
+      role: "Dominante",
       icon: "⛓️",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -164,16 +164,16 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Dominant",
       icon: "⛓️",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent ⛓️",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent ⛓️",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(139,92,246,0.6)] border-electricViolet/60 text-violet-300",
     },
   },
   Submissive: {
     es: {
-      role: "Submissive",
+      role: "Sumiso",
       icon: "🧎",
       actionLabel: "Me Hotea 🔥",
       shortLabel: "Hotea",
@@ -184,32 +184,60 @@ export const ROLE_ACTION_MAP: Record<string, { es: RoleActionMeta; en: RoleActio
     en: {
       role: "Submissive",
       icon: "🧎",
-      actionLabel: "Send Pulse",
-      shortLabel: "Pulse",
-      sentLabel: "Pulse sent 🧎",
-      tooltipTemplate: "Send pulse to {name}",
+      actionLabel: "Send Nudge",
+      shortLabel: "Nudge",
+      sentLabel: "Nudge sent 🧎",
+      tooltipTemplate: "Send nudge to {name}",
       glowClass: "shadow-[0_0_12px_rgba(96,165,250,0.6)] border-blue-400/60 text-blue-300",
     },
   },
 };
 
+export const ALL_ROLE_TYPES: RoleType[] = [
+  "Top",
+  "Bottom",
+  "Versatile",
+  "Vers Top",
+  "Vers Bottom",
+  "Side",
+  "Dominant",
+  "Submissive",
+  "Oral Focus",
+];
+
 export const ROLE_DISPLAY_NAMES: Record<string, { es: string; en: string }> = {
   Top: { es: "Activo", en: "Top" },
-  "Vers Top": { es: "Vers Activo", en: "Vers Top" },
+  "Vers Top": { es: "Versátil Activo", en: "Vers Top" },
   Bottom: { es: "Pasivo", en: "Bottom" },
-  "Vers Bottom": { es: "Vers Pasivo", en: "Vers Bottom" },
+  "Vers Bottom": { es: "Versátil Pasivo", en: "Vers Bottom" },
   Versatile: { es: "Versátil", en: "Versatile" },
-  Side: { es: "Side", en: "Side" },
-  "Oral Focus": { es: "Enfoque Oral", en: "Oral Focus" },
+  Side: { es: "Sin penetración", en: "Side" },
+  "Oral Focus": { es: "Enfoque oral", en: "Oral Focus" },
   Dominant: { es: "Dominante", en: "Dominant" },
   Submissive: { es: "Sumiso", en: "Submissive" },
 };
 
 export const getRoleDisplayLabel = (
   role: RoleType | string | undefined,
-  lang: "es" | "en" = "es"
+  lang: "es" | "en" = "es",
+  t?: { roles?: Record<string, string> }
 ): string => {
   if (!role) return lang === "en" ? "Versatile" : "Versátil";
+  if (t?.roles) {
+    const keyMap: Record<string, string> = {
+      Top: "top",
+      Bottom: "bottom",
+      Versatile: "versatile",
+      "Vers Top": "versTop",
+      "Vers Bottom": "versBottom",
+      Side: "side",
+      Dominant: "dominant",
+      Submissive: "submissive",
+      "Oral Focus": "oralFocus",
+    };
+    const key = keyMap[role];
+    if (key && t.roles[key]) return t.roles[key];
+  }
   const language = lang === "en" ? "en" : "es";
   return ROLE_DISPLAY_NAMES[role]?.[language] || role;
 };
@@ -236,16 +264,16 @@ export const getRoleActionMeta = (
   return {
     role: role || (language === "en" ? "Versatile" : "Versátil"),
     icon: "⚡",
-    actionLabel: language === "es" ? "Me Hotea 🔥" : "Send Pulse",
-    shortLabel: language === "es" ? "Hotea" : "Pulse",
-    sentLabel: language === "es" ? "Te Hotea 🔥" : "Pulse sent ⚡",
+    actionLabel: language === "es" ? "Me Hotea 🔥" : "Send Nudge",
+    shortLabel: language === "es" ? "Hotea" : "Nudge",
+    sentLabel: language === "es" ? "Te Hotea 🔥" : "Nudge sent ⚡",
     tooltipTemplate: targetName
       ? language === "es"
         ? `Avisale a ${targetName} que te hotea`
-        : `Send pulse to ${targetName}`
+        : `Send nudge to ${targetName}`
       : language === "es"
       ? "Me Hotea 🔥"
-      : "Send Pulse",
+      : "Send Nudge",
     glowClass: "shadow-violet-soft border-electricViolet text-electricViolet",
   };
 };

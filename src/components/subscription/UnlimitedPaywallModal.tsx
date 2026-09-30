@@ -41,6 +41,7 @@ export const UnlimitedPaywallModal: React.FC = () => {
     activatePartyPass,
     appMode,
     t,
+    language,
   } = useVessel();
 
   const [selectedTier, setSelectedTier] = useState<"annual" | "monthly" | "weekend" | "party">("party");
@@ -259,11 +260,11 @@ export const UnlimitedPaywallModal: React.FC = () => {
     {
       icon: "🛰️",
       title: "Transmisión Satelital de Largo Alcance (>1 km)",
-      desc: "Chateá de inmediato con cualquier Vessel a más de 1 km sin tener que esperar que te devuelvan el pulso, con fotos nítidas y fichas desclasificadas.",
+      desc: "Chateá de inmediato con cualquier Vessel a más de 1 km sin tener que esperar que te devuelvan el zumbido, con fotos nítidas y fichas desclasificadas.",
     },
     {
       icon: "✈️",
-      title: "Radar de Teleportación (Travel Mode)",
+      title: "Radar de Teleportación (Modo Viajero)",
       desc: "Navegá y conectá en otras ciudades 48 hs antes de viajar sin moverte de tu cama.",
     },
     {
@@ -278,7 +279,7 @@ export const UnlimitedPaywallModal: React.FC = () => {
     },
     {
       icon: "👻",
-      title: "Modo Fantasma Quirúrgico (Stealth Pro)",
+      title: "Modo Sigilo Quirúrgico (Incógnito Pro)",
       desc: "Navegá perfiles, mirá galerías y estados corporales sin dejar rastro de visita ni aparecer en el radar.",
     },
     {
@@ -288,8 +289,8 @@ export const UnlimitedPaywallModal: React.FC = () => {
     },
     {
       icon: "🔥",
-      title: "Priority Pulse & Boost de Visibilidad",
-      desc: "Tus pulsos y perfil aparecen primero en la matriz y el radar con distintivo dorado.",
+      title: t.payment?.priorityPulse || "Prioridad en el Radar & Boost de Visibilidad",
+      desc: "Tus zumbidos y perfil aparecen primero en la matriz y el radar con distintivo dorado.",
     },
   ];
 
@@ -327,14 +328,14 @@ export const UnlimitedPaywallModal: React.FC = () => {
           </button>
 
           <span className="inline-block px-3 py-0.5 rounded-full bg-purple-950/60 border border-electricViolet/40 text-electricViolet-glow font-mono text-[10px] font-bold uppercase tracking-widest mb-1.5 shadow-violet-soft">
-            {step === "checkout" ? "PASARELA SEGURA" : step === "success" ? "TRANSACCIÓN APROBADA" : "MEMBRESÍA OFICIAL"}
+            {step === "checkout" ? (t.payment?.secureGateway || "PAGO SEGURO") : step === "success" ? (t.payment?.transactionApproved || "TRANSACCIÓN APROBADA") : (t.payment?.membershipOfficial || (language === "es" ? "MEMBRESÍA TOTAL" : "FULL MEMBERSHIP"))}
           </span>
           <h2 className="text-xl font-black font-mono tracking-wider uppercase text-neutral-100">
-            {step === "checkout" ? "CHECKOUT CIFRADO" : step === "success" ? "RECIBO DIGITAL" : "VESSEL UNLIMITED"}
+            {step === "checkout" ? (t.payment?.checkoutTitle || "PAGO CIFRADO") : step === "success" ? (t.payment?.receiptTitle || "COMPROBANTE DIGITAL") : "VESSEL UNLIMITED"}
           </h2>
           <p className="text-[11px] text-electricViolet-glow font-mono mt-0.5">
             {step === "checkout"
-              ? "Cifrado SSL 256-bit • Facturación discreta garantizada"
+              ? (t.payment?.sslBadge || "Cifrado bancario SSL 256-bit • Facturación discreta")
               : step === "success"
               ? "Tu membresía está activa de forma inmediata"
               : '"Álbumes, bóvedas y señales ilimitadas."'}
@@ -415,7 +416,7 @@ export const UnlimitedPaywallModal: React.FC = () => {
                   }`}
                 >
                   <span className="text-[8.5px] px-1.5 py-0.5 rounded-full bg-electricViolet text-white uppercase tracking-wider font-extrabold block mb-1 shadow-sm">
-                    POPULAR // 48H
+                    {language === "es" ? "POPULAR • 48 HS" : "POPULAR • 48H"}
                   </span>
                   <span className="text-[9.5px] text-electricViolet-glow uppercase tracking-wider block font-bold">
                     PASE FINDE

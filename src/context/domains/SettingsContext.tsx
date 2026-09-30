@@ -183,26 +183,67 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     const unsubscribe = subscribeToUserAlbums(currentUserUid, (cloudAlbums) => {
       if (cloudAlbums && cloudAlbums.length > 0) {
         setUserAlbums(cloudAlbums);
-        saveToStorage(STORAGE_KEYS.ALBUMS, cloudAlbums);
+        saveToStorage(STORAGE_KEYS.ALBUMS, cloudAlbums, appMode);
+      } else if (appMode === "real") {
+        setUserAlbums([]);
+        saveToStorage(STORAGE_KEYS.ALBUMS, [], "real");
       }
     });
 
     return () => unsubscribe();
-  }, [currentUserUid]);
+  }, [currentUserUid, appMode]);
+
+  // Hidratar appSettings y userPlan desde el documento de Firestore del usuario logueado
+  useEffect(() => {
+    const handleCloudHydrated = (e: Event) => {
+      const detail = (e as CustomEvent<{ uid: string; cloudData: any }>).detail;
+      if (!detail || !detail.cloudData) return;
+      const { cloudData } = detail;
+
+      if (cloudData.appSettings) {
+        const mergedSettings = { ...INITIAL_APP_SETTINGS, ...cloudData.appSettings };
+        setAppSettings(mergedSettings);
+        if (mergedSettings.language) setLanguageState(mergedSettings.language);
+        if (mergedSettings.unitSystem) setUnitSystemState(mergedSettings.unitSystem);
+        saveToStorage(STORAGE_KEYS.SETTINGS, mergedSettings, appMode);
+      }
+
+      if (cloudData.userPlan) {
+        setUserPlanState(cloudData.userPlan);
+        saveToStorage(STORAGE_KEYS.PLAN, cloudData.userPlan, appMode);
+      } else if (appMode === "real") {
+        setUserPlanState("free");
+      }
+    };
+
+    const handleUserSwitched = () => {
+      const defaultAlbums = appMode === "real" ? [] : INITIAL_MY_ALBUMS;
+      setUserAlbums(defaultAlbums);
+      setUserPlanState("free");
+    };
+
+    window.addEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
+    window.addEventListener("vessel:user-switched", handleUserSwitched);
+    return () => {
+      window.removeEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
+      window.removeEventListener("vessel:user-switched", handleUserSwitched);
+    };
+  }, [appMode]);
 
   // Hidratación segura local-first
   useEffect(() => {
-    const localSettings = loadFromStorage<AppSettings>(STORAGE_KEYS.SETTINGS, INITIAL_APP_SETTINGS);
+    const localSettings = loadFromStorage<AppSettings>(STORAGE_KEYS.SETTINGS, INITIAL_APP_SETTINGS, appMode);
     if (localSettings) {
       setAppSettings(localSettings);
       if (localSettings.language) setLanguageState(localSettings.language);
       if (localSettings.unitSystem) setUnitSystemState(localSettings.unitSystem);
     }
 
-    const localPlan = loadFromStorage<UserSubscriptionTier>(STORAGE_KEYS.PLAN, "free");
+    const localPlan = loadFromStorage<UserSubscriptionTier>(STORAGE_KEYS.PLAN, "free", appMode);
     if (localPlan !== "free") setUserPlanState(localPlan);
 
-    const rawAlbums = loadFromStorage<UserAlbum[]>(STORAGE_KEYS.ALBUMS, INITIAL_MY_ALBUMS);
+    const defaultAlbums = appMode === "real" ? [] : INITIAL_MY_ALBUMS;
+    const rawAlbums = loadFromStorage<UserAlbum[]>(STORAGE_KEYS.ALBUMS, defaultAlbums, appMode);
     const cleanAlbums = (rawAlbums || []).map((a) => ({
       ...a,
       photos: (a.photos || []).map((p) => ({
@@ -211,22 +252,23 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         uploadProgress: undefined,
       })),
     }));
-    if (cleanAlbums && cleanAlbums.length > 0) setUserAlbums(cleanAlbums);
+    setUserAlbums(cleanAlbums);
 
-    // Hidratación complementaria desde IndexedDB para medios de alta fidelidad
-    getFromIdb<UserAlbum[]>(STORAGE_KEYS.ALBUMS, []).then((idbAlbums) => {
-      if (idbAlbums && idbAlbums.length > 0) {
-        setUserAlbums((prev) => {
-          // Si IndexedDB tiene fotos completas preservadas sin truncar
-          if (prev.length <= INITIAL_MY_ALBUMS.length) {
-            return idbAlbums;
-          }
-          return prev;
-        });
-      }
-    });
+    if (appMode !== "real") {
+      // Hidratación complementaria desde IndexedDB para modo prueba
+      getFromIdb<UserAlbum[]>(STORAGE_KEYS.ALBUMS, []).then((idbAlbums) => {
+        if (idbAlbums && idbAlbums.length > 0) {
+          setUserAlbums((prev) => {
+            if (prev.length <= INITIAL_MY_ALBUMS.length) {
+              return idbAlbums;
+            }
+            return prev;
+          });
+        }
+      });
+    }
 
-    const localWeekendPass = loadFromStorage<WeekendPassState>(STORAGE_KEYS.WEEKEND_PASS, INITIAL_WEEKEND_PASS);
+    const localWeekendPass = loadFromStorage<WeekendPassState>(STORAGE_KEYS.WEEKEND_PASS, INITIAL_WEEKEND_PASS, appMode);
     if (localWeekendPass && localWeekendPass.expiresAt && new Date(localWeekendPass.expiresAt).getTime() > Date.now()) {
       setWeekendPass(localWeekendPass);
       setUserPlanState("unlimited");
@@ -277,33 +319,51 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
 
   const t = useMemo(() => getTranslations(language), [language]);
 
-  const setLanguage = useCallback((newLang: SupportedLanguage) => {
-    setLanguageState(newLang);
-    setAppSettings((prev) => {
-      const next = { ...prev, language: newLang };
-      saveToStorage(STORAGE_KEYS.SETTINGS, next);
-      return next;
-    });
-    audioEngine.playPulse();
-  }, []);
+  const setLanguage = useCallback(
+    (newLang: SupportedLanguage) => {
+      setLanguageState(newLang);
+      setAppSettings((prev) => {
+        const next = { ...prev, language: newLang };
+        saveToStorage(STORAGE_KEYS.SETTINGS, next, appMode);
+        if (uidRef.current && uidRef.current !== "local-user") {
+          saveFullUserDataToCloud(uidRef.current, { appSettings: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [appMode]
+  );
 
-  const setUnitSystem = useCallback((newUnit: UnitSystem) => {
-    setUnitSystemState(newUnit);
-    setAppSettings((prev) => {
-      const next = { ...prev, unitSystem: newUnit };
-      saveToStorage(STORAGE_KEYS.SETTINGS, next);
-      return next;
-    });
-    audioEngine.playPulse();
-  }, []);
+  const setUnitSystem = useCallback(
+    (newUnit: UnitSystem) => {
+      setUnitSystemState(newUnit);
+      setAppSettings((prev) => {
+        const next = { ...prev, unitSystem: newUnit };
+        saveToStorage(STORAGE_KEYS.SETTINGS, next, appMode);
+        if (uidRef.current && uidRef.current !== "local-user") {
+          saveFullUserDataToCloud(uidRef.current, { appSettings: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [appMode]
+  );
 
-  const updateAppSettings = useCallback((updates: Partial<AppSettings>) => {
-    setAppSettings((prev) => {
-      const next = { ...prev, ...updates };
-      saveToStorage(STORAGE_KEYS.SETTINGS, next);
-      return next;
-    });
-  }, []);
+  const updateAppSettings = useCallback(
+    (updates: Partial<AppSettings>) => {
+      setAppSettings((prev) => {
+        const next = { ...prev, ...updates };
+        saveToStorage(STORAGE_KEYS.SETTINGS, next, appMode);
+        if (uidRef.current && uidRef.current !== "local-user") {
+          saveFullUserDataToCloud(uidRef.current, { appSettings: next });
+        }
+        return next;
+      });
+    },
+    [appMode]
+  );
 
   const formatDist = useCallback(
     (meters: number): string => {

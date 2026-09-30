@@ -70,11 +70,11 @@ export const SUBSTANCE_ATMOSPHERE_CATALOG: Record<SubstanceAtmosphere, Substance
   green_420: {
     id: "green_420",
     title: {
-      es: "420 Friendly",
+      es: "420 / Cannabis Amigable",
       en: "420 Friendly",
     },
     subtitle: {
-      es: "Cannabis & Chill",
+      es: "Humos y Relax",
       en: "Cannabis & Chill",
     },
     icon: "🍃",
@@ -93,11 +93,11 @@ export const SUBSTANCE_ATMOSPHERE_CATALOG: Record<SubstanceAtmosphere, Substance
   party_play: {
     id: "party_play",
     title: {
-      es: "Party & Play / Sesión",
+      es: "Sesión Intensa / Fiesta",
       en: "Party & Play / Chem Session",
     },
     subtitle: {
-      es: "Sesión Intensa & Caravana",
+      es: "Sesión Intensa y Caravana",
       en: "Intense Session & Party",
     },
     icon: "⚡",

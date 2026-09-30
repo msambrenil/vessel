@@ -5,8 +5,12 @@ import { useVessel } from "@/context/VesselContext";
 import { VesselLogo } from "@/components/brand/VesselLogo";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { RoleType } from "@/types/vessel";
+import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from "@/lib/storage/localStorageSync";
-import { checkCodenameAvailability } from "@/lib/firebase/identityDeduplicationService";
+import {
+  checkCodenameAvailability,
+  claimCodename,
+} from "@/lib/firebase/identityDeduplicationService";
 import {
   X,
   Mail,
@@ -36,15 +40,15 @@ interface AuthModalProps {
 }
 
 const ROLE_OPTIONS: { id: RoleType; label: string }[] = [
-  { id: "Top", label: "Top (Activo)" },
-  { id: "Bottom", label: "Bottom (Pasivo)" },
-  { id: "Versatile", label: "Versatile (Versátil)" },
-  { id: "Vers Top", label: "Vers Top" },
-  { id: "Vers Bottom", label: "Vers Bottom" },
+  { id: "Top", label: "Activo" },
+  { id: "Bottom", label: "Pasivo" },
+  { id: "Versatile", label: "Versátil" },
+  { id: "Vers Top", label: "Versátil Activo" },
+  { id: "Vers Bottom", label: "Versátil Pasivo" },
   { id: "Side", label: "Side (Sin penetración)" },
-  { id: "Dominant", label: "Dominante / Master" },
-  { id: "Submissive", label: "Sumiso / Receptivo" },
-  { id: "Oral Focus", label: "Oral Focus" },
+  { id: "Dominant", label: "Dominante" },
+  { id: "Submissive", label: "Sumiso" },
+  { id: "Oral Focus", label: "Enfoque Oral / Morbo Oral" },
 ];
 
 export interface TestPersona {
@@ -61,7 +65,7 @@ export const TEST_PERSONAS: TestPersona[] = [
   {
     name: "Alex",
     role: "Top",
-    roleLabel: "Top (Activo)",
+    roleLabel: "Activo",
     email: "alex.top@vessel.test",
     password: "vessel_test_pass_123",
     codename: "ALEX_TOP_01",
@@ -70,7 +74,7 @@ export const TEST_PERSONAS: TestPersona[] = [
   {
     name: "Marcus",
     role: "Versatile",
-    roleLabel: "Versatile (Versátil)",
+    roleLabel: "Versátil",
     email: "marcus.vers@vessel.test",
     password: "vessel_test_pass_123",
     codename: "MARCUS_VERS_02",
@@ -79,7 +83,7 @@ export const TEST_PERSONAS: TestPersona[] = [
   {
     name: "Liam",
     role: "Bottom",
-    roleLabel: "Bottom (Pasivo)",
+    roleLabel: "Pasivo",
     email: "liam.bottom@vessel.test",
     password: "vessel_test_pass_123",
     codename: "LIAM_BOTTOM_03",
@@ -106,12 +110,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     authUser,
     logout,
     myProfile,
+    updateMyProfile,
     currentUserUid,
     openAuthModal,
+    appMode,
+    filters,
+    setFilters,
   } = useVessel();
 
   const [mode, setMode] = useState<"login" | "register" | "forgot_password" | "link" | "session">(
-    initialMode === "session" && isAuthenticated
+    isAuthenticated
       ? "session"
       : isAnonymous && initialMode === "link"
       ? "link"
@@ -120,28 +128,70 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       : initialMode
   );
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(authUser?.email || myProfile?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [codename, setCodename] = useState("");
-  const [phone, setPhone] = useState("");
-  const [selectedRole, setSelectedRole] = useState<RoleType>("Versatile");
+  const [codename, setCodename] = useState(() => {
+    const initialCode = myProfile?.codename || "";
+    return initialCode === "VESSEL_USER" ? "" : initialCode;
+  });
+  const [phone, setPhone] = useState(myProfile?.phone || "");
+  const [selectedRole, setSelectedRole] = useState<RoleType>(myProfile?.role || "Versatile");
+  const [seekingRoles, setSeekingRoles] = useState<RoleType[]>(
+    () => myProfile?.seekingRoles || filters?.roles || []
+  );
   const [codenameStatus, setCodenameStatus] = useState<{
     isChecking: boolean;
     isAvailable?: boolean;
     message?: string;
   }>({ isChecking: false });
 
-  // Validación reactiva de disponibilidad de codename
+  // Si el usuario ya está autenticado (ej. tras login con Google OAuth), pasar automáticamente a la vista de Configurar Mi Perfil / Mi Sesión y pre-cargar sus datos
   useEffect(() => {
-    if (mode !== "register" || !codename.trim() || codename.trim().length < 3) {
+    if (isAuthenticated) {
+      setMode("session");
+      if (authUser?.email && !email) {
+        setEmail(authUser.email);
+      }
+      if (myProfile?.codename && myProfile.codename !== "VESSEL_USER" && !codename) {
+        setCodename(myProfile.codename);
+      } else if (!codename && authUser?.displayName) {
+        setCodename(authUser.displayName.split(" ")[0].toUpperCase());
+      }
+      if (myProfile?.role) {
+        setSelectedRole(myProfile.role);
+      }
+      if (myProfile?.phone && !phone) {
+        setPhone(myProfile.phone);
+      }
+      if (myProfile?.seekingRoles && myProfile.seekingRoles.length > 0 && seekingRoles.length === 0) {
+        setSeekingRoles(myProfile.seekingRoles);
+      }
+    }
+  }, [isAuthenticated, authUser, myProfile]);
+
+  const toggleSeekingRole = (roleId: RoleType) => {
+    audioEngine.playPulse();
+    setSeekingRoles((prev) =>
+      prev.includes(roleId) ? prev.filter((r) => r !== roleId) : [...prev, roleId]
+    );
+  };
+
+  // Validación reactiva de disponibilidad de codename (tanto en Registro como en Configurar Mi Perfil)
+  useEffect(() => {
+    if ((mode !== "register" && mode !== "session") || !codename.trim() || codename.trim().length < 3) {
       setCodenameStatus({ isChecking: false });
       return;
     }
 
     const timer = setTimeout(async () => {
       setCodenameStatus({ isChecking: true });
-      const res = await checkCodenameAvailability(codename);
+      const res = await checkCodenameAvailability(
+        codename,
+        currentUserUid && currentUserUid !== "unauthenticated" && currentUserUid !== "local-user"
+          ? currentUserUid
+          : undefined
+      );
       setCodenameStatus({
         isChecking: false,
         isAvailable: res.isAvailable,
@@ -150,7 +200,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [codename, mode]);
+  }, [codename, mode, currentUserUid]);
 
   const [personas, setPersonas] = useState<TestPersona[]>(() => {
     return loadFromStorage<TestPersona[]>(STORAGE_KEYS.TEST_PERSONAS, TEST_PERSONAS);
@@ -211,6 +261,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSuccessMessage(null);
   };
 
+  const handleSaveAuthenticatedProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    clearMessages();
+
+    const cleanCode = codename.trim().toUpperCase();
+    if (!cleanCode || cleanCode.length < 3) {
+      setErrorMessage("Por favor ingresá un nombre de usuario (alias) de al menos 3 caracteres.");
+      audioEngine.playSubBass(35, 0.4);
+      return;
+    }
+
+    setIsLoading(true);
+    audioEngine.playPulse();
+
+    try {
+      const uidForCheck =
+        currentUserUid && currentUserUid !== "unauthenticated" && currentUserUid !== "local-user"
+          ? currentUserUid
+          : authUser?.uid;
+
+      const availability = await checkCodenameAvailability(cleanCode, uidForCheck);
+      if (!availability.isAvailable) {
+        setErrorMessage(availability.message || "Ese nombre de usuario ya está en uso por otra persona.");
+        audioEngine.playSubBass(35, 0.4);
+        setIsLoading(false);
+        return;
+      }
+
+      if (uidForCheck) {
+        await claimCodename(cleanCode, uidForCheck);
+      }
+
+      updateMyProfile({
+        codename: cleanCode,
+        role: selectedRole,
+        phone: phone.trim(),
+        email: (email || authUser?.email || "").trim(),
+        seekingRoles,
+        isProfileSetupComplete: true,
+      });
+
+      setFilters((prev) => ({
+        ...prev,
+        roles: seekingRoles,
+      }));
+
+      audioEngine.playVaultUnlock();
+      setSuccessMessage("¡Perfil configurado! Ya estás visible en la Matrix.");
+      setTimeout(() => {
+        onClose();
+      }, 450);
+    } catch (err: any) {
+      setErrorMessage("Error al guardar tu perfil. Intentá nuevamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleGoogleAuth = async () => {
     clearMessages();
     setIsLoading(true);
@@ -224,10 +332,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       if (result.success) {
         audioEngine.playVaultUnlock();
-        setSuccessMessage(mode === "link" ? t.auth.linkSuccess : "¡Sesión iniciada con éxito!");
-        setTimeout(() => {
-          onClose();
-        }, 600);
+        if (result.user?.email) {
+          setEmail(result.user.email);
+        }
+        if (!codename && result.user?.displayName) {
+          setCodename(result.user.displayName.split(" ")[0].toUpperCase());
+        }
+        setMode("session");
+        setSuccessMessage(
+          "¡Conectado con Google! Confirmá tu alias, tu posición corporal y qué buscás para entrar a la Matrix."
+        );
       } else if (result.error) {
         setErrorMessage(result.error);
         audioEngine.playSubBass(35, 0.4);
@@ -283,6 +397,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     clearMessages();
 
+    // Si el usuario ya está autenticado (ej. Google OAuth), guardar directamente sus datos de perfil sin intentar crear otra cuenta de Auth
+    if (isAuthenticated) {
+      await handleSaveAuthenticatedProfile();
+      return;
+    }
+
     if (!email || (!password && mode !== "forgot_password")) {
       setErrorMessage("Por favor completá los campos obligatorios.");
       return;
@@ -326,6 +446,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         );
 
         if (result.success) {
+          updateMyProfile({
+            codename: codename.trim().toUpperCase(),
+            role: selectedRole,
+            phone: phone.trim(),
+            email: email.trim(),
+            seekingRoles,
+            isProfileSetupComplete: true,
+          });
+          setFilters((prev) => ({
+            ...prev,
+            roles: seekingRoles,
+          }));
           audioEngine.playVaultUnlock();
           setSuccessMessage("¡Cuenta creada y asegurada con éxito!");
           setTimeout(() => onClose(), 600);
@@ -403,10 +535,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={
-        mode === "link"
+        isAuthenticated || mode === "session"
+          ? "Configurar Mi Perfil en VESSEL"
+          : mode === "link"
           ? t.auth.linkAccountTitle
-          : mode === "session"
-          ? t.auth.sessionTitle || "Mi Sesión // VESSEL"
           : t.auth.loginTitle
       }
       className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-center justify-center p-3 sm:p-4 select-none animate-in fade-in"
@@ -421,25 +553,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                  {mode === "link"
+                  {isAuthenticated || mode === "session"
+                    ? "MI PERFIL OPERATIVO"
+                    : mode === "link"
                     ? t.auth.linkAccountTitle
-                    : mode === "session"
-                    ? t.auth.sessionTitle || "Mi Sesión // VESSEL"
                     : t.auth.loginTitle}
                 </h2>
                 <span
                   className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold border ${
-                    mode === "session"
+                    isAuthenticated || mode === "session"
                       ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
                       : "bg-electricViolet/15 text-electricViolet-glow border-electricViolet/30"
                   }`}
                 >
-                  {mode === "session" ? "ACTIVE OPERATIVE" : "AUTH CORE"}
+                  {isAuthenticated || mode === "session"
+                    ? (language === "es" ? "GOOGLE OAUTH ACTIVO" : "ACTIVE SESSION")
+                    : (language === "es" ? "ACCESO VESSEL" : "AUTH CORE")}
                 </span>
               </div>
               <p className="text-[10px] text-neutral-400 font-mono">
-                {mode === "session"
-                  ? t.auth.sessionSub || "Estado de cuenta y desconexión segura"
+                {isAuthenticated || mode === "session"
+                  ? "Datos principales de tu cuenta y qué buscás en la Matrix"
                   : t.auth.loginSub}
               </p>
             </div>
@@ -455,33 +589,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </div>
 
-        {/* Selector de Pestañas (Sesión / Ingresar / Crear Cuenta) */}
-        {mode !== "forgot_password" && (
-          <div
-            className={`p-1.5 bg-black/60 border-b border-white/5 grid ${
-              isAuthenticated ? "grid-cols-3" : "grid-cols-2"
-            } gap-1.5 text-xs font-bold`}
-          >
-            {isAuthenticated && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("session");
-                  clearMessages();
-                  audioEngine.playPulse();
-                }}
-                aria-selected={mode === "session"}
-                className={`py-2.5 min-h-[44px] text-center rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-98 flex items-center justify-center gap-1.5 ${
-                  mode === "session"
-                    ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
-                    : "bg-white/5 text-neutral-400 hover:text-white"
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span className="truncate">{t.auth.tabSession || "Mi Sesión"}</span>
-              </button>
-            )}
-
+        {/* Selector de Pestañas: SOLO visible cuando el usuario NO está autenticado (evita confusión de "Crear Cuenta" ya logueado) */}
+        {!isAuthenticated && mode !== "forgot_password" && (
+          <div className="p-1.5 bg-black/60 border-b border-white/5 grid grid-cols-2 gap-1.5 text-xs font-bold">
             <button
               type="button"
               onClick={() => {
@@ -535,114 +645,227 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           )}
 
-          {mode === "session" ? (
+          {isAuthenticated || mode === "session" ? (
             /* ================================================================
-               VISTA DEDICADA: GESTIÓN DE SESIÓN ACTIVA & CIERRE DIRECTO
+               VISTA UNIFICADA CUANDO YA INICIASTE CON GOOGLE OAUTH / SESIÓN:
+               DATOS PRINCIPALES + QUÉ POSICIÓN CORPORAL BUSCO PARA ENCUENTROS
                ================================================================ */
-            <div className="space-y-4 animate-in fade-in">
-              {/* Tarjeta de Identidad & Estado de Cuenta */}
-              <div className="p-4 rounded-2xl bg-black/60 border border-electricViolet/30 space-y-3.5">
-                <div className="flex items-center gap-3.5">
-                  <div className="relative flex-shrink-0">
-                    {myProfile?.avatarUrl ? (
-                      <img
-                        src={myProfile.avatarUrl}
-                        alt={myProfile.codename}
-                        className="w-14 h-14 rounded-2xl object-cover border-2 border-electricViolet/50 shadow-md"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-electricViolet/15 border-2 border-electricViolet/50 flex items-center justify-center text-electricViolet-glow text-xl font-bold font-mono">
-                        {myProfile?.codename?.[0] || authUser?.email?.[0]?.toUpperCase() || "V"}
-                      </div>
-                    )}
-                    <span
-                      className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-black animate-pulse"
-                      title="Sesión activa"
+            <form onSubmit={handleSaveAuthenticatedProfile} className="space-y-4 animate-in fade-in">
+              {/* Banner de Cuenta Google Conectada */}
+              <div className="p-3 rounded-2xl bg-emerald-950/25 border border-emerald-500/30 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {authUser?.photoURL || myProfile?.avatarUrl ? (
+                    <img
+                      src={authUser?.photoURL || myProfile.avatarUrl}
+                      alt={codename || "Avatar"}
+                      className="w-10 h-10 rounded-xl object-cover border border-emerald-400/50 flex-shrink-0"
                     />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-black text-white font-mono uppercase truncate">
-                        {myProfile?.codename || authUser?.displayName || "VESSEL_OPERATIVE"}
-                      </h3>
-                      <span className="px-1.5 py-0.5 rounded bg-white/10 text-neutral-300 font-mono text-[9px] font-bold">
-                        {myProfile?.role || "Versatile"}
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 font-mono font-black text-sm flex-shrink-0">
+                      {(codename?.[0] || email?.[0] || "V").toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[10px] font-mono font-bold uppercase text-emerald-300">
+                        Cuenta Verificada con Google
                       </span>
                     </div>
-
-                    <p className="text-[11px] text-neutral-400 font-mono truncate mt-0.5">
-                      {authUser?.email || (isAnonymous ? "Sesión Temporal / Invitado" : "Sin correo asociado")}
+                    <p className="text-[11px] text-white font-mono truncate">
+                      {authUser?.email || email}
                     </p>
-
-                    <div className="flex items-center gap-2 mt-1.5 text-[9px] font-mono text-neutral-500">
-                      <span>UID: {currentUserUid ? `${currentUserUid.slice(0, 10)}...` : "LOCAL"}</span>
-                      <span>•</span>
-                      <span className={authUser?.emailVerified ? "text-emerald-400" : "text-amber-400"}>
-                        {authUser?.emailVerified ? "Email Verificado" : "Email No Verificado"}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Métricas y Estado Técnico */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-center font-mono text-[10px]">
-                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
-                    <span className="text-neutral-500 block text-[9px]">MÉTODO DE ACCESO</span>
-                    <span className="text-white font-bold block truncate">
-                      {authUser?.providerData?.[0]?.providerId === "google.com"
-                        ? "Google OAuth"
-                        : isAnonymous
-                        ? "Invitado Local"
-                        : "Email & Contraseña"}
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={handleLogout}
+                  className="px-2.5 py-1.5 rounded-xl bg-red-950/60 hover:bg-bloodNeon text-bloodNeon hover:text-white border border-bloodNeon/40 font-mono text-[10px] font-bold cursor-pointer transition-colors flex-shrink-0"
+                >
+                  Salir
+                </button>
+              </div>
+
+              {/* 1. NOMBRE DE USUARIO / ALIAS EN VESSEL */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold text-neutral-200 uppercase tracking-wider block">
+                    1. Nombre de Usuario / Alias en VESSEL <span className="text-electricViolet-glow">*</span>
+                  </label>
+                  {codename.trim().length >= 3 && (
+                    <span className="text-[9px] font-mono font-bold flex items-center gap-1">
+                      {codenameStatus.isChecking ? (
+                        <span className="text-neutral-400 animate-pulse">Comprobando...</span>
+                      ) : codenameStatus.isAvailable ? (
+                        <span className="text-emerald-400">✓ DISPONIBLE</span>
+                      ) : codenameStatus.isAvailable === false ? (
+                        <span className="text-bloodNeon">✕ NO DISPONIBLE</span>
+                      ) : null}
                     </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                    <User className="w-4 h-4" />
                   </div>
-                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 space-y-0.5">
-                    <span className="text-neutral-500 block text-[9px]">ESTADO DE VERIFICACIÓN</span>
-                    <span className={`font-bold block truncate ${myProfile?.verification?.isVerified ? "text-mintNeon" : "text-neutral-400"}`}>
-                      {myProfile?.verification?.isVerified ? "3D Verificado" : "Sin Validar 3D"}
-                    </span>
+                  <input
+                    type="text"
+                    required
+                    value={codename}
+                    onChange={(e) => setCodename(e.target.value)}
+                    placeholder="Ej: OJITOS"
+                    className={`w-full min-h-[44px] bg-black/60 border rounded-xl text-white text-xs pl-9 pr-3.5 py-2.5 focus:outline-none focus-visible:ring-2 transition-colors font-mono font-bold uppercase ${
+                      codenameStatus.isAvailable === false
+                        ? "border-bloodNeon focus:border-bloodNeon"
+                        : "border-emerald-500/50 focus:border-electricViolet"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* 2. MI POSICIÓN CORPORAL */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-200 uppercase tracking-wider block">
+                  2. Mi Posición Corporal <span className="text-electricViolet-glow">*</span>
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {ROLE_OPTIONS.map((opt) => {
+                    const active = selectedRole === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          audioEngine.playPulse();
+                          setSelectedRole(opt.id);
+                        }}
+                        className={`py-2.5 px-2 min-h-[42px] rounded-xl font-mono text-[10px] font-bold uppercase transition-all cursor-pointer border ${
+                          active
+                            ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft"
+                            : "bg-black/60 text-neutral-300 border-white/10 hover:border-electricViolet/40"
+                        }`}
+                      >
+                        {opt.label.split(" (")[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. ¿QUÉ POSICIÓN CORPORAL BUSCO PARA ENCUENTROS? */}
+              <div className="space-y-1.5 p-3 rounded-2xl bg-electricViolet/10 border border-electricViolet/30">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-extrabold text-electricViolet-glow uppercase tracking-wider block">
+                    3. ¿Qué Posición Corporal buscás para encuentros?
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      setSeekingRoles([]);
+                    }}
+                    className={`text-[9px] font-mono px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                      seekingRoles.length === 0
+                        ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/50 font-bold"
+                        : "bg-black/50 text-neutral-400 border-white/10 hover:text-white"
+                    }`}
+                  >
+                    {seekingRoles.length === 0 ? "✓ Abierto a Todos" : "Ver Todos"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-neutral-400">
+                  Podés elegir una o varias posiciones para filtrar tu Matrix automáticamente:
+                </p>
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  {ROLE_OPTIONS.map((opt) => {
+                    const isSelected = seekingRoles.includes(opt.id);
+                    return (
+                      <button
+                        key={`seek-${opt.id}`}
+                        type="button"
+                        onClick={() => toggleSeekingRole(opt.id)}
+                        className={`py-2 px-2 min-h-[40px] rounded-xl font-mono text-[10px] font-bold uppercase transition-all cursor-pointer border flex items-center justify-center gap-1 ${
+                          isSelected
+                            ? "bg-emerald-500/25 text-emerald-200 border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                            : "bg-black/60 text-neutral-400 border-white/10 hover:border-white/25 hover:text-white"
+                        }`}
+                      >
+                        {isSelected && <span>✓</span>}
+                        <span>{opt.label.split(" (")[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. TELÉFONO CELULAR & 5. CORREO ELECTRÓNICO */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider block">
+                      4. Teléfono Celular
+                    </label>
+                    <span className="text-[8px] text-mintNeon font-mono font-bold">1 Persona = 1 Cuenta</span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="5493584851171"
+                      className="w-full min-h-[42px] bg-black/60 border border-white/15 rounded-xl text-white text-xs pl-8 pr-3 py-2 focus:outline-none focus:border-electricViolet font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider block">
+                    5. Correo Electrónico
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                      <Mail className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="email"
+                      value={email || authUser?.email || ""}
+                      onChange={(e) => setEmail(e.target.value)}
+                      readOnly={Boolean(authUser?.email)}
+                      className="w-full min-h-[42px] bg-black/40 border border-white/10 rounded-xl text-neutral-300 text-xs pl-8 pr-3 py-2 font-mono"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* BOTÓN PRINCIPAL: CERRAR SESIÓN */}
+              {/* BOTÓN PRINCIPAL: GUARDAR DATOS Y ENTRAR A LA MATRIX */}
               <button
-                type="button"
+                type="submit"
                 disabled={isLoading}
-                onClick={handleLogout}
-                className="w-full py-3.5 min-h-[48px] bg-bloodNeon/15 hover:bg-bloodNeon text-bloodNeon hover:text-white border border-bloodNeon/50 hover:border-bloodNeon font-black rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-[0_0_15px_rgba(255,0,51,0.2)] cursor-pointer disabled:opacity-50 active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon"
+                className="w-full py-3.5 min-h-[50px] bg-electricViolet text-white hover:bg-electricViolet-glow font-black rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer disabled:opacity-50 active:scale-98"
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <LogOut className="w-4 h-4 stroke-[2.5]" />
-                    <span>{t.auth.logoutAction || "Cerrar Sesión Activa"}</span>
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>GUARDAR MI PERFIL Y ENTRAR A LA MATRIX</span>
                   </>
                 )}
               </button>
-
-              {/* Acciones Secundarias: Cambiar de Cuenta */}
-              <div className="pt-2 border-t border-white/10 flex flex-col gap-2 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("login");
-                    clearMessages();
-                    audioEngine.playPulse();
-                  }}
-                  className="w-full py-2.5 min-h-[40px] text-[11px] text-neutral-400 hover:text-white font-mono hover:underline cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <span>{t.auth.switchAccount || "Cambiar de Cuenta"}</span>
-                  <span className="text-electricViolet font-bold">→</span>
-                </button>
-              </div>
-            </div>
+            </form>
           ) : (
             <>
               {/* Banner de Sesión Activa mientras se visualiza login/registro */}
-              {isAuthenticated && (
+              {isAuthenticated &&
+                (appMode === "test" ||
+                  (!authUser?.email?.endsWith("@vessel.dev") &&
+                    myProfile?.codename &&
+                    myProfile.codename.toUpperCase() !== "VESSEL_USER")) && (
                 <div className="p-3 bg-purple-950/40 border border-electricViolet/30 rounded-2xl flex items-center justify-between gap-2 text-[11px] animate-in fade-in">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0 animate-pulse" />
@@ -681,8 +904,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span>{t.auth.antiSybilNotice}</span>
               </div>
 
-          {/* Sección de Cuentas de Prueba Rápida (Local Dev / Demo) */}
-          {mode !== "forgot_password" && (
+          {/* Sección de Cuentas de Prueba Rápida (Estrictamente oculta en Modo Real) */}
+          {appMode === "test" && process.env.NODE_ENV === "development" && mode !== "forgot_password" && (
             <div className="p-3 bg-white/5 border border-electricViolet/30 rounded-2xl space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-electricViolet-glow uppercase font-mono tracking-wider">
@@ -697,10 +920,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     title="Restaurar presets por defecto"
                   >
                     <RotateCcw className="w-2.5 h-2.5" />
-                    <span>Reset</span>
+                    <span>{language === "es" ? "Reiniciar" : "Reset"}</span>
                   </button>
                   <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-electricViolet/15 text-electricViolet-glow border border-electricViolet/30 font-bold">
-                    DEV PRESETS
+                    {language === "es" ? "PERFILES DEV" : "DEV PRESETS"}
                   </span>
                 </div>
               </div>
@@ -732,7 +955,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       {p.name}
                     </span>
                     <span className="text-[8px] font-mono text-neutral-400 group-hover:text-neutral-300 block truncate w-full">
-                      {p.role}
+                      {getRoleDisplayLabel(p.role, language)}
                     </span>
                   </div>
                 ))}
@@ -893,24 +1116,68 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            {/* Selector de Rol Corporal (Solo en Registro) */}
+            {/* Selector de Rol Corporal y Qué Posición Busco (Solo en Registro) */}
             {mode === "register" && (
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider block">
-                  {t.auth.roleLabel}
-                </label>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value as RoleType)}
-                  className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-colors font-sans cursor-pointer"
-                >
-                  {ROLE_OPTIONS.map((opt) => (
-                    <option key={opt.id} value={opt.id} className="bg-neutral-900 text-white">
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider block">
+                    {t.auth.roleLabel}
+                  </label>
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value as RoleType)}
+                    className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-colors font-sans cursor-pointer"
+                  >
+                    {ROLE_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id} className="bg-neutral-900 text-white">
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 p-3 rounded-2xl bg-electricViolet/10 border border-electricViolet/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-extrabold text-electricViolet-glow uppercase tracking-wider block">
+                      ¿Qué Posición Corporal buscás para encuentros?
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        audioEngine.playPulse();
+                        setSeekingRoles([]);
+                      }}
+                      className={`text-[9px] font-mono px-2 py-0.5 rounded border cursor-pointer transition-all ${
+                        seekingRoles.length === 0
+                          ? "bg-emerald-500/25 text-emerald-300 border-emerald-500/50 font-bold"
+                          : "bg-black/50 text-neutral-400 border-white/10 hover:text-white"
+                      }`}
+                    >
+                      {seekingRoles.length === 0 ? "✓ Abierto a Todos" : "Ver Todos"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    {ROLE_OPTIONS.map((opt) => {
+                      const isSelected = seekingRoles.includes(opt.id);
+                      return (
+                        <button
+                          key={`reg-seek-${opt.id}`}
+                          type="button"
+                          onClick={() => toggleSeekingRole(opt.id)}
+                          className={`py-2 px-2 min-h-[38px] rounded-xl font-mono text-[10px] font-bold uppercase transition-all cursor-pointer border flex items-center justify-center gap-1 ${
+                            isSelected
+                              ? "bg-emerald-500/25 text-emerald-200 border-emerald-400"
+                              : "bg-black/60 text-neutral-400 border-white/10 hover:text-white"
+                          }`}
+                        >
+                          {isSelected && <span>✓</span>}
+                          <span>{opt.label.split(" (")[0]}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Campo Teléfono de Validación Única Anti-Sybil (Opcional en Registro) */}
@@ -1036,8 +1303,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </button>
           )}
 
-          {/* Acceso como Invitado */}
-          {mode !== "link" && (
+          {/* Acceso como Invitado (Solo en Modo Prueba) */}
+          {appMode === "test" && mode !== "link" && (
             <div className="pt-2 border-t border-white/10 text-center">
               <button
                 type="button"

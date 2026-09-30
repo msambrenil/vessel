@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import { useVessel, FREE_TIER_LIMITS } from "@/context/VesselContext";
 import { AlbumPrivacy, AlbumPhoto, MediaType } from "@/types/vessel";
 import { compressImage } from "@/lib/firebase/storageService";
+import { getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import {
   X,
   Globe,
@@ -35,39 +36,11 @@ interface MediaItemDraft {
   fileName?: string;
 }
 
-const PRESET_SAMPLE_PHOTOS: { url: string; caption: string; mediaType: MediaType }[] = [
-  {
-    url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
-    caption: "Retrato Brutalista // Kreuzberg",
-    mediaType: "photo",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
-    caption: "Tensión Corporal // Studio",
-    mediaType: "photo",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
-    caption: "Espalda & Silueta",
-    mediaType: "photo",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-    caption: "Iluminación Tenue // Darkroom",
-    mediaType: "photo",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
-    caption: "Presencia Física // Gym Raw",
-    mediaType: "photo",
-  },
-];
-
 export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
   onClose,
   defaultPrivacy = "public",
 }) => {
-  const { userAlbums, userPlan, setUserPlan, createAlbum } = useVessel();
+  const { userAlbums, userPlan, setUserPlan, createAlbum, t } = useVessel();
 
   const [privacy, setPrivacy] = useState<AlbumPrivacy>(defaultPrivacy);
   const [title, setTitle] = useState("");
@@ -213,19 +186,6 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
     setCustomCaption("");
   };
 
-  const handleTogglePresetPhoto = (preset: {
-    url: string;
-    caption: string;
-    mediaType: MediaType;
-  }) => {
-    const exists = selectedMedia.some((p) => p.url === preset.url);
-    if (exists) {
-      setSelectedMedia((prev) => prev.filter((p) => p.url !== preset.url));
-    } else {
-      setSelectedMedia((prev) => [...prev, preset]);
-    }
-  };
-
   const handleRemoveMedia = (index: number) => {
     setSelectedMedia((prev) => prev.filter((_, i) => i !== index));
   };
@@ -239,12 +199,13 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
       return;
     }
 
+    const todayIso = getLocalTodayIso();
     const photosToSave: AlbumPhoto[] = selectedMedia.map((p, idx) => {
       const item: AlbumPhoto = {
         id: `media-${Date.now()}-${idx}`,
         url: p.url,
         blurredUrl: p.url.startsWith("data:") ? "" : p.url,
-        createdAt: "Ahora",
+        createdAt: todayIso,
       };
       if (p.caption?.trim()) item.caption = p.caption.trim();
       if (p.mediaType) item.mediaType = p.mediaType;
@@ -282,7 +243,7 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                Crear Nuevo Álbum // Media Vault
+                {t.account?.createAlbumModalTitle || "Crear Nuevo Álbum // Bóveda"}
               </h2>
               <p className="text-[10px] text-neutral-400">
                 Fotos y Videos desde Celular o Computadora
@@ -291,7 +252,7 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -473,8 +434,8 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
               onChange={(e) => setTitle(e.target.value)}
               placeholder={
                 privacy === "public"
-                  ? "Ej. Sesión Nocturna // Palermo"
-                  : "Ej. Álbum de Nudes // Arnés, Tensión & Darkroom"
+                  ? "Ej. Sesión Nocturna en Palermo"
+                  : "Ej. Álbum Privado: Arnés, Tensión y Cuarto Oscuro"
               }
               className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-medium"
             />
@@ -573,49 +534,7 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
             </div>
           </div>
 
-          {/* 5. Selector de Fotos de Muestra Presets */}
-          <div className="space-y-2 pt-1 border-t border-white/5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                O elegir muestras de catálogo:
-              </label>
-            </div>
-
-            <div className="grid grid-cols-5 gap-2">
-              {PRESET_SAMPLE_PHOTOS.map((preset, idx) => {
-                const isSelected = selectedMedia.some((p) => p.url === preset.url);
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleTogglePresetPhoto(preset)}
-                    aria-label={`Seleccionar foto de muestra ${preset.caption}`}
-                    className={`relative aspect-square rounded-xl overflow-hidden border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                      isSelected
-                        ? "border-electricViolet scale-95 shadow-violet-soft ring-2 ring-electricViolet/40"
-                        : "border-white/10 hover:border-white/30 opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <img
-                      src={preset.url}
-                      alt={preset.caption}
-                      className="w-full h-full object-cover"
-                    />
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-electricViolet/30 flex items-center justify-center">
-                        <div className="w-5 h-5 rounded-full bg-electricViolet text-white flex items-center justify-center shadow-md">
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
-                        </div>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 6. Añadir Foto/Video con URL Directa */}
+          {/* 5. Añadir Foto/Video con URL Directa */}
           <div className="space-y-2 pt-1 border-t border-white/5">
             <label className="text-[11px] font-bold text-neutral-400 block">
               O añadir por URL directa:

@@ -28,7 +28,7 @@ export const BoundariesTab: React.FC = () => {
       {/* Sección de Límites y Desconexión Gradual */}
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-purple-500/30 space-y-4 shadow-card-elevation backdrop-blur-md">
         <SectionHeroHeader
-          title="LÍMITES // DESCONEXIÓN GRADUAL"
+          title="LÍMITES & DESCONEXIÓN GRADUAL"
           tag={`${activeBoundariesCount} ACTIVOS`}
           subtitle="Protocolos activos sin bloqueos abruptos ni hostilidad digital"
           variant="violet"
@@ -40,6 +40,21 @@ export const BoundariesTab: React.FC = () => {
             {Object.entries(connectionBoundaries).map(([pId, bound]) => {
               const targetP = profiles.find((p) => p.id === pId);
               const protoDef = BOUNDARY_PROTOCOLS_CATALOG.find((b) => b.id === bound.protocol);
+
+              const chatStatusLabel: Record<string, string> = {
+                active: "Activo",
+                muted: "Silenciado",
+                readonly: "Solo Lectura",
+                disconnected: "Desconectado",
+              };
+
+              const protocolLabelFallback: Record<string, string> = {
+                polite_archive: "CIERRE RESPETUOSO",
+                pause: "MODO PAUSA",
+                stealth_fade: "MODO SIGILO",
+                hard_boundary: "LÍMITE ESTRICTO",
+                custom: "PERSONALIZADO",
+              };
 
               return (
                 <div
@@ -58,11 +73,11 @@ export const BoundariesTab: React.FC = () => {
                           {targetP?.codename || pId}
                         </span>
                         <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${protoDef?.tagColor || "bg-white/10 text-white"}`}>
-                          {protoDef?.badge || bound.protocol.toUpperCase()}
+                          {protoDef?.badge || protocolLabelFallback[bound.protocol] || bound.protocol}
                         </span>
                       </div>
                       <span className="text-[10px] font-mono text-neutral-400 block truncate mt-0.5">
-                        Chat: <strong className="text-neutral-200">{bound.chatStatus}</strong> • Álbumes: <strong className="text-neutral-200">{bound.publicAlbumsVisible ? "Públicos" : "Ocultos"}</strong>
+                        Chat: <strong className="text-neutral-200">{chatStatusLabel[bound.chatStatus] || bound.chatStatus}</strong> • Álbumes: <strong className="text-neutral-200">{bound.publicAlbumsVisible ? "Públicos" : "Ocultos"}</strong>
                       </span>
                     </div>
                   </div>

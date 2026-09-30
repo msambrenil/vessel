@@ -346,8 +346,9 @@ export const SafetyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const toggleStealthMode = useCallback(() => {
-    setStealthMode((prev) => {
+    setIsCoverScreenActive((prev) => {
       const next = !prev;
+      setStealthMode(next);
       if (next) {
         audioEngine.playStateSwitch("dormant");
       } else {

@@ -78,7 +78,7 @@ export const HostCardBadge: React.FC<HostCardBadgeProps> = ({
           </div>
           <p className="text-[11px] text-neutral-400 truncate max-w-[200px]">
             {hostCard.livingArrangement === "solo" && "Solo • Espacio privado"}
-            {hostCard.livingArrangement === "roommates" && "Con roommates"}
+            {hostCard.livingArrangement === "roommates" && "Con compañeros de piso"}
             {hostCard.livingArrangement === "partner_aware" && "Pareja en casa"}
             {hostCard.livingArrangement === "hotel" && "Hotel / Temporal"}
             {hostCard.notes && ` — ${hostCard.notes}`}

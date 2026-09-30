@@ -10,12 +10,14 @@ import {
   ShieldAlert,
   UserCog,
   FileText,
+  Compass,
 } from "lucide-react";
 
 export type AdminTabId =
   | "dashboard"
   | "users"
   | "kinks"
+  | "hotspots"
   | "memberships"
   | "moderation"
   | "staff"
@@ -29,6 +31,7 @@ interface AdminNavProps {
   totalUsersCount: number;
   unlimitedCount: number;
   kinksCount?: number;
+  hotspotsCount?: number;
 }
 
 export const AdminNav: React.FC<AdminNavProps> = ({
@@ -39,6 +42,7 @@ export const AdminNav: React.FC<AdminNavProps> = ({
   totalUsersCount,
   unlimitedCount,
   kinksCount,
+  hotspotsCount,
 }) => {
   const tabs = [
     {
@@ -59,6 +63,13 @@ export const AdminNav: React.FC<AdminNavProps> = ({
       label: "Morbos & Fetiches",
       icon: Flame,
       badge: kinksCount,
+      roles: ["superadmin", "moderator", "support"],
+    },
+    {
+      id: "hotspots" as AdminTabId,
+      label: "Puntos & Cruising",
+      icon: Compass,
+      badge: hotspotsCount,
       roles: ["superadmin", "moderator", "support"],
     },
     {

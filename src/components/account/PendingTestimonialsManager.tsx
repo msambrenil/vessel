@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import {
   MessageSquareHeart,
   Check,
@@ -25,6 +26,8 @@ export const PendingTestimonialsManager: React.FC = () => {
     toggleTestimonialVisibility,
     rejectTestimonial,
     myProfile,
+    t,
+    language,
   } = useVessel();
 
   const [tab, setTab] = useState<"pending" | "approved" | "hidden">("pending");
@@ -52,7 +55,7 @@ export const PendingTestimonialsManager: React.FC = () => {
                 Testimonios & Doble Consentimiento
               </h3>
               <p className="text-[10px] text-neutral-400">
-                Visibilidad Selectiva // Carta de Presentación Real
+                Visibilidad Selectiva • Carta de Presentación Real
               </p>
             </div>
           </div>
@@ -85,12 +88,12 @@ export const PendingTestimonialsManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Selector de Pestañas */}
+        {/* Selector de Pestañas (44px Touch Targets) */}
         <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 text-xs font-mono">
           <button
             type="button"
             onClick={() => setTab("pending")}
-            className={`flex-1 py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 ${
+            className={`flex-1 min-h-[44px] py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
               tab === "pending"
                 ? "bg-electricViolet text-white font-bold shadow-violet-soft"
                 : "text-neutral-400 hover:text-white"
@@ -111,7 +114,7 @@ export const PendingTestimonialsManager: React.FC = () => {
           <button
             type="button"
             onClick={() => setTab("approved")}
-            className={`flex-1 py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 ${
+            className={`flex-1 min-h-[44px] py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
               tab === "approved"
                 ? "bg-electricViolet text-white font-bold shadow-violet-soft"
                 : "text-neutral-400 hover:text-white"
@@ -123,7 +126,7 @@ export const PendingTestimonialsManager: React.FC = () => {
           <button
             type="button"
             onClick={() => setTab("hidden")}
-            className={`flex-1 py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 ${
+            className={`flex-1 min-h-[44px] py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
               tab === "hidden"
                 ? "bg-electricViolet text-white font-bold shadow-violet-soft"
                 : "text-neutral-400 hover:text-white"
@@ -155,7 +158,10 @@ export const PendingTestimonialsManager: React.FC = () => {
                         {item.authorCodename}
                       </span>
                       <span className="text-[10px] text-neutral-400 font-mono">
-                        {item.createdAt} • {item.validationMethod === "geofencing" ? "Geofencing <50m" : "PIN de Encuentro"}
+                        {formatDiaryDateDisplay(item.createdAt, language)} •{" "}
+                        {item.validationMethod === "geofencing"
+                          ? (t.account.proximityVerified || "Proximidad verificada (<50m)")
+                          : "PIN de Encuentro"}
                       </span>
                     </div>
                   </div>
@@ -183,13 +189,13 @@ export const PendingTestimonialsManager: React.FC = () => {
                   </div>
                 )}
 
-                {/* Acciones de Doble Consentimiento y Visibilidad Selectiva */}
+                {/* Acciones de Doble Consentimiento y Visibilidad Selectiva (44px) */}
                 <div className="grid grid-cols-3 gap-2 pt-1">
                   {/* Rechazar */}
                   <button
                     type="button"
                     onClick={() => rejectTestimonial("me", item.id)}
-                    className="py-2 px-2 rounded-xl border border-white/10 hover:border-bloodNeon text-neutral-400 hover:text-bloodNeon text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    className="min-h-[44px] py-2 px-2 rounded-xl border border-white/10 hover:border-bloodNeon text-neutral-400 hover:text-bloodNeon text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                     <span>Rechazar</span>
@@ -199,18 +205,18 @@ export const PendingTestimonialsManager: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => hideTestimonial("me", item.id)}
-                    className="py-2 px-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 border border-white/10 cursor-pointer"
+                    className="min-h-[44px] py-2 px-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 border border-white/10 cursor-pointer"
                     title="Mantiene el texto privado pero suma al contador de encuentros verificados"
                   >
                     <EyeOff className="w-3.5 h-3.5 text-neutral-300" />
-                    <span>Ocultar (+1 ID)</span>
+                    <span>Guardar Privado</span>
                   </button>
 
                   {/* Aceptar y Publicar Abiertamente */}
                   <button
                     type="button"
                     onClick={() => approveTestimonial("me", item.id, true)}
-                    className="py-2 px-2 rounded-xl bg-electricViolet text-white hover:bg-electricViolet-glow text-[11px] font-bold transition-all shadow-violet-soft flex items-center justify-center gap-1 cursor-pointer"
+                    className="min-h-[44px] py-2 px-2 rounded-xl bg-electricViolet text-white hover:bg-electricViolet-glow text-[11px] font-bold transition-all shadow-violet-soft flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                     <span>Publicar</span>

@@ -42,6 +42,16 @@ describe("SubBassAudioEngine — Motor Acústico Sub-Bass & Respuesta Háptica",
     expect(vibrateMock).toHaveBeenCalledWith(12);
   });
 
+  it("debe invocar navigator.vibrate con patrón tipo zumbido intermitente en triggerNudgeHaptic", () => {
+    audioEngine.triggerNudgeHaptic();
+    expect(vibrateMock).toHaveBeenCalledWith([70, 45, 70, 45, 120]);
+  });
+
+  it("debe ejecutar vibración háptica de zumbido al recibir un nudge entrante (playNudgeReceived)", () => {
+    audioEngine.playNudgeReceived();
+    expect(vibrateMock).toHaveBeenCalledWith([70, 45, 70, 45, 120]);
+  });
+
   it("debe invocar navigator.vibrate con doble pulso en triggerWarningHaptic", () => {
     audioEngine.triggerWarningHaptic();
     expect(vibrateMock).toHaveBeenCalledWith([20, 35, 20]);

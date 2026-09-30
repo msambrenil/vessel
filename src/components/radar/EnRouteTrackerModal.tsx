@@ -115,22 +115,27 @@ export const EnRouteTrackerModal: React.FC = () => {
 
               <div>
                 <span className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block mb-2">
-                  Tiempo Estimado de Llegada (ETA):
+                  {t.tacticalSuite.enRoute.etaLabel || "Tiempo Estimado de Llegada"}:
                 </span>
                 <div className="grid grid-cols-4 gap-2">
-                  {[5, 10, 15, 30].map((mins) => (
+                  {[
+                    { mins: 5, icon: "🏃" },
+                    { mins: 10, icon: "🚗" },
+                    { mins: 15, icon: "⏱️" },
+                    { mins: 30, icon: "📍" },
+                  ].map(({ mins, icon }) => (
                     <button
                       key={mins}
                       type="button"
                       onClick={() => setSelectedEta(mins)}
-                      className={`p-3 rounded-xl border text-center font-mono transition-all ${
+                      className={`p-3 min-h-[48px] rounded-xl border text-center font-mono transition-all cursor-pointer active:scale-95 ${
                         selectedEta === mins
                           ? "bg-purple-950/50 border-electricViolet text-white font-bold shadow-violet-soft"
                           : "bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700"
                       }`}
                     >
-                      <div className="text-sm font-bold">{mins}</div>
-                      <div className="text-[10px] text-neutral-500 uppercase">min</div>
+                      <div className="text-xs mb-0.5">{icon}</div>
+                      <div className="text-sm font-bold">{mins} min</div>
                     </button>
                   ))}
                 </div>

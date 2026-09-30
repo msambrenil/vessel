@@ -47,10 +47,7 @@ const CalculatorCoverScreen = dynamic(
   () => import("@/components/safety/CalculatorCoverScreen").then((m) => m.CalculatorCoverScreen),
   { ssr: false }
 );
-const StealthLockScreen = dynamic(
-  () => import("@/components/ui/StealthLockScreen").then((m) => m.StealthLockScreen),
-  { ssr: false }
-);
+
 const SafetyBeaconModal = dynamic(
   () => import("@/components/safety/SafetyBeaconModal").then((m) => m.SafetyBeaconModal),
   { ssr: false }
@@ -71,10 +68,6 @@ const HostCardModal = dynamic(
   () => import("@/components/logistics/HostCardModal").then((m) => m.HostCardModal),
   { ssr: false }
 );
-const PreFlightChecklistModal = dynamic(
-  () => import("@/components/chat/PreFlightChecklistModal").then((m) => m.PreFlightChecklistModal),
-  { ssr: false }
-);
 const VoiceVibeRecorderModal = dynamic(
   () => import("@/components/profile/VoiceVibeRecorderModal").then((m) => m.VoiceVibeRecorderModal),
   { ssr: false }
@@ -91,7 +84,6 @@ const NightlifeEventsModal = dynamic(
   () => import("@/components/nightlife/NightlifeEventsModal").then((m) => m.NightlifeEventsModal),
   { ssr: false }
 );
-
 // ==========================================
 // 5. Utilidades, Salud & Cuentas
 // ==========================================
@@ -115,8 +107,20 @@ const UnlimitedPaywallModal = dynamic(
   () => import("@/components/subscription/UnlimitedPaywallModal").then((m) => m.UnlimitedPaywallModal),
   { ssr: false }
 );
-const VaultAuditModal = dynamic(
-  () => import("@/components/profile/VaultAuditModal").then((m) => m.VaultAuditModal),
+const DuoLinkModal = dynamic(
+  () => import("@/components/profile/DuoLinkModal").then((m) => m.DuoLinkModal),
+  { ssr: false }
+);
+const LoverDossierModal = dynamic(
+  () => import("@/components/diary/LoverDossierModal").then((m) => m.LoverDossierModal),
+  { ssr: false }
+);
+const VesselWrappedModal = dynamic(
+  () => import("@/components/diary/VesselWrappedModal").then((m) => m.VesselWrappedModal),
+  { ssr: false }
+);
+const QuickShareQrModal = dynamic(
+  () => import("@/components/profile/QuickShareQrModal").then((m) => m.QuickShareQrModal),
   { ssr: false }
 );
 
@@ -140,27 +144,34 @@ export const ModalHost: React.FC = memo(function ModalHost() {
     isFilterDrawerOpen,
     isAppSettingsModalOpen,
     isHostCardModalOpen,
-    isPreFlightModalOpen,
     isVoiceRecorderOpen,
     isEnRouteModalOpen,
     isSafetyBeaconModalOpen,
     isDuressPinSettingsOpen,
     isLivenessModalOpen,
     isUnlimitedModalOpen,
-    isVaultAuditModalOpen,
     isTravelModalOpen,
     isHarmReductionModalOpen,
     isItsExposureModalOpen,
     isNightlifeModalOpen,
     isCoverScreenActive,
-    stealthMode,
     isGenderOnboardingOpen,
+    isDuoModalOpen,
+    isDossierModalOpen,
+    isWrappedModalOpen,
   } = useVessel();
 
   return (
     <>
       {/* 1. Core Overlays */}
       {isFilterDrawerOpen && <DynamicFilterDrawer />}
+
+      {activeChatProfileId && (
+        <DarkroomChatModal
+          profileId={activeChatProfileId}
+          onClose={() => setActiveChatProfileId(null)}
+        />
+      )}
 
       {selectedProfile && (
         <ProfileDetailModal
@@ -170,13 +181,6 @@ export const ModalHost: React.FC = memo(function ModalHost() {
             setSelectedProfile(null);
             setActiveChatProfileId(profileId);
           }}
-        />
-      )}
-
-      {activeChatProfileId && (
-        <DarkroomChatModal
-          profileId={activeChatProfileId}
-          onClose={() => setActiveChatProfileId(null)}
         />
       )}
 
@@ -194,20 +198,18 @@ export const ModalHost: React.FC = memo(function ModalHost() {
 
       {/* 3. Seguridad & Camuflaje */}
       {isCoverScreenActive && <CalculatorCoverScreen />}
-      {stealthMode && <StealthLockScreen />}
       {isSafetyBeaconModalOpen && <SafetyBeaconModal />}
       {isDuressPinSettingsOpen && <DuressPinSettingsModal />}
       {isHarmReductionModalOpen && <HarmReductionModal />}
 
       {/* 4. Suite Táctica & Logística */}
       {isHostCardModalOpen && <HostCardModal />}
-      {isPreFlightModalOpen && <PreFlightChecklistModal />}
       {isVoiceRecorderOpen && <VoiceVibeRecorderModal />}
       {isEnRouteModalOpen && <EnRouteTrackerModal />}
       {isTravelModalOpen && <TravelModeModal />}
       {isNightlifeModalOpen && <NightlifeEventsModal />}
 
-      {/* 5. Utilidades, Salud & Cuentas */}
+      {/* 5. Utilidades, Salud, Cuentas & The Black Vault */}
       {isAppSettingsModalOpen && <AppSettingsModal />}
       {isGeoBatteryModalOpen && (
         <GeoBatteryModal onClose={closeGeoBatteryModal} />
@@ -215,9 +217,12 @@ export const ModalHost: React.FC = memo(function ModalHost() {
       {isDiaryModalOpen && (
         <CreateDiaryEntryModal onClose={closeCreateDiaryModal} />
       )}
+      {isDossierModalOpen && <LoverDossierModal />}
+      {isWrappedModalOpen && <VesselWrappedModal />}
       {isItsExposureModalOpen && <ItsExposureModal />}
       {isUnlimitedModalOpen && <UnlimitedPaywallModal />}
-      {isVaultAuditModalOpen && <VaultAuditModal />}
+      {isDuoModalOpen && <DuoLinkModal />}
+      <QuickShareQrModal />
     </>
   );
 });

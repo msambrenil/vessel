@@ -16,6 +16,7 @@ export const HostCardModal: React.FC = () => {
     stopAmbientTonePreview,
     isPlayingAmbientTone,
     t,
+    language,
   } = useVessel();
 
   const isEditingSelf = !selectedHostCardProfile;
@@ -118,7 +119,9 @@ export const HostCardModal: React.FC = () => {
                     : "bg-neutral-800 text-neutral-400"
                 }`}
               >
-                {formData.hasPlace ? "HOST ON" : "HOST OFF"}
+                {formData.hasPlace
+                  ? (language === "es" ? "TENGO LUGAR" : "HOSTING YES")
+                  : (language === "es" ? "SIN LUGAR" : "NO PLACE")}
               </button>
             )}
           </div>
@@ -234,7 +237,7 @@ export const HostCardModal: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Music className="w-4 h-4 text-electricViolet" />
                 <span className="font-mono text-neutral-300 font-bold uppercase text-[11px]">
-                  Soundtrack & Clima Sonoro
+                  {language === "es" ? "Banda Sonora & Clima Acústico" : "Soundtrack & Ambient Vibe"}
                 </span>
               </div>
               <span className="text-[9px] font-mono text-electricViolet-glow bg-purple-950/40 px-2 py-0.5 rounded-full border border-electricViolet/30 font-bold">
@@ -248,11 +251,31 @@ export const HostCardModal: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {[
-                { id: "subbass_50hz" as AmbientSoundVibeType, name: "Sub-Bass 50Hz", sub: "Resonancia analógica profunda" },
-                { id: "dark_techno" as AmbientSoundVibeType, name: "Dark Techno", sub: "128 BPM beat Berghain" },
-                { id: "berlin_industrial" as AmbientSoundVibeType, name: "Berlin Industrial", sub: "Hangar táctico crudo" },
-                { id: "sensual_downtempo" as AmbientSoundVibeType, name: "Sensual Downtempo", sub: "85 BPM pulsión íntima" },
-                { id: "ambient_chill" as AmbientSoundVibeType, name: "Ambient Chill", sub: "Texturas envolventes calmas" },
+                {
+                  id: "subbass_50hz" as AmbientSoundVibeType,
+                  name: "Sub-Bass 50Hz",
+                  sub: language === "es" ? "Resonancia analógica profunda" : "Deep analog resonance",
+                },
+                {
+                  id: "dark_techno" as AmbientSoundVibeType,
+                  name: language === "es" ? "Tecno Oscuro" : "Dark Techno",
+                  sub: language === "es" ? "Pulsión Berghain 128 BPM" : "Berghain pulse 128 BPM",
+                },
+                {
+                  id: "berlin_industrial" as AmbientSoundVibeType,
+                  name: language === "es" ? "Industrial Berlín" : "Berlin Industrial",
+                  sub: language === "es" ? "Textura cruda de hangar" : "Raw warehouse texture",
+                },
+                {
+                  id: "sensual_downtempo" as AmbientSoundVibeType,
+                  name: language === "es" ? "Downtempo Sensual" : "Sensual Downtempo",
+                  sub: language === "es" ? "Ritmo íntimo pausado" : "Paced intimate rhythm",
+                },
+                {
+                  id: "ambient_chill" as AmbientSoundVibeType,
+                  name: language === "es" ? "Ambiente Calmo" : "Ambient Chill",
+                  sub: language === "es" ? "Texturas envolventes relajadas" : "Relaxed enveloping textures",
+                },
               ].map((vibe) => {
                 const isSelected = formData.ambientVibe === vibe.id;
 

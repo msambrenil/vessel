@@ -38,6 +38,8 @@ import {
   MoreVertical,
   Mic,
   Plus,
+  Calendar,
+  Home,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
@@ -51,6 +53,7 @@ import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { KIND_CLOSURE_MESSAGES } from "@/data/energyCatalog";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { ChatMediaAttachment, ExitProtocol } from "@/types/vessel";
 import { PreFlightCard } from "./PreFlightCard";
 import { RendezvousSheet } from "./RendezvousSheet";
@@ -89,7 +92,6 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
     getProfileDossier,
     toggleChatRetention,
     clearChatHistory,
-    openPreFlightModal,
     openEnRouteModal,
     openHostCardModal,
     openSafetyBeaconModal,
@@ -98,8 +100,13 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
     language,
     formatDist,
     setSelectedProfile,
+    archivePhotosToDossier,
+    openLoverDossierModal,
+    updateEncounterTicketStatus,
+    confirmH2Ticket,
   } = useVessel();
 
+  const [archivedMediaIds, setArchivedMediaIds] = useState<Record<string, boolean>>({});
   const [inputMessage, setInputMessage] = useState("");
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [isBurnMode, setIsBurnMode] = useState(false);
@@ -112,13 +119,8 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const [isTacticalMenuOpen, setIsTacticalMenuOpen] = useState(false);
   const [isRendezvousSheetOpen, setIsRendezvousSheetOpen] = useState(false);
   const [quickBarMode, setQuickBarMode] = useState<"quick" | "antiGhost">("quick");
-  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
-
-  // Estado de Waypoint Seguro en 2 Fases
-  const [isWaypointModalOpen, setIsWaypointModalOpen] = useState(false);
-  const [phase1Corner, setPhase1Corner] = useState("");
-  const [phase2Address, setPhase2Address] = useState("");
-  const [phase2Notes, setPhase2Notes] = useState("");
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [confirmingCancelPin, setConfirmingCancelPin] = useState(false);
 
   // Estados de Multimedia y Álbumes
   const [isSendMediaModalOpen, setIsSendMediaModalOpen] = useState<boolean>(false);
@@ -224,14 +226,14 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Chat Darkroom con ${profile.codename}`}
+      aria-label={language === "es" ? `Chat seguro con ${profile.codename}` : `Secure chat with ${profile.codename}`}
       className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex justify-center items-center p-0 md:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
     >
       <div className="w-full max-w-lg md:max-w-4xl lg:max-w-5xl bg-obsidian-deep h-full md:h-[92vh] md:max-h-[920px] flex flex-row relative border-x md:border border-white/10 md:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden [overscroll-behavior:contain]">
         {/* COLUMNA PRINCIPAL DE MENSAJES Y FLUJO DE CHAT */}
         <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
           {/* CABECERA TÁCTICA CON JERARQUÍA ELEGANTE Y ACCIONES PRIORIZADAS */}
-          <div className="p-2 sm:p-2.5 border-b border-white/10 bg-[#09090B] flex items-center justify-between sticky top-0 z-20 gap-2 select-none shadow-md">
+          <div className={`p-2 sm:p-2.5 border-b border-white/10 bg-[#09090B] flex items-center justify-between sticky top-0 ${isTacticalMenuOpen ? "z-[90]" : "z-20"} gap-2 select-none shadow-md`}>
             {/* IDENTIDAD DEL USUARIO (AVATAR + 2 LÍNEAS LIMPIAS CON ACCESO AL PERFIL) */}
             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <button
@@ -241,7 +243,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   onClose();
                 }}
                 aria-label={t.chat.backToList}
-                className="p-1.5 -ml-1 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer active:scale-95 transition-all flex-shrink-0"
+                className="p-2 -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer active:scale-95 transition-all flex-shrink-0"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -313,7 +315,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   {/* Badge Anti-Ghost compacto */}
                   {profile.isAntiGhost && (
                     <span
-                      title={`Anti-Ghost // ${profile.respectScore || 98}% Respect Karma`}
+                      title={`Protocolo Anti-Ghost • ${profile.respectScore || 98}% Respeto`}
                       className="inline-flex items-center flex-shrink-0 text-emerald-400"
                     >
                       <Ghost className="w-3 h-3 stroke-[2.4]" />
@@ -347,9 +349,9 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               </div>
             </div>
 
-          {/* CINTA DE ACCIONES TÁCTICAS (Primaria PIN + Menú Flotante) */}
-          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
-            {/* 0. Botón Unificado Coordinar Cita (RendezvousSheet) */}
+          {/* CINTA DE ACCIONES TÁCTICAS (Primaria PIN + Menú Flotante 44x44px) */}
+          <div className="flex items-center gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
+            {/* Botón Unificado Coordinar Cita (RendezvousSheet) */}
             <button
               type="button"
               onClick={() => {
@@ -357,26 +359,15 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                 setIsRendezvousSheetOpen(true);
               }}
               aria-label="Coordinar cita segura"
-              className="px-2.5 py-1.5 min-h-[36px] sm:min-h-[38px] flex items-center gap-1.5 rounded-full transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm bg-electricViolet text-white hover:bg-electricViolet/90 font-mono text-xs font-bold"
+              className={`px-3.5 py-2 min-h-[44px] flex items-center gap-1.5 rounded-full transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm font-mono text-xs font-bold ${
+                activeRendezvous?.profileId === profile.id
+                  ? "bg-bloodNeon/20 border border-bloodNeon/60 text-bloodNeon shadow-[0_0_12px_rgba(230,25,55,0.35)] animate-pulse"
+                  : "bg-electricViolet text-white hover:bg-electricViolet/90"
+              }`}
               title="Asistente Integral de Encuentros (Sintonía + Lugar + Guardián SOS)"
             >
               <span className="text-sm leading-none">⚡</span>
-              <span className="hidden xs:inline sm:inline">Cita</span>
-            </button>
-
-            {/* 1. Botón Rendezvous PIN / Punto de Encuentro (Acción Rápida) */}
-            <button
-              type="button"
-              onClick={handleSendPin}
-              aria-label={t.chat.pinTooltip}
-              className={`p-1.5 sm:p-2 min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center rounded-full transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm ${
-                activeRendezvous?.profileId === profile.id
-                  ? "bg-bloodNeon/20 border border-bloodNeon/60 text-bloodNeon shadow-[0_0_12px_rgba(230,25,55,0.35)] animate-pulse"
-                  : "bg-electricViolet/15 border border-electricViolet/40 text-electricViolet-glow hover:bg-electricViolet hover:text-white"
-              }`}
-              title={activeRendezvous?.profileId === profile.id ? "Punto de Encuentro Activo // Toca para ver instrucciones" : t.chat.pinTooltip}
-            >
-              <Navigation className="w-4 h-4 fill-current" />
+              <span>{activeRendezvous?.profileId === profile.id ? (language === "es" ? "PIN Activo" : "Active PIN") : (language === "es" ? "Cita" : "Date")}</span>
             </button>
 
             {/* 2. Botón Menú Táctico Más Acciones [ ⋯ ] */}
@@ -388,12 +379,12 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               }}
               aria-label="Más herramientas tácticas"
               aria-expanded={isTacticalMenuOpen}
-              className={`p-1.5 sm:p-2 min-w-[36px] min-h-[36px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 relative ${
+              className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 relative ${
                 isTacticalMenuOpen
                   ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
                   : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
               }`}
-              title="Herramientas tácticas (Pre-Flight, ETA, Guardián, Diario, Límites)"
+              title={language === "es" ? "Herramientas tácticas (Cita, Guardián SOS, En Camino, Límites)" : "Tactical tools (Date, Guardian, En route, Boundaries)"}
             >
               <MoreVertical className="w-4 h-4" />
               {safetyBeacon?.isActive && (
@@ -401,265 +392,414 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               )}
             </button>
 
-            {/* POPUP DROPDOWN TÁCTICO FLOTANTE (100% OPACO CON BACKDROP) */}
+            {/* MODAL TÁCTICO CENTRADO / BOTTOM-SAFE (CERO RECORTE CON BARRA DE MENSAJES) */}
             {isTacticalMenuOpen && (
-              <>
-                {/* BACKDROP SCRIM */}
+              <div
+                className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setIsTacticalMenuOpen(false);
+                  }
+                }}
+                role="dialog"
+                aria-modal="true"
+                aria-label={
+                  language === "es"
+                    ? `Opciones del chat con ${profile.codename}`
+                    : `Chat options with ${profile.codename}`
+                }
+              >
                 <div
-                  className="fixed inset-0 z-40 bg-black/70 backdrop-blur-xs transition-opacity animate-in fade-in duration-150"
-                  onClick={() => setIsTacticalMenuOpen(false)}
-                  aria-hidden="true"
-                />
-
-                {/* MENÚ FLOTANTE 100% OPACO (#0E0E12) */}
-                <div
-                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 border-2 border-white/20 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.98)] p-2 space-y-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 select-none text-left"
-                  style={{ backgroundColor: "#0E0E12", opacity: 1 }}
+                  className="w-full max-w-md max-h-[calc(100dvh-2rem)] flex flex-col border border-white/20 rounded-3xl shadow-[0_24px_80px_rgba(0,0,0,0.98)] overflow-hidden select-none text-left animate-in zoom-in-95 duration-150"
+                  style={{ backgroundColor: "#0E0E12" }}
                   role="menu"
                   aria-orientation="vertical"
                 >
-                  {/* Encabezado del Menú Táctico */}
-                  <div className="px-2.5 py-1 flex items-center justify-between border-b border-white/10 text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
-                    <span>Herramientas Tácticas</span>
-                    <span className="text-electricViolet-glow font-bold">VESSEL</span>
+                  {/* Encabezado Amigable con Botón de Cierre 44x44px */}
+                  <div className="px-4 py-3 flex items-center justify-between border-b border-white/10 bg-[#13131A] flex-shrink-0">
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-white tracking-tight truncate">
+                          {language === "es"
+                            ? `Opciones con ${dossier?.customAlias || profile.codename}`
+                            : `Options with ${dossier?.customAlias || profile.codename}`}
+                        </span>
+                        <span className="text-[9px] font-mono font-bold text-electricViolet-glow px-1.5 py-0.5 rounded bg-electricViolet/15 border border-electricViolet/30 flex-shrink-0">
+                          VESSEL
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 leading-snug mt-0.5">
+                        {language === "es"
+                          ? "Coordiná para verse, cuidá tu seguridad o manejá este chat"
+                          : "Plan a meetup, stay safe, or manage this conversation"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsTacticalMenuOpen(false)}
+                      aria-label={language === "es" ? "Cerrar menú de opciones" : "Close options menu"}
+                      className="min-w-[44px] min-h-[44px] -mr-1 rounded-full flex items-center justify-center bg-white/5 hover:bg-white/15 border border-white/10 text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-95 flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  {/* HERO FASE 2: Coordinar Cita (3 en 1) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      setIsRendezvousSheetOpen(true);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-electricViolet/30 to-bloodNeon/20 hover:from-electricViolet/40 hover:to-bloodNeon/30 border border-electricViolet/50 transition-all group cursor-pointer text-left shadow-violet-soft"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-electricViolet text-white flex items-center justify-center text-sm font-bold flex-shrink-0 shadow-sm">
-                        ⚡
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block leading-tight">Coordinar Cita (3 en 1)</span>
-                        <span className="text-[10px] text-neutral-300 block leading-tight">Sintonía + Lugar/PIN + Blindaje SOS</span>
-                      </div>
-                    </div>
-                    <span className="text-[9px] font-mono font-bold text-electricViolet-glow px-1.5 py-0.5 rounded bg-black/40 border border-electricViolet/40 flex-shrink-0">WIZARD</span>
-                  </button>
-
-                  {/* 0. Pre-Flight Checklist (Sintonía) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      openPreFlightModal(profile);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-electricViolet/10 hover:bg-electricViolet/20 border border-electricViolet/30 hover:border-electricViolet transition-all group cursor-pointer text-left"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow flex items-center justify-center text-sm flex-shrink-0">
-                        📋
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block leading-tight">Pre-Flight Checklist</span>
-                        <span className="text-[10px] text-neutral-300 block leading-tight">Comprobar sintonía sexual antes de coordinar</span>
-                      </div>
-                    </div>
-                    <span className="text-[9px] font-mono font-bold text-electricViolet-glow px-1.5 py-0.5 rounded bg-electricViolet/20 border border-electricViolet/40 flex-shrink-0">TEST</span>
-                  </button>
-
-                  {/* 1. Guardián Silencioso */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      openSafetyBeaconModal();
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 transition-all group cursor-pointer text-left"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${safetyBeacon?.isActive ? "bg-bloodNeon/30 text-bloodNeon border border-bloodNeon shadow-blood-glow" : "bg-bloodNeon/15 text-bloodNeon border border-bloodNeon/30"}`}>
-                        <ShieldCheck className={`w-4 h-4 ${safetyBeacon?.isActive ? "animate-pulse" : ""}`} />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block leading-tight">Guardián Silencioso</span>
-                        <span className="text-[10px] text-neutral-400 block leading-tight">Dead-Man Switch para citas</span>
-                      </div>
-                    </div>
-                    {safetyBeacon?.isActive ? (
-                      <span className="text-[9px] font-mono font-bold text-bloodNeon px-2 py-0.5 rounded bg-bloodNeon/25 border border-bloodNeon/50 flex-shrink-0">ACTIVO</span>
-                    ) : (
-                      <span className="text-[10px] text-neutral-400 font-mono flex-shrink-0">Timer</span>
-                    )}
-                  </button>
-
-                  {/* 2. Voy en Camino (ETA) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      openEnRouteModal(profile);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 transition-all group cursor-pointer text-left"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-sm flex-shrink-0">
-                        🚗
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block leading-tight">Avisar "Voy en camino"</span>
-                        <span className="text-[10px] text-neutral-400 block leading-tight">Compartir tiempo de llegada estimado</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-neutral-400 font-mono flex-shrink-0">ETA</span>
-                  </button>
-
-                  {/* 3. Salida Amable No-Ghost */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      setIsKindClosureOpen(!isKindClosureOpen);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-950/60 border border-emerald-500/30 hover:border-emerald-500/50 transition-all group cursor-pointer text-left"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                        <Ghost className="w-4 h-4 stroke-[2.3]" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-emerald-300 block leading-tight">Salida Amable No-Ghost</span>
-                        <span className="text-[10px] text-neutral-300 block leading-tight">Despedida con onda sin clavar visto</span>
-                      </div>
-                    </div>
-                    <span className="text-[9px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/25 border border-emerald-500/40 flex-shrink-0">+5 Karma</span>
-                  </button>
-
-                  {/* 4. Documentar en Diario */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      openCreateDiaryModal(profile.id);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 transition-all group cursor-pointer text-left"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-white/10 text-neutral-200 flex items-center justify-center text-sm flex-shrink-0">
-                        📓
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block leading-tight">Anotar en Mi Diario</span>
-                        <span className="text-[10px] text-neutral-400 block leading-tight">Registro privado y seguro de citas</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-neutral-400 font-mono flex-shrink-0">Privado</span>
-                  </button>
-
-                  {/* 5. Gestión de Límites */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsTacticalMenuOpen(false);
-                      setIsBoundaryModalOpen(true);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-950/60 border border-purple-500/30 hover:border-purple-500/50 transition-all group cursor-pointer text-left"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-400 flex items-center justify-center flex-shrink-0">
-                        <ShieldCheck className="w-4 h-4 stroke-[2.3]" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-purple-300 block leading-tight">Límites & Desconexión</span>
-                        <span className="text-[10px] text-neutral-300 block leading-tight">Silenciar o desconectar contacto</span>
-                      </div>
-                    </div>
-                    {activeBoundary && (
-                      <span className="text-[9px] font-mono font-bold text-purple-400 px-2 py-0.5 rounded bg-purple-500/25 border border-purple-500/40 flex-shrink-0">
-                        {activeBoundary.chatStatus}
+                  {/* Cuerpo con Scroll Independiente (Garantiza Cero Corte en Cualquier Pantalla) */}
+                  <div className="p-3.5 space-y-3.5 overflow-y-auto overscroll-contain flex-1">
+                    {/* GRUPO 1: PARA VERNOS HOY */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-mono font-bold text-electricViolet-glow uppercase tracking-wider block px-1">
+                        📍 {language === "es" ? "Para Vernos Hoy" : "Meet Up Today"}
                       </span>
-                    )}
-                  </button>
 
-                  <div className="border-t border-white/10 my-1" />
+                      {/* Acción Principal Destacada: Armar Encuentro Paso a Paso */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          audioEngine.playPulse();
+                          setIsTacticalMenuOpen(false);
+                          setIsRendezvousSheetOpen(true);
+                        }}
+                        className="w-full flex items-center justify-between gap-3 p-3 rounded-2xl bg-gradient-to-r from-electricViolet/30 via-electricViolet/20 to-bloodNeon/20 hover:from-electricViolet/40 hover:to-bloodNeon/30 border border-electricViolet/50 transition-all group cursor-pointer text-left shadow-violet-soft"
+                        role="menuitem"
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-electricViolet text-white flex items-center justify-center text-base font-bold flex-shrink-0 shadow-sm mt-0.5">
+                            ⚡
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs sm:text-sm font-black text-white leading-tight">
+                                {language === "es"
+                                  ? "Armar Encuentro Paso a Paso"
+                                  : "Plan Meetup Step by Step"}
+                              </span>
+                              <span className="text-[9px] font-mono font-bold text-electricViolet-glow px-1.5 py-0.5 rounded bg-black/50 border border-electricViolet/40">
+                                {language === "es" ? "Todo en 1" : "All-in-1"}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-neutral-200 block leading-snug mt-1">
+                              {language === "es"
+                                ? "Elegí qué buscan hacer, quién pone el lugar, la hora y activá tu alerta SOS en 1 minuto."
+                                : "Agree on dynamics, who hosts, time, and activate your SOS timer in 1 minute."}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
 
-                  {/* 6. Validar / Testimonio */}
-                  {isEncounterValidated ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        audioEngine.playPulse();
-                        setIsTacticalMenuOpen(false);
-                        setIsWriteModalOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-electricViolet/15 hover:bg-electricViolet/25 border border-electricViolet/30 transition-all cursor-pointer text-left"
-                      role="menuitem"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow flex items-center justify-center flex-shrink-0">
-                        <MessageSquareHeart className="w-4 h-4 text-electricViolet-glow" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-electricViolet-glow block leading-tight">Dejar Testimonio & Reseña</span>
-                        <span className="text-[10px] text-neutral-300 block leading-tight">Compartir feedback recíproco</span>
-                      </div>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        audioEngine.playSuccess();
-                        setIsTacticalMenuOpen(false);
-                        validateEncounter(profile.id, "chat_agreement");
-                      }}
-                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.12] border border-white/10 hover:border-white/20 transition-all cursor-pointer text-left"
-                      role="menuitem"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-mintNeon/20 border border-mintNeon/40 text-mintNeon flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-mintNeon" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-white block leading-tight">Validar Encuentro Mutuo</span>
-                        <span className="text-[10px] text-neutral-400 block leading-tight">Confirmar encuentro presencial</span>
-                      </div>
-                    </button>
-                  )}
+                      {/* Grilla 2 Columnas: Mostrar Mi Lugar + Avisar que Ya Salí */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {/* Mostrar Cómo es Mi Lugar */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            setIsTacticalMenuOpen(false);
+                            openHostCardModal();
+                          }}
+                          className="w-full flex items-start gap-2.5 p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-emerald-500/40 transition-all group cursor-pointer text-left"
+                          role="menuitem"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Home className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {language === "es" ? "Cómo es Mi Lugar" : "My Place Details"}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 block leading-snug mt-0.5">
+                              {language === "es"
+                                ? "Mostrá si vivís solo, tenés ducha o privacidad (sin dar dirección)."
+                                : "Share privacy, shower & house vibe without exposing your address."}
+                            </span>
+                          </div>
+                        </button>
 
-                  {/* 7. Limpiar Historial */}
-                  {messages.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsTacticalMenuOpen(false);
-                        if (window.confirm(t.chat.clearHistoryConfirm)) {
-                          clearChatHistory(profile.id);
-                        }
-                      }}
-                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-bloodNeon/10 hover:bg-bloodNeon/20 border border-bloodNeon/25 transition-all cursor-pointer text-left"
-                      role="menuitem"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-bloodNeon/20 border border-bloodNeon/40 text-bloodNeon flex items-center justify-center flex-shrink-0">
-                        <Trash2 className="w-4 h-4 text-bloodNeon" />
+                        {/* Avisar que Ya Salí (En Camino) */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            setIsTacticalMenuOpen(false);
+                            openEnRouteModal(profile);
+                          }}
+                          className="w-full flex items-start gap-2.5 p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-electricViolet/40 transition-all group cursor-pointer text-left"
+                          role="menuitem"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-electricViolet/20 border border-electricViolet/30 text-electricViolet-glow flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Navigation className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {language === "es" ? "Avisar que Ya Salí" : "I'm On My Way"}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 block leading-snug mt-0.5">
+                              {language === "es"
+                                ? "Mandale en cuántos minutos llegás para que te espere listo."
+                                : "Send your estimated arrival time in minutes."}
+                            </span>
+                          </div>
+                        </button>
                       </div>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-bloodNeon block leading-tight">{t.chat.clearHistoryBtn || "Limpiar Chat"}</span>
-                        <span className="text-[10px] text-bloodNeon/70 block leading-tight">Purgar todos los mensajes</span>
+                    </div>
+
+                    {/* GRUPO 2: TU CUIDADO Y TUS TIEMPOS */}
+                    <div className="space-y-2 pt-1 border-t border-white/10">
+                      <span className="text-[10px] font-mono font-bold text-neutral-300 uppercase tracking-wider block px-1">
+                        🛡️ {language === "es" ? "Tu Cuidado y Tus Tiempos" : "Your Safety & Boundaries"}
+                      </span>
+
+                      {/* Alerta SOS para tu Cita (Guardián Silencioso explicado claro) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          audioEngine.playPulse();
+                          setIsTacticalMenuOpen(false);
+                          openSafetyBeaconModal();
+                        }}
+                        className="w-full flex items-start justify-between gap-2.5 p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-bloodNeon/40 transition-all group cursor-pointer text-left"
+                        role="menuitem"
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                              safetyBeacon?.isActive
+                                ? "bg-bloodNeon/30 text-bloodNeon border border-bloodNeon shadow-blood-glow"
+                                : "bg-bloodNeon/15 text-bloodNeon border border-bloodNeon/30"
+                            }`}
+                          >
+                            <ShieldCheck className={`w-4 h-4 ${safetyBeacon?.isActive ? "animate-pulse" : ""}`} />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {language === "es"
+                                ? "Alerta SOS por si Algo Sale Mal"
+                                : "Safety SOS Timer for Your Date"}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 block leading-snug mt-0.5">
+                              {language === "es"
+                                ? "Poné un reloj (ej. 1 hora). Si no avisás que estás bien, alerta a un amigo tuyo."
+                                : "Set a timer. If you don't check in safe, it alerts your trusted contact."}
+                            </span>
+                          </div>
+                        </div>
+                        {safetyBeacon?.isActive ? (
+                          <span className="text-[9px] font-mono font-bold text-bloodNeon px-2 py-0.5 rounded-full bg-bloodNeon/25 border border-bloodNeon/50 flex-shrink-0">
+                            {t.system?.active || "ACTIVO"}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono font-bold text-neutral-300 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 flex-shrink-0">
+                            {language === "es" ? "Reloj SOS" : "SOS Timer"}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Cortar con Buena Onda (Salida Amable No-Ghost) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          audioEngine.playPulse();
+                          setIsTacticalMenuOpen(false);
+                          setIsKindClosureOpen(!isKindClosureOpen);
+                        }}
+                        className="w-full flex items-start justify-between gap-2.5 p-2.5 rounded-2xl bg-emerald-950/30 hover:bg-emerald-950/50 border border-emerald-500/30 hover:border-emerald-500/50 transition-all group cursor-pointer text-left"
+                        role="menuitem"
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <HeartHandshake className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-emerald-300 block leading-tight">
+                              {language === "es"
+                                ? "Despedirse con Buena Onda"
+                                : "Say Goodbye Politely"}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 block leading-snug mt-0.5">
+                              {language === "es"
+                                ? "Elegí un mensaje amable ya escrito para decir que hoy no pinta, sin clavar visto."
+                                : "Pick a ready-made kind message to pass politely without ghosting."}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono font-bold text-emerald-300 px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-500/40 flex-shrink-0">
+                          +5 Respeto
+                        </span>
+                      </button>
+
+                      {/* Silenciar, Pausar o Bloquear */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          audioEngine.playPulse();
+                          setIsTacticalMenuOpen(false);
+                          setIsBoundaryModalOpen(true);
+                        }}
+                        className="w-full flex items-start justify-between gap-2.5 p-2.5 rounded-2xl bg-purple-950/20 hover:bg-purple-900/30 border border-purple-500/25 hover:border-purple-500/45 transition-all group cursor-pointer text-left"
+                        role="menuitem"
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <ShieldAlert className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-purple-200 block leading-tight">
+                              {language === "es"
+                                ? "Silenciar, Pausar o Bloquear"
+                                : "Mute, Pause or Block"}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 block leading-snug mt-0.5">
+                              {language === "es"
+                                ? "Poné la charla en pausa, ocultate de su radar o cortá el contacto."
+                                : "Mute notifications, pause this chat, or hide from their radar."}
+                            </span>
+                          </div>
+                        </div>
+                        {activeBoundary && (
+                          <span className="text-[9px] font-mono font-bold text-purple-300 px-2 py-0.5 rounded-full bg-purple-500/25 border border-purple-500/40 flex-shrink-0">
+                            {activeBoundary.chatStatus === "readonly"
+                              ? (t.system?.chatReadonly || "Solo lectura")
+                              : activeBoundary.chatStatus === "disconnected"
+                              ? (t.system?.chatDisconnected || "Desconectado")
+                              : (t.system?.chatMuted || activeBoundary.chatStatus)}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* GRUPO 3: PERFIL, NOTAS PRIVADAS & HISTORIAL (GRILLA COMPACTA 2x2) */}
+                    <div className="space-y-2 pt-1 border-t border-white/10">
+                      <span className="text-[10px] font-mono font-bold text-neutral-300 uppercase tracking-wider block px-1">
+                        👤 {language === "es" ? `Sobre ${dossier?.customAlias || profile.codename}` : `About ${dossier?.customAlias || profile.codename}`}
+                      </span>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Ver Fotos y Perfil */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            setIsTacticalMenuOpen(false);
+                            setSelectedProfile(profile);
+                          }}
+                          className="p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-white/25 transition-all cursor-pointer text-left flex items-start gap-2"
+                          role="menuitem"
+                        >
+                          <span className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 text-white flex items-center justify-center text-sm flex-shrink-0">
+                            👤
+                          </span>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {language === "es" ? "Ver Perfil y Fotos" : "View Full Profile"}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block leading-tight mt-0.5">
+                              {language === "es" ? "Bio, morbos y reputación" : "Bio, kinks & reputation"}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Guardar Nota Privada */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            setIsTacticalMenuOpen(false);
+                            openCreateDiaryModal(profile.id);
+                          }}
+                          className="p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-white/25 transition-all cursor-pointer text-left flex items-start gap-2"
+                          role="menuitem"
+                        >
+                          <span className="w-8 h-8 rounded-xl bg-neutral-800 border border-white/15 text-neutral-200 flex items-center justify-center text-sm flex-shrink-0">
+                            📓
+                          </span>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {language === "es" ? "Guardar Nota Privada" : "Save Private Note"}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block leading-tight mt-0.5">
+                              {language === "es" ? "Agendar o anotar (solo vos)" : "Private personal log"}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Confirmar que nos vimos / Dejar Reseña */}
+                        {isEncounterValidated ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              audioEngine.playPulse();
+                              setIsTacticalMenuOpen(false);
+                              setIsWriteModalOpen(true);
+                            }}
+                            className="p-2.5 rounded-2xl bg-electricViolet/15 hover:bg-electricViolet/25 border border-electricViolet/30 transition-all cursor-pointer text-left flex items-start gap-2"
+                            role="menuitem"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow flex items-center justify-center flex-shrink-0">
+                              <MessageSquareHeart className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-electricViolet-glow block leading-tight">
+                                {language === "es" ? "Dejar Reseña" : "Leave Review"}
+                              </span>
+                              <span className="text-[10px] text-neutral-300 block leading-tight mt-0.5">
+                                {language === "es" ? "Contar qué tal estuvo" : "Share verified review"}
+                              </span>
+                            </div>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              audioEngine.playSuccess();
+                              setIsTacticalMenuOpen(false);
+                              validateEncounter(profile.id, "chat_agreement");
+                            }}
+                            className="p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-mintNeon/40 transition-all cursor-pointer text-left flex items-start gap-2"
+                            role="menuitem"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-mintNeon/20 border border-mintNeon/40 text-mintNeon flex items-center justify-center flex-shrink-0">
+                              <CheckCircle2 className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-white block leading-tight">
+                                {language === "es" ? "Confirmar que nos Vimos" : "Confirm We Met"}
+                              </span>
+                              <span className="text-[10px] text-neutral-400 block leading-tight mt-0.5">
+                                {language === "es" ? "Habilita reseña mutua" : "Unlocks mutual review"}
+                              </span>
+                            </div>
+                          </button>
+                        )}
+
+                        {/* Borrar Mensajes */}
+                        {messages.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsTacticalMenuOpen(false);
+                              setIsClearConfirmOpen(true);
+                            }}
+                            className="p-2.5 rounded-2xl bg-bloodNeon/10 hover:bg-bloodNeon/20 border border-bloodNeon/25 transition-all cursor-pointer text-left flex items-start gap-2"
+                            role="menuitem"
+                          >
+                            <div className="w-8 h-8 rounded-xl bg-bloodNeon/20 border border-bloodNeon/40 text-bloodNeon flex items-center justify-center flex-shrink-0">
+                              <Trash2 className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-bloodNeon block leading-tight">
+                                {language === "es" ? "Borrar Mensajes" : "Clear Messages"}
+                              </span>
+                              <span className="text-[10px] text-bloodNeon/80 block leading-tight mt-0.5">
+                                {language === "es" ? "Vaciar este chat" : "Empty this chat"}
+                              </span>
+                            </div>
+                          </button>
+                        )}
                       </div>
-                    </button>
-                  )}
+                    </div>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -688,7 +828,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-300 font-black text-xs uppercase tracking-wide">
                 <Ghost className="w-4 h-4 stroke-[2.5]" />
-                <span>Salida Amable & Sexy // Modo Anti-Ghost</span>
+                <span>Salida Amable & Sexy • Modo Anti-Ghost</span>
               </div>
               <button
                 type="button"
@@ -700,7 +840,9 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             </div>
 
             <p className="text-[11px] text-neutral-300 leading-relaxed">
-              ¿No hay chispa o seguís de largo? Elegí una salida con onda en 1 toque. Sumás <strong>+5 Respect Karma</strong> y mantenés la cultura del respeto.
+              {language === "es"
+                ? "¿No hay chispa o seguís de largo? Elegí una salida con onda en 1 toque. Sumás +5 Puntos de Respeto y mantenés la cultura de cero plantones."
+                : "No mutual spark? Choose a kind sign-off in 1 tap. Earn +5 Respect Karma and build a ghost-free community."}
             </p>
 
             <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
@@ -726,27 +868,45 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
           </div>
         )}
 
-        {/* BANNER DE PUNTO DE ENCUENTRO ACTIVO CON ACCIÓN DE ANULAR */}
+        {/* BANNER DE PUNTO DE ENCUENTRO ACTIVO CON CONFIRMACIÓN INLINE (CERO WINDOW.CONFIRM) */}
         {activeRendezvous?.profileId === profile.id && (
           <div className="bg-bloodNeon/15 border-b border-bloodNeon/50 p-3.5 space-y-2.5 animate-in slide-in-from-top-2 z-10 backdrop-blur-md">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-bloodNeon font-black text-xs uppercase tracking-wide">
                 <Navigation className="w-4 h-4 animate-pulse" />
-                <span>Punto de Encuentro Activo</span>
+                <span>{language === "es" ? "Punto de Encuentro Activo" : "Active Meeting Point"}</span>
                 <span className="w-2 h-2 rounded-full bg-bloodNeon animate-ping" />
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm("¿Estás seguro de anular este Punto de Encuentro?")) {
-                    cancelRendezvousPin(profile.id);
-                  }
-                }}
-                className="px-3 py-1 bg-bloodNeon hover:bg-bloodNeon/80 text-white rounded-xl text-[11px] font-mono font-bold uppercase transition-all shadow-blood-glow flex items-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <X className="w-3.5 h-3.5" />
-                <span>Anular Encuentro</span>
-              </button>
+              {confirmingCancelPin ? (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      cancelRendezvousPin(profile.id);
+                      setConfirmingCancelPin(false);
+                    }}
+                    className="px-2.5 py-1 bg-bloodNeon hover:bg-red-600 text-white rounded-lg text-[10px] font-mono font-black uppercase cursor-pointer"
+                  >
+                    {language === "es" ? "Sí, Anular" : "Yes, Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingCancelPin(false)}
+                    className="px-2 py-1 bg-white/10 hover:bg-white/20 text-neutral-300 rounded-lg text-[10px] font-mono font-bold uppercase cursor-pointer"
+                  >
+                    {language === "es" ? "No" : "Keep"}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingCancelPin(true)}
+                  className="px-3 py-1 bg-bloodNeon hover:bg-bloodNeon/80 text-white rounded-xl text-[11px] font-mono font-bold uppercase transition-all shadow-blood-glow flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>{language === "es" ? "Anular Encuentro" : "Cancel PIN"}</span>
+                </button>
+              )}
             </div>
 
             <div className="bg-black/60 p-2.5 rounded-xl border border-bloodNeon/30 text-xs font-mono flex items-center justify-between">
@@ -810,6 +970,39 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
 
         {/* ZONA DE MENSAJES SENSORIAL */}
         <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-3.5 bg-gradient-to-b from-obsidian-deep via-[#070709] to-obsidian-deep overscroll-contain">
+          {/* ESTADO VACÍO TÁCTICO DE APERTURA DE CANAL (SIN PANTALLA EN BLANCO) */}
+          {messages.length === 0 && (
+            <div className="my-6 mx-auto max-w-sm rounded-3xl border border-white/10 bg-obsidian-surface/80 p-5 text-center space-y-3.5 shadow-card-elevation">
+              <div className="w-12 h-12 rounded-2xl bg-electricViolet/15 border border-electricViolet/40 text-electricViolet-glow flex items-center justify-center mx-auto shadow-violet-soft">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xs font-mono font-black uppercase tracking-wider text-white">
+                  {language === "es"
+                    ? `Canal Cifrado con ${profile.codename}`
+                    : `Encrypted Channel with ${profile.codename}`}
+                </h3>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  {language === "es"
+                    ? `${getRoleDisplayLabel(profile.role, language)} • ${profile.hosting}. Rompé el hielo en 1 toque o coordiná cita directa.`
+                    : `${getRoleDisplayLabel(profile.role, language)} • ${profile.hosting}. Break the ice in 1 tap or schedule a date.`}
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+                {quickReplies.slice(0, 3).map((icebreaker, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleQuickReply(icebreaker)}
+                    className="px-3 py-1.5 min-h-[38px] rounded-xl bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 text-[11px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                  >
+                    {icebreaker}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {messages.map((msg) => {
             const isMe = msg.senderId === "me";
             const isSystem = msg.senderId === "system";
@@ -821,6 +1014,190 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                     <span className="text-[10px] text-emerald-300 font-mono font-bold block">
                       {msg.text}
                     </span>
+                  </div>
+                </div>
+              );
+            }
+
+            {/* TARJETA TÁCTICA MAESTRA DE TICKET DE ENCUENTRO */}
+            if (msg.isEncounterTicket && msg.encounterTicketData) {
+              const ticket = msg.encounterTicketData;
+              const isConfirmed = ticket.status === "confirmed";
+              const isDeclined = ticket.status === "declined" || ticket.status === "cancelled";
+              const formattedDate = formatDiaryDateDisplay(ticket.scheduledDate, language);
+              const myH2Confirmed = ticket.h2ConfirmedByUser;
+              const theirH2Confirmed = ticket.h2ConfirmedByPartner;
+
+              return (
+                <div key={msg.id} className="w-full my-3">
+                  <div
+                    className={`rounded-3xl border-2 p-4 sm:p-5 space-y-3 relative overflow-hidden transition-all ${
+                      isConfirmed
+                        ? "bg-obsidian-surface border-electricViolet/70 shadow-violet-soft"
+                        : isDeclined
+                        ? "bg-obsidian border-white/10 opacity-60"
+                        : "bg-obsidian-surface border-champagneGold/60 shadow-[0_0_25px_rgba(245,158,11,0.2)]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                      <div className="flex items-center gap-2 font-mono font-black text-xs uppercase tracking-wider text-white">
+                        <Calendar className="w-4 h-4 text-electricViolet-glow" />
+                        <span>{t.diary?.encounterTicketTitle || (language === "es" ? "Ticket de Encuentro" : "Encounter Ticket")}</span>
+                      </div>
+                      <span
+                        className={`text-[9px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                          isConfirmed
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                            : isDeclined
+                            ? "bg-neutral-800 text-neutral-400 border-neutral-700"
+                            : "bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse"
+                        }`}
+                      >
+                        {isConfirmed
+                          ? (t.diary?.encounterTicketAccepted || (language === "es" ? "Confirmada" : "Confirmed"))
+                          : isDeclined
+                          ? (t.diary?.encounterTicketDeclined || (language === "es" ? "Cancelada" : "Declined"))
+                          : (language === "es" ? "Pendiente" : "Pending")}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded-xl bg-black/50 border border-white/5 space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 block uppercase">
+                          {language === "es" ? "Fecha & Hora" : "Date & Time"}
+                        </span>
+                        <span className="font-bold text-white block">
+                          📅 {formattedDate} · {ticket.scheduledTime} hs
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-black/50 border border-white/5 space-y-0.5">
+                        <span className="text-[10px] text-neutral-400 block uppercase">
+                          {language === "es" ? "Lugar" : "Location"}
+                        </span>
+                        <span className="font-bold text-electricViolet-glow block truncate">
+                          📍 {ticket.locationName}
+                        </span>
+                      </div>
+                    </div>
+
+                    {ticket.exitProtocol && (
+                      <div className="text-[11px] font-mono text-neutral-300 flex items-center gap-1.5 pt-0.5">
+                        <span className="text-neutral-500">{language === "es" ? "Salida:" : "Exit:"}</span>
+                        <span className="font-bold text-white">
+                          {ticket.exitProtocol === "fast_encounter"
+                            ? (language === "es" ? "⏱️ Puntual (Sin sobremesa)" : "⏱️ Fast Encounter")
+                            : ticket.exitProtocol === "chill_cuddle"
+                            ? (language === "es" ? "🫂 Mimos (Ducha y charla)" : "🫂 Shower & Cuddle")
+                            : (language === "es" ? "🌙 Pasar la noche" : "🌙 Sleepover")}
+                        </span>
+                      </div>
+                    )}
+
+                    {ticket.notes && (
+                      <p className="text-xs font-sans text-neutral-200 pl-2.5 border-l-2 border-electricViolet/60 leading-relaxed">
+                        {ticket.notes}
+                      </p>
+                    )}
+
+                    {/* Botonera de acciones para el receptor (Aceptar / Declinar) o para el emisor (Reprogramar / Cancelar) */}
+                    {ticket.status === "proposed" && !isMe && (
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playSubBass(70);
+                            updateEncounterTicketStatus(ticket.id, "confirmed");
+                          }}
+                          className="min-h-[44px] py-2.5 px-3 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-bold transition-all cursor-pointer shadow-violet-soft"
+                        >
+                          {t.diary?.encounterTicketAccept || (language === "es" ? "Aceptar Cita" : "Accept Date")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            updateEncounterTicketStatus(ticket.id, "declined");
+                          }}
+                          className="min-h-[44px] py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-300 font-mono text-xs font-bold transition-all cursor-pointer"
+                        >
+                          {t.diary?.encounterTicketDecline || (language === "es" ? "Declinar" : "Decline")}
+                        </button>
+                      </div>
+                    )}
+
+                    {ticket.status === "proposed" && isMe && (
+                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            setIsRendezvousSheetOpen(true);
+                          }}
+                          className="flex-1 min-h-[40px] py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-mono text-[11px] font-bold transition-all cursor-pointer"
+                        >
+                          {language === "es" ? "Reprogramar Hora" : "Reschedule"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            updateEncounterTicketStatus(ticket.id, "declined");
+                          }}
+                          className="min-h-[40px] py-2 px-3 rounded-xl bg-bloodNeon/15 hover:bg-bloodNeon/25 border border-bloodNeon/40 text-bloodNeon font-mono text-[11px] font-bold transition-all cursor-pointer"
+                        >
+                          {language === "es" ? "Cancelar Propuesta" : "Cancel"}
+                        </button>
+                      </div>
+                    )}
+
+                    {isConfirmed && (
+                      <div className="space-y-2 pt-2 border-t border-white/10">
+                        {/* Estado bilateral de confirmación H-2 */}
+                        <div className="flex items-center justify-between text-[10px] font-mono px-1">
+                          <span className={myH2Confirmed ? "text-emerald-400 font-bold" : "text-neutral-400"}>
+                            {language === "es" ? "Vos:" : "You:"} {myH2Confirmed ? "✓ Confirmado" : "Pendiente"}
+                          </span>
+                          <span className={theirH2Confirmed ? "text-emerald-400 font-bold" : "text-neutral-400"}>
+                            {profile.codename}: {theirH2Confirmed ? "✓ Confirmado" : "Pendiente"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              audioEngine.playSuccess();
+                              confirmH2Ticket(ticket.id, isMe);
+                            }}
+                            disabled={Boolean(myH2Confirmed)}
+                            className={`flex-1 min-h-[44px] py-2 px-3 rounded-xl border font-mono text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                              myH2Confirmed
+                                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 cursor-default"
+                                : "bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/40 text-emerald-300 cursor-pointer"
+                            }`}
+                          >
+                            <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>
+                              {myH2Confirmed
+                                ? (language === "es" ? "Asistencia Confirmada ✓" : "Arrival Confirmed ✓")
+                                : (language === "es" ? "Confirmar que voy (H-2)" : "Confirm arrival (H-2)")}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              audioEngine.playPulse();
+                              updateEncounterTicketStatus(ticket.id, "declined");
+                            }}
+                            className="min-h-[44px] px-3 py-2 rounded-xl bg-white/5 hover:bg-bloodNeon/20 border border-white/10 hover:border-bloodNeon/40 text-neutral-400 hover:text-bloodNeon font-mono text-[11px] font-bold transition-all cursor-pointer"
+                            title={language === "es" ? "Cancelar cita" : "Cancel date"}
+                          >
+                            {language === "es" ? "Cancelar" : "Cancel"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -864,7 +1241,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                         <Navigation className={`w-4 h-4 ${!isCancelled ? "animate-pulse" : ""}`} />
                         <span>
                           {isCancelled
-                            ? "Punto de Encuentro Anulado"
+                            ? (language === "es" ? "Punto de Encuentro Anulado" : "Meeting Point Cancelled")
                             : t.chat.rendezvousTitle}
                         </span>
                       </div>
@@ -874,7 +1251,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                         }`}
                       >
                         <Clock className="w-3 h-3" />
-                        <span>{isCancelled ? "Anulado" : t.chat.expiresIn15}</span>
+                        <span>{isCancelled ? (language === "es" ? "Anulado" : "Cancelled") : t.chat.expiresIn15}</span>
                       </div>
                     </div>
 
@@ -893,22 +1270,18 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                             : "bg-bloodNeon/20 text-bloodNeon border-bloodNeon/40"
                         }`}
                       >
-                        {isCancelled ? "ANULADO" : "DOBLE CONSENTIMIENTO"}
+                        {isCancelled ? (language === "es" ? "ANULADO" : "CANCELLED") : (language === "es" ? "DOBLE CONSENTIMIENTO" : "DOUBLE CONSENT")}
                       </span>
                     </div>
 
                     {!isCancelled && (
                       <button
                         type="button"
-                        onClick={() => {
-                          if (window.confirm("¿Deseas anular este Punto de Encuentro?")) {
-                            cancelRendezvousPin(profile.id);
-                          }
-                        }}
-                        className="w-full mt-2 py-2 px-3 bg-bloodNeon/15 hover:bg-bloodNeon hover:text-white text-bloodNeon border border-bloodNeon/40 rounded-xl text-xs font-mono font-bold uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98"
+                        onClick={() => cancelRendezvousPin(profile.id)}
+                        className="w-full min-h-[44px] mt-2 py-2 px-3 bg-bloodNeon/15 hover:bg-bloodNeon hover:text-white text-bloodNeon border border-bloodNeon/40 rounded-xl text-xs font-mono font-bold uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-98"
                       >
                         <X className="w-3.5 h-3.5" />
-                        <span>Anular Punto de Encuentro</span>
+                        <span>{language === "es" ? "Anular Punto de Encuentro" : "Cancel Meeting Point"}</span>
                       </button>
                     )}
                   </div>
@@ -927,7 +1300,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                     <div className="flex items-center justify-between border-b border-white/10 pb-2">
                       <div className="flex items-center gap-2 text-electricViolet-glow font-mono font-bold text-xs uppercase">
                         <MapPin className="w-4 h-4 text-electricViolet animate-pulse" />
-                        <span>Waypoint Seguro // 2 Fases</span>
+                        <span>Punto de Encuentro Seguro • 2 Fases</span>
                       </div>
                       <span
                         className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
@@ -1020,7 +1393,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   <div className="w-full max-w-sm rounded-2xl bg-red-950/70 border-2 border-red-500/70 p-4 space-y-2.5 shadow-[0_0_20px_rgba(239,68,68,0.3)]">
                     <div className="flex items-center gap-2 text-red-300 font-mono font-bold text-xs uppercase border-b border-red-500/30 pb-2">
                       <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse" />
-                      <span>Alerta Médica Preventiva // 100% Anónima</span>
+                      <span>Alerta Médica Preventiva • 100% Anónima</span>
                     </div>
 
                     <p className="text-xs text-neutral-200 leading-relaxed font-mono">
@@ -1343,6 +1716,27 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                               decoding="async"
                             />
                           )}
+                          {/* Botón de Archivar en la Ficha del Amante (The Black Vault) */}
+                          {!isMe && msg.mediaAttachment.url && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                archivePhotosToDossier(profile.id, [msg.mediaAttachment!.url]);
+                                setArchivedMediaIds((prev) => ({ ...prev, [msg.id]: true }));
+                                audioEngine.playPulse();
+                              }}
+                              className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-black/80 hover:bg-black text-white border border-white/20 hover:border-electricViolet text-[9.5px] font-mono font-bold flex items-center gap-1.5 transition-all shadow-md z-10 cursor-pointer active:scale-95"
+                              title={t.diary?.archivePhotosFromChat || "Archivar en Ficha"}
+                              aria-label={t.diary?.archivePhotosFromChat || "Archivar en Ficha"}
+                            >
+                              <Lock className="w-3 h-3 text-electricViolet-glow" />
+                              <span className={archivedMediaIds[msg.id] ? "text-emerald-400" : "text-white"}>
+                                {archivedMediaIds[msg.id] ? "✓ Archivada" : (t.diary?.archivePhotosFromChat || "Archivar en Ficha")}
+                              </span>
+                            </button>
+                          )}
+
                           <div className="absolute bottom-2 right-2 p-1 rounded bg-obsidian-950/80 text-electricViolet-glow border border-electricViolet/40">
                             <Maximize2 className="w-3.5 h-3.5" />
                           </div>
@@ -1511,119 +1905,30 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               </div>
             ) : (
             <div className="flex flex-col">
-              {/* Drawer Táctico Desplegable del Botón + */}
-              {isPlusMenuOpen && (
-                <div className="p-2.5 sm:p-3 bg-[#0c0c10] border-b border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in slide-in-from-bottom-2 duration-150">
-                  {/* 1. Coordinar Cita Segura */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsPlusMenuOpen(false);
-                      setIsRendezvousSheetOpen(true);
-                    }}
-                    className="flex items-center gap-2 p-2 rounded-xl bg-electricViolet/15 border border-electricViolet/30 text-white hover:bg-electricViolet/25 transition-all text-left cursor-pointer active:scale-95"
-                  >
-                    <div className="p-1.5 rounded-lg bg-electricViolet/20 text-electricViolet-glow flex-shrink-0">
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] font-mono font-bold uppercase truncate text-white">Coordinar Cita</span>
-                      <span className="text-[9px] text-neutral-400 truncate">Punto seguro & Yendo</span>
-                    </div>
-                  </button>
-
-                  {/* 2. Mensaje Efímero (Burn-on-View) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playStateSwitch("occupied");
-                      setIsBurnMode(!isBurnMode);
-                      setIsPlusMenuOpen(false);
-                    }}
-                    className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-left cursor-pointer active:scale-95 ${
-                      isBurnMode
-                        ? "bg-bloodNeon/25 border-bloodNeon text-bloodNeon shadow-blood-glow"
-                        : "bg-white/5 border-white/10 text-white hover:bg-white/10"
-                    }`}
-                  >
-                    <div className={`p-1.5 rounded-lg flex-shrink-0 ${isBurnMode ? "bg-bloodNeon/30 text-white" : "bg-white/5 text-bloodNeon"}`}>
-                      <Flame className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] font-mono font-bold uppercase truncate">
-                        {isBurnMode ? "Efímero: ON" : "Modo Efímero"}
-                      </span>
-                      <span className="text-[9px] text-neutral-400 truncate">1 sola vista</span>
-                    </div>
-                  </button>
-
-                  {/* 3. Pre-Flight Checklist (Sintonía) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsPlusMenuOpen(false);
-                      openPreFlightModal(profile);
-                    }}
-                    className="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all text-left cursor-pointer active:scale-95"
-                  >
-                    <div className="p-1.5 rounded-lg bg-white/5 text-amber-300 flex-shrink-0">
-                      <Zap className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] font-mono font-bold uppercase truncate">Pre-Flight</span>
-                      <span className="text-[9px] text-neutral-400 truncate">Sintonía erótica</span>
-                    </div>
-                  </button>
-
-                  {/* 4. Guardián Silencioso */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsPlusMenuOpen(false);
-                      openSafetyBeaconModal();
-                    }}
-                    className="flex items-center gap-2 p-2 rounded-xl bg-red-950/20 border border-red-500/30 text-red-300 hover:bg-red-950/40 transition-all text-left cursor-pointer active:scale-95"
-                  >
-                    <div className="p-1.5 rounded-lg bg-red-950/40 text-bloodNeon flex-shrink-0">
-                      <ShieldCheck className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-[11px] font-mono font-bold uppercase truncate">Guardián SOS</span>
-                      <span className="text-[9px] text-neutral-400 truncate">Dead-man switch</span>
-                    </div>
-                  </button>
-                </div>
-              )}
-
               <form
                 onSubmit={handleSend}
                 className="p-2 sm:p-2.5 flex items-center gap-1.5 sm:gap-2 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]"
               >
-                {/* BOTÓN + (MENÚ TÁCTICO) */}
+                {/* BOTÓN DIRECTO MODO EFÍMERO (BURN-ON-VIEW 🔥 44x44px) */}
                 <button
                   type="button"
                   onClick={() => {
-                    audioEngine.playPulse();
-                    setIsPlusMenuOpen(!isPlusMenuOpen);
+                    audioEngine.playStateSwitch("occupied");
+                    setIsBurnMode(!isBurnMode);
                   }}
-                  aria-label="Menú de herramientas tácticas"
-                  aria-expanded={isPlusMenuOpen}
-                  className={`p-2 min-w-[38px] sm:min-w-[42px] min-h-[38px] sm:min-h-[42px] flex items-center justify-center rounded-2xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0 ${
-                    isPlusMenuOpen
-                      ? "bg-electricViolet text-white border-electricViolet shadow-violet-glow"
-                      : isBurnMode
-                      ? "bg-bloodNeon/20 border-bloodNeon text-bloodNeon shadow-blood-glow"
-                      : "border-white/10 bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10"
+                  aria-label={isBurnMode ? (language === "es" ? "Desactivar modo efímero" : "Disable burn mode") : (language === "es" ? "Activar modo efímero de 1 vista" : "Enable burn mode")}
+                  aria-pressed={isBurnMode}
+                  className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 flex-shrink-0 ${
+                    isBurnMode
+                      ? "bg-bloodNeon/25 border-bloodNeon text-bloodNeon shadow-blood-glow"
+                      : "border-white/10 bg-white/5 text-neutral-400 hover:text-bloodNeon hover:border-bloodNeon/50"
                   }`}
-                  title="Herramientas tácticas (+)"
+                  title={isBurnMode ? (language === "es" ? "Modo Efímero Activo (1 sola lectura)" : "Burn Mode ON") : (language === "es" ? "Activar Modo Efímero (🔥)" : "Toggle Burn Mode (🔥)")}
                 >
-                  <Plus className={`w-4 h-4 transition-transform duration-200 ${isPlusMenuOpen ? "rotate-45" : ""}`} />
+                  <Flame className={`w-4 h-4 ${isBurnMode ? "animate-pulse fill-bloodNeon/30" : ""}`} />
                 </button>
 
-                {/* BOTÓN ADJUNTAR FOTO / VIDEO / ÁLBUM */}
+                {/* BOTÓN ADJUNTAR FOTO / VIDEO / ÁLBUM (44x44px) */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1631,7 +1936,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                     setIsSendMediaModalOpen(true);
                   }}
                   aria-label={t.chat.attachMediaTooltip}
-                  className="p-2 min-w-[38px] sm:min-w-[42px] min-h-[38px] sm:min-h-[42px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-electricViolet-glow hover:border-electricViolet/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0"
+                  className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-electricViolet-glow hover:border-electricViolet/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0"
                   title={t.chat.attachMediaTooltip}
                 >
                   <ImageIcon className="w-4 h-4" />
@@ -1641,17 +1946,17 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                 <div className="relative flex-1 min-w-0">
                   <input
                     type="text"
-                    aria-label="Escribir mensaje"
+                    aria-label={language === "es" ? "Escribir mensaje" : "Write a message"}
                     placeholder={
                       activeBoundary?.chatStatus === "muted"
                         ? t.chat.mutedPlaceholder
                         : isBurnMode
                         ? t.chat.burnModeActive
-                        : t.chat.normalPlaceholder || "Escribí algo piola..."
+                        : t.chat.normalPlaceholder || (language === "es" ? "Escribí un mensaje..." : "Write a message...")
                     }
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    className={`w-full bg-black/50 border rounded-2xl text-white text-xs px-3.5 py-2.5 sm:py-3 placeholder:text-neutral-500 focus:outline-none focus-visible:ring-2 transition-all ${
+                    className={`w-full min-h-[44px] bg-black/50 border rounded-2xl text-white text-xs px-3.5 py-2.5 sm:py-3 placeholder:text-neutral-500 focus:outline-none focus-visible:ring-2 transition-all ${
                       isBurnMode
                         ? "border-bloodNeon/60 focus:border-bloodNeon focus-visible:ring-bloodNeon/60 pr-8"
                         : "border-white/10 focus:border-electricViolet focus-visible:ring-electricViolet/60"
@@ -1664,13 +1969,13 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   )}
                 </div>
 
-                {/* BOTÓN REACTIVO: SI HAY TEXTO -> ENVIAR; SI ESTÁ VACÍO -> MICRÓFONO */}
+                {/* BOTÓN REACTIVO: SI HAY TEXTO -> ENVIAR; SI ESTÁ VACÍO -> MICRÓFONO (44x44px) */}
                 {inputMessage.trim() ? (
                   <button
                     type="submit"
                     disabled={isSendingMessage}
-                    aria-label="Enviar mensaje"
-                    className="p-2 min-w-[40px] sm:min-w-[44px] min-h-[40px] sm:min-h-[44px] flex items-center justify-center rounded-2xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-90 bg-electricViolet hover:bg-electricViolet-glow text-white shadow-[0_0_18px_rgba(139,92,246,0.5)] flex-shrink-0"
+                    aria-label={language === "es" ? "Enviar mensaje" : "Send message"}
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-90 bg-electricViolet hover:bg-electricViolet-glow text-white shadow-[0_0_18px_rgba(139,92,246,0.5)] flex-shrink-0"
                   >
                     <Send
                       className={`w-4 h-4 fill-current transition-transform ${
@@ -1686,7 +1991,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                       setIsVoiceRecording(true);
                     }}
                     aria-label={t.chat.voiceTapToRecord}
-                    className="p-2 min-w-[38px] sm:min-w-[42px] min-h-[38px] sm:min-h-[42px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-mintNeon hover:border-mintNeon/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95 flex-shrink-0"
+                    className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-mintNeon hover:border-mintNeon/50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95 flex-shrink-0"
                     title={t.chat.voiceTapToRecord}
                   >
                     <Mic className="w-4 h-4" />
@@ -1733,108 +2038,6 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             onClose={() => setIsBoundaryModalOpen(false)}
           />
         )}
-
-        {/* MODAL CREAR WAYPOINT SEGURO (2 FASES) */}
-        {isWaypointModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fadeIn">
-            <div className="w-full max-w-md bg-obsidian-surface rounded-2xl border border-electricViolet/40 p-5 space-y-4 shadow-2xl relative">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-electricViolet/20 text-electricViolet-glow border border-electricViolet/30">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                      Waypoint Seguro // 2 Fases
-                    </h3>
-                    <p className="text-[10px] text-neutral-400 font-mono">
-                      Tu domicilio solo se revela al confirmar arribo a la esquina
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsWaypointModalOpen(false)}
-                  className="p-1 rounded-full text-neutral-400 hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] font-mono font-bold text-electricViolet-glow block uppercase mb-1">
-                    📍 Fase 1: Esquina o Punto Público de Encuentro
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={phase1Corner}
-                    onChange={(e) => setPhase1Corner(e.target.value)}
-                    placeholder="Ej: Av. Santa Fe y Callao (Frente al café)"
-                    className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 focus:outline-none focus:border-electricViolet"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-mono font-bold text-electricViolet-glow block uppercase mb-1">
-                    🔒 Fase 2: Domicilio Exacto, Piso y Timbre (Cifrado)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={phase2Address}
-                    onChange={(e) => setPhase2Address(e.target.value)}
-                    placeholder="Ej: Piso 4 Depto B // Timbre 12"
-                    className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 focus:outline-none focus:border-electricViolet"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-mono font-bold text-neutral-400 block uppercase mb-1">
-                    📝 Notas de Acceso (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={phase2Notes}
-                    onChange={(e) => setPhase2Notes(e.target.value)}
-                    placeholder="Ej: Portón negro, ascensor a la izquierda"
-                    className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 focus:outline-none focus:border-white/40"
-                  />
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-purple-950/20 border border-electricViolet/20 text-[10px] text-neutral-300 font-mono leading-relaxed">
-                  🛡️ <strong>Protocolo Anti-Emboscada:</strong> La otra persona solo verá la esquina. Cuando confirme que llegó físicamente a la esquina, se le desbloqueará tu piso y timbre.
-                </div>
-
-                <div className="flex items-center gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsWaypointModalOpen(false)}
-                    className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-neutral-300 font-mono text-xs rounded-xl transition-all"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!phase1Corner.trim() || !phase2Address.trim()}
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      sendSecureWaypoint(profile.id, phase1Corner.trim(), phase2Address.trim(), phase2Notes.trim() || undefined);
-                      setPhase1Corner("");
-                      setPhase2Address("");
-                      setPhase2Notes("");
-                      setIsWaypointModalOpen(false);
-                    }}
-                    className="flex-1 py-2.5 bg-electricViolet hover:bg-electricViolet-glow disabled:opacity-30 text-white font-mono font-extrabold text-xs rounded-xl transition-all shadow-violet-glow cursor-pointer"
-                  >
-                    ENVIAR WAYPOINT
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
         </div>
 
         {/* =========================================================
@@ -1846,11 +2049,11 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-electricViolet animate-pulse shadow-violet-soft" />
               <span className="font-mono text-[11px] font-black uppercase tracking-wider text-white">
-                Ficha Táctica
+                {language === "es" ? "Ficha Táctica" : "Tactical Dossier"}
               </span>
             </div>
             <span className="text-[9px] font-mono font-bold text-electricViolet-glow bg-electricViolet/15 border border-electricViolet/30 px-2 py-0.5 rounded-full">
-              LIVE
+              {t.system?.live || "EN VIVO"}
             </span>
           </div>
 
@@ -1896,8 +2099,8 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
           {/* Badges de Confianza y Respeto */}
           <div className="bg-black/40 rounded-2xl p-3 border border-white/10 space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-400 font-mono text-[10px] uppercase">
-                Respect Karma
+              <span className="text-xs font-bold text-white block">
+                {language === "es" ? "Puntaje de Respeto" : "Respect Score"} ({profile.respectScore || 98})
               </span>
               <span className="font-mono font-bold text-mintNeon">
                 {profile.respectScore || 98}%
@@ -1931,29 +2134,29 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             </div>
           </div>
 
-          {/* Suite de Herramientas Tácticas 1-Tap */}
+          {/* Suite de Acciones Rápidas 1-Tap (Desktop Sidebar) */}
           <div className="space-y-1.5 pt-1">
             <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider block px-1">
-              Herramientas de Cita
+              {language === "es" ? "Para Vernos y Cuidarte" : "Meetup & Safety"}
             </span>
 
-            {/* Pre-Flight */}
+            {/* Armar Encuentro Paso a Paso */}
             <button
               type="button"
               onClick={() => {
                 audioEngine.playPulse();
-                openPreFlightModal(profile);
+                setIsRendezvousSheetOpen(true);
               }}
               className="w-full flex items-center justify-between p-2.5 rounded-xl bg-electricViolet/10 hover:bg-electricViolet/20 border border-electricViolet/30 text-white text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
             >
               <div className="flex items-center gap-2">
-                <span>📋</span>
-                <span className="text-[11px]">Pre-Flight Test</span>
+                <span>⚡</span>
+                <span className="text-[11px]">{language === "es" ? "Armar Encuentro Paso a Paso" : "Plan Meetup Step by Step"}</span>
               </div>
-              <span className="text-[9px] text-electricViolet-glow">COMPATIBLE</span>
+              <span className="text-[9px] text-electricViolet-glow">{language === "es" ? "Todo en 1" : "All-in-1"}</span>
             </button>
 
-            {/* Voy en Camino (ETA) */}
+            {/* Avisar que Ya Salí (Tiempo Estimado) */}
             <button
               type="button"
               onClick={() => {
@@ -1963,13 +2166,13 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
             >
               <div className="flex items-center gap-2">
-                <span>🚗</span>
-                <span className="text-[11px]">Voy en Camino (ETA)</span>
+                <span>🚀</span>
+                <span className="text-[11px]">{language === "es" ? "Avisar que Ya Salí" : "I'm On My Way"}</span>
               </div>
-              <span className="text-[9px] text-neutral-400">COMPARTIR</span>
+              <span className="text-[9px] text-neutral-400">{language === "es" ? "En camino" : "En route"}</span>
             </button>
 
-            {/* Guardián Silencioso */}
+            {/* Alerta SOS por si Algo Sale Mal */}
             <button
               type="button"
               onClick={() => {
@@ -1979,13 +2182,13 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               className="w-full flex items-center justify-between p-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 border border-red-500/30 text-red-300 text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
             >
               <div className="flex items-center gap-2">
-                <span>🛡️</span>
-                <span className="text-[11px]">Guardián Silencioso</span>
+                <span>🆘</span>
+                <span className="text-[11px]">{language === "es" ? "Alerta SOS para tu Cita" : "Safety SOS Timer"}</span>
               </div>
-              <span className="text-[9px] text-bloodNeon">DEAD-MAN</span>
+              <span className="text-[9px] text-bloodNeon">{language === "es" ? "Reloj SOS" : "SOS Timer"}</span>
             </button>
 
-            {/* Anotar en Diario */}
+            {/* Guardar Nota Privada */}
             <button
               type="button"
               onClick={() => {
@@ -1996,12 +2199,12 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             >
               <div className="flex items-center gap-2">
                 <span>📓</span>
-                <span className="text-[11px]">Anotar en Mi Diario</span>
+                <span className="text-[11px]">{language === "es" ? "Guardar Nota Privada" : "Save Private Note"}</span>
               </div>
-              <span className="text-[9px] text-neutral-400">PRIVADO</span>
+              <span className="text-[9px] text-neutral-400">{language === "es" ? "Solo vos" : "Private"}</span>
             </button>
 
-            {/* Ver Perfil Completo */}
+            {/* Ver Perfil y Fotos */}
             <button
               type="button"
               onClick={() => {
@@ -2010,7 +2213,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               }}
               className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white text-[11px] font-mono font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 mt-2"
             >
-              <span>Ver Perfil Completo</span>
+              <span>{language === "es" ? "Ver Perfil y Fotos" : "View Full Profile"}</span>
               <span>→</span>
             </button>
           </div>
@@ -2023,6 +2226,49 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
         onClose={() => setIsRendezvousSheetOpen(false)}
         targetProfile={profile}
       />
+
+      {/* MODAL BRUTALISTA DE CONFIRMACIÓN PARA LIMPIAR CHAT */}
+      {isClearConfirmOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+        >
+          <div className="w-full max-w-sm bg-obsidian-deep border border-bloodNeon/50 rounded-3xl p-5 shadow-2xl space-y-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-bloodNeon/20 border border-bloodNeon/40 text-bloodNeon flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider">
+                {language === "es" ? "¿Limpiar todo el historial?" : "Clear chat history?"}
+              </h3>
+              <p className="text-xs text-neutral-400 font-mono leading-relaxed">
+                {t.chat.clearHistoryConfirm || (language === "es" ? "Se borrarán todos los mensajes de esta conversación en tu dispositivo." : "All messages in this chat will be deleted from your device.")}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setIsClearConfirmOpen(false)}
+                className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold transition-all cursor-pointer"
+              >
+                {language === "es" ? "Cancelar" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  audioEngine.playSubBass(55);
+                  clearChatHistory(profile.id);
+                  setIsClearConfirmOpen(false);
+                }}
+                className="py-2.5 px-3 rounded-xl bg-bloodNeon hover:bg-red-600 text-white font-black transition-all cursor-pointer shadow-blood-glow"
+              >
+                {language === "es" ? "Confirmar" : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

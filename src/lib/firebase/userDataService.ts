@@ -18,6 +18,12 @@ import {
   AppSettings,
   UserBoundarySetting,
   ProfileDossier,
+  DiaryEntry,
+  KinkMatrixMap,
+  AmbientSoundVibeType,
+  SubstanceAtmosphere,
+  HostCardInfo,
+  ExitProtocol,
 } from "@/types/vessel";
 
 const USERS_COLLECTION = "vessel_users";
@@ -30,6 +36,13 @@ export interface FullUserDataPayload {
   appSettings?: Partial<AppSettings>;
   boundaries?: Record<string, UserBoundarySetting>;
   dossiers?: Record<string, ProfileDossier>;
+  diaryEntries?: DiaryEntry[];
+  kinkMatrix?: KinkMatrixMap;
+  ambientVibe?: AmbientSoundVibeType;
+  substanceAtmosphere?: SubstanceAtmosphere;
+  hostCard?: HostCardInfo;
+  exitProtocol?: ExitProtocol;
+  favoriteProfileIds?: string[];
 }
 
 /**
@@ -55,6 +68,13 @@ export const subscribeToFullUserData = (
           appSettings: cloudData.appSettings,
           boundaries: cloudData.boundaries,
           dossiers: cloudData.dossiers,
+          diaryEntries: cloudData.diaryEntries,
+          kinkMatrix: cloudData.kinkMatrix,
+          ambientVibe: cloudData.ambientVibe,
+          substanceAtmosphere: cloudData.substanceAtmosphere,
+          hostCard: cloudData.hostCard,
+          exitProtocol: cloudData.exitProtocol,
+          favoriteProfileIds: cloudData.favoriteProfileIds,
         });
       } else {
         // Primera vez que se conecta este UID: sembramos sus datos en Firestore

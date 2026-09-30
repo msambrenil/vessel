@@ -21,15 +21,6 @@ interface CoverPhotoSelectorModalProps {
   onGoToAlbums: () => void;
 }
 
-const PRESET_PROFILE_PHOTOS = [
-  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
-];
-
 export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = ({
   onClose,
   onGoToAlbums,
@@ -40,6 +31,7 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
     setProfileCoverPhoto,
     addPhotoToAlbum,
     currentUserUid,
+    t,
   } = useVessel();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -126,7 +118,7 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
                   Foto Principal de Portada
                 </h2>
                 <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-electricViolet/20 text-electricViolet-glow font-bold border border-electricViolet/40">
-                  CARD COVER
+                  {t.account?.cardCoverBadge || "PORTADA"}
                 </span>
               </div>
               <p className="text-[10px] text-neutral-400 font-mono">
@@ -139,7 +131,7 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
             type="button"
             onClick={onClose}
             aria-label="Cerrar selector de portada"
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
           >
             <X className="w-4 h-4" />
           </button>
@@ -198,7 +190,7 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
                   onClose();
                   onGoToAlbums();
                 }}
-                className="text-[10px] font-mono text-electricViolet-glow hover:underline font-bold"
+                className="text-[10px] font-mono text-electricViolet-glow hover:underline font-bold cursor-pointer"
               >
                 + Gestionar Álbumes
               </button>
@@ -206,12 +198,12 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
 
             {albumPhotos.length === 0 ? (
               <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-center space-y-1">
-                <ImageIcon className="w-6 h-6 text-neutral-500 mx-auto" />
-                <p className="text-[11px] text-neutral-400">
+                <ImageIcon className="w-6 h-6 text-neutral-400 mx-auto" />
+                <p className="text-[11px] text-neutral-300">
                   No tenés fotos en tus álbumes todavía.
                 </p>
-                <p className="text-[10px] text-neutral-500">
-                  Subí una foto con el botón de arriba o seleccioná uno de los presets a continuación.
+                <p className="text-[10px] text-neutral-400">
+                  Subí una foto real desde tu dispositivo con el botón superior para establecer tu portada.
                 </p>
               </div>
             ) : (
@@ -251,48 +243,6 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
                 })}
               </div>
             )}
-          </div>
-
-          {/* Sección 2: Presets de Demostración Rápida */}
-          <div className="space-y-2 pt-2 border-t border-white/10">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-electricViolet-glow" />
-              <span className="text-xs font-bold text-white uppercase font-mono tracking-wider">
-                Fotos de Prueba // Presets Rápidos
-              </span>
-            </div>
-            <p className="text-[10px] text-neutral-400 font-mono">
-              Tocá cualquiera para asignarla de inmediato como tu portada de perfil:
-            </p>
-
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {PRESET_PROFILE_PHOTOS.map((url, idx) => {
-                const isCurrent = myProfile.avatarUrl === url;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectPhoto(url)}
-                    className={`relative aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all cursor-pointer group ${
-                      isCurrent
-                        ? "border-electricViolet shadow-violet-soft ring-2 ring-electricViolet/60 scale-105"
-                        : "border-white/10 opacity-70 hover:opacity-100 hover:border-white/30"
-                    }`}
-                  >
-                    <img
-                      src={url}
-                      alt={`Preset ${idx}`}
-                      className="w-full h-full object-cover"
-                    />
-                    {isCurrent && (
-                      <div className="absolute inset-0 bg-electricViolet/30 flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </div>
       </div>

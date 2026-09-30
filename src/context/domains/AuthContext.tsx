@@ -57,6 +57,11 @@ export interface MyProfileState {
   verification: IdentityVerification;
   totalEncountersVerified: number;
   authProvider?: "google" | "direct" | "email";
+  phone?: string;
+  email?: string;
+  seekingRoles?: RoleType[];
+  isProfileSetupComplete?: boolean;
+  isProfileCustomized?: boolean;
 }
 
 export const INITIAL_MY_PROFILE: MyProfileState = {
@@ -69,7 +74,7 @@ export const INITIAL_MY_PROFILE: MyProfileState = {
   hivStatus: "Negativo en PrEP",
   genderIdentity: "Hombre Cis",
   genderInterests: ["all"],
-  pronouns: "Él / He / Him",
+  pronouns: "Él",
   desires: [
     "Conexión carnal al palo",
     "Exploración fetiche & morbo",
@@ -107,28 +112,29 @@ export const INITIAL_MY_PROFILE: MyProfileState = {
 
 export const CLEAN_UNAUTHENTICATED_PROFILE: MyProfileState = {
   codename: "",
-  age: 25,
+  age: 0,
   showAge: true,
   twitterHandle: "",
-  yoSoy: "Atlético / Deportista",
-  mobility: "Tengo depto / lugar",
-  hivStatus: "Negativo en PrEP",
-  genderIdentity: "Hombre Cis",
-  genderInterests: ["all"],
-  pronouns: "Él / He / Him",
+  yoSoy: "" as YoSoyType,
+  mobility: "" as MobilityType,
+  hivStatus: "" as HivStatusType,
+  genderIdentity: "",
+  genderInterests: [],
+  pronouns: "",
   desires: [],
   intentions: [],
-  boundaries: ["Consentimiento explícito"],
+  boundaries: [],
   energyVibes: [],
   noGhostMode: true,
   respectScore: 100,
   isAntiGhost: true,
-  role: "Versatile",
-  heightCm: 175,
-  weightKg: 70,
+  role: "" as RoleType,
+  heightCm: 0,
+  weightKg: 0,
   avatarUrl: "",
   isStylizedAvatar: false,
   isFogMode: false,
+  isProfileCustomized: false,
   verification: {
     isVerified: false,
     method: undefined,
@@ -236,15 +242,87 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
   const openGenderOnboarding = useCallback(() => setIsGenderOnboardingOpen(true), []);
   const closeGenderOnboarding = useCallback(() => setIsGenderOnboardingOpen(false), []);
 
+  const lastAuthUidRef = useRef<string>("");
+
+  // Helper para detectar si un perfil tenía cargada una plantilla de muestra vieja sin personalizar
+  const sanitizeLegacyTemplateProfile = useCallback(
+    (prof: Partial<MyProfileState>, fallbackPhotoUrl?: string): MyProfileState => {
+      const isLegacyTemplate =
+        !prof.isProfileCustomized &&
+        ((prof.age === 26 && prof.heightCm === 178 && prof.weightKg === 75) ||
+          (prof.age === 28 && prof.heightCm === 180 && prof.weightKg === 78) ||
+          (prof.age === 25 && prof.heightCm === 175 && prof.weightKg === 70));
+
+      if (isLegacyTemplate) {
+        return {
+          ...CLEAN_UNAUTHENTICATED_PROFILE,
+          ...prof,
+          age: 0,
+          yoSoy: "" as YoSoyType,
+          mobility: "" as MobilityType,
+          hivStatus: "" as HivStatusType,
+          genderIdentity: "",
+          genderInterests: [],
+          pronouns: "",
+          desires: [],
+          intentions: [],
+          boundaries: [],
+          energyVibes: [],
+          heightCm: 0,
+          weightKg: 0,
+          codename: prof.codename === "VESSEL_USER" ? "" : (prof.codename || ""),
+          avatarUrl: prof.avatarUrl?.includes("images.unsplash.com")
+            ? (fallbackPhotoUrl || "")
+            : (prof.avatarUrl || fallbackPhotoUrl || ""),
+        };
+      }
+
+      return {
+        ...CLEAN_UNAUTHENTICATED_PROFILE,
+        ...prof,
+        codename: prof.codename === "VESSEL_USER" ? "" : (prof.codename || ""),
+        avatarUrl: prof.avatarUrl?.includes("images.unsplash.com")
+          ? (fallbackPhotoUrl || "")
+          : (prof.avatarUrl || fallbackPhotoUrl || ""),
+      };
+    },
+    []
+  );
+
   // Sincronización reactiva cuando cambia el appMode
   useEffect(() => {
-    const fallbackProfile = appMode === "real" ? CLEAN_UNAUTHENTICATED_PROFILE : INITIAL_MY_PROFILE;
-    const localProfile = loadFromStorage<MyProfileState>(STORAGE_KEYS.PROFILE, fallbackProfile, appMode);
-    if (localProfile) setMyProfile(localProfile);
+    if (appMode === "real") {
+      if (!authUser || authUser.email?.endsWith("@vessel.dev") || authUser.isAnonymous) {
+        if (authUser?.email?.endsWith("@vessel.dev") || authUser?.isAnonymous) {
+          authLogoutUser().catch(() => {});
+        }
+        setMyProfile(CLEAN_UNAUTHENTICATED_PROFILE);
+      } else {
+        const localProfile = loadFromStorage<MyProfileState>(
+          STORAGE_KEYS.PROFILE,
+          CLEAN_UNAUTHENTICATED_PROFILE,
+          "real"
+        );
+        if (localProfile) {
+          const cleaned = sanitizeLegacyTemplateProfile(localProfile, authUser.photoURL || "");
+          setMyProfile(cleaned);
+          saveToStorage(STORAGE_KEYS.PROFILE, cleaned, "real");
+        }
+      }
+    } else {
+      const localProfile = loadFromStorage<MyProfileState>(
+        STORAGE_KEYS.PROFILE,
+        INITIAL_MY_PROFILE,
+        "test"
+      );
+      if (localProfile) {
+        setMyProfile(localProfile);
+      }
+    }
 
     const localBodyState = loadFromStorage<BodyState>(STORAGE_KEYS.BODY_STATE, "open", appMode);
     setMyBodyStateInternal(localBodyState || "open");
-  }, [appMode]);
+  }, [appMode, authUser, sanitizeLegacyTemplateProfile]);
 
   // Suscripción al ciclo de vida de Firebase Auth y sincronización en tiempo real
   useEffect(() => {
@@ -253,12 +331,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
 
     const unsubAuth = onAuthChange((user) => {
       if (!isMounted) return;
-      setAuthUser(user);
-      setIsAuthLoading(false);
-      setIsCloudConnected(!!user);
+      // En Modo Real no se admiten cuentas de prueba de desarrollo (@vessel.dev)
+      if (appMode === "real" && user && (user.email?.endsWith("@vessel.dev") || user.isAnonymous)) {
+        authLogoutUser().catch(() => {});
+        setAuthUser(null);
+        setIsAuthLoading(false);
+        setIsCloudConnected(false);
+        setCurrentUserUid("unauthenticated");
+        uidRef.current = "unauthenticated";
+        setMyProfile(CLEAN_UNAUTHENTICATED_PROFILE);
+        return;
+      }
 
       const defaultNonAuthUid = appMode === "real" ? "unauthenticated" : "local-user";
       const uid = user ? user.uid : defaultNonAuthUid;
+
+      // Si cambió de cuenta o se cerró sesión, purgar caché local para evitar contaminación entre cuentas
+      if (lastAuthUidRef.current && lastAuthUidRef.current !== uid) {
+        removeFromStorage(STORAGE_KEYS.PROFILE, appMode);
+        removeFromStorage(STORAGE_KEYS.PROFILE);
+        removeFromStorage(STORAGE_KEYS.KINK_MATRIX, appMode);
+        removeFromStorage(STORAGE_KEYS.KINK_MATRIX);
+        removeFromStorage(STORAGE_KEYS.ALBUMS, appMode);
+        removeFromStorage(STORAGE_KEYS.ALBUMS);
+        removeFromStorage(STORAGE_KEYS.HOST_CARD, appMode);
+        removeFromStorage(STORAGE_KEYS.HOST_CARD);
+        removeFromStorage(STORAGE_KEYS.EXIT_PROTOCOL, appMode);
+        removeFromStorage(STORAGE_KEYS.EXIT_PROTOCOL);
+        removeFromStorage(STORAGE_KEYS.AMBIENT_VIBE, appMode);
+        removeFromStorage(STORAGE_KEYS.AMBIENT_VIBE);
+        removeFromStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, appMode);
+        removeFromStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE);
+        removeFromStorage(STORAGE_KEYS.FAVORITES, appMode);
+        removeFromStorage(STORAGE_KEYS.FAVORITES);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("vessel:user-switched", { detail: { uid: user ? uid : null } }));
+        }
+      }
+      lastAuthUidRef.current = uid;
+
+      setAuthUser(user);
+      setIsAuthLoading(false);
+      setIsCloudConnected(!!user);
       setCurrentUserUid(uid);
       uidRef.current = uid;
 
@@ -266,6 +380,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
         const fallbackProfile = appMode === "real" ? CLEAN_UNAUTHENTICATED_PROFILE : INITIAL_MY_PROFILE;
         setMyProfile(fallbackProfile);
         setMyBodyStateInternal("open");
+      } else if (appMode === "real") {
+        // Iniciar con perfil limpio mientras hidrata el documento exclusivo de este UID desde Firestore
+        const cleanInitialForUser: MyProfileState = {
+          ...CLEAN_UNAUTHENTICATED_PROFILE,
+          codename: user.displayName?.split(" ")[0]?.toUpperCase() || "",
+          email: user.email || "",
+          avatarUrl: user.photoURL || "",
+        };
+        setMyProfile(cleanInitialForUser);
       }
 
       if (unsubFullData) {
@@ -274,21 +397,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
       }
 
       if (user && uid !== "local-user" && uid !== "unauthenticated") {
+        const freshInitialProfile: MyProfileState = {
+          ...CLEAN_UNAUTHENTICATED_PROFILE,
+          codename: user.displayName?.split(" ")[0]?.toUpperCase() || "",
+          email: user.email || "",
+          avatarUrl: user.photoURL || "",
+          authProvider: user.providerData?.some((p) => p.providerId === "google.com") ? "google" : "direct",
+        };
+
         unsubFullData = subscribeToFullUserData(
           uid,
-          { profile: myProfile, bodyState: myBodyState },
+          { profile: freshInitialProfile, bodyState: "open", kinkMatrix: {} },
           (cloudData) => {
             if (!isMounted) return;
             if (cloudData.profile) {
-              setMyProfile((prev) => {
-                const merged = { ...prev, ...cloudData.profile };
-                saveToStorage(STORAGE_KEYS.PROFILE, merged, appMode);
-                return merged;
-              });
+              const sanitized = sanitizeLegacyTemplateProfile(cloudData.profile, user.photoURL || "");
+              const wasLegacyTemplate =
+                !cloudData.profile.isProfileCustomized &&
+                ((cloudData.profile.age === 26 && cloudData.profile.heightCm === 178) ||
+                  (cloudData.profile.age === 28 && cloudData.profile.heightCm === 180) ||
+                  (cloudData.profile.age === 25 && cloudData.profile.heightCm === 175));
+
+              setMyProfile(sanitized);
+              saveToStorage(STORAGE_KEYS.PROFILE, sanitized, appMode);
+
+              if (wasLegacyTemplate) {
+                saveFullUserDataToCloud(uid, { profile: sanitized, kinkMatrix: {} });
+              }
             }
             if (cloudData.bodyState) {
               setMyBodyStateInternal(cloudData.bodyState);
               saveToStorage(STORAGE_KEYS.BODY_STATE, cloudData.bodyState, appMode);
+            }
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("vessel:cloud-user-hydrated", {
+                  detail: { uid, cloudData },
+                })
+              );
             }
           }
         );
@@ -302,7 +448,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
         unsubFullData();
       }
     };
-  }, []);
+  }, [appMode, sanitizeLegacyTemplateProfile]);
 
   const syncProfileToCloudAndStorage = useCallback(
     (updated: MyProfileState) => {
@@ -329,7 +475,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
   const updateMyProfile = useCallback(
     (updates: Partial<MyProfileState>) => {
       setMyProfile((prev) => {
-        const updated = { ...prev, ...updates };
+        const updated: MyProfileState = {
+          ...prev,
+          ...updates,
+          isProfileCustomized: true,
+        };
         syncProfileToCloudAndStorage(updated);
         return updated;
       });
@@ -376,7 +526,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
       setMyProfile((prev) => {
         const updated: MyProfileState = {
           ...prev,
-          codename: prev.codename && prev.codename !== "VESSEL" ? prev.codename : cleanCodename,
+          codename:
+            prev.codename && prev.codename !== "VESSEL" && prev.codename !== "VESSEL_USER"
+              ? prev.codename
+              : cleanCodename,
+          email: user.email || prev.email || "",
           avatarUrl: user.photoURL || prev.avatarUrl,
           authProvider: "google",
           verification: {
@@ -392,12 +546,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
         syncProfileToCloudAndStorage(updated);
         return updated;
       });
-      setIsAuthModalOpen(false);
-      
-      if (!myProfile.genderInterests || myProfile.genderInterests.length === 0) {
-        setIsGenderOnboardingOpen(true);
-      }
-      
+      // Mantener el modal abierto en modo configuración de perfil / sesión para que el usuario confirme su alias, rol, teléfono y qué busca
+      setAuthModalMode("session");
+      setIsAuthModalOpen(true);
       audioEngine.playVaultUnlock();
     }
     return res;
@@ -519,6 +670,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
     removeFromStorage(STORAGE_KEYS.PROFILE);
     removeFromStorage(STORAGE_KEYS.BODY_STATE, appMode);
     removeFromStorage(STORAGE_KEYS.BODY_STATE);
+    removeFromStorage(STORAGE_KEYS.KINK_MATRIX, appMode);
+    removeFromStorage(STORAGE_KEYS.KINK_MATRIX);
+    removeFromStorage(STORAGE_KEYS.HOST_CARD, appMode);
+    removeFromStorage(STORAGE_KEYS.HOST_CARD);
+    removeFromStorage(STORAGE_KEYS.EXIT_PROTOCOL, appMode);
+    removeFromStorage(STORAGE_KEYS.EXIT_PROTOCOL);
+    removeFromStorage(STORAGE_KEYS.AMBIENT_VIBE, appMode);
+    removeFromStorage(STORAGE_KEYS.AMBIENT_VIBE);
+    removeFromStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, appMode);
+    removeFromStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE);
+    removeFromStorage(STORAGE_KEYS.FAVORITES, appMode);
+    removeFromStorage(STORAGE_KEYS.FAVORITES);
+    removeFromStorage(STORAGE_KEYS.RECEIVED_PULSES, appMode);
+    removeFromStorage(STORAGE_KEYS.RECEIVED_PULSES);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("vessel:user-switched", { detail: { uid: null } }));
+    }
 
     setAuthModalMode("login");
   }, [onLogoutCleanup, appMode, cleanupUserSessionData]);

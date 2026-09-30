@@ -11,6 +11,10 @@ Este documento establece las reglas de negocio, políticas de producto y restric
   * Máximo **1 Bóveda Privada** con acceso bajo autorización y temporizador de 10s.
   * Carga directa de fotos y videos desde celular o notebook.
   * Acceso completo a la Matriz, Radar de proximidad y Darkroom Chat en radio local de **hasta 1.0 km (1000m)**.
+  * **Exploración de la Matriz (Cuota de 99 Perfiles & Paridad Grindr)**:
+    * Las **primeras 99 personas** en la Matriz (posiciones 1 a 99) son 100% accesibles: cualquier usuario puede abrir su ficha completa (`ProfileDetailModal` y `TacticalProfileModal`).
+    * **Card Promocional Táctica tras el Perfil 99**: Inmediatamente a continuación del perfil 99 (posición visual 100), se presenta una tarjeta promocional de `VESSEL UNLIMITED` explicando el límite de radar gratuito y ofreciendo desbloquear la comunidad completa en 1 tap.
+    * **Perfiles Más Allá de 99 (100+)**: Para usuarios del plan gratuito, los perfiles a partir del número 100 se muestran en modo restringido (`🔒 UNLIMITED`); hacer click en su tarjeta o píldoras no abre el perfil sino que dispara el paywall modal de membresía (`UnlimitedPaywallModal`).
   * **Alcance Táctico a Distancia (> 1.0 km)**:
     * Los perfiles lejanos se visualizan con **Intriga Táctica** (desenfoque de silueta `blur-[8px]` y biografía clasificada).
     * El envío de **Pulsos Rápidos (1-Tap)** se mantiene gratuito e ilimitado para expresar atracción.
@@ -18,6 +22,7 @@ Este documento establece las reglas de negocio, políticas de producto y restric
     * Sin sintonía mutua, el chat directo inmediato a más de 1.0 km requiere `VESSEL UNLIMITED`.
 * **Membresía Oficial: `VESSEL UNLIMITED` (`unlimited`)**:
   * **Lema Oficial**: *"Álbumes, bóvedas y señales ilimitadas."*
+  * **Desbloqueo Total de la Matriz (Sin Topes)**: Acceso irrestricto a todos los perfiles de la matriz (100+ personas sin límite) y desaparición automática de cards promocionales de cuota.
   * **Transmisión Satelital de Largo Alcance (>1.0 km)**: Visualización 100% nítida de fotos, biografías completas y apertura de Darkroom Chat inmediato con perfiles a cualquier distancia sin esperar respuesta al pulso (*Skip the line*).
   * **Álbumes Públicos & Bóvedas Privadas Ilimitadas**: Creación de multi-bóvedas temáticas (*Sensual, Kink, Gym, Cruising*).
   * **Clips de Video en Alta Definición**: Carga y reproducción de video-loops HD en galerías y bóvedas.

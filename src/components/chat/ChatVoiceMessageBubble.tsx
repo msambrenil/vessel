@@ -24,7 +24,7 @@ export const ChatVoiceMessageBubble: React.FC<ChatVoiceMessageBubbleProps> = ({
   timestamp,
   onBurn,
 }) => {
-  const { t } = useVessel();
+  const { t, language } = useVessel();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -33,24 +33,29 @@ export const ChatVoiceMessageBubble: React.FC<ChatVoiceMessageBubbleProps> = ({
     if (audioPlayerService.isPlaying(messageId)) {
       setIsPlaying(true);
     }
-    
-    // Poll for progress and state as a fallback
+  }, [messageId]);
+
+  useEffect(() => {
+    // Poll for progress ONLY while actively playing this voice message (Zero idle CPU drain)
+    if (!isPlaying) return;
+
     const interval = setInterval(() => {
       const playing = audioPlayerService.isPlaying(messageId);
-      if (playing !== isPlaying) setIsPlaying(playing);
-      
-      if (playing) {
-        const current = audioPlayerService.getCurrentTime();
-        const dur = voiceData.durationSeconds || 1;
-        setProgress(Math.min(1, current / dur));
-      } else if (progress > 0 && progress < 1 && !audioPlayerService.getCurrentPlayingId()) {
-        // Only reset if no audio is playing
-        setProgress(0);
+      if (!playing) {
+        setIsPlaying(false);
+        if (!audioPlayerService.getCurrentPlayingId()) {
+          setProgress(0);
+        }
+        return;
       }
+
+      const current = audioPlayerService.getCurrentTime();
+      const dur = voiceData.durationSeconds || 1;
+      setProgress(Math.min(1, current / dur));
     }, 100);
-    
+
     return () => clearInterval(interval);
-  }, [messageId, isPlaying, progress, voiceData.durationSeconds]);
+  }, [messageId, isPlaying, voiceData.durationSeconds]);
 
   const togglePlay = () => {
     if (isBurned) return;
@@ -92,16 +97,21 @@ export const ChatVoiceMessageBubble: React.FC<ChatVoiceMessageBubbleProps> = ({
 
   return (
     <div
-      className={`relative flex items-center p-2 rounded-2xl border ${bubbleBg} ${bubbleBorder} min-w-[200px] max-w-[280px] space-x-3 backdrop-blur-sm`}
+      className={`relative flex items-center p-2 rounded-2xl border ${bubbleBg} ${bubbleBorder} min-w-[210px] max-w-[290px] space-x-3 backdrop-blur-sm`}
     >
-      {/* Play/Pause Button */}
+      {/* Play/Pause Button (44x44px ergonomic target) */}
       <button
+        type="button"
         onClick={togglePlay}
         disabled={isBurned}
-        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-obsidian-deep border ${bubbleBorder} transition-all active:scale-95 ${
+        className={`flex-shrink-0 w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center bg-obsidian-deep border ${bubbleBorder} transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
           isBurned ? "opacity-50 cursor-not-allowed" : "hover:border-white/30 cursor-pointer"
         }`}
-        aria-label={isPlaying ? "Pause" : "Play"}
+        aria-label={
+          isPlaying
+            ? (language === "es" ? "Pausar nota de voz" : "Pause voice note")
+            : (language === "es" ? "Reproducir nota de voz" : "Play voice note")
+        }
       >
         {isPlaying ? (
           <Pause className={`w-4 h-4 ${iconColor}`} />

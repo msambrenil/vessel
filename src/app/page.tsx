@@ -1,13 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useVessel } from "@/context/VesselContext";
 import { BrutalistHeader } from "@/components/brand/BrutalistHeader";
 import { StatusToggle } from "@/components/matrix/StatusToggle";
 import { BrutalistNav } from "@/components/navigation/BrutalistNav";
 import { ProfileGridSkeleton } from "@/components/matrix/ProfileGridSkeleton";
+import { PulsesListSkeleton } from "@/components/pulses/PulsesListSkeleton";
 import { ModalHost } from "@/components/modals/ModalHost";
+import { BetaVipGateScreen } from "@/components/auth/BetaVipGateScreen";
+import { getLocalVipVerification } from "@/lib/firebase/inviteService";
 
 // Carga perezosa (Code-Splitting) para el radar local-first sin desajuste de hidratación SSR
 const ProfileGrid = dynamic(
@@ -21,7 +24,17 @@ const ProfileGrid = dynamic(
 // Carga perezosa (Code-Splitting) para vistas secundarias
 const DarkroomListView = dynamic(
   () => import("@/components/chat/DarkroomListView").then((m) => m.DarkroomListView),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <PulsesListSkeleton />,
+  }
+);
+const PulsesView = dynamic(
+  () => import("@/components/pulses/PulsesView").then((m) => m.PulsesView),
+  {
+    ssr: false,
+    loading: () => <PulsesListSkeleton />,
+  }
 );
 const ProtocolView = dynamic(
   () => import("@/components/account/ProtocolView").then((m) => m.ProtocolView),
@@ -32,9 +45,13 @@ const DateDiaryView = dynamic(
   { ssr: false }
 );
 
-// Banner táctico de telemetría de trayecto
+// Banner táctico de telemetría de trayecto y próxima cita agendada
 const EnRouteBanner = dynamic(
   () => import("@/components/radar/EnRouteBanner").then((m) => m.EnRouteBanner),
+  { ssr: false }
+);
+const UpcomingEncounterBanner = dynamic(
+  () => import("@/components/radar/UpcomingEncounterBanner").then((m) => m.UpcomingEncounterBanner),
   { ssr: false }
 );
 
@@ -44,7 +61,40 @@ export default function VesselApp() {
     setSelectedProfile,
     setActiveChatProfileId,
     enRouteState,
+    appMode,
+    isAuthenticated,
+    authUser,
   } = useVessel();
+
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [vipGateUnlocked, setVipGateUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (appMode === "real") {
+      const check = getLocalVipVerification(authUser?.uid);
+      setVipGateUnlocked(check.verified && isAuthenticated);
+    }
+  }, [appMode, isAuthenticated, authUser]);
+
+  // Guard de montaje cliente: previene desajustes de hidratación SSR
+  // garantizando que el primer pase de renderizado sea idéntico en servidor y cliente.
+  if (!isMounted) {
+    return (
+      <div className="flex flex-col flex-1 relative bg-obsidian text-white min-h-screen w-full selection:bg-electricViolet selection:text-white">
+        <div className="w-full max-w-4xl mx-auto flex flex-col flex-1 relative min-h-screen">
+          <ProfileGridSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (appMode === "real" && (!isAuthenticated || !vipGateUnlocked)) {
+    return <BetaVipGateScreen onVipUnlocked={() => setVipGateUnlocked(true)} />;
+  }
 
   return (
     <div className="flex flex-col flex-1 relative bg-obsidian text-white min-h-screen w-full selection:bg-electricViolet selection:text-white">
@@ -59,6 +109,9 @@ export default function VesselApp() {
         {/* Selector de Estado Corporal (Open / Occupied / Dormant) - Exclusivo para vista de exploración */}
         {activeView === "grid" && <StatusToggle />}
 
+        {/* Recordatorio Táctico de Próxima Cita Agendada (1-Tap Chat & Confirmación) */}
+        {activeView === "grid" && <UpcomingEncounterBanner />}
+
         {/* Vista Activa */}
         <main className="flex-1 flex flex-col">
           {activeView === "grid" && (
@@ -68,9 +121,14 @@ export default function VesselApp() {
             />
           )}
 
-          {(activeView === "chat" || activeView === "pulses") && (
+          {activeView === "pulses" && (
+            <PulsesView
+              onOpenChat={(profileId) => setActiveChatProfileId(profileId)}
+            />
+          )}
+
+          {activeView === "chat" && (
             <DarkroomListView
-              initialSection={activeView === "pulses" ? "pulses" : "chats"}
               onOpenChat={(profileId) => setActiveChatProfileId(profileId)}
             />
           )}

@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helpers de autenticación y propiedad
+    // Helpers de autenticación, propiedad y administración
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,28 +11,56 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Perfiles públicos de la matriz VESSEL (Lectura libre, escritura exclusiva del propietario)
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        (
+          request.auth.token.email != null &&
+          request.auth.token.email_verified == true &&
+          request.auth.token.email in ['admin@vessel.network', 'ojitos@vessel.app', 'msambrenil@gmail.com']
+        )
+      );
+    }
+
+    // Perfiles públicos de la matriz VESSEL (Lectura exclusiva autenticada para Beta Cerrada, escritura del propietario)
     match /vessel_profiles/{profileId} {
-      allow read: if true;
-      allow write: if isOwner(profileId);
+      allow read: if isAuthenticated();
+      allow write: if isOwner(profileId) || isAdmin();
+    }
+
+    // Códigos de invitación VIP para Beta Cerrada (Validación por clave y redención autenticada)
+    match /vessel_invites/{inviteCode} {
+      // Cualquier cliente puede consultar un código específico para validarlo antes de entrar
+      allow get: if true;
+      // Únicamente administradores pueden listar todas las invitaciones de la plataforma
+      allow list: if isAdmin();
+      // Solo administradores pueden emitir nuevos códigos de invitación
+      allow create: if isAdmin();
+      // Redención controlada: Un usuario autenticado solo puede actualizar usesCount y agregar su propio UID
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['usesCount', 'redeemedByUids', 'updatedAt']) &&
+        request.auth.uid in request.resource.data.redeemedByUids
+      );
+      allow delete: if isAdmin();
     }
 
     // Usuarios VESSEL: Expediente privado, límites, dossiers y álbumes (Privacidad estricta P0)
     match /vessel_users/{userId} {
       // Blindaje IDOR: Únicamente el dueño del UID puede leer y modificar sus datos privados
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isAdmin();
 
       match /albums/{albumId} {
-        allow read: if isOwner(userId) || (resource != null && resource.data.privacy == 'public');
-        allow write: if isOwner(userId);
+        allow read: if isOwner(userId) || (resource != null && resource.data.privacy == 'public') || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
       }
 
       match /boundaries/{boundaryId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
 
       match /dossiers/{dossierId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
@@ -47,14 +75,15 @@ service cloud.firestore {
 
     // Chats efímeros en tiempo real y darkroom (Acceso exclusivo para los participantes legítimos)
     match /vessel_chats/{chatId} {
-      allow read: if isChatMember(chatId);
+      allow read: if isChatMember(chatId) || isAdmin();
       allow create: if isChatMember(chatId);
-      allow update, delete: if isChatMember(chatId);
+      allow update, delete: if isChatMember(chatId) || isAdmin();
 
       match /messages/{messageId} {
         allow read: if isAuthenticated() && (
           (resource != null && (resource.data.senderId == request.auth.uid || resource.data.recipientId == request.auth.uid)) ||
-          chatId.matches('.*' + request.auth.uid + '.*')
+          chatId.matches('.*' + request.auth.uid + '.*') ||
+          isAdmin()
         );
         // Anti-Spoofing P0: Solo el usuario autenticado puede ser el remitente legítimo del mensaje
         allow create: if isAuthenticated() &&
@@ -63,74 +92,115 @@ service cloud.firestore {
         allow update: if isAuthenticated() && (
           chatId.matches('.*' + request.auth.uid + '.*') ||
           (resource != null && resource.data.senderId == request.auth.uid) ||
-          request.resource.data.isBurned == true
+          request.resource.data.isBurned == true ||
+          isAdmin()
         );
         allow delete: if isAuthenticated() && (
           chatId.matches('.*' + request.auth.uid + '.*') ||
-          (resource != null && resource.data.senderId == request.auth.uid)
+          (resource != null && resource.data.senderId == request.auth.uid) ||
+          isAdmin()
         );
       }
     }
 
-    // Testimonios de encuentros con doble consentimiento
+    // Testimonios de encuentros con doble consentimiento (Lectura solo autenticada)
     match /vessel_testimonials/{testimonialId} {
-      allow read: if true;
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && (
         request.resource.data.authorUid == request.auth.uid ||
         request.resource.data.senderId == request.auth.uid
       );
       allow update, delete: if isAuthenticated() && (
         resource.data.authorUid == request.auth.uid ||
-        resource.data.senderId == request.auth.uid
+        resource.data.senderId == request.auth.uid ||
+        isAdmin()
       );
     }
 
-    // Identidades únicas (Anti-Sybil) y deduplicación - Privacidad estricta
+    // Identidades únicas (Anti-Sybil) y deduplicación - Permite verificar disponibilidad de codename_*
     match /vessel_unique_identities/{identityId} {
-      allow read: if isAuthenticated() && (
-        identityId == 'user_' + request.auth.uid ||
-        (resource != null && resource.data.uid == request.auth.uid)
+      allow get: if identityId.matches('codename_.*') || (
+        isAuthenticated() && (
+          identityId == 'user_' + request.auth.uid ||
+          (resource != null && resource.data.uid == request.auth.uid) ||
+          isAdmin()
+        )
+      );
+      allow list: if isAuthenticated() && (
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        isAdmin()
       );
       allow create, update: if isAuthenticated() && (
         identityId == 'user_' + request.auth.uid ||
-        (request.resource != null && request.resource.data.uid == request.auth.uid)
+        (request.resource != null && request.resource.data.uid == request.auth.uid) ||
+        isAdmin()
       );
       allow delete: if isAuthenticated() && (
         identityId == 'user_' + request.auth.uid ||
-        (resource != null && resource.data.uid == request.auth.uid)
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        isAdmin()
       );
     }
 
-    // Lista negra de dispositivos y cuentas restringidas
+    // Lista negra de dispositivos y cuentas restringidas (Blindaje contra exposición pública)
     match /vessel_blacklist/{blacklistId} {
-      allow read: if true;
-      allow write: if false; // Solo administradores / Backend
+      // Un usuario solo puede verificar si su propio UID está sancionado; admins tienen acceso total
+      allow get: if isAuthenticated() && (request.auth.uid == blacklistId || isAdmin());
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Personal operativo y permisos administrativos (Exclusivo para administradores)
+    match /vessel_staff/{staffId} {
+      allow read, write: if isAdmin();
     }
 
     // Pulsos cinéticos persistentes (Señales de radar en tiempo real)
     match /vessel_pulses/{pulseId} {
       allow read: if isAuthenticated() && (
         resource.data.toUid == request.auth.uid ||
-        resource.data.fromUid == request.auth.uid
+        resource.data.fromUid == request.auth.uid ||
+        isAdmin()
       );
       allow create: if isAuthenticated() &&
         request.resource.data.fromUid == request.auth.uid;
       allow update: if isAuthenticated() && (
         resource.data.toUid == request.auth.uid ||
-        resource.data.fromUid == request.auth.uid
+        resource.data.fromUid == request.auth.uid ||
+        isAdmin()
       );
       allow delete: if isAuthenticated() && (
         resource.data.toUid == request.auth.uid ||
-        resource.data.fromUid == request.auth.uid
+        resource.data.fromUid == request.auth.uid ||
+        isAdmin()
       );
     }
 
-    // Hotspots tácticos y check-in anónimo (Lectura pública, actualización de afluencia en vivo)
+    // Hotspots tácticos y check-in anónimo (Lectura pública, mutaciones de estructura blindadas)
     match /vessel_hotspots/{hotspotId} {
       allow read: if true;
-      allow create: if isAuthenticated(); // Permite seed inicial
-      allow update: if isAuthenticated(); // Permite check-in/out atómico
-      allow delete: if false;
+      // Solo admins o propuestas comunitarias legítimas con estado 'proposed'
+      allow create: if isAdmin() || (
+        isAuthenticated() && request.resource.data.status == 'proposed'
+      );
+      // Actualizaciones permitidas para usuarios: afluencia, confirmaciones, calificaciones o reportes
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        // No permitir alterar metadatos estructurales (nombre, dirección, coordenadas, geohash)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'activeVesselsCount',
+          'confirmedByUserIds',
+          'confirmationsCount',
+          'ratings',
+          'ratingsCount',
+          'rating',
+          'reports',
+          'reportsCount',
+          'status',
+          'updatedAt'
+        ])
+      );
+      allow delete: if isAdmin();
     }
 
     // Denegación por defecto para cualquier otra ruta no declarada

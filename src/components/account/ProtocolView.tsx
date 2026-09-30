@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
 import { CoverPhotoSelectorModal } from "./CoverPhotoSelectorModal";
@@ -53,13 +54,15 @@ export const ProtocolView: React.FC = () => {
     myReceivedTestimonials,
     boundaries: connectionBoundaries,
     openAppSettingsModal,
+    setSelectedProfile,
+    myFullProfile,
+    isCloudConnected,
+    isSyncingCloud,
     language,
     t,
   } = useVessel();
 
   const [activeMacroTab, setActiveMacroTab] = useState<ProtocolMacroTab>("public");
-  const [presenceSubView, setPresenceSubView] = useState<"bio" | "kinks">("bio");
-  const [securitySubView, setSecuritySubView] = useState<"boundaries" | "reputation">("boundaries");
   const [isCoverSelectorOpen, setIsCoverSelectorOpen] = useState(false);
 
   // Estados locales para edición inline de nombre en Hero Banner
@@ -76,12 +79,24 @@ export const ProtocolView: React.FC = () => {
     }
   }, [myProfile.codename]);
 
+  // Permitir que BioTab dispare la edición validada de alias en el Hero
+  useEffect(() => {
+    const onFocusCodename = () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setIsEditingName(true);
+      setInlineName(myProfile.codename || "VESSEL_USER");
+      setTimeout(() => nameInputRef.current?.focus(), 120);
+    };
+    window.addEventListener("vessel:edit-codename", onFocusCodename);
+    return () => window.removeEventListener("vessel:edit-codename", onFocusCodename);
+  }, [myProfile.codename]);
+
   const handleSaveInlineName = async () => {
     setInlineNameError(null);
     const cleanName = inlineName.trim().toUpperCase();
 
     if (!cleanName) {
-      setInlineNameError("El alias no puede estar vacío.");
+      setInlineNameError(language === "es" ? "El alias no puede estar vacío." : "Alias cannot be empty.");
       return;
     }
 
@@ -95,7 +110,9 @@ export const ProtocolView: React.FC = () => {
     setIsCheckingName(false);
 
     if (!check.isAvailable) {
-      setInlineNameError(check.message || "El alias ya se encuentra registrado.");
+      setInlineNameError(
+        check.message || (language === "es" ? "El alias ya se encuentra registrado." : "This alias is already taken.")
+      );
       audioEngine.playSubBass(35, 0.4);
       return;
     }
@@ -112,71 +129,101 @@ export const ProtocolView: React.FC = () => {
     audioEngine.playSignalSent();
   };
 
-  const pendingTestimonialsCount = myReceivedTestimonials.filter((t) => t.status === "pending").length;
+  const pendingTestimonialsCount = myReceivedTestimonials.filter((item) => item.status === "pending").length;
   const activeBoundariesCount = Object.keys(connectionBoundaries).length;
 
   return (
-    <div className="flex flex-col flex-1 p-3 sm:p-4 pb-40 sm:pb-44 space-y-4 select-none bg-obsidian-deep">
-      {/* CABECERA HERO SUPERIOR DE PROTOCOLO */}
+    <div className="flex flex-col flex-1 p-3 sm:p-4 pb-28 sm:pb-32 space-y-3.5 select-none bg-obsidian-deep">
+      {/* CABECERA HERO SUPERIOR DE PROTOCOLO CON ESTADO DE PERSISTENCIA */}
       <SectionHeroHeader
-        title={language === "es" ? "PROTOCOLO // MI PERFIL" : "PROTOCOL // MY PROFILE"}
-        tag={myProfile.codename || "VESSEL"}
+        title={t.account?.myProfileTitle || (language === "es" ? "MI PERFIL" : "MY PROFILE")}
+        tag={
+          isSyncingCloud
+            ? language === "es"
+              ? "SINCRONIZANDO..."
+              : "SYNCING..."
+            : isCloudConnected
+            ? language === "es"
+              ? "☁️ NUBE ACTIVA"
+              : "☁️ CLOUD SYNCED"
+            : language === "es"
+            ? "💾 GUARDADO LOCAL"
+            : "💾 LOCAL SAVED"
+        }
         subtitle={
           language === "es"
-            ? "Identidad táctica, límites de conexión, media vault y soberanía de datos."
-            : "Tactical identity, connection boundaries, media vault, and data sovereignty."
+            ? "Identidad táctica, acuerdos de conexión, fotos y bóvedas cifradas."
+            : "Tactical identity, connection boundaries, photos, and encrypted vaults."
         }
         variant="violet"
         icon={<User className="w-4 h-4 text-electricViolet-glow" />}
         actions={
-          <button
-            type="button"
-            onClick={() => {
-              audioEngine.playPulse();
-              openAppSettingsModal();
-            }}
-            aria-label={t.settings.title}
-            className="px-3 py-1.5 min-h-[38px] rounded-xl bg-white/10 hover:bg-electricViolet hover:text-white border border-white/15 text-neutral-200 transition-all text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
-          >
-            <Sliders className="w-3.5 h-3.5 text-electricViolet-glow" />
-            <span className="hidden sm:inline">{t.settings.title}</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playSubBass(65);
+                window.dispatchEvent(new CustomEvent("vessel:open-qr-share"));
+              }}
+              title={
+                t.qrShare?.triggerTooltip ||
+                "Mostrar código QR gigante para compartir tu perfil en segundos"
+              }
+              aria-label={t.qrShare?.triggerBtn || "Mi QR"}
+              className="px-3 py-2 min-h-[44px] rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white border border-electricViolet/60 transition-all text-xs font-mono font-black flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-violet-soft"
+            >
+              <span>📱</span>
+              <span>{t.qrShare?.triggerBtn || "Mi QR"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playPulse();
+                setSelectedProfile(myFullProfile);
+              }}
+              title={
+                language === "es"
+                  ? "Previsualizar cómo ven tu tarjeta los demás usuarios"
+                  : "Preview how other users see your public card"
+              }
+              className="px-3 py-2 min-h-[44px] rounded-xl bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 transition-all text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+            >
+              <span>👁️</span>
+              <span>{t.account?.previewMyProfileBtn || (language === "es" ? "Cómo me ven" : "Preview Card")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playPulse();
+                openAppSettingsModal();
+              }}
+              aria-label={t.settings.title}
+              className="px-3 py-2 min-h-[44px] min-w-[44px] rounded-xl bg-white/10 hover:bg-electricViolet hover:text-white border border-white/15 text-neutral-200 transition-all text-xs font-mono font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+            >
+              <Sliders className="w-4 h-4 text-electricViolet-glow" />
+              <span className="hidden sm:inline">{t.settings.title}</span>
+            </button>
+          </div>
         }
       />
 
       {/* =========================================================================
-          1. HERO BANNER: IDENTIDAD VISUAL, FOTO EDITORIAL & BADGES DE REPUTACIÓN
+          1. COMPACT TACTICAL HERO BANNER (<180px ALTO + 3 PÍLDORAS RÁPIDAS 44px)
           ========================================================================= */}
-      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-4 shadow-card-elevation relative overflow-hidden backdrop-blur-md">
-        {/* Glow sutil de fondo */}
-        <div className="absolute top-0 right-0 w-56 h-56 bg-electricViolet/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-obsidian-surface/90 rounded-3xl p-3.5 sm:p-4 border border-white/10 space-y-3 shadow-card-elevation relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-electricViolet/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Botón táctico de Configuración del Sistema */}
-        <button
-          type="button"
-          onClick={() => {
-            audioEngine.playPulse();
-            openAppSettingsModal();
-          }}
-          aria-label={t.settings.title}
-          className="absolute top-3.5 right-3.5 z-20 px-3 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/15 border border-white/15 hover:border-electricViolet/60 text-neutral-300 hover:text-white transition-all text-[11px] font-mono font-bold flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm"
-          title={t.settings.title}
-        >
-          <Sliders className="w-3.5 h-3.5 text-electricViolet-glow" />
-          <span className="hidden sm:inline">{t.settings.title}</span>
-        </button>
-
-        {/* Fila superior: Foto Grande + Datos Principales */}
-        <div className="flex gap-4 items-start relative z-10">
-          {/* Foto de Perfil de Gran Tamaño con Marco Brutalista */}
+        {/* Fila superior: Foto + Identidad + Badges */}
+        <div className="flex gap-3.5 items-start relative z-10">
+          {/* Foto de Perfil con Marco Brutalista */}
           <div className="relative flex-shrink-0">
             <div
               onClick={() => {
                 setIsCoverSelectorOpen(true);
                 audioEngine.playPulse();
               }}
-              className="w-28 h-36 sm:w-36 sm:h-44 rounded-2xl bg-neutral-900 overflow-hidden border-2 border-electricViolet/60 hover:border-electricViolet shadow-2xl relative group cursor-pointer"
-              title="Hacé clic para cambiar tu Foto de Portada"
+              className="w-24 h-32 sm:w-32 sm:h-40 rounded-2xl bg-neutral-900 overflow-hidden border-2 border-electricViolet/60 hover:border-electricViolet shadow-2xl relative group cursor-pointer"
+              title={language === "es" ? "Hacé clic para cambiar tu Foto de Portada" : "Click to change your Cover Photo"}
             >
               {myProfile.avatarUrl ? (
                 <img
@@ -187,31 +234,27 @@ export const ProtocolView: React.FC = () => {
                   }`}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-neutral-900 text-neutral-500">
-                  <User className="w-12 h-12" />
+                <div className="w-full h-full flex items-center justify-center bg-neutral-900 text-neutral-400">
+                  <User className="w-10 h-10" />
                 </div>
               )}
 
-              {/* Degradado inferior */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent pointer-events-none" />
 
-              {/* Badge flotante de Niebla en la foto */}
               {myProfile.isFogMode && (
-                <div className="absolute top-2 left-2 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded-full border border-electricViolet/40 text-[9px] font-mono font-bold text-electricViolet-glow flex items-center gap-1 shadow-md">
+                <div className="absolute top-1.5 left-1.5 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded-full border border-electricViolet/40 text-[9px] font-mono font-bold text-electricViolet-glow flex items-center gap-1 shadow-md">
                   <span>🌫️</span>
-                  <span>Niebla ON</span>
+                  <span>{t.account?.fogOn || "Niebla Activa"}</span>
                 </div>
               )}
 
-              {/* Badge si usa Avatar Estilizado */}
               {myProfile.isStylizedAvatar && !myProfile.isFogMode && (
-                <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 text-[9px] font-mono font-bold text-white flex items-center gap-1">
+                <div className="absolute top-1.5 left-1.5 bg-black/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/20 text-[9px] font-mono font-bold text-white flex items-center gap-1">
                   <EyeOff className="w-3 h-3 text-electricViolet-glow" />
-                  <span>Estilizado</span>
+                  <span>{language === "es" ? "Estilizado" : "Stylized"}</span>
                 </div>
               )}
 
-              {/* Botón flotante para cambiar foto / avatar */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -219,9 +262,9 @@ export const ProtocolView: React.FC = () => {
                   setIsCoverSelectorOpen(true);
                   audioEngine.playPulse();
                 }}
-                className="absolute bottom-2 right-2 p-2.5 bg-electricViolet text-white rounded-xl shadow-violet-soft hover:bg-electricViolet-glow transition-all active:scale-95 flex items-center justify-center cursor-pointer min-w-[44px] min-h-[44px] z-10"
-                title="Cambiar Foto de Portada Principal"
-                aria-label="Cambiar Foto de Portada Principal"
+                className="absolute bottom-1.5 right-1.5 p-2 bg-electricViolet text-white rounded-xl shadow-violet-soft hover:bg-electricViolet-glow transition-all active:scale-95 flex items-center justify-center cursor-pointer min-w-[44px] min-h-[44px] z-10"
+                title={language === "es" ? "Cambiar Foto de Portada Principal" : "Change Cover Photo"}
+                aria-label={language === "es" ? "Cambiar Foto de Portada Principal" : "Change Cover Photo"}
               >
                 <Camera className="w-4 h-4 stroke-[2.5]" />
               </button>
@@ -229,10 +272,10 @@ export const ProtocolView: React.FC = () => {
           </div>
 
           {/* Información de Identidad, Codename y Badges */}
-          <div className="flex-1 min-w-0 space-y-2 pr-12 sm:pr-28">
+          <div className="flex-1 min-w-0 space-y-1.5 pr-1">
             <div>
               {isEditingName ? (
-                <div className="space-y-1.5 py-1">
+                <div className="space-y-1.5 py-0.5">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <input
                       ref={nameInputRef}
@@ -250,8 +293,8 @@ export const ProtocolView: React.FC = () => {
                           setIsEditingName(false);
                         }
                       }}
-                      placeholder="Tu nombre / alias..."
-                      className={`px-2.5 py-1.5 min-h-[44px] rounded-xl bg-black border text-white font-mono font-bold text-base sm:text-lg focus:outline-none transition-all w-full max-w-[240px] ${
+                      placeholder={t.account.codenamePlaceholder}
+                      className={`px-2.5 py-1.5 min-h-[44px] rounded-xl bg-black border text-white font-mono font-bold text-base sm:text-lg focus:outline-none transition-all w-full max-w-[220px] ${
                         inlineNameError
                           ? "border-bloodNeon text-bloodNeon"
                           : "border-electricViolet shadow-violet-soft"
@@ -264,10 +307,9 @@ export const ProtocolView: React.FC = () => {
                       disabled={isCheckingName}
                       onClick={handleSaveInlineName}
                       className="px-3 py-2 min-h-[44px] bg-electricViolet text-white rounded-xl hover:bg-electricViolet-glow transition-all active:scale-95 cursor-pointer font-bold text-xs flex items-center gap-1 shadow-violet-soft disabled:opacity-50"
-                      title="Guardar nombre"
                     >
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      <span>{isCheckingName ? "Validando..." : "Listo"}</span>
+                      <span>{isCheckingName ? (language === "es" ? "Validando..." : "Checking...") : (language === "es" ? "Listo" : "Done")}</span>
                     </button>
                     <button
                       type="button"
@@ -277,8 +319,7 @@ export const ProtocolView: React.FC = () => {
                         setIsEditingName(false);
                       }}
                       className="p-2 min-h-[44px] min-w-[44px] bg-white/10 hover:bg-white/20 text-neutral-400 hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center"
-                      title="Cancelar"
-                      aria-label="Cancelar"
+                      aria-label={language === "es" ? "Cancelar" : "Cancel"}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -291,20 +332,11 @@ export const ProtocolView: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1
-                    onClick={() => {
-                      setIsEditingName(true);
-                      setInlineName(myProfile.codename || "VESSEL_USER");
-                      audioEngine.playPulse();
-                    }}
-                    className="text-xl sm:text-2xl font-mono font-black text-white tracking-tight cursor-pointer hover:text-electricViolet-glow transition-colors flex items-center gap-1.5 group"
-                    title="Hacé clic para cambiar tu nombre"
-                  >
-                    <span>{myProfile.codename || "VESSEL_USER"}</span>
-                    <span className="text-xs opacity-60 group-hover:opacity-100 text-electricViolet-glow transition-opacity">✏️</span>
+                  <h1 className="text-lg sm:text-2xl font-mono font-black text-white tracking-tight">
+                    {myProfile.codename || "VESSEL_USER"}
                   </h1>
-                  <span className="text-sm font-mono font-bold text-neutral-400">
-                    {myProfile.showAge ? `${myProfile.age} años` : "Edad Oculta"}
+                  <span className="text-xs sm:text-sm font-mono font-bold text-neutral-400">
+                    {myProfile.showAge ? `${myProfile.age} ${language === "es" ? "años" : "yo"}` : (language === "es" ? "Edad Oculta" : "Age Hidden")}
                   </span>
                   <button
                     type="button"
@@ -313,34 +345,38 @@ export const ProtocolView: React.FC = () => {
                       setInlineName(myProfile.codename || "VESSEL_USER");
                       audioEngine.playPulse();
                     }}
-                    className="px-2.5 py-1 min-h-[36px] rounded-lg bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 text-[10px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
-                    title="Editar Nombre de Usuario"
-                    aria-label="Editar Nombre de Usuario"
+                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 text-[10px] font-mono font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                    title={t.account.codenameLabel}
+                    aria-label={t.account.codenameLabel}
                   >
                     <span>✏️</span>
-                    <span>Editar</span>
+                    <span>{language === "es" ? "Alias" : "Edit Alias"}</span>
                   </button>
                 </div>
               )}
 
               <div className="text-xs text-electricViolet-glow font-mono font-bold mt-0.5 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-electricViolet animate-pulse shadow-violet-soft" />
-                <span>{myBodyState === "open" ? "Transmisión Activa // Open Now" : "Modo Stealth // Oculto"}</span>
+                <span>
+                  {myBodyState === "open"
+                    ? t.geo?.transmissionActive || (language === "es" ? "Transmisión Activa (Disponible Ya)" : "Active Transmission (Available Now)")
+                    : t.geo?.stealthMode || (language === "es" ? "Modo Sigilo (Oculto)" : "Stealth Mode (Hidden)")}
+                </span>
               </div>
             </div>
 
             {/* Badges de Verificación, Lugar y Respeto */}
             <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-              {(myProfile.mobility?.toLowerCase().includes("casa") ||
-                myProfile.mobility?.toLowerCase().includes("lugar") ||
-                myProfile.mobility?.toLowerCase().includes("depto") ||
-                myProfile.mobility?.toLowerCase().includes("sitio")) ? (
+              {myProfile.mobility?.toLowerCase().includes("casa") ||
+              myProfile.mobility?.toLowerCase().includes("lugar") ||
+              myProfile.mobility?.toLowerCase().includes("depto") ||
+              myProfile.mobility?.toLowerCase().includes("sitio") ? (
                 <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                  🏠 Pongo Casa
+                  🏠 {language === "es" ? "Pongo Casa" : "Can Host"}
                 </span>
               ) : (
                 <span className="text-[10px] font-mono font-bold text-neutral-300 bg-white/5 border border-white/15 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  🚗 Voy a la tuya
+                  🚗 {language === "es" ? "Me muevo" : "Mobile"}
                 </span>
               )}
               {myProfile.verification?.isVerified && (
@@ -358,59 +394,49 @@ export const ProtocolView: React.FC = () => {
                   title={`${myProfile.totalEncountersVerified} Encuentros físicos validados`}
                 >
                   <CheckCircle2 className="w-3 h-3" />
-                  <span>{myProfile.totalEncountersVerified} Verificados</span>
+                  <span>
+                    {myProfile.totalEncountersVerified} {language === "es" ? "Verificados" : "Verified"}
+                  </span>
                 </span>
               )}
             </div>
 
             {/* Ficha sintética del usuario */}
-            <div className="text-[11px] text-neutral-300 font-mono space-y-0.5 pt-1.5 border-t border-white/10">
+            <div className="text-[11px] text-neutral-300 font-mono space-y-0.5 pt-1 border-t border-white/10">
               <div className="truncate text-neutral-200 font-bold">
-                {myProfile.genderIdentity || "Hombre Cis"} • {myProfile.pronouns || "Él / He / Him"}
+                {myProfile.genderIdentity || "Hombre Cis"} • {myProfile.pronouns || (t.account?.pronounsFallback || (language === "es" ? "Él" : "He"))}
               </div>
               <div className="text-neutral-400 truncate">
-                {myProfile.role} • {myProfile.heightCm} cm • {myProfile.weightKg} kg • {myProfile.yoSoy}
+                {getRoleDisplayLabel(myProfile.role, language)} • {myProfile.heightCm} cm • {myProfile.weightKg} kg • {myProfile.yoSoy}
               </div>
-              {myProfile.twitterHandle && (
-                <div className="text-electricViolet-glow font-mono text-[10px] truncate">
-                  @{myProfile.twitterHandle}
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* INTERRUPTOR DE MODO NIEBLA (DIFUMINADO FACIAL INTEGRADO) */}
-        <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5 space-y-2.5 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
-                🌫️
-              </div>
+        {/* BARRA TÁCTICA COMPACTA DE CONTROLES RÁPIDOS (MODO NIEBLA + NOTA DE VOZ 5S) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-white/10">
+          {/* Píldora 1: Modo Niebla (Switch Accesible 44px) */}
+          <div className="bg-black/60 border border-white/10 rounded-2xl px-3 py-2 flex items-center justify-between gap-2.5 min-h-[52px]">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base flex-shrink-0">🌫️</span>
               <div className="min-w-0">
-                <div className="text-xs font-mono font-extrabold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                  <span>{t.account.fogModeTitle}</span>
-                  <span
-                    className={`text-[9px] font-mono px-2 py-0.5 rounded-full border ${
-                      myProfile.isFogMode
-                        ? "bg-electricViolet/20 text-electricViolet-glow border-electricViolet/40 font-bold shadow-violet-soft"
-                        : "bg-white/5 text-neutral-400 border-white/10 font-normal"
-                    }`}
-                  >
-                    {myProfile.isFogMode ? t.account.fogModeActive : t.account.fogModeNormal}
-                  </span>
+                <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
+                  <span className="truncate">{t.account.fogModeTitle}</span>
                 </div>
-                <p className="text-[10px] text-neutral-400 mt-0.5 line-clamp-1">
+                <span className="text-[10px] font-mono text-neutral-400 block truncate">
                   {myProfile.isFogMode
-                    ? "Tu foto se muestra difuminada con discreción en el radar y cuadrícula."
-                    : "Tu foto se muestra nítida y visible para todos los perfiles."}
-                </p>
+                    ? t.account.fogModeNearbyWarning
+                    : language === "es"
+                    ? "Foto nítida (Máxima visibilidad)"
+                    : "Clear photo (Max visibility)"}
+                </span>
               </div>
             </div>
 
-            {/* Switch Toggle */}
             <button
               type="button"
+              role="switch"
+              aria-checked={myProfile.isFogMode}
               onClick={() => {
                 toggleFogMode();
                 audioEngine.playPulse();
@@ -418,8 +444,8 @@ export const ProtocolView: React.FC = () => {
               className={`w-12 h-7 rounded-full transition-colors relative p-1 flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
                 myProfile.isFogMode ? "bg-electricViolet shadow-violet-soft" : "bg-neutral-800"
               }`}
-              title="Conmutar Modo Niebla"
-              aria-label="Conmutar Modo Niebla"
+              title={t.account.fogModeTitle}
+              aria-label={t.account.fogModeTitle}
             >
               <div
                 className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
@@ -429,120 +455,89 @@ export const ProtocolView: React.FC = () => {
             </button>
           </div>
 
-          {/* AVISO IMPORTANTE DE VISIBILIDAD CUANDO EL MODO NIEBLA ESTÁ ACTIVO */}
-          {myProfile.isFogMode && (
-            <div className="bg-electricViolet/10 border border-electricViolet/30 rounded-xl p-2.5 sm:p-3 flex items-start gap-2.5 shadow-sm animate-fade-in">
-              <div className="p-1 rounded-lg bg-electricViolet/20 text-electricViolet-glow mt-0.5 flex-shrink-0">
-                <AlertTriangle className="w-3.5 h-3.5" />
+          {/* Píldora 2: Audio de Perfil 5s */}
+          <div className="bg-black/60 border border-white/10 rounded-2xl px-3 py-2 flex items-center justify-between gap-2 min-h-[52px]">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="w-7 h-7 rounded-xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-electricViolet-glow flex-shrink-0">
+                <Mic className="w-3.5 h-3.5" />
               </div>
-              <div className="space-y-0.5 text-[11px] font-mono leading-relaxed min-w-0">
-                <span className="font-bold text-electricViolet-glow block uppercase text-[10px] tracking-wider">
-                  ⚠️ Impacto de Visibilidad // Modo Niebla Activo
-                </span>
-                <p className="text-neutral-300">
-                  • <strong>Vista Cerca:</strong> Tu perfil tendrá <strong>menor visibilidad en el ranking</strong>.
-                  <br />
-                  • <strong>Vista Radar:</strong> Tu perfil <strong>no será visible en el radar</strong>.
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="text-[10px] text-neutral-400 font-mono italic border-t border-white/5 pt-2 flex items-center justify-between">
-            <span>ℹ️ {t.account.fogModeNotice}</span>
-          </div>
-        </div>
-
-        {/* NOTA DE VOZ // VOICE VIBE DEL PERFIL */}
-        <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5 space-y-2.5 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-sm flex-shrink-0 text-electricViolet-glow shadow-sm">
-                <Mic className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-mono font-extrabold text-white uppercase tracking-wider flex items-center gap-2 flex-wrap">
-                  <span>{language === "es" ? "Nota de Voz // Voice Vibe" : "Voice Note // Voice Vibe"}</span>
-                  <span
-                    className={`text-[9px] font-mono px-2 py-0.5 rounded-full border ${
-                      myVoiceVibe
-                        ? "bg-mintNeon/15 text-mintNeon border-mintNeon/30 font-bold"
-                        : "bg-white/5 text-neutral-400 border-white/10"
-                    }`}
-                  >
-                    {myVoiceVibe
-                      ? language === "es"
-                        ? "ACTIVA (5s)"
-                        : "ACTIVE (5s)"
-                      : language === "es"
-                      ? "SIN AUDIO"
-                      : "NO AUDIO"}
+              {myVoiceVibe ? (
+                <div className="flex-1 min-w-0">
+                  <VoiceVibePlayer voice={myVoiceVibe} compact />
+                </div>
+              ) : (
+                <div className="min-w-0">
+                  <span className="text-xs font-mono font-bold text-white block truncate">
+                    {t.account?.voiceVibeSection || "AUDIO DE PERFIL (5s)"}
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-400 block truncate">
+                    {language === "es" ? "Sin audio grabado" : "No audio recorded"}
                   </span>
                 </div>
-                <p className="text-[10px] text-neutral-400 mt-0.5 line-clamp-1">
-                  {myVoiceVibe
-                    ? language === "es"
-                      ? "Tu voz se escucha al inspeccionar tu perfil en la matriz."
-                      : "Your voice plays when users inspect your profile on the grid."
-                    : language === "es"
-                    ? "Grabá un audio de 5s para transmitir tono y presencia real."
-                    : "Record a 5s clip to convey tone and real presence."}
-                </p>
-              </div>
+              )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                openVoiceRecorder();
-              }}
-              className="px-3 py-1.5 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-[11px] font-bold shadow-violet-soft transition-all active:scale-95 flex items-center gap-1.5 flex-shrink-0 cursor-pointer"
-            >
-              <Mic className="w-3.5 h-3.5" />
-              <span>
-                {myVoiceVibe
-                  ? language === "es"
-                    ? "Cambiar"
-                    : "Change"
-                  : language === "es"
-                  ? "Grabar"
-                  : "Record"}
-              </span>
-            </button>
-          </div>
-
-          {/* Si tiene nota de voz activa, mostrar reproductor con waveform real y botón de borrar */}
-          {myVoiceVibe && (
-            <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-              <div className="w-full flex-1">
-                <VoiceVibePlayer voice={myVoiceVibe} compact />
-              </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => {
-                  audioEngine.playError();
-                  deleteMyVoiceVibe();
+                  audioEngine.playPulse();
+                  openVoiceRecorder();
                 }}
-                className="text-[10px] font-mono text-red-400 hover:text-red-300 flex items-center gap-1 py-1 px-2 rounded-lg bg-red-950/30 border border-red-500/20 transition-colors self-end sm:self-center cursor-pointer"
-                title="Eliminar nota de voz"
+                className="px-3 py-2 min-h-[44px] rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-[11px] font-bold shadow-violet-soft transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
               >
-                <Trash2 className="w-3 h-3" />
-                <span>{language === "es" ? "Eliminar" : "Delete"}</span>
+                <Mic className="w-3.5 h-3.5" />
+                <span>
+                  {myVoiceVibe
+                    ? language === "es"
+                      ? "Regrabar"
+                      : "Re-record"
+                    : language === "es"
+                    ? "Grabar 5s"
+                    : "Record 5s"}
+                </span>
               </button>
+              {myVoiceVibe && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playError();
+                    deleteMyVoiceVibe();
+                  }}
+                  className="p-2 min-h-[44px] min-w-[44px] rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-400 flex items-center justify-center transition-colors cursor-pointer"
+                  title={language === "es" ? "Eliminar nota de voz" : "Delete voice note"}
+                  aria-label={language === "es" ? "Eliminar nota de voz" : "Delete voice note"}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Aviso compacto de 1 línea si Modo Niebla está activo */}
+        {myProfile.isFogMode && (
+          <div className="px-3 py-2 rounded-xl bg-electricViolet/10 border border-electricViolet/30 flex items-center gap-2 text-[11px] font-mono text-neutral-200 animate-fade-in">
+            <AlertTriangle className="w-3.5 h-3.5 text-electricViolet-glow flex-shrink-0" />
+            <span className="truncate">{t.account.fogModeRankNotice}</span>
+          </div>
+        )}
       </div>
 
       {/* =========================================================================
-          2. CONMUTADOR SEGMENTADO TÁCTIL (3 MACRO-PANELES PRINCIPALES)
+          2. CONMUTADOR SEGMENTADO STICKY (3 MACRO-PANELES PRINCIPALES)
           ========================================================================= */}
-      <div className="bg-obsidian-surface/90 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md shadow-card-elevation">
-        <div className="grid grid-cols-3 gap-1.5">
+      <div className="sticky top-2 z-30 bg-obsidian-surface/95 p-1.5 rounded-2xl border border-white/15 backdrop-blur-xl shadow-card-elevation">
+        <div
+          role="tablist"
+          aria-label={language === "es" ? "Secciones de Mi Perfil" : "My Profile Sections"}
+          className="grid grid-cols-3 gap-1.5"
+        >
           {/* Pestaña 1: Mi Presencia */}
           <button
             type="button"
+            role="tab"
+            aria-selected={activeMacroTab === "public"}
             onClick={() => {
               setActiveMacroTab("public");
               audioEngine.playPulse();
@@ -554,12 +549,14 @@ export const ProtocolView: React.FC = () => {
             }`}
           >
             <User className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{language === "es" ? "Mi Perfil" : "My Profile"}</span>
+            <span className="truncate">{language === "es" ? "Mi Ficha" : "My Profile"}</span>
           </button>
 
           {/* Pestaña 2: Bóvedas Íntimas / Álbumes */}
           <button
             type="button"
+            role="tab"
+            aria-selected={activeMacroTab === "vaults"}
             onClick={() => {
               setActiveMacroTab("vaults");
               audioEngine.playPulse();
@@ -571,7 +568,8 @@ export const ProtocolView: React.FC = () => {
             }`}
           >
             <FolderLock className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{language === "es" ? "Álbumes" : "Albums"}</span>
+            <span className="truncate hidden sm:inline">{language === "es" ? "Fotos & Bóvedas" : "Photos & Vaults"}</span>
+            <span className="truncate sm:hidden">{language === "es" ? "Fotos" : "Photos"}</span>
             <span
               className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
                 activeMacroTab === "vaults"
@@ -586,6 +584,8 @@ export const ProtocolView: React.FC = () => {
           {/* Pestaña 3: Soberanía & Seguridad */}
           <button
             type="button"
+            role="tab"
+            aria-selected={activeMacroTab === "security"}
             onClick={() => {
               setActiveMacroTab("security");
               audioEngine.playPulse();
@@ -597,7 +597,8 @@ export const ProtocolView: React.FC = () => {
             }`}
           >
             <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{language === "es" ? "Seguridad" : "Security"}</span>
+            <span className="truncate hidden sm:inline">{language === "es" ? "Privacidad & Respeto" : "Privacy & Respect"}</span>
+            <span className="truncate sm:hidden">{language === "es" ? "Privacidad" : "Privacy"}</span>
             {pendingTestimonialsCount > 0 ? (
               <span className="w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow animate-pulse" />
             ) : activeBoundariesCount > 0 ? (
@@ -618,115 +619,26 @@ export const ProtocolView: React.FC = () => {
       {/* =========================================================================
           3. CONTENIDO MODULAR POR MACRO-PANELES
           ========================================================================= */}
-      {/* PANEL 1: PRESENCIA PÚBLICA (Ficha, Bio & Kink Matrix) */}
       {activeMacroTab === "public" && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
-            <button
-              type="button"
-              onClick={() => {
-                setPresenceSubView("bio");
-                audioEngine.playPulse();
-              }}
-              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                presenceSubView === "bio"
-                  ? "bg-white/15 text-white shadow-sm border border-white/20"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>{language === "es" ? "Datos & Bio" : "Bio & Details"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPresenceSubView("kinks");
-                audioEngine.playPulse();
-              }}
-              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                presenceSubView === "kinks"
-                  ? "bg-bloodNeon/20 text-bloodNeon border border-bloodNeon/40 font-extrabold shadow-sm"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              <Flame className="w-3.5 h-3.5" />
-              <span>{language === "es" ? "Qué te morbosea 😈" : "Blind Kink Matrix 😈"}</span>
-            </button>
+        <div className="space-y-4 animate-fade-in">
+          <BioTab />
+          <div className="pt-2 border-t border-white/10">
+            <KinksTab />
           </div>
-
-          {presenceSubView === "bio" ? <BioTab /> : <KinksTab />}
         </div>
       )}
 
-      {/* PANEL 2: BÓVEDAS & ARCHIVO (Álbumes privados, llaves y revocación) */}
       {activeMacroTab === "vaults" && <AlbumsTab />}
 
-      {/* PANEL 3: SOBERANÍA & SEGURIDAD (Límites, Reputación y Respeto) */}
       {activeMacroTab === "security" && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10">
-            <button
-              type="button"
-              onClick={() => {
-                setSecuritySubView("boundaries");
-                audioEngine.playPulse();
-              }}
-              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                securitySubView === "boundaries"
-                  ? "bg-white/15 text-white shadow-sm border border-white/20"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>{language === "es" ? "Límites & Privacidad" : "Boundaries & Privacy"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSecuritySubView("reputation");
-                audioEngine.playPulse();
-              }}
-              className={`flex-1 py-2 px-3 min-h-[40px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                securitySubView === "reputation"
-                  ? "bg-mintNeon/15 text-mintNeon border border-mintNeon/40 font-extrabold shadow-sm"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{language === "es" ? "Anti-Ghost & Karma" : "Anti-Ghost & Karma"}</span>
-            </button>
+        <div className="space-y-4 animate-fade-in">
+          <BoundariesTab />
+          <div className="pt-2 border-t border-white/10">
+            <ReputationTab />
           </div>
-
-          {securitySubView === "boundaries" ? <BoundariesTab /> : <ReputationTab />}
         </div>
       )}
 
-      {/* Banner al pie para Configuración del Sistema */}
-      <div className="bg-obsidian-surface/90 rounded-2xl p-3.5 border border-white/10 flex items-center justify-between gap-3 backdrop-blur-md shadow-card-elevation">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="p-2 rounded-xl bg-electricViolet/15 text-electricViolet-glow border border-electricViolet/30 flex-shrink-0">
-            <Sliders className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-xs font-mono font-bold text-white uppercase block truncate">
-              {t.settings.title}
-            </span>
-            <span className="text-[10px] text-neutral-400 block font-mono truncate">
-              {t.settings.subtitle}
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            audioEngine.playPulse();
-            openAppSettingsModal();
-          }}
-          className="px-3.5 py-2 min-h-[44px] bg-white/10 hover:bg-electricViolet hover:text-white text-white font-mono font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0"
-        >
-          <span>{language === "es" ? "Configurar" : "Settings"}</span>
-        </button>
-      </div>
 
       {/* Modal de Selección / Subida de Foto de Portada */}
       {isCoverSelectorOpen && (

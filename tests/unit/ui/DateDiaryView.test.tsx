@@ -138,10 +138,13 @@ const mockProfiles = [
   },
 ];
 
+const mockOpenLoverDossierModal = vi.fn();
+
 vi.mock("@/context/VesselContext", () => ({
   useVessel: () => ({
     openCreateDiaryModal: mockOpenCreateDiaryModal,
     openItsExposureModal: mockOpenItsExposureModal,
+    openLoverDossierModal: mockOpenLoverDossierModal,
     diaryEntries: mockEntries,
     diaryStats: {
       totalEncounters: 3,
@@ -165,12 +168,16 @@ vi.mock("@/context/VesselContext", () => ({
     },
     language: "es",
     t: TRANSLATIONS.es,
+    favoriteProfileIds: ["vessel-01"],
+    isFavoriteProfile: (id: string) => id === "vessel-01",
+    toggleFavoriteProfile: vi.fn(),
   }),
 }));
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {
     playPulse: vi.fn(),
+    playSubBass: vi.fn(),
   },
 }));
 
@@ -179,51 +186,73 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     vi.clearAllMocks();
   });
 
-  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas 📖 (Diario)' y credencial AES-256", () => {
+  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas 📖 (Bitácora)' y credencial AES-256", () => {
     render(<DateDiaryView />);
 
     expect(screen.getByText(/Chongos & Citas/i)).toBeInTheDocument();
-    expect(screen.getByText(/AES-256 VAULT/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/AES-256/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Documentar Encuentro/i)).toBeInTheDocument();
   });
 
-  it("debe renderizar el Bento Grid de telemetría con contadores y Respect Karma", () => {
+  it("debe renderizar las 3 pestañas de navegación: Agenda & Citas, Salud & Cuidados y Métricas", () => {
     render(<DateDiaryView />);
 
-    expect(screen.getByText(/Total Encuentros/i)).toBeInTheDocument();
-    expect(screen.getByText(/Respect Karma/i)).toBeInTheDocument();
-    expect(screen.getByText(/98%/i)).toBeInTheDocument();
-    expect(screen.getByText(/Valoración Sobre Mí/i)).toBeInTheDocument();
+    expect(screen.getByTestId("diary-tab-schedule")).toBeInTheDocument();
+    expect(screen.getByTestId("diary-tab-health")).toBeInTheDocument();
+    expect(screen.getByTestId("diary-tab-insights")).toBeInTheDocument();
   });
 
-  it("debe renderizar la sección de valoraciones recibidas sobre mí con testimonios", () => {
+  it("debe renderizar la solapa Citas por defecto con listado de citas y filtros de fecha", () => {
     render(<DateDiaryView />);
+
+    expect(screen.getByText("KLAUS_030")).toBeInTheDocument();
+    expect(screen.getByText("RECEPTOR_V")).toBeInTheDocument();
+    expect(screen.getByText(TRANSLATIONS.es.diary.filterAll)).toBeInTheDocument();
+    expect(screen.getByText(TRANSLATIONS.es.diary.filter7Days)).toBeInTheDocument();
+    expect(screen.getByText(TRANSLATIONS.es.diary.filter30Days)).toBeInTheDocument();
+    expect(screen.getByText(TRANSLATIONS.es.diary.filterThisYear)).toBeInTheDocument();
+    expect(screen.getByText(TRANSLATIONS.es.diary.filterCustomRange)).toBeInTheDocument();
+  });
+
+  it("debe conmutar a la solapa 'Salud & Cuidados' e invocar openItsExposureModal al hacer clic en Emitir Alerta Anónima", () => {
+    render(<DateDiaryView />);
+
+    const healthTabBtn = screen.getByTestId("diary-tab-health");
+    fireEvent.click(healthTabBtn);
+
+    expect(screen.getByText(/Control & Calendario PrEP/i)).toBeInTheDocument();
+    expect(screen.getByText(/Alerta de Exposición a ITS/i)).toBeInTheDocument();
+    expect(screen.getByText(/Reducción de Daños/i)).toBeInTheDocument();
+
+    const alertBtn = screen.getByRole("button", { name: /Emitir Alerta Anónima/i });
+    fireEvent.click(alertBtn);
+
+    expect(mockOpenItsExposureModal).toHaveBeenCalledTimes(1);
+  });
+
+  it("debe conmutar a la solapa 'Métricas' y renderizar los 4 KPIs y las valoraciones de onda y confianza", () => {
+    render(<DateDiaryView />);
+
+    const insightsTabBtn = screen.getByTestId("diary-tab-insights");
+    fireEvent.click(insightsTabBtn);
+
+    expect(screen.getByText(/Total Encuentros/i)).toBeInTheDocument();
+    expect(screen.getByText(/Satisfacción Media/i)).toBeInTheDocument();
+    expect(screen.getByText(/Química Corporal/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tasa de Repetición/i)).toBeInTheDocument();
 
     expect(screen.getByText(/Valoraciones de Onda & Confianza/i)).toBeInTheDocument();
     expect(screen.getByText(/Increíble anfitrión, lugar súper prolijo/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Excelente Host/i).length).toBeGreaterThan(0);
   });
 
-  it("debe invocar setSelectedProfile al hacer clic en el rostro de un encuentro", () => {
+  it("debe invocar openLoverDossierModal al hacer clic en el rostro de un encuentro", () => {
     render(<DateDiaryView />);
 
-    // Rostro de KLAUS_030
     const klausAvatars = screen.getAllByAltText("KLAUS_030");
     fireEvent.click(klausAvatars[0]);
 
-    expect(mockSetSelectedProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "vessel-01", codename: "KLAUS_030" })
-    );
-  });
-
-  it("debe renderizar y filtrar por los presets de fecha", () => {
-    render(<DateDiaryView />);
-
-    expect(screen.getByText(TRANSLATIONS.es.diary.filterAll)).toBeInTheDocument();
-    expect(screen.getByText(TRANSLATIONS.es.diary.filter7Days)).toBeInTheDocument();
-    expect(screen.getByText(TRANSLATIONS.es.diary.filter30Days)).toBeInTheDocument();
-    expect(screen.getByText(TRANSLATIONS.es.diary.filterThisYear)).toBeInTheDocument();
-    expect(screen.getByText(TRANSLATIONS.es.diary.filterCustomRange)).toBeInTheDocument();
+    expect(mockOpenLoverDossierModal).toHaveBeenCalledWith("vessel-01");
   });
 
   it("debe invocar openCreateDiaryModal al hacer clic en Documentar Encuentro", () => {
@@ -235,33 +264,14 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     expect(mockOpenCreateDiaryModal).toHaveBeenCalledTimes(1);
   });
 
-  it("debe conmutar entre la pestaña 'Bitácora de Citas' y 'Salud & Cuidado'", () => {
+  it("debe renderizar el botón de filtro 'Solo Favoritos' en el feed y permitir activarlo", () => {
     render(<DateDiaryView />);
 
-    // Por defecto estamos en Bitácora de Citas
-    expect(screen.getByText(/Total Encuentros/i)).toBeInTheDocument();
+    const favFilterBtn = screen.getByTestId("diary-filter-only-favorites");
+    expect(favFilterBtn).toBeInTheDocument();
 
-    // Hacemos clic en la pestaña Salud & Cuidado
-    const healthTabBtn = screen.getByRole("button", { name: /Salud & Cuidado/i });
-    fireEvent.click(healthTabBtn);
-
-    // Debe mostrar las secciones clínicas de Salud & Cuidado
-    expect(screen.getByText(/Control & Calendario PrEP/i)).toBeInTheDocument();
-    expect(screen.getByText(/Alerta de Exposición a ITS/i)).toBeInTheDocument();
-    expect(screen.getByText(/Reducción de Daños/i)).toBeInTheDocument();
-  });
-
-  it("debe invocar openItsExposureModal al hacer clic en Emitir Alerta Anónima", () => {
-    render(<DateDiaryView />);
-
-    // Ir a pestaña Salud & Cuidado
-    const healthTabBtn = screen.getByRole("button", { name: /Salud & Cuidado/i });
-    fireEvent.click(healthTabBtn);
-
-    // Botón de emitir alerta
-    const alertBtn = screen.getByRole("button", { name: /Emitir Alerta Anónima/i });
-    fireEvent.click(alertBtn);
-
-    expect(mockOpenItsExposureModal).toHaveBeenCalledTimes(1);
+    fireEvent.click(favFilterBtn);
+    expect(favFilterBtn).toHaveAttribute("aria-pressed", "true");
+    expect(favFilterBtn).toHaveClass("bg-amber-500/25");
   });
 });

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { NightlifeEvent } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import {
   MapPin,
   Clock,
@@ -21,10 +22,10 @@ import {
 interface Props {
   event: NightlifeEvent;
   onClose: () => void;
-  onOpenFloorRadar: () => void;
+  onOpenFloorRadar?: () => void;
 }
 
-export const EventDetailModal: React.FC<Props> = ({ event, onClose, onOpenFloorRadar }) => {
+export const EventDetailModal: React.FC<Props> = ({ event, onClose }) => {
   const {
     toggleEventRsvp,
     checkInToEvent,
@@ -32,6 +33,7 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose, onOpenFloorR
     profiles,
     setSelectedProfile,
     currentUserUid,
+    language,
   } = useVessel();
 
   const isGoing =
@@ -46,7 +48,7 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose, onOpenFloorR
 
   const handleCheckin = () => {
     checkInToEvent(event.id, "dancefloor");
-    onOpenFloorRadar();
+    audioEngine.playSignalSent();
   };
 
   // Asistentes de mock basados en los perfiles
@@ -162,14 +164,10 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose, onOpenFloorR
             </button>
 
             {isCheckedInHere ? (
-              <button
-                type="button"
-                onClick={onOpenFloorRadar}
-                className="py-3 px-4 rounded-xl font-mono text-xs font-bold bg-purple-900/70 border border-purple-400/60 text-purple-200 flex items-center justify-center gap-2 shadow-md cursor-pointer animate-pulse"
-              >
-                <Radio className="w-4 h-4 text-purple-300" />
-                <span>Abrir Radar de Pista ➔</span>
-              </button>
+              <div className="py-3 px-4 rounded-xl font-mono text-xs font-bold bg-mintNeon/20 border border-mintNeon/60 text-mintNeon flex items-center justify-center gap-2 shadow-sm">
+                <ShieldCheck className="w-4 h-4 text-mintNeon" />
+                <span>Estás presente en este evento</span>
+              </div>
             ) : (
               <button
                 type="button"
@@ -177,7 +175,7 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose, onOpenFloorR
                 className="py-3 px-4 rounded-xl font-mono text-xs font-bold bg-neutral-900 hover:bg-neutral-800 border border-white/20 hover:border-electricViolet/50 text-white flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
                 <Radio className="w-4 h-4 text-electricViolet-glow" />
-                <span>Estoy en el boliche // Check-in</span>
+                <span>Estoy en el lugar • Marcar presencia</span>
               </button>
             )}
           </div>
@@ -219,7 +217,7 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose, onOpenFloorR
                         {p.codename}
                       </span>
                       <span className="font-mono text-[8px] text-electricViolet-glow block truncate">
-                        {p.role}
+                        {getRoleDisplayLabel(p.role, language)}
                       </span>
                     </div>
                   </div>

@@ -1,44 +1,44 @@
-import { VesselProfile, StyledAvatar } from "@/types/vessel";
+import { VesselProfile, StyledAvatar, EnergyVibe } from "@/types/vessel";
 
 export const STYLED_AVATARS_CATALOG: StyledAvatar[] = [
   {
     id: "avatar-leather-01",
-    name: "Máscara Leather // Crux",
+    name: "Máscara de Cuero - Crux",
     category: "leather",
     url: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80",
     description: "Silueta táctica con arnés de cuero y protección facial completa.",
   },
   {
     id: "avatar-neon-02",
-    name: "Vórtice Neón // Darkroom",
+    name: "Vórtice Neón - Cuarto Oscuro",
     category: "neon",
     url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80",
     description: "Gradiente de luz ámbar y roja profunda con atmósfera cinematográfica.",
   },
   {
     id: "avatar-silhouette-03",
-    name: "Sombra Dorsal // Anatomical",
+    name: "Sombra Dorsal - Anatómico",
     category: "silhouette",
     url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
     description: "Líneas musculares en alto contraste sin exposición de facciones faciales.",
   },
   {
     id: "avatar-cyber-04",
-    name: "Monolito Brutalista // Void",
+    name: "Monolito Brutalista - Vacío",
     category: "cyber",
     url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
     description: "Textura de hormigón y geometría angular oscura.",
   },
   {
     id: "avatar-darkroom-05",
-    name: "Humo & Luces Bajas // Berghain",
+    name: "Humo y Luces Bajas - Berlín",
     category: "darkroom",
     url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80",
     description: "Vapor de club nocturno y misterio industrial.",
   },
   {
     id: "avatar-tactical-06",
-    name: "Capucha Sigilo // Stealth Mode",
+    name: "Capucha Sigilo - Modo Furtivo",
     category: "leather",
     url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
     description: "Perfil táctico de alta discreción para cruising.",
@@ -68,7 +68,7 @@ export const MOBILITY_OPTIONS = [
   "Tengo depto / lugar",
   "Me muevo / voy",
   "Tengo lugar y me muevo",
-  "En boliche / darkroom / cruising",
+  "En boliche / sala oscura / aire libre",
 ] as const;
 
 export const HIV_STATUS_OPTIONS = [
@@ -79,7 +79,7 @@ export const HIV_STATUS_OPTIONS = [
   "Lo charlamos por privado",
 ] as const;
 
-export const MOCK_PROFILES: VesselProfile[] = [
+export const BASE_MOCK_PROFILES: VesselProfile[] = [
   {
     id: "vessel-01",
     codename: "KLAUS_030",
@@ -90,7 +90,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     mobility: "Tengo depto / lugar",
     hivStatus: "Negativo en PrEP",
     genderIdentity: "Hombre Cis",
-    pronouns: "Él / He / Him",
+    pronouns: "Él",
     orientation: "Gay",
     desires: ["Conexión carnal al palo", "Exploración fetiche & morbo", "Darkroom sin caretas", "Dominación & Marcar la cancha"],
     intentions: ["Pinta algo ya (Inmediato)", "Solo por esta noche", "Chongo fijo / Vernos seguido"],
@@ -121,7 +121,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "biometric_liveness",
       verifiedAt: "JUL 2026",
       hasFacialPrivacy: false,
-      badgeLabel: "ID VERIFIED // LIVENESS 3D",
+      badgeLabel: "IDENTIDAD VERIFICADA - PRUEBA FACIAL 3D",
       trustScore: 100,
       certificateHash: "0x89AC...221E",
     },
@@ -136,13 +136,13 @@ export const MOCK_PROFILES: VesselProfile[] = [
         id: "pv-01",
         url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
         blurredUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=10",
-        caption: "Bóveda Privada // Sesión de arnés",
+        caption: "Bóveda Privada - Sesión de arnés",
       },
       {
         id: "pv-02",
         url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
         blurredUrl: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&auto=format&fit=crop&q=10",
-        caption: "Bóveda Privada // Espalda y tensión dorsal",
+        caption: "Bóveda Privada - Espalda y tensión dorsal",
       },
     ],
     testimonials: [
@@ -175,7 +175,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     },
     audioNote: {
       duration: "0:14",
-      label: "Audio de voz // Instrucciones de llegada",
+      label: "Nota de voz - Instrucciones de llegada",
     },
     coordinates: {
       lat: 52.498,
@@ -208,7 +208,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       durationSeconds: 5,
       waveform: [25, 45, 80, 100, 75, 90, 60, 40, 85, 95, 70, 50, 30],
       recordedAt: "2026-08-30",
-      label: "Voz // 'Directo y sin vueltas en Palermo'",
+      label: "Nota de voz: 'Directo y sin vueltas en Palermo'",
     },
     exitProtocol: "fast_encounter",
     isLivenessVerified: true,
@@ -217,7 +217,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       isActive: true,
       expiresAt: new Date(Date.now() + 1000 * 60 * 35).toISOString(),
       durationMinutes: 45,
-      statusNote: "Listo en 10 min // Tengo depto en Palermo",
+      statusNote: "Listo en 10 min - Tengo depto en Palermo",
     },
     kinkMatrix: {
       leather: "love",
@@ -239,7 +239,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     mobility: "Me muevo / voy",
     hivStatus: "Negativo en PrEP",
     genderIdentity: "No Binarie",
-    pronouns: "Elle / They / Them",
+    pronouns: "Elle",
     orientation: "Pansexual",
     desires: ["Entrega & Sumisión total", "Mimos, besos y calentura lenta", "Devoción Oral / Petes", "Morbo visual / Voyeur"],
     intentions: ["Pinta algo ya (Inmediato)", "Exploración libre y cuidada", "Chongo fijo / Vernos seguido"],
@@ -268,7 +268,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "email",
       verifiedAt: "AGO 2026",
       hasFacialPrivacy: false,
-      badgeLabel: "ID VERIFIED // EMAIL",
+      badgeLabel: "IDENTIDAD VERIFICADA - CORREO ELECTRÓNICO",
       trustScore: 99,
       certificateHash: "0x4B3C...E912",
     },
@@ -282,7 +282,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
         id: "pv-03",
         url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&auto=format&fit=crop&q=80",
         blurredUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=10",
-        caption: "Bóveda Privada // Arco lumbar",
+        caption: "Bóveda Privada - Arco lumbar",
       },
     ],
     testimonials: [
@@ -316,7 +316,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       durationSeconds: 4,
       waveform: [40, 60, 50, 80, 70, 65, 85, 90, 75, 55, 35],
       recordedAt: "2026-08-31",
-      label: "Voz // 'Me muevo por Colegiales o Palermo'",
+      label: "Nota de voz: 'Me muevo por Colegiales o Palermo'",
     },
     isLivenessVerified: true,
     livenessVerifiedDate: "Hace 5 días",
@@ -324,7 +324,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       isActive: true,
       expiresAt: new Date(Date.now() + 1000 * 60 * 20).toISOString(),
       durationMinutes: 30,
-      statusNote: "Disponible ya // Me muevo a tu lugar",
+      statusNote: "Disponible ya - Me muevo a tu lugar",
     },
     kinkMatrix: {
       submissive: "love",
@@ -346,7 +346,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     mobility: "Tengo depto / lugar",
     hivStatus: "Positivo Indetectable (I=I)",
     genderIdentity: "Hombre Cis",
-    pronouns: "Él / He / Him",
+    pronouns: "Él",
     orientation: "Gay",
     desires: ["Dominación & Marcar la cancha", "Exploración fetiche & morbo", "Darkroom sin caretas", "Sudor, fierro & piel"],
     intentions: ["Solo por esta noche", "Chongo fijo / Vernos seguido"],
@@ -375,7 +375,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "id_document",
       verifiedAt: "JUL 2026",
       hasFacialPrivacy: true,
-      badgeLabel: "ID VERIFIED // PRIVACIDAD FACIAL",
+      badgeLabel: "IDENTIDAD VERIFICADA - PRIVACIDAD FACIAL",
       trustScore: 100,
       certificateHash: "0x1A2B...9C8D",
     },
@@ -388,7 +388,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
         id: "pv-04",
         url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
         blurredUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=10",
-        caption: "Bóveda // Templo de concreto privado",
+        caption: "Bóveda Privada - Templo de concreto privado",
       },
     ],
     testimonials: [
@@ -465,7 +465,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "phone_sms",
       verifiedAt: "AGO 2026",
       hasFacialPrivacy: false,
-      badgeLabel: "ID VERIFIED // SMS PROTOCOL",
+      badgeLabel: "IDENTIDAD VERIFICADA - PROTOCOLO SMS",
       trustScore: 99,
       certificateHash: "0x8E7D...6C5B",
     },
@@ -499,7 +499,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     mobility: "Me muevo / voy",
     hivStatus: "VIH Negativo",
     genderIdentity: "Hombre",
-    pronouns: "Él / He / Him",
+    pronouns: "Él",
     orientation: "Bisexual",
     desires: ["Mimos, besos y calentura lenta", "Morbo visual / Voyeur", "Contacto físico sin etiquetas"],
     intentions: ["Sin vueltas / Lo que fluya", "Pinta algo ya (Inmediato)"],
@@ -518,7 +518,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     hosting: "Me muevo / voy",
     tagline: "Presencia en sigilo. Se activa con la señal correcta.",
     statement:
-      "En modo discreto. Tirame un pulso para reactivarme si estás cerca y con ganas.",
+      "En modo discreto. Tirame un zumbido para reactivarme si estás cerca y con ganas.",
     avatarUrl:
       "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: true, // Avatar estilizado
@@ -528,7 +528,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "biometric_liveness",
       verifiedAt: "JUN 2026",
       hasFacialPrivacy: true,
-      badgeLabel: "ID VERIFIED // PRIVACIDAD FACIAL",
+      badgeLabel: "IDENTIDAD VERIFICADA - PRIVACIDAD FACIAL",
       trustScore: 100,
       certificateHash: "0x55AA...BB11",
     },
@@ -560,7 +560,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     mobility: "En boliche / darkroom / cruising",
     hivStatus: "Negativo en PrEP",
     genderIdentity: "Queer / Fluido",
-    pronouns: "Cualquiera / Any",
+    pronouns: "Cualquiera",
     orientation: "Pansexual",
     desires: ["Devoción Oral / Petes", "Darkroom sin caretas", "Conexión carnal al palo", "Exploración fetiche & morbo"],
     intentions: ["Pinta algo ya (Inmediato)", "Solo por esta noche"],
@@ -589,7 +589,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "biometric_liveness",
       verifiedAt: "AGO 2026",
       hasFacialPrivacy: true,
-      badgeLabel: "ID VERIFIED // PRIVACIDAD FACIAL",
+      badgeLabel: "IDENTIDAD VERIFICADA - PRIVACIDAD FACIAL",
       trustScore: 99,
       certificateHash: "0x99FF...33CC",
     },
@@ -602,7 +602,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
         id: "pv-05",
         url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
         blurredUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=10",
-        caption: "Bóveda // Darkroom atmosphere",
+        caption: "Bóveda Privada - Atmósfera de cuarto oscuro",
       },
     ],
     testimonials: [],
@@ -628,7 +628,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
     mobility: "Tengo depto / lugar",
     hivStatus: "Negativo en PrEP",
     genderIdentity: "Hombre Cis",
-    pronouns: "Él / He / Him",
+    pronouns: "Él",
     orientation: "Gay",
     desires: ["Dominación & Marcar la cancha", "Conexión carnal al palo", "Exploración fetiche & morbo"],
     intentions: ["Chongo fijo / Vernos seguido", "Pinta algo ya (Inmediato)"],
@@ -657,7 +657,7 @@ export const MOCK_PROFILES: VesselProfile[] = [
       method: "biometric_liveness",
       verifiedAt: "AGO 2026",
       hasFacialPrivacy: false,
-      badgeLabel: "ID VERIFIED // LIVENESS 3D",
+      badgeLabel: "IDENTIDAD VERIFICADA - PRUEBA FACIAL 3D",
       trustScore: 100,
       certificateHash: "0xAA11...8899",
     },
@@ -681,3 +681,143 @@ export const MOCK_PROFILES: VesselProfile[] = [
     exitProtocol: "chill_cuddle",
   },
 ];
+
+const ADDITIONAL_CODENAMES = [
+  "SANTI_PALERMO", "AXEL_RAW", "TOMAS_RECOLETA", "NICO_TELMO", "RAMA_ALMAGRO",
+  "LUCAS_BELGRANO", "FRAN_CABALLITO", "JULIAN_CRESPO", "MARCOS_COLEGIAL", "GONZA_CHACARITA",
+  "FACU_DEVOTO", "AGUS_NUÑEZ", "IVAN_SAAVEDRA", "MATI_MONSERRAT", "LEO_BOEDO",
+  "EMILIANO_COGHLAN", "ESTEBAN_URQUIZA", "JOACO_FLORES", "MANU_BARRACAS", "ENZO_PARQUE_P",
+  "DIEGO_RETIRO", "SEBA_SAN_CRISTOBAL", "MARTIN_PUYRREDON", "IAN_SAAVEDRA", "FEDE_HOLLYWOOD",
+  "ALEX_CAÑITAS", "RODRIGO_CONGRESO", "BAUTI_RECOLETA", "MAXI_DEVOTO", "LUCIO_BELGRANO",
+  "SANTINO_NORDELTA", "CAMILO_OLIVOS", "THIAGO_V_LOPEZ", "GABRIEL_S_ISIDRO", "PABLO_MARTINEZ",
+  "BENJA_TIGRE", "ALAN_LANUS", "CRISTIAN_QUILMES", "HERNAN_LOMAS", "MAURO_AVELLANEDA",
+  "DANTE_BANFIELD", "SIMON_ADROGUE", "FELIPE_RAMOS_M", "GERMAN_HAEDO", "LEANDRO_CASTELAR",
+  "ADRIAN_MORON", "JERO_ITUZAINGO", "TOBIAS_S_MARTIN", "LIONEL_CASEROS", "VALENTIN_FLORIDA",
+  "NEHUEN_ACASSUSO", "CIRO_BECCAR", "LAUTARO_VICTORIA", "ELIAN_BOULOGNE", "RENZO_ADELINA",
+  "LISANDRO_MUNRO", "GAEL_CARAPACHAY", "MATEO_BALLESTER", "TADEO_CHILAVERT", "URIEL_ANDRES",
+  "AITOR_S_FERNANDO", "BRUNO_PUNTA_CHICA", "FABRIZIO_B_CHICO", "LEONEL_TIGRE", "KEVIN_URQUIZA",
+  "GUIDO_ORTUZAR", "EZE_PARQUE_CHAS", "BLAS_AGRONOMIA", "SANTOS_PATERNAL", "GASTON_MITRE",
+  "CONRADO_SANTA_RITA", "AMADEO_REAL", "BORJA_M_CASTRO", "TEO_VERSALLES", "RAMON_LINIERS",
+  "SALVADOR_MATADEROS", "FAUSTO_LUGANO", "AURELIO_RIACHUELO", "OCTAVIO_AVELLANEDA", "CASIANO_SOLDATI",
+  "SILVIO_POMPEYA", "BERNARDO_CONSTITUCION", "JUSTO_BALVANERA", "FIDEL_S_NICOLAS", "ELISEO_MONSERRAT",
+  "GENARO_P_MADERO", "DONATO_COSTANERA", "HILARIO_CATALINAS", "CAYETANO_P_MAYO", "CRUZ_TRIBUNALES",
+  "ULISES_B_NORTE", "INAKI_BOTANICO", "SERGIO_P_ITALIA", "ROMAN_LAS_HERAS", "ALVARO_ALTO_PALERMO",
+  "ORLANDO_ARMENIA", "CORIOLANO_SERRANO", "DARIO_PALERMO_SOHO", "ISMAEL_ARCOS", "NATAN_PACIFICO",
+  "NESTOR_BARRANCAS", "WALDO_CHINATOWN", "XAVIER_BELGRANO_C",
+];
+
+const AVATAR_POOL = [
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1519764622345-23439dd774f7?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1480429370139-e0132c086e2a?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1528892952291-009c663ce843?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?w=800&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&auto=format&fit=crop&q=80",
+];
+
+const ROLES_POOL = ["Top", "Bottom", "Versatile", "Vers Top", "Vers Bottom", "Side"] as const;
+const BODY_ARCHETYPES = ["Muscular / Athletic", "Slim / Fit", "Bear / Heavy", "Otter / Toned", "Daddy / Mature", "Average / Natural"] as const;
+const KINKS_POOL = ["leather-harness", "darkroom", "oral-worship", "raw-carnal", "gym-gear", "rubber-latex", "domination", "bondage", "sensory-deprivation", "techno-afters"] as const;
+
+function generateAdditionalProfiles(): VesselProfile[] {
+  return ADDITIONAL_CODENAMES.map((codename, index) => {
+    const profileNum = index + 8;
+    const id = `vessel-${String(profileNum).padStart(2, "0")}`;
+    const role = ROLES_POOL[index % ROLES_POOL.length];
+    const yoSoy = YO_SOY_OPTIONS[index % YO_SOY_OPTIONS.length];
+    const mobility = MOBILITY_OPTIONS[index % MOBILITY_OPTIONS.length];
+    const hivStatus = HIV_STATUS_OPTIONS[index % HIV_STATUS_OPTIONS.length];
+    const avatarUrl = AVATAR_POOL[index % AVATAR_POOL.length];
+    const exitProtocol = (["fast_encounter", "chill_cuddle", "sleepover"] as const)[index % 3];
+    const bodyState = index % 6 === 0 ? "dormant" : index % 4 === 0 ? "occupied" : "open";
+    const distanceMeters = 120 + index * 34; // Distribución escalonada desde 120m hasta ~3600m
+    const age = 21 + (index % 30);
+    const isAntiGhost = index % 3 !== 0;
+    const respectScore = 88 + (index % 12);
+    const hasPlace = mobility.includes("depto") || mobility.includes("casa");
+
+    return {
+      id,
+      codename,
+      age,
+      showAge: true,
+      twitterHandle: `${codename.toLowerCase()}_ba`,
+      yoSoy,
+      mobility,
+      hivStatus,
+      genderIdentity: "Hombre Cis",
+      pronouns: "Él",
+      orientation: "Gay",
+      desires: ["Conexión carnal al palo", "Exploración fetiche & morbo", "Solo por esta noche"],
+      intentions: ["Pinta algo ya (Inmediato)", "Solo por esta noche"],
+      boundaries: ["Respeto total a la palabra de seguridad", "Doble consentimiento explícito siempre"],
+      energyVibes: (index % 2 === 0 ? ["fogoso", "intenso"] : ["kinky", "jugueton"]) as EnergyVibe[],
+      respectScore,
+      isAntiGhost,
+      responseRateMinutes: 1 + (index % 8),
+      distanceMeters,
+      bodyState,
+      role,
+      heightCm: 172 + (index % 22),
+      weightKg: 68 + (index % 28),
+      bodyArchetype: BODY_ARCHETYPES[index % BODY_ARCHETYPES.length],
+      intensity: (((index % 4) + 1) as 1 | 2 | 3 | 4),
+      hosting: hasPlace ? "Tengo depto / lugar" : "Voy a la tuya / Viajo 🚗",
+      tagline: `Presencia en ${codename.split("_")[1] || "CABA"}. Conexión táctica y respeto.`,
+      statement: "Buena onda, directo y sin vueltas. Si hay piel y respeto, coordinamos en 1 tap.",
+      avatarUrl,
+      isStylizedAvatar: false,
+      isFogMode: index % 12 === 0,
+      userPlan: index % 7 === 0 ? "unlimited" : "free",
+      isUnlimited: index % 7 === 0,
+      verification: {
+        isVerified: index % 2 === 0,
+        method: "biometric_liveness",
+        verifiedAt: "AGO 2026",
+        hasFacialPrivacy: false,
+        badgeLabel: "IDENTIDAD VERIFICADA",
+        trustScore: 99,
+        certificateHash: `0x${profileNum}A...99`,
+      },
+      totalEncountersVerified: (index % 14) + 1,
+      galleryUrls: [avatarUrl],
+      privateVault: [],
+      testimonials: [],
+      kinks: [
+        KINKS_POOL[index % KINKS_POOL.length],
+        KINKS_POOL[(index + 2) % KINKS_POOL.length],
+        KINKS_POOL[(index + 4) % KINKS_POOL.length],
+      ],
+      healthStatus: {
+        prep: true,
+        testedDate: "AGO 2026",
+        details: "PrEP verificado",
+      },
+      coordinates: {
+        lat: -34.5885 + (index * 0.0012) * (index % 2 === 0 ? 1 : -1),
+        lng: -58.4376 + (index * 0.0012) * (index % 3 === 0 ? 1 : -1),
+      },
+      exitProtocol,
+    };
+  });
+}
+
+export const MOCK_PROFILES: VesselProfile[] = [
+  ...BASE_MOCK_PROFILES,
+  ...generateAdditionalProfiles(),
+];
+

@@ -79,6 +79,9 @@ const mockPlayVoiceVibe = vi.fn();
 const mockStopVoiceVibe = vi.fn();
 const mockHasMutualPulse = vi.fn().mockReturnValue(false);
 
+const mockToggleFavorite = vi.fn();
+let mockFavoriteProfileIds = ["profile-77"];
+
 const mockVesselState = {
   myProfile: { codename: "TEST_ME", id: "user-me" },
   currentUserUid: "user-me",
@@ -107,10 +110,17 @@ const mockVesselState = {
   isUnlimited: false,
   openUnlimitedModal: mockOpenUnlimitedModal,
   hasMutualPulse: mockHasMutualPulse,
+  toggleFavoriteProfile: mockToggleFavorite,
+  isFavoriteProfile: (id: string) => mockFavoriteProfileIds.includes(id),
 };
 
 vi.mock("@/context/VesselContext", () => ({
   useVessel: () => mockVesselState,
+  useRadarMatrix: () => ({
+    favoriteProfileIds: mockFavoriteProfileIds,
+    isFavoriteProfile: (id: string) => mockFavoriteProfileIds.includes(id),
+    toggleFavoriteProfile: mockToggleFavorite,
+  }),
 }));
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
@@ -138,7 +148,7 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
     expect(screen.getAllByText("VALENTIN_CYBER").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Atlético / Gym")).toBeInTheDocument();
     expect(screen.getByText(/Diseñador visual y de noche/i)).toBeInTheDocument();
-    expect(screen.getByText("Charla post-sexo")).toBeInTheDocument();
+    expect(screen.getByText("Encuentro hoy")).toBeInTheDocument();
     expect(screen.getByText("Solo con protección")).toBeInTheDocument();
   });
 
@@ -209,5 +219,21 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
     fireEvent.click(closeBtn);
 
     expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("permite marcar y alternar como favorito el perfil desde el botón de la cabecera", () => {
+    render(
+      <ProfileDetailModal
+        profile={mockProfile}
+        onClose={mockOnClose}
+        onOpenChat={mockOnOpenChat}
+      />
+    );
+
+    const favBtn = screen.getByTestId(`detail-modal-favorite-toggle-${mockProfile.id}`);
+    expect(favBtn).toBeInTheDocument();
+    fireEvent.click(favBtn);
+
+    expect(mockToggleFavorite).toHaveBeenCalledWith(mockProfile.id);
   });
 });

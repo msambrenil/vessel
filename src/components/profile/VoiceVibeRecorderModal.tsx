@@ -14,6 +14,7 @@ export const VoiceVibeRecorderModal: React.FC = () => {
     deleteMyVoiceVibe,
     playVoiceVibe,
     activePlayingVoiceId,
+    language,
     t,
   } = useVessel();
 
@@ -40,7 +41,7 @@ export const VoiceVibeRecorderModal: React.FC = () => {
         durationSeconds: Math.ceil(recordedResult.durationSeconds || 5),
         waveform: recordedResult.waveform || [],
         recordedAt: new Date().toISOString(),
-        label: "Voz // Perfil verificado",
+        label: "Nota de voz - Perfil verificado",
       };
       setRecordedSnippet(newSnippet);
     }
@@ -179,7 +180,11 @@ export const VoiceVibeRecorderModal: React.FC = () => {
                     className="px-4 py-2 rounded-lg border border-neutral-700 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-mono text-xs flex items-center gap-2 transition-all"
                   >
                     <span>{isPlaying ? "⏸" : "▶"}</span>
-                    <span>{isPlaying ? "Reproduciendo..." : "Escuchar Preview"}</span>
+                    <span>
+                      {isPlaying
+                        ? (language === "es" ? "Reproduciendo..." : "Playing...")
+                        : (language === "es" ? "Escuchar Grabación" : "Listen Preview")}
+                    </span>
                   </button>
                   <button
                     type="button"

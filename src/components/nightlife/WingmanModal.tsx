@@ -52,7 +52,7 @@ export const WingmanModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                Modo Wingman // Salgo con Amigo
+                Compañero de Salida (Cuidado Mutuo)
               </h2>
               <p className="text-[11px] text-neutral-400">
                 Cuidado mutuo y alertas de seguridad en la noche

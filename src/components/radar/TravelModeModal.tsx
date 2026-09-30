@@ -17,11 +17,13 @@ export const TravelModeModal: React.FC = () => {
 
   const cities = [
     { name: "Buenos Aires", country: "Argentina", coords: { lat: -34.5885, lng: -58.4376 }, flag: "🇦🇷" },
-    { name: "Berlín", country: "Alemania", coords: { lat: 52.52, lng: 13.405 }, flag: "🇩🇪" },
-    { name: "Madrid", country: "España", coords: { lat: 40.4168, lng: -3.7038 }, flag: "🇪🇸" },
+    { name: "Córdoba", country: "Argentina", coords: { lat: -31.4201, lng: -64.1888 }, flag: "🇦🇷" },
+    { name: "Rosario", country: "Argentina", coords: { lat: -32.9468, lng: -60.6393 }, flag: "🇦🇷" },
+    { name: "Mendoza", country: "Argentina", coords: { lat: -32.8895, lng: -68.8458 }, flag: "🇦🇷" },
+    { name: "Mar del Plata", country: "Argentina", coords: { lat: -38.0055, lng: -57.5562 }, flag: "🇦🇷" },
     { name: "São Paulo", country: "Brasil", coords: { lat: -23.5505, lng: -46.6333 }, flag: "🇧🇷" },
-    { name: "Nueva York", country: "Estados Unidos", coords: { lat: 40.7128, lng: -74.006 }, flag: "🇺🇸" },
-    { name: "Londres", country: "Reino Unido", coords: { lat: 51.5074, lng: -0.1278 }, flag: "🇬🇧" },
+    { name: "Madrid", country: "España", coords: { lat: 40.4168, lng: -3.7038 }, flag: "🇪🇸" },
+    { name: "Berlín", country: "Alemania", coords: { lat: 52.52, lng: 13.405 }, flag: "🇩🇪" },
   ];
 
   return (
@@ -104,7 +106,7 @@ export const TravelModeModal: React.FC = () => {
           </div>
 
           <p className="text-[11px] text-neutral-500">
-            Al activar Travel Mode, el radar de proximidad y la grilla cargan los perfiles locales de la ciudad seleccionada.
+            Al activar el Modo Viajero, el radar de proximidad y la grilla cargan los perfiles locales de la ciudad seleccionada.
           </p>
         </div>
       </div>

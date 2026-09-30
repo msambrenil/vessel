@@ -13,6 +13,11 @@ import {
   ItsExposureType,
   ProfileDossier,
   VaultAuditLog,
+  EncounterTicket,
+  ConquestZone,
+  VesselWrappedMetrics,
+  RoleType,
+  YoSoyType,
 } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
@@ -23,6 +28,8 @@ import {
   subscribeToReceivedTestimonials,
   updateTestimonialStatusCloud,
 } from "@/lib/firebase/testimonialService";
+import { saveFullUserDataToCloud } from "@/lib/firebase/userDataService";
+import { getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import { useAuth } from "./AuthContext";
 import { useSettings } from "./SettingsContext";
 
@@ -48,6 +55,7 @@ export interface DiaryContextType {
   updateDiaryEntry: (id: string, updates: Partial<DiaryEntry>) => void;
   deleteDiaryEntry: (id: string) => void;
   toggleHealthReminderResolved: (diaryId: string) => void;
+  restoreDiaryBackup: (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, any> }) => void;
 
   // Testimonios Consensuados & Geofencing
   validatedEncounters: Record<string, EncounterRecord>;
@@ -77,14 +85,37 @@ export interface DiaryContextType {
   sendAnonymousItsAlert: (
     condition: ItsExposureType,
     conditionLabel: string,
-    daysWindow: number
+    daysWindow: number,
+    selectedPartners?: string[]
   ) => void;
 
-  // Dossier Privado, Ranking & Red Flags
+  // Dossier Privado, Ranking, Fotos de Amantes & The Black Vault
   profileDossiers: Record<string, ProfileDossier>;
   getProfileDossier: (profileId: string) => ProfileDossier | undefined;
   saveProfileDossier: (profileId: string, data: Partial<ProfileDossier>) => void;
   deleteProfileDossier: (profileId: string) => void;
+  archivePhotosToDossier: (profileId: string, photoUrls: string[]) => void;
+  removePhotoFromDossier: (profileId: string, photoUrl: string) => void;
+  selectedDossierProfileId: string | null;
+  setSelectedDossierProfileId: (id: string | null) => void;
+  isDossierModalOpen: boolean;
+  openLoverDossierModal: (profileId: string) => void;
+  closeLoverDossierModal: () => void;
+
+  // Ticket de Encuentro Táctico
+  createEncounterTicket: (
+    ticket: Omit<EncounterTicket, "id" | "createdAt" | "status">,
+    partnerInfo?: { codename: string; avatarUrl?: string; role?: RoleType; yoSoy?: YoSoyType }
+  ) => EncounterTicket;
+  updateEncounterTicketStatus: (ticketId: string, status: EncounterTicket["status"]) => void;
+  confirmH2Ticket: (ticketId: string, isUser: boolean) => void;
+
+  // VESSEL Wrapped & Heatmap de Conquistas
+  isWrappedModalOpen: boolean;
+  openWrappedModal: () => void;
+  closeWrappedModal: () => void;
+  getVesselWrappedMetrics: (period?: "month" | "year") => VesselWrappedMetrics;
+  getConquestZones: () => ConquestZone[];
 
   // Bóvedas Desbloqueadas & Auditoría
   unlockedVaults: Record<string, boolean>;
@@ -127,10 +158,37 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
   const [doxyPepTrackers, setDoxyPepTrackers] = useState<DoxyPepTracker[]>(INITIAL_DOXYPEP_TRACKERS);
   const [isItsExposureModalOpen, setIsItsExposureModalOpen] = useState(false);
 
-  const [profileDossiers, setProfileDossiers] = useState<Record<string, ProfileDossier>>(INITIAL_DOSSIERS);
+  const [profileDossiers, setProfileDossiers] = useState<Record<string, ProfileDossier>>(() =>
+    getActiveAppMode() === "real" ? {} : INITIAL_DOSSIERS
+  );
+  const [selectedDossierProfileId, setSelectedDossierProfileId] = useState<string | null>(null);
+  const [isDossierModalOpen, setIsDossierModalOpen] = useState<boolean>(false);
+  const [isWrappedModalOpen, setIsWrappedModalOpen] = useState<boolean>(false);
   const [unlockedVaults, setUnlockedVaults] = useState<Record<string, boolean>>({});
-  const [vaultAuditLogs, setVaultAuditLogs] = useState<VaultAuditLog[]>(INITIAL_VAULT_AUDIT_LOGS);
+  const [vaultAuditLogs, setVaultAuditLogs] = useState<VaultAuditLog[]>(() =>
+    getActiveAppMode() === "real" ? [] : INITIAL_VAULT_AUDIT_LOGS
+  );
   const [isVaultAuditModalOpen, setIsVaultAuditModalOpen] = useState<boolean>(false);
+
+  const openLoverDossierModal = useCallback((profileId: string) => {
+    setSelectedDossierProfileId(profileId);
+    setIsDossierModalOpen(true);
+    audioEngine.playPulse();
+  }, []);
+
+  const closeLoverDossierModal = useCallback(() => {
+    setIsDossierModalOpen(false);
+    setSelectedDossierProfileId(null);
+  }, []);
+
+  const openWrappedModal = useCallback(() => {
+    setIsWrappedModalOpen(true);
+    audioEngine.playSubBass(60);
+  }, []);
+
+  const closeWrappedModal = useCallback(() => {
+    setIsWrappedModalOpen(false);
+  }, []);
 
   const openVaultAuditModal = useCallback(() => {
     setIsVaultAuditModalOpen(true);
@@ -147,17 +205,45 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
     const localDiary = loadFromStorage<DiaryEntry[]>(STORAGE_KEYS.DIARY, fallbackDiary, appMode);
     if (localDiary) setDiaryEntries(localDiary);
 
-    const localEncounters = loadFromStorage<Record<string, EncounterRecord>>(STORAGE_KEYS.VALIDATED_ENCOUNTERS, INITIAL_VALIDATED_ENCOUNTERS, appMode);
-    if (localEncounters && Object.keys(localEncounters).length > 0) setValidatedEncounters(localEncounters);
+    const localEncounters = loadFromStorage<Record<string, EncounterRecord>>(
+      STORAGE_KEYS.VALIDATED_ENCOUNTERS,
+      appMode === "real" ? {} : INITIAL_VALIDATED_ENCOUNTERS,
+      appMode
+    );
+    setValidatedEncounters(localEncounters || {});
 
-    const localDossiers = loadFromStorage<Record<string, ProfileDossier>>(STORAGE_KEYS.DOSSIERS, INITIAL_DOSSIERS, appMode);
-    if (localDossiers && Object.keys(localDossiers).length > 0) setProfileDossiers(localDossiers);
+    const localDossiers = loadFromStorage<Record<string, ProfileDossier>>(
+      STORAGE_KEYS.DOSSIERS,
+      appMode === "real" ? {} : INITIAL_DOSSIERS,
+      appMode
+    );
+    if (localDossiers && Object.keys(localDossiers).length > 0) {
+      const normalized: Record<string, ProfileDossier> = {};
+      Object.entries(localDossiers).forEach(([k, d]) => {
+        const rawChem = d.chemistryLevel ?? 5;
+        normalized[k] = {
+          ...d,
+          chemistryLevel: rawChem > 5 ? Math.min(5, Math.ceil(rawChem / 2)) : Math.max(1, rawChem),
+        };
+      });
+      setProfileDossiers(normalized);
+    } else {
+      setProfileDossiers({});
+    }
 
-    const localDoxyPep = loadFromStorage<DoxyPepTracker[]>(STORAGE_KEYS.DOXYPEP_TRACKERS, INITIAL_DOXYPEP_TRACKERS, appMode);
-    if (localDoxyPep) setDoxyPepTrackers(localDoxyPep);
+    const localDoxyPep = loadFromStorage<DoxyPepTracker[]>(
+      STORAGE_KEYS.DOXYPEP_TRACKERS,
+      appMode === "real" ? [] : INITIAL_DOXYPEP_TRACKERS,
+      appMode
+    );
+    setDoxyPepTrackers(localDoxyPep || []);
 
-    const localVaultAudit = loadFromStorage<VaultAuditLog[]>(STORAGE_KEYS.VAULT_AUDIT_LOGS, INITIAL_VAULT_AUDIT_LOGS, appMode);
-    if (localVaultAudit) setVaultAuditLogs(localVaultAudit);
+    const localVaultAudit = loadFromStorage<VaultAuditLog[]>(
+      STORAGE_KEYS.VAULT_AUDIT_LOGS,
+      appMode === "real" ? [] : INITIAL_VAULT_AUDIT_LOGS,
+      appMode
+    );
+    setVaultAuditLogs(localVaultAudit || []);
 
     const fallbackTestimonials = appMode === "real" ? [] : MOCK_MY_RECEIVED_TESTIMONIALS;
     const localTestimonials = loadFromStorage<EncounterTestimonial[]>(STORAGE_KEYS.MY_TESTIMONIALS, fallbackTestimonials, appMode);
@@ -205,12 +291,15 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       setDiaryEntries((prev) => {
         const next = [newEntry, ...prev];
         saveToStorage(STORAGE_KEYS.DIARY, next);
+        if (currentUserUid && currentUserUid !== "local-user") {
+          saveFullUserDataToCloud(currentUserUid, { diaryEntries: next });
+        }
         return next;
       });
       audioEngine.playVaultUnlock();
       return newEntry;
     },
-    []
+    [currentUserUid]
   );
 
   const updateDiaryEntry = useCallback((id: string, updates: Partial<DiaryEntry>) => {
@@ -225,19 +314,25 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
           : entry
       );
       saveToStorage(STORAGE_KEYS.DIARY, next);
+      if (currentUserUid && currentUserUid !== "local-user") {
+        saveFullUserDataToCloud(currentUserUid, { diaryEntries: next });
+      }
       return next;
     });
     audioEngine.playPulse();
-  }, []);
+  }, [currentUserUid]);
 
   const deleteDiaryEntry = useCallback((id: string) => {
     setDiaryEntries((prev) => {
       const next = prev.filter((entry) => entry.id !== id);
       saveToStorage(STORAGE_KEYS.DIARY, next);
+      if (currentUserUid && currentUserUid !== "local-user") {
+        saveFullUserDataToCloud(currentUserUid, { diaryEntries: next });
+      }
       return next;
     });
     audioEngine.playStateSwitch("dormant");
-  }, []);
+  }, [currentUserUid]);
 
   const toggleHealthReminderResolved = useCallback((diaryId: string) => {
     setDiaryEntries((prev) => {
@@ -254,10 +349,43 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
         return entry;
       });
       saveToStorage(STORAGE_KEYS.DIARY, next);
+      if (currentUserUid && currentUserUid !== "local-user") {
+        saveFullUserDataToCloud(currentUserUid, { diaryEntries: next });
+      }
       return next;
     });
     audioEngine.playPulse();
-  }, []);
+  }, [currentUserUid]);
+
+  const restoreDiaryBackup = useCallback(
+    (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, any> }) => {
+      if (backup.entries && Array.isArray(backup.entries)) {
+        setDiaryEntries((prev) => {
+          const map = new Map<string, DiaryEntry>();
+          prev.forEach((e) => map.set(e.id, e));
+          backup.entries!.forEach((e) => map.set(e.id, e));
+          const merged = Array.from(map.values());
+          saveToStorage(STORAGE_KEYS.DIARY, merged);
+          if (currentUserUid && currentUserUid !== "local-user") {
+            saveFullUserDataToCloud(currentUserUid, { diaryEntries: merged });
+          }
+          return merged;
+        });
+      }
+      if (backup.dossiers && typeof backup.dossiers === "object") {
+        setProfileDossiers((prev) => {
+          const merged = { ...prev, ...backup.dossiers };
+          saveToStorage(STORAGE_KEYS.DOSSIERS, merged);
+          if (currentUserUid && currentUserUid !== "local-user") {
+            saveFullUserDataToCloud(currentUserUid, { dossiers: merged });
+          }
+          return merged;
+        });
+      }
+      audioEngine.playSubBass(75);
+    },
+    [currentUserUid]
+  );
 
   const editingDiaryEntry = useMemo(
     () => diaryEntries.find((d) => d.id === editingDiaryEntryId) || null,
@@ -274,7 +402,11 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
     const avgSatisfaction =
       totalWithScore > 0
         ? evaluatedEntries.reduce(
-            (acc, e) => acc + (e.satisfaction?.overallScore || 0),
+            (acc, e) =>
+              acc +
+              (e.satisfaction?.expectationsRating ??
+                e.satisfaction?.overallScore ??
+                0),
             0
           ) / totalWithScore
         : 0;
@@ -282,7 +414,9 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
     const avgChemistry =
       totalWithScore > 0
         ? evaluatedEntries.reduce(
-            (acc, e) => acc + (e.satisfaction?.chemistryLevel || 0),
+            (acc, e) =>
+              acc +
+              Math.min(5, Math.max(1, e.satisfaction?.chemistryLevel || 5)),
             0
           ) / totalWithScore
         : 0;
@@ -497,19 +631,28 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
   }, []);
 
   const sendAnonymousItsAlert = useCallback(
-    (condition: ItsExposureType, conditionLabel: string, daysWindow: number) => {
+    (
+      condition: ItsExposureType,
+      conditionLabel: string,
+      daysWindow: number,
+      selectedPartners?: string[]
+    ) => {
       const token = `token-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+      const recipientsNote =
+        selectedPartners && selectedPartners.length > 0
+          ? ` (${selectedPartners.length} contactos seleccionados)`
+          : "";
       const alertData: ItsExposureAlert = {
         id: `its-${Date.now()}`,
         conditionType: condition,
-        conditionLabel,
-        diagnosedDate: new Date().toISOString().split("T")[0],
+        conditionLabel: `${conditionLabel}${recipientsNote}`,
+        diagnosedDate: getLocalTodayIso(),
         anonymousToken: token,
         sentAt: new Date().toISOString(),
         adviceText:
           language === "es"
-            ? "Te recomendamos realizarte un chequeo médico de rutina preventivo."
-            : "We recommend taking a routine medical screening.",
+            ? `Ventana de ${daysWindow} días: Te recomendamos realizarte un chequeo médico de rutina preventivo.`
+            : `${daysWindow}-day window: We recommend taking a routine medical screening.`,
       };
 
       if (onSendItsAlertMessages) {
@@ -538,9 +681,12 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
           greenFlags: [],
           updatedAt: new Date().toISOString(),
         };
+        const rawChem = data.chemistryLevel ?? existing.chemistryLevel ?? 5;
+        const clampedChem = Math.min(5, Math.max(1, rawChem > 5 ? Math.ceil(rawChem / 2) : rawChem));
         const updated: ProfileDossier = {
           ...existing,
           ...data,
+          chemistryLevel: clampedChem,
           profileId,
           redFlags: data.redFlags ?? existing.redFlags ?? [],
           greenFlags: data.greenFlags ?? existing.greenFlags ?? [],
@@ -548,10 +694,13 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
         };
         const next = { ...prev, [profileId]: updated };
         saveToStorage(STORAGE_KEYS.DOSSIERS, next);
+        if (currentUserUid && currentUserUid !== "local-user") {
+          saveFullUserDataToCloud(currentUserUid, { dossiers: next });
+        }
         return next;
       });
     },
-    []
+    [currentUserUid]
   );
 
   const deleteProfileDossier = useCallback((profileId: string) => {
@@ -560,9 +709,12 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       const next = { ...prev };
       delete next[profileId];
       saveToStorage(STORAGE_KEYS.DOSSIERS, next);
+      if (currentUserUid && currentUserUid !== "local-user") {
+        saveFullUserDataToCloud(currentUserUid, { dossiers: next });
+      }
       return next;
     });
-  }, []);
+  }, [currentUserUid]);
 
   const unlockVault = useCallback((vaultId: string) => {
     setUnlockedVaults((prev) => ({
@@ -580,6 +732,280 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
     });
   }, []);
 
+  const archivePhotosToDossier = useCallback(
+    (profileId: string, photoUrls: string[]) => {
+      if (!photoUrls || photoUrls.length === 0) return;
+      setProfileDossiers((prev) => {
+        const existing = prev[profileId] || {
+          profileId,
+          redFlags: [],
+          greenFlags: [],
+          sharedPhotos: [],
+          updatedAt: new Date().toISOString(),
+        };
+        const currentPhotos = existing.sharedPhotos || [];
+        const combined = Array.from(new Set([...currentPhotos, ...photoUrls]));
+        const updated: ProfileDossier = {
+          ...existing,
+          sharedPhotos: combined,
+          updatedAt: new Date().toISOString(),
+        };
+        const next = { ...prev, [profileId]: updated };
+        saveToStorage(STORAGE_KEYS.DOSSIERS, next);
+        if (currentUserUid && currentUserUid !== "local-user") {
+          saveFullUserDataToCloud(currentUserUid, { dossiers: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [currentUserUid]
+  );
+
+  const removePhotoFromDossier = useCallback(
+    (profileId: string, photoUrl: string) => {
+      setProfileDossiers((prev) => {
+        const existing = prev[profileId];
+        if (!existing || !existing.sharedPhotos) return prev;
+        const filtered = existing.sharedPhotos.filter((url) => url !== photoUrl);
+        const updated: ProfileDossier = {
+          ...existing,
+          sharedPhotos: filtered,
+          updatedAt: new Date().toISOString(),
+        };
+        const next = { ...prev, [profileId]: updated };
+        saveToStorage(STORAGE_KEYS.DOSSIERS, next);
+        if (currentUserUid && currentUserUid !== "local-user") {
+          saveFullUserDataToCloud(currentUserUid, { dossiers: next });
+        }
+        return next;
+      });
+    },
+    [currentUserUid]
+  );
+
+  const createEncounterTicket = useCallback(
+    (
+      ticketData: Omit<EncounterTicket, "id" | "createdAt" | "status">,
+      partnerInfo?: { codename: string; avatarUrl?: string; role?: RoleType; yoSoy?: YoSoyType }
+    ): EncounterTicket => {
+      const ticket: EncounterTicket = {
+        ...ticketData,
+        id: `ticket-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        status: "proposed",
+        createdAt: new Date().toISOString(),
+      };
+      // También registrar cita programada en la bitácora
+      const newEntry: Omit<DiaryEntry, "id" | "createdAt" | "updatedAt"> = {
+        person: {
+          profileId: ticket.partnerId,
+          codename: partnerInfo?.codename || "Contacto VESSEL",
+          avatarUrl: partnerInfo?.avatarUrl,
+          role: partnerInfo?.role,
+          yoSoy: partnerInfo?.yoSoy,
+          sharedPhotos: partnerInfo?.avatarUrl ? [partnerInfo.avatarUrl] : [],
+        },
+        date: ticket.scheduledDate,
+        time: ticket.scheduledTime,
+        isUpcoming: true,
+        location: {
+          name: ticket.locationName,
+          category: ticket.locationCategory,
+        },
+        encounterType: "intense_carnal",
+        privateNotes:
+          ticket.notes ||
+          (language === "es"
+            ? "Cita agendada mediante Ticket de Encuentro."
+            : "Appointment scheduled via Encounter Ticket."),
+        tags: [
+          language === "es" ? "Ticket de Encuentro" : "Encounter Ticket",
+          language === "es" ? "Puntual" : "Punctual",
+        ],
+        ticketId: ticket.id,
+      };
+      addDiaryEntry(newEntry);
+      audioEngine.playSubBass(70);
+      return ticket;
+    },
+    [addDiaryEntry, language]
+  );
+
+  const updateEncounterTicketStatus = useCallback(
+    (ticketId: string, status: EncounterTicket["status"]) => {
+      const statusLabelMap: Record<EncounterTicket["status"], string> =
+        language === "es"
+          ? {
+              proposed: "Ticket Propuesto",
+              confirmed: "Ticket Confirmado",
+              declined: "Cita Declinada",
+              completed: "Cita Concretada",
+              cancelled: "Cita Cancelada",
+            }
+          : {
+              proposed: "Ticket Proposed",
+              confirmed: "Ticket Confirmed",
+              declined: "Appointment Declined",
+              completed: "Completed",
+              cancelled: "Cancelled",
+            };
+
+      setDiaryEntries((prev) => {
+        const next = prev.map((entry) => {
+          if (entry.ticketId === ticketId) {
+            return {
+              ...entry,
+              isUpcoming: status !== "completed",
+              tags: Array.from(
+                new Set([...entry.tags, statusLabelMap[status] || statusLabelMap.confirmed])
+              ),
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return entry;
+        });
+        saveToStorage(STORAGE_KEYS.DIARY, next);
+        if (currentUserUid && currentUserUid !== "local-user") {
+          saveFullUserDataToCloud(currentUserUid, { diaryEntries: next });
+        }
+        return next;
+      });
+      audioEngine.playPulse();
+    },
+    [currentUserUid, language]
+  );
+
+  const confirmH2Ticket = useCallback(
+    (ticketId: string, isUser: boolean) => {
+      const h2Tag =
+        language === "es"
+          ? isUser
+            ? "H-2 Confirmado (Vos)"
+            : "H-2 Confirmado (Amante)"
+          : isUser
+          ? "H-2 Confirmed (You)"
+          : "H-2 Confirmed (Partner)";
+
+      setDiaryEntries((prev) => {
+        const next = prev.map((entry) => {
+          if (entry.ticketId === ticketId) {
+            return {
+              ...entry,
+              tags: Array.from(new Set([...entry.tags, h2Tag])),
+              updatedAt: new Date().toISOString(),
+            };
+          }
+          return entry;
+        });
+        saveToStorage(STORAGE_KEYS.DIARY, next);
+        if (currentUserUid && currentUserUid !== "local-user") {
+          saveFullUserDataToCloud(currentUserUid, { diaryEntries: next });
+        }
+        return next;
+      });
+      audioEngine.playSubBass(60);
+    },
+    [currentUserUid, language]
+  );
+
+  const getConquestZones = useCallback((): ConquestZone[] => {
+    const counts: Record<string, { count: number; lastDate: string }> = {};
+    diaryEntries.forEach((entry) => {
+      const zone = entry.location.name || (entry.location.category === "my_place" ? "Mi Bóveda" : "Exterior");
+      if (!counts[zone]) {
+        counts[zone] = { count: 0, lastDate: entry.date };
+      }
+      counts[zone].count += 1;
+      if (entry.date > counts[zone].lastDate) {
+        counts[zone].lastDate = entry.date;
+      }
+    });
+
+    const total = diaryEntries.length || 1;
+    return Object.entries(counts)
+      .map(([zoneName, data]) => ({
+        zoneName,
+        encounterCount: data.count,
+        percentage: Math.round((data.count / total) * 100),
+        lastDate: data.lastDate,
+      }))
+      .sort((a, b) => b.encounterCount - a.encounterCount);
+  }, [diaryEntries]);
+
+  const getVesselWrappedMetrics = useCallback(
+    (period: "month" | "year" = "year"): VesselWrappedMetrics => {
+      const completed = diaryEntries.filter((e) => !e.isUpcoming);
+      const total = completed.length;
+
+      const partnerCounts: Record<string, { count: number; codename: string; avatarUrl?: string; totalChem: number }> = {};
+      completed.forEach((e) => {
+        const key = e.person.profileId || e.person.codename;
+        if (!partnerCounts[key]) {
+          partnerCounts[key] = {
+            count: 0,
+            codename: e.person.codename,
+            avatarUrl: e.person.avatarUrl,
+            totalChem: 0,
+          };
+        }
+        partnerCounts[key].count += 1;
+        partnerCounts[key].totalChem += e.satisfaction?.chemistryLevel || 5;
+      });
+
+      const uniqueCount = Object.keys(partnerCounts).length;
+      let mvp: VesselWrappedMetrics["mvpPartner"] = undefined;
+      let maxCount = 0;
+      Object.values(partnerCounts).forEach((p) => {
+        if (p.count > maxCount) {
+          maxCount = p.count;
+          mvp = {
+            codename: p.codename,
+            avatarUrl: p.avatarUrl,
+            encountersCount: p.count,
+            chemistry: Number((p.totalChem / p.count).toFixed(1)),
+          };
+        }
+      });
+
+      const dateCounts: Record<string, number> = {};
+      completed.forEach((e) => {
+        dateCounts[e.date] = (dateCounts[e.date] || 0) + 1;
+      });
+      let wildestDate = "";
+      let wildestMax = 0;
+      Object.entries(dateCounts).forEach(([d, c]) => {
+        if (c > wildestMax) {
+          wildestMax = c;
+          wildestDate = d;
+        }
+      });
+
+      const repeatPercentage =
+        total > 0 && uniqueCount > 0 ? Math.min(100, Math.round(((total - uniqueCount) / total) * 100)) : 65;
+
+      return {
+        period,
+        periodLabel: period === "month" ? "Último Mes" : "Año 2026",
+        totalEncounters: total,
+        uniquePartnersCount: uniqueCount,
+        topRankPercentile: total > 15 ? 3 : total > 5 ? 10 : 25,
+        averageChemistry: diaryStats.averageChemistry || 4.8,
+        repeatRatePercentage: repeatPercentage || 65,
+        mvpPartner: mvp,
+        wildestNight: wildestDate
+          ? {
+              date: wildestDate,
+              encountersCount: wildestMax,
+              description: wildestMax > 1 ? `${wildestMax} encuentros en una sola noche` : "Noche de máxima intensidad carnal",
+            }
+          : undefined,
+        dominantRole: "Versátil Dominante",
+        topConquestZones: getConquestZones().slice(0, 5),
+      };
+    },
+    [diaryEntries, diaryStats, getConquestZones]
+  );
+
   const value = useMemo<DiaryContextType>(
     () => ({
       diaryEntries,
@@ -594,6 +1020,7 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       updateDiaryEntry,
       deleteDiaryEntry,
       toggleHealthReminderResolved,
+      restoreDiaryBackup,
       validatedEncounters,
       validateEncounter,
       addTestimonial,
@@ -614,6 +1041,21 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       getProfileDossier,
       saveProfileDossier,
       deleteProfileDossier,
+      archivePhotosToDossier,
+      removePhotoFromDossier,
+      selectedDossierProfileId,
+      setSelectedDossierProfileId,
+      isDossierModalOpen,
+      openLoverDossierModal,
+      closeLoverDossierModal,
+      createEncounterTicket,
+      updateEncounterTicketStatus,
+      confirmH2Ticket,
+      isWrappedModalOpen,
+      openWrappedModal,
+      closeWrappedModal,
+      getVesselWrappedMetrics,
+      getConquestZones,
       unlockedVaults,
       unlockVault,
       revokeVaultAccess,
@@ -634,6 +1076,7 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       updateDiaryEntry,
       deleteDiaryEntry,
       toggleHealthReminderResolved,
+      restoreDiaryBackup,
       validatedEncounters,
       validateEncounter,
       addTestimonial,
@@ -654,6 +1097,20 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       getProfileDossier,
       saveProfileDossier,
       deleteProfileDossier,
+      archivePhotosToDossier,
+      removePhotoFromDossier,
+      selectedDossierProfileId,
+      isDossierModalOpen,
+      openLoverDossierModal,
+      closeLoverDossierModal,
+      createEncounterTicket,
+      updateEncounterTicketStatus,
+      confirmH2Ticket,
+      isWrappedModalOpen,
+      openWrappedModal,
+      closeWrappedModal,
+      getVesselWrappedMetrics,
+      getConquestZones,
       unlockedVaults,
       unlockVault,
       revokeVaultAccess,

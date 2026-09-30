@@ -92,14 +92,14 @@ describe("RendezvousSheet — Asistente Unificado de Cita (Fase 2)", () => {
     // Debe mostrar paso 2: Lugar & Logística
     expect(screen.getByText("¿Quién Pone el Lugar o Punto de Encuentro?")).toBeInTheDocument();
     expect(screen.getByText("Recibo en mi lugar")).toBeInTheDocument();
-    expect(screen.getByText("Rendezvous PIN")).toBeInTheDocument();
+    expect(screen.getByText(/PIN de Encuentro/i)).toBeInTheDocument();
 
     // En paso 2, hacer click en Continuar
     const nextBtn2 = screen.getByRole("button", { name: /Continuar/i });
     fireEvent.click(nextBtn2);
 
     // Debe mostrar paso 3: Blindaje Guardián SOS & ETA
-    expect(screen.getByText("Guardián Silencioso (Dead-Man Switch)")).toBeInTheDocument();
+    expect(screen.getByText("Guardián Silencioso")).toBeInTheDocument();
     expect(screen.getByText(/Compartir Telemetría/i)).toBeInTheDocument();
   });
 

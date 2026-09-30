@@ -145,7 +145,7 @@ export const DrmBlackoutProtector: React.FC<DrmBlackoutProtectorProps> = ({
           </div>
 
           <h4 className="font-mono font-black text-bloodNeon text-xs sm:text-sm uppercase tracking-widest leading-tight">
-            ⚠️ CAPTURA RECHAZADA // PROTOCOLO DRM VESSEL
+            ⚠️ CAPTURA RECHAZADA - PROTOCOLO DRM VESSEL
           </h4>
 
           <p className="text-[11px] text-neutral-400 mt-2.5 font-mono max-w-sm leading-relaxed">
@@ -180,7 +180,7 @@ export const DrmBlackoutProtector: React.FC<DrmBlackoutProtectorProps> = ({
           </div>
 
           <h4 className="font-mono font-black text-white text-xs uppercase tracking-wider">
-            CONTENIDO PROTEGIDO // MODO TÁCTIL
+            CONTENIDO PROTEGIDO - MODO TÁCTIL
           </h4>
 
           <p className="text-[10px] text-neutral-400 font-mono mt-1.5 max-w-xs leading-relaxed">

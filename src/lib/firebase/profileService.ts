@@ -71,6 +71,13 @@ export const syncMyProfileToCloud = async (
 
     // 2. Sincronizar perfil público en vessel_profiles (Lectura autorizada para matriz/radar)
     const publicProfileRef = doc(db, PROFILES_COLLECTION, uid);
+    const existingSnap = await getDoc(publicProfileRef).catch(() => null);
+    const existingCoords = existingSnap?.exists() ? existingSnap.data()?.coordinates : undefined;
+    const safeCoordinates =
+      existingCoords && typeof existingCoords.lat === "number"
+        ? existingCoords
+        : { lat: -34.588, lng: -58.43 };
+
     await setDoc(
       publicProfileRef,
       sanitizeForFirestore({
@@ -92,6 +99,7 @@ export const syncMyProfileToCloud = async (
         isAntiGhost: profile.isAntiGhost ?? true,
         distanceMeters: 50,
         bodyState,
+        coordinates: safeCoordinates,
         role: profile.role,
         heightCm: profile.heightCm,
         weightKg: profile.weightKg,

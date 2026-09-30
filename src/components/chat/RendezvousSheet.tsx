@@ -2,8 +2,13 @@
 
 import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
-import { VesselProfile, PreFlightTempo, PreFlightProtection, PreFlightVibe } from "@/types/vessel";
+import { VesselProfile, PreFlightTempo, PreFlightProtection, PreFlightVibe, DiaryLocationCategory } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import {
+  getLocalTodayIso,
+  getLocalDaysOffsetIso,
+  formatLocalizedPreFlightSummary,
+} from "@/lib/calendar/dateLocale";
 import {
   X,
   Zap,
@@ -42,6 +47,8 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
     startSafetyBeacon,
     safetyBeacon,
     startEnRoute,
+    createEncounterTicket,
+    sendEncounterTicketMessage,
     language,
     t,
   } = useVessel();
@@ -58,11 +65,17 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
   const [protection, setProtection] = useState<PreFlightProtection>("bareback_prep");
   const [vibe, setVibe] = useState<PreFlightVibe>("100_sober");
 
-  // --- PASO 2: LOGÍSTICA & UBICACIÓN ---
+  // --- PASO 2: LOGÍSTICA & UBICACIÓN & FECHA/HORA (Con Autocompletado desde myHostCard) ---
+  const [scheduledDate, setScheduledDate] = useState<string>(() => getLocalTodayIso());
+  const [scheduledTime, setScheduledTime] = useState<string>(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() + 30);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  });
   const [hostingMode, setHostingMode] = useState<"i_host" | "they_host" | "neutral_corner" | "rendezvous_pin">("i_host");
-  const [cornerText, setCornerText] = useState("");
-  const [exactAddress, setExactAddress] = useState("");
-  const [doorNotes, setDoorNotes] = useState("");
+  const [cornerText, setCornerText] = useState<string>("");
+  const [exactAddress, setExactAddress] = useState<string>("");
+  const [doorNotes, setDoorNotes] = useState<string>(() => myHostCard?.notes || "");
 
   // --- PASO 3: BLINDAJE & EN CAMINO ---
   const [guardianDuration, setGuardianDuration] = useState<number>(60); // 0 = sin guardián, 45, 60, 90, 120
@@ -82,26 +95,53 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
     );
   };
 
+  const applyQuickTimePreset = (mode: "now30" | "tonight22" | "late01") => {
+    audioEngine.playPulse();
+    const now = new Date();
+    if (mode === "now30") {
+      const plus30 = new Date(now.getTime() + 30 * 60 * 1000);
+      setScheduledDate(getLocalTodayIso(plus30));
+      setScheduledTime(
+        `${String(plus30.getHours()).padStart(2, "0")}:${String(plus30.getMinutes()).padStart(2, "0")}`
+      );
+    } else if (mode === "tonight22") {
+      setScheduledDate(getLocalTodayIso(now));
+      setScheduledTime("22:00");
+    } else if (mode === "late01") {
+      const targetDate = now.getHours() >= 4 ? getLocalDaysOffsetIso(1, now) : getLocalTodayIso(now);
+      setScheduledDate(targetDate);
+      setScheduledTime("01:00");
+    }
+  };
+
   const handleConfirmAll = async () => {
     setIsSubmitting(true);
     audioEngine.playSubBass(60, 0.4);
 
     try {
-      // 1. Despachar Pre-Flight Checklist de Sintonía
-      sendPreFlightChecklist(targetProfile.id, {
-        tempo,
-        dynamics: selectedDynamics,
-        protection,
-        vibe,
-        isMutualMatch: true,
-      });
+      // 1. Si no existe soporte de EncounterTicket maestro, despachar Pre-Flight suelto como fallback
+      if (!createEncounterTicket) {
+        sendPreFlightChecklist(targetProfile.id, {
+          tempo,
+          dynamics: selectedDynamics,
+          protection,
+          vibe,
+          isMutualMatch: true,
+        });
+      }
 
-      // 2. Despachar Logística según selección
+      // 2. Despachar Waypoint en 2 fases o PIN efímero
       if (hostingMode === "i_host" || hostingMode === "neutral_corner") {
-        const corner = cornerText.trim() || (hostingMode === "i_host" ? "Mi dirección acordada" : "Punto de encuentro público");
-        const address = exactAddress.trim() || corner;
-        const notes = doorNotes.trim() || undefined;
-        sendSecureWaypoint(targetProfile.id, corner, address, notes);
+        if (cornerText.trim() || exactAddress.trim() || !createEncounterTicket) {
+          const corner =
+            cornerText.trim() ||
+            (hostingMode === "i_host"
+              ? (language === "es" ? "Esquina de mi domicilio" : "My neighborhood corner")
+              : (language === "es" ? "Punto de encuentro público" : "Public meeting corner"));
+          const address = exactAddress.trim() || corner;
+          const notes = doorNotes.trim() || undefined;
+          sendSecureWaypoint(targetProfile.id, corner, address, notes);
+        }
       } else if (hostingMode === "rendezvous_pin") {
         sendRendezvousPin(targetProfile.id);
       }
@@ -110,9 +150,15 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
       if (guardianDuration > 0) {
         startSafetyBeacon({
           durationMinutes: guardianDuration,
-          emergencyPhone: emergencyPhone.trim() || "Local Safe Contact",
-          emergencyName: emergencyName.trim() || "Contacto de Confianza",
-          locationText: cornerText.trim() || exactAddress.trim() || "Cita en curso",
+          emergencyPhone:
+            emergencyPhone.trim() ||
+            (t.safety?.localContact || (language === "es" ? "Contacto de Seguridad Local" : "Local Safety Contact")),
+          emergencyName:
+            emergencyName.trim() || (language === "es" ? "Contacto de Confianza" : "Trusted Contact"),
+          locationText:
+            cornerText.trim() ||
+            exactAddress.trim() ||
+            (language === "es" ? "Cita en curso" : "Encounter in progress"),
           targetCodename: targetProfile.codename,
           pinCode: "1234",
         });
@@ -121,6 +167,56 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
       // 4. Activar En-Route si se seleccionó
       if (isEnRouteActive) {
         startEnRoute(targetProfile, estimatedMinutes);
+      }
+
+      // 5. Generar Ticket de Encuentro Maestro con etiquetas 100% localizadas (cero enums crudos)
+      const locationCategory: DiaryLocationCategory =
+        hostingMode === "i_host"
+          ? "my_place"
+          : hostingMode === "they_host"
+          ? "their_place"
+          : hostingMode === "neutral_corner"
+          ? "bar_lounge"
+          : "other";
+
+      const locName =
+        cornerText.trim() ||
+        (hostingMode === "i_host"
+          ? (language === "es" ? "Mi Lugar Acordado" : "My Place")
+          : hostingMode === "they_host"
+          ? (language === "es" ? "Su Lugar Acordado" : "Their Place")
+          : (language === "es" ? "Punto de Encuentro Acordado" : "Agreed Spot"));
+
+      if (createEncounterTicket) {
+        const preFlightNotes = formatLocalizedPreFlightSummary(
+          {
+            tempo,
+            protection,
+            dynamics: selectedDynamics,
+            accessNotes: doorNotes.trim() || undefined,
+          },
+          language
+        );
+
+        const ticket = createEncounterTicket(
+          {
+            senderId: myProfile.codename || "me",
+            partnerId: targetProfile.id,
+            scheduledDate,
+            scheduledTime,
+            locationCategory,
+            locationName: locName,
+            notes: preFlightNotes || undefined,
+          },
+          {
+            codename: targetProfile.codename,
+            avatarUrl: targetProfile.avatarUrl,
+            role: targetProfile.role,
+            yoSoy: targetProfile.yoSoy,
+          }
+        );
+
+        sendEncounterTicketMessage?.(targetProfile.id, ticket);
       }
 
       audioEngine.playSignalSent();
@@ -184,9 +280,9 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
           {/* Stepper horizontal táctil */}
           <div className="grid grid-cols-3 gap-1.5 mt-3 pt-2 border-t border-white/5">
             {[
-              { num: 1 as const, title: "1. Sintonía", icon: "📋" },
-              { num: 2 as const, title: "2. Lugar", icon: "📍" },
-              { num: 3 as const, title: "3. Blindaje", icon: "🛡️" },
+              { num: 1 as const, title: language === "es" ? "1. Sintonía" : "1. Tuning", icon: "📋" },
+              { num: 2 as const, title: language === "es" ? "2. Lugar / PIN" : "2. Place / PIN", icon: "📍" },
+              { num: 3 as const, title: language === "es" ? "3. Blindaje" : "3. Safety", icon: "🛡️" },
             ].map((step) => {
               const isActive = currentStep === step.num;
               const isPassed = currentStep > step.num;
@@ -217,7 +313,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
             ========================================================= */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
           {/* -----------------------------------------------------
-              PASO 1: SINTONÍA ERÓTICA (Pre-Flight Express)
+              PASO 1: SINTONÍA Y ACUERDO PREVIO
               ----------------------------------------------------- */}
           {currentStep === 1 && (
             <div className="space-y-4 animate-in fade-in duration-150">
@@ -228,10 +324,10 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { key: "fast_carnal" as PreFlightTempo, label: "Puntual / Fast", sub: "Sin sobremesa", icon: "⚡" },
-                    { key: "chill" as PreFlightTempo, label: "Sensual & Chill", sub: "Ducha y mimos", icon: "🫂" },
-                    { key: "rough_dom" as PreFlightTempo, label: "Intenso / Kink", sub: "Fetiches y poder", icon: "⛓️" },
-                    { key: "sensual_slow" as PreFlightTempo, label: "Pasar la Noche", sub: "Si hay química", icon: "🌙" },
+                    { key: "fast_carnal" as PreFlightTempo, label: t.rendezvous?.tempoFastCarnal || (language === "es" ? "Rápido y Carnal" : "Quick & Carnal"), sub: language === "es" ? "Sin sobremesa" : "Direct / No lingering", icon: "⚡" },
+                    { key: "chill" as PreFlightTempo, label: t.rendezvous?.tempoSensualChill || (language === "es" ? "Sensual & Tranqui" : "Sensual & Chill"), sub: language === "es" ? "Ducha y mimos" : "Shower & cuddle", icon: "🫂" },
+                    { key: "rough_dom" as PreFlightTempo, label: t.rendezvous?.tempoKinkDom || (language === "es" ? "Kink & Dominación" : "Kink & Domination"), sub: language === "es" ? "Fetiches y poder" : "Fetish & dynamics", icon: "⛓️" },
+                    { key: "sensual_slow" as PreFlightTempo, label: t.rendezvous?.tempoSleepover || (language === "es" ? "Pasar la Noche" : "Stay the Night"), sub: language === "es" ? "Si hay química" : "If chemistry is right", icon: "🌙" },
                   ].map((item) => {
                     const isSelected = tempo === item.key;
                     return (
@@ -304,10 +400,10 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { key: "bareback_prep" as PreFlightProtection, label: "Bareback + PrEP", icon: "🛡️" },
-                    { key: "condom_only" as PreFlightProtection, label: "Preservativo Obligatorio", icon: "🎈" },
-                    { key: "doxy_pep_friendly" as PreFlightProtection, label: "Doxy-PEP Amigable", icon: "💊" },
-                    { key: "discuss_first" as PreFlightProtection, label: "Charlar en persona", icon: "💬" },
+                    { key: "bareback_prep" as PreFlightProtection, label: t.rendezvous?.protectionBarebackPrep || (language === "es" ? "A pelo + PrEP" : "Bareback + PrEP"), icon: "🛡️" },
+                    { key: "condom_only" as PreFlightProtection, label: language === "es" ? "Preservativo Obligatorio" : "Condoms Required", icon: "🎈" },
+                    { key: "doxy_pep_friendly" as PreFlightProtection, label: language === "es" ? "Doxy-PEP Amigable" : "Doxy-PEP Friendly", icon: "💊" },
+                    { key: "discuss_first" as PreFlightProtection, label: language === "es" ? "Charlar en persona" : "Discuss in person", icon: "💬" },
                   ].map((item) => {
                     const isSelected = protection === item.key;
                     return (
@@ -342,10 +438,10 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { key: "i_host" as const, label: "Recibo en mi lugar", sub: "Pongo depto", icon: "🏠" },
-                    { key: "they_host" as const, label: "Voy a su lugar", sub: "Me desplazo", icon: "🚗" },
-                    { key: "neutral_corner" as const, label: "Esquina neutra", sub: "Punto público seguro", icon: "📍" },
-                    { key: "rendezvous_pin" as const, label: "Rendezvous PIN", sub: "Ubicación efímera", icon: "⚡" },
+                    { key: "i_host" as const, label: language === "es" ? "Recibo en mi lugar" : "I can host", sub: language === "es" ? "Pongo depto" : "Have place", icon: "🏠" },
+                    { key: "they_host" as const, label: language === "es" ? "Voy a su lugar" : "They host", sub: language === "es" ? "Me desplazo" : "Can travel", icon: "🚗" },
+                    { key: "neutral_corner" as const, label: language === "es" ? "Esquina neutra" : "Public corner", sub: language === "es" ? "Punto público seguro" : "Safe public point", icon: "📍" },
+                    { key: "rendezvous_pin" as const, label: t.safety?.pinOfMeeting || (language === "es" ? "PIN de Encuentro Seguro" : "Meeting PIN"), sub: t.safety?.pinEphemeralDesc || (language === "es" ? "Código efímero de 4 dígitos" : "Ephemeral location"), icon: "⚡" },
                   ].map((opt) => {
                     const isSelected = hostingMode === opt.key;
                     return (
@@ -372,22 +468,90 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </div>
               </div>
 
+              {/* Fecha y Hora del Ticket de Encuentro con Presets de 1 Toque */}
+              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-electricViolet-glow">
+                    <Clock className="w-4 h-4" />
+                    <span>{language === "es" ? "Fecha & Hora del Encuentro" : "Encounter Date & Time"}</span>
+                  </div>
+                </div>
+
+                {/* Chips Rápidos de Horario Táctico */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => applyQuickTimePreset("now30")}
+                    className="py-1.5 px-2 rounded-xl bg-electricViolet/15 hover:bg-electricViolet/30 border border-electricViolet/40 text-electricViolet-glow text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                  >
+                    ⚡ {language === "es" ? "Ahora (+30m)" : "Now (+30m)"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyQuickTimePreset("tonight22")}
+                    className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                  >
+                    🌙 22:00 hs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyQuickTimePreset("late01")}
+                    className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                  >
+                    🔥 01:00 hs
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                      {language === "es" ? "Fecha" : "Date"}
+                    </label>
+                    <input
+                      type="date"
+                      min={getLocalTodayIso()}
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono focus-visible:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                      {language === "es" ? "Hora" : "Time"}
+                    </label>
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono focus-visible:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Si recibo o es esquina neutra: Formulario de Waypoint en 2 fases */}
               {(hostingMode === "i_host" || hostingMode === "neutral_corner") && (
                 <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-electricViolet-glow">
-                    <MapPin className="w-4 h-4" />
-                    <span>Dirección Segura en 2 Fases</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-mono font-bold text-electricViolet-glow">
+                      <MapPin className="w-4 h-4" />
+                      <span>{language === "es" ? "Dirección Segura en 2 Fases" : "Safe 2-Phase Waypoint"}</span>
+                    </div>
+                    {hostingMode === "i_host" && (myHostCard?.hasPlace || myHostCard?.notes) && (
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
+                        ✓ {language === "es" ? "Ficha de Casa" : "Host Card"}
+                      </span>
+                    )}
                   </div>
 
                   {/* Fase 1: Esquina pública */}
                   <div>
                     <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                      Fase 1: Esquina o Intersección Pública (Visible al inicio)
+                      {language === "es" ? "Fase 1: Esquina o Intersección Pública (Visible al inicio)" : "Phase 1: Public Corner or Intersection (Visible initially)"}
                     </label>
                     <input
                       type="text"
-                      placeholder="Ej: Av. Santa Fe y Thames"
+                      placeholder={language === "es" ? "Ej: Av. Santa Fe y Thames" : "E.g.: 5th Ave & 42nd St"}
                       value={cornerText}
                       onChange={(e) => setCornerText(e.target.value)}
                       className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
@@ -399,11 +563,11 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                     <div className="space-y-2">
                       <div>
                         <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                          Fase 2: Dirección Exacta y Timbre (Se revela cuando avisa llegada)
+                          {language === "es" ? "Fase 2: Dirección Exacta y Timbre (Se revela cuando avisa llegada)" : "Phase 2: Exact Address & Doorbell (Revealed upon arrival)"}
                         </label>
                         <input
                           type="text"
-                          placeholder="Ej: Thames 1840, Piso 4 Depto B"
+                          placeholder={language === "es" ? "Ej: Thames 1840, Piso 4 Depto B" : "E.g.: 123 Main St, Apt 4B"}
                           value={exactAddress}
                           onChange={(e) => setExactAddress(e.target.value)}
                           className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
@@ -412,11 +576,11 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
                       <div>
                         <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                          Notas de Acceso (Opcional)
+                          {language === "es" ? "Notas de Acceso (Opcional)" : "Access Notes (Optional)"}
                         </label>
                         <input
                           type="text"
-                          placeholder="Ej: Portero no anda, tocar timbre y esperar"
+                          placeholder={language === "es" ? "Ej: Portero no anda, tocar timbre y esperar" : "E.g.: Buzzer broken, ring twice and wait"}
                           value={doorNotes}
                           onChange={(e) => setDoorNotes(e.target.value)}
                           className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
@@ -432,10 +596,12 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/40 text-neutral-300 text-xs font-mono space-y-1.5">
                   <div className="flex items-center gap-2 text-purple-300 font-bold">
                     <Navigation className="w-4 h-4 text-purple-400" />
-                    <span>PIN Efímero con Geofencing</span>
+                    <span>{t.safety?.pinEphemeral || (language === "es" ? "PIN de Encuentro Seguro (<50m)" : "Ephemeral PIN with Geofencing")}</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-relaxed">
-                    Se generará un código criptográfico de 4 dígitos. Ambos deben estar a menos de 50 metros para validar el encuentro físico sin guardar direcciones permanentes.
+                    {language === "es"
+                      ? "Se generará un código seguro de 4 dígitos. Ambos deben estar a menos de 50 metros para validar el encuentro físico sin guardar direcciones permanentes."
+                      : "A 4-digit cryptographic PIN will be generated. Both must be within 50 meters to validate the physical encounter without storing permanent addresses."}
                   </p>
                 </div>
               )}
@@ -445,10 +611,12 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-neutral-300 text-xs font-mono space-y-1.5">
                   <div className="flex items-center gap-2 text-white font-bold">
                     <Car className="w-4 h-4 text-electricViolet-glow" />
-                    <span>Te Desplazas hacia su Lugar</span>
+                    <span>{language === "es" ? "Te Desplazas hacia su Lugar" : "You travel to their place"}</span>
                   </div>
                   <p className="text-[11px] text-neutral-400 leading-relaxed">
-                    Le pedirás a {targetProfile.codename} que te envíe su esquina o dirección por el chat seguro.
+                    {language === "es"
+                      ? `Le pedirás a ${targetProfile.codename} que te envíe su esquina o dirección por el chat seguro.`
+                      : `You will ask ${targetProfile.codename} to send their corner or address in the secure chat.`}
                   </p>
                 </div>
               )}
@@ -465,20 +633,22 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-bloodNeon font-mono text-xs font-bold">
                     <Shield className="w-4 h-4" />
-                    <span>Guardián Silencioso (Dead-Man Switch)</span>
+                    <span>{t.safety?.guardianLabel || (language === "es" ? "Guardián Silencioso" : "Silent Guardian")}</span>
                   </div>
                   <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-bloodNeon/20 text-bloodNeon font-black">
-                    LOCAL-FIRST
+                    {t.system?.localOnly || (language === "es" ? "SOLO EN TU CELU 🔒" : "LOCAL ONLY 🔒")}
                   </span>
                 </div>
                 <p className="text-[11px] text-neutral-300 font-mono">
-                  Si el tiempo expira sin que introduzcas tu PIN de seguridad, se activará la alerta de auxilio silenciosa hacia tu contacto.
+                  {language === "es"
+                    ? "Si el tiempo expira sin que introduzcas tu PIN de seguridad, se activará la alerta de auxilio silenciosa hacia tu contacto."
+                    : "If timer expires without entering your safety PIN, a silent distress alert will trigger to your emergency contact."}
                 </p>
 
                 {/* Opciones de temporizador */}
                 <div className="grid grid-cols-4 gap-1.5">
                   {[
-                    { mins: 0, label: "Sin SOS" },
+                    { mins: 0, label: language === "es" ? "Sin SOS" : "No SOS" },
                     { mins: 45, label: "45 min" },
                     { mins: 60, label: "60 min" },
                     { mins: 90, label: "90 min" },
@@ -506,11 +676,11 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-bloodNeon/20">
                     <div>
                       <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                        Nombre de Confianza
+                        {language === "es" ? "Nombre de Confianza" : "Trusted Contact Name"}
                       </label>
                       <input
                         type="text"
-                        placeholder="Ej: Hermano / Amigo"
+                        placeholder={language === "es" ? "Ej: Hermano / Amigo" : "E.g.: Sibling / Friend"}
                         value={emergencyName}
                         onChange={(e) => setEmergencyName(e.target.value)}
                         className="w-full bg-black/60 border border-bloodNeon/40 focus:border-bloodNeon rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus-visible:outline-none"
@@ -518,11 +688,11 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                     </div>
                     <div>
                       <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                        Teléfono WhatsApp / SMS
+                        {language === "es" ? "Teléfono WhatsApp / SMS" : "WhatsApp / SMS Phone"}
                       </label>
                       <input
                         type="tel"
-                        placeholder="+54 9 11 ..."
+                        placeholder={language === "es" ? "+54 9 11 ..." : "+1 ..."}
                         value={emergencyPhone}
                         onChange={(e) => setEmergencyPhone(e.target.value)}
                         className="w-full bg-black/60 border border-bloodNeon/40 focus:border-bloodNeon rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus-visible:outline-none"
@@ -537,7 +707,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
                     <Car className="w-4 h-4 text-electricViolet-glow" />
-                    <span>Compartir Telemetría "Voy en Camino"</span>
+                    <span>{language === "es" ? "Compartir Telemetría \"Voy en Camino\"" : "Share \"En Route\" Telemetry"}</span>
                   </div>
                   <button
                     type="button"
@@ -548,14 +718,14 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         : "bg-white/10 text-neutral-400 hover:text-white"
                     }`}
                   >
-                    {isEnRouteActive ? "ACTIVADO ✓" : "APAGADO"}
+                    {isEnRouteActive ? (language === "es" ? "ACTIVADO ✓" : "ACTIVE ✓") : (language === "es" ? "APAGADO" : "OFF")}
                   </button>
                 </div>
 
                 {isEnRouteActive && (
                   <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-3">
                     <span className="text-[11px] font-mono text-neutral-400">
-                      Tiempo de viaje estimado:
+                      {language === "es" ? "Tiempo de viaje estimado:" : "Estimated travel time:"}
                     </span>
                     <div className="flex items-center gap-1.5">
                       {[15, 25, 40].map((m) => (
@@ -591,7 +761,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
               className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Atrás</span>
+              <span>{language === "es" ? "Atrás" : "Back"}</span>
             </button>
           ) : (
             <div />
@@ -603,7 +773,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
               onClick={() => setCurrentStep((prev) => (prev + 1) as any)}
               className="min-h-[44px] px-6 py-2.5 rounded-2xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-violet-soft cursor-pointer active:scale-95 transition-all ml-auto"
             >
-              <span>Continuar</span>
+              <span>{language === "es" ? "Continuar" : "Continue"}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
@@ -614,7 +784,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
               className="min-h-[48px] px-6 py-2.5 rounded-2xl bg-gradient-to-r from-electricViolet via-purple-600 to-electricViolet text-white font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.6)] cursor-pointer active:scale-95 transition-all flex-1 ml-auto disabled:opacity-50"
             >
               <Zap className="w-4 h-4 stroke-[2.5]" />
-              <span>{isSubmitting ? "Blindando..." : "Confirmar y Blindar Encuentro 🔥"}</span>
+              <span>{isSubmitting ? (language === "es" ? "Blindando..." : "Securing...") : (language === "es" ? "Confirmar y Blindar Encuentro 🔥" : "Confirm & Secure Encounter 🔥")}</span>
             </button>
           )}
         </div>

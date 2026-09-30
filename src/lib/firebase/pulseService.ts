@@ -24,6 +24,7 @@ export interface CloudPulsePayload {
   toUid: string;
   fromUid: string;
   fromProfileId: string;
+  fromCodename?: string;
   isRead: boolean;
   returned: boolean;
   timestamp: string;
@@ -36,7 +37,8 @@ export interface CloudPulsePayload {
 export const sendPulseToCloud = async (
   fromUid: string,
   fromProfileId: string,
-  toProfileId: string
+  toProfileId: string,
+  fromCodename?: string
 ): Promise<string | null> => {
   if (!fromUid || fromUid === "local-user" || !toProfileId) return null;
 
@@ -48,6 +50,7 @@ export const sendPulseToCloud = async (
         toUid: toProfileId,
         fromUid,
         fromProfileId,
+        fromCodename: fromCodename || fromProfileId,
         isRead: false,
         returned: false,
         timestamp: new Date().toISOString(),
@@ -77,23 +80,25 @@ export const subscribeToIncomingPulses = (
   const q = query(
     pulsesRef,
     where("toUid", "==", myUid),
-    orderBy("createdAtRaw", "desc"),
     limit(50)
   );
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const pulses: ReceivedPulse[] = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          fromProfileId: data.fromProfileId || data.fromUid || "anon",
-          timestamp: data.timestamp || new Date().toISOString(),
-          isRead: !!data.isRead,
-          returned: !!data.returned,
-        };
-      });
+      const pulses: ReceivedPulse[] = snapshot.docs
+        .map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            fromProfileId: data.fromProfileId || data.fromUid || "anon",
+            fromCodename: data.fromCodename || data.fromProfileId || undefined,
+            timestamp: data.timestamp || new Date().toISOString(),
+            isRead: !!data.isRead,
+            returned: !!data.returned,
+          };
+        })
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       onUpdate(pulses);
     },
     (error) => {
@@ -156,3 +161,4 @@ export const clearPulseInCloud = async (pulseId: string): Promise<boolean> => {
     return false;
   }
 };
+

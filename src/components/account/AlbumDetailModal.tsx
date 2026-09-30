@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { uploadMediaFile } from "@/lib/firebase/storageService";
+import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { DrmBlackoutProtector } from "@/components/security/DrmBlackoutProtector";
 import { SteganographicWatermark } from "@/components/security/SteganographicWatermark";
 
@@ -34,34 +35,6 @@ interface AlbumDetailModalProps {
   album: UserAlbum;
   onClose: () => void;
 }
-
-const PRESET_ADDITIONAL_PHOTOS = [
-  {
-    url: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
-    caption: "Retrato 01 // Luz cenital",
-    mediaType: "photo" as MediaType,
-  },
-  {
-    url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
-    caption: "Sesión 02 // Tensión corporal",
-    mediaType: "photo" as MediaType,
-  },
-  {
-    url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
-    caption: "Espalda // Musculatura",
-    mediaType: "photo" as MediaType,
-  },
-  {
-    url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-    caption: "Atmósfera // Kreuzberg",
-    mediaType: "photo" as MediaType,
-  },
-  {
-    url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
-    caption: "Gym // Presencia",
-    mediaType: "photo" as MediaType,
-  },
-];
 
 export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
   album: initialAlbum,
@@ -79,6 +52,7 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
     revokeAlbumAccessGlobally,
     unshareAlbumGlobally,
     getSharedChatIdsForAlbum,
+    language,
   } = useVessel();
 
   // Obtener el álbum vivo y reactivo desde el estado global
@@ -225,15 +199,6 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
     setShowAddSection(false);
   };
 
-  const handleAddPresetPhoto = (preset: { url: string; caption: string; mediaType: MediaType }) => {
-    addPhotoToAlbum(album.id, {
-      url: preset.url,
-      blurredUrl: preset.url,
-      caption: preset.caption,
-      mediaType: preset.mediaType,
-    });
-  };
-
   const handleDeleteAlbum = () => {
     deleteAlbum(album.id);
     onClose();
@@ -277,7 +242,7 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
               <div className="flex items-center gap-2 text-[10px] text-neutral-400 mt-0.5">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-neutral-500" />
-                  {album.createdAt}
+                  {formatDiaryDateDisplay(album.createdAt, language)}
                 </span>
                 <span>•</span>
                 <span>
@@ -289,7 +254,7 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -299,111 +264,76 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
         <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
           {/* Descripción si existe */}
           {album.description && (
-            <div className="bg-black/40 border border-white/5 p-3 rounded-xl text-neutral-300 text-xs font-sans italic">
-              "{album.description}"
+            <div className="p-3 bg-white/5 rounded-2xl border border-white/5 text-neutral-300 leading-relaxed">
+              {album.description}
             </div>
           )}
 
-          {/* Banner explicativo de Bóveda Privada */}
-          {isPrivate && (
-            <div className="bg-bloodNeon/10 border border-bloodNeon/30 p-3 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-2.5 text-bloodNeon">
-                <Lock className="w-4 h-4 flex-shrink-0" />
-                <span className="text-[11px] font-medium leading-relaxed">
-                  Bóveda Cifrada Privada · Acceso ilimitado para ti como propietario. Al compartir acceso en el chat, los destinatarios tendrán visualización efímera protegida.
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Cuadrícula de Fotos y Videos */}
-          <div className="space-y-2">
+          {/* Barra de Acciones del Álbum */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-white uppercase tracking-wider">
-                Contenido Multimedia ({album.photos.length})
+                Galería del Álbum ({album.photos.length})
               </span>
               <button
                 type="button"
                 onClick={() => setShowAddSection(!showAddSection)}
-                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all"
+                className="px-3 py-1.5 min-h-[40px] bg-electricViolet text-white rounded-xl text-xs font-bold flex items-center gap-1 hover:bg-electricViolet-glow transition-all cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{showAddSection ? "Cerrar" : "Cargar Fotos o Videos"}</span>
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>{showAddSection ? "Cerrar" : "Añadir Fotos/Videos"}</span>
               </button>
             </div>
 
-            {/* Sección expandible para agregar fotos/videos */}
+            {/* Sección Desplegable para Añadir Medios */}
             {showAddSection && (
-              <div className="bg-obsidian-surface border border-white/10 p-3.5 rounded-2xl space-y-3 animate-in fade-in">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => e.target.files && processUploadedFiles(e.target.files)}
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                />
-
-                {/* Zona de Arrastrar y Soltar */}
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={(e) => {
-                    e.preventDefault();
-                    setIsDragging(false);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragging(false);
-                    if (e.dataTransfer.files) processUploadedFiles(e.dataTransfer.files);
-                  }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`p-4 rounded-xl border-2 border-dashed text-center cursor-pointer transition-all ${
-                    isDragging
-                      ? "bg-electricViolet/20 border-electricViolet"
-                      : "bg-black/40 border-white/15 hover:border-electricViolet/50"
-                  }`}
-                >
-                  <UploadCloud className="w-6 h-6 text-electricViolet-glow mx-auto mb-1.5" />
-                  <span className="text-xs font-bold text-white block">
-                    Toca para cargar desde tu Celular o Notebook
-                  </span>
-                  <span className="text-[10px] text-neutral-400">
-                    Cámara, carrete, o arrastrar archivos (JPG, PNG, MP4, MOV)
-                  </span>
+              <div className="p-4 bg-black/60 border border-electricViolet/30 rounded-2xl space-y-4 animate-in fade-in">
+                {/* Subida Directa de Archivos */}
+                <div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => e.target.files && processUploadedFiles(e.target.files)}
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                  />
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      if (e.dataTransfer.files) {
+                        processUploadedFiles(e.dataTransfer.files);
+                      }
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-1.5 ${
+                      isDragging
+                        ? "border-electricViolet bg-electricViolet/20"
+                        : "border-electricViolet/40 bg-electricViolet/5 hover:border-electricViolet"
+                    }`}
+                  >
+                    <UploadCloud className="w-6 h-6 text-electricViolet-glow" />
+                    <span className="text-xs font-bold text-white">
+                      Subir Fotos o Videos desde tu Dispositivo
+                    </span>
+                    <span className="text-[10px] text-neutral-400">
+                      Tocá para elegir de tu galería o arrastrá archivos aquí
+                    </span>
+                  </div>
                   {isProcessing && (
-                    <div className="text-xs text-electricViolet-glow font-bold mt-2 animate-pulse">
-                      Procesando y cargando medios...
+                    <div className="text-center text-xs text-electricViolet-glow font-bold animate-pulse mt-2">
+                      Procesando y optimizando medios...
                     </div>
                   )}
-                </div>
-
-                {/* Muestras rápidas */}
-                <div className="pt-2 border-t border-white/5 space-y-2">
-                  <span className="text-[11px] font-bold text-neutral-400 block">
-                    O añadir foto rápida de catálogo:
-                  </span>
-                  <div className="grid grid-cols-5 gap-2">
-                    {PRESET_ADDITIONAL_PHOTOS.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleAddPresetPhoto(preset)}
-                        className="relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-electricViolet transition-all group"
-                      >
-                        <img
-                          src={preset.url}
-                          alt="preset"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-electricViolet-glow font-bold transition-opacity">
-                          <Plus className="w-4 h-4 stroke-[3]" />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-white/5 space-y-2">

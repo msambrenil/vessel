@@ -22,6 +22,7 @@ export const ItsExposureModal: React.FC = () => {
     closeItsExposureModal,
     sendAnonymousItsAlert,
     diaryEntries,
+    language,
     t,
   } = useVessel();
 
@@ -32,24 +33,24 @@ export const ItsExposureModal: React.FC = () => {
 
   if (!isItsExposureModalOpen) return null;
 
-  // Contactos únicos recientes del diario
+  // Contactos únicos recientes de la agenda
   const recentPartners = Array.from(
-    new Set(diaryEntries.map((e) => e.person?.codename || "ANONYMOUS"))
+    new Set(diaryEntries.map((e) => e.person?.codename || "ANÓNIMO"))
   );
 
   const itsList: { id: ItsExposureType; name: string; icon: string }[] = [
-    { id: "gonorrhea", name: "Gonorrea", icon: "🦠" },
-    { id: "chlamydia", name: "Clamidia", icon: "🔬" },
-    { id: "syphilis", name: "Sífilis", icon: "🩸" },
+    { id: "gonorrhea", name: language === "es" ? "Gonorrea" : "Gonorrhea", icon: "🦠" },
+    { id: "chlamydia", name: language === "es" ? "Clamidia" : "Chlamydia", icon: "🔬" },
+    { id: "syphilis", name: language === "es" ? "Sífilis" : "Syphilis", icon: "🩸" },
     { id: "mpox", name: "MPOX", icon: "🛡️" },
-    { id: "hepatitis_a", name: "Hepatitis A", icon: "💉" },
-    { id: "other", name: "Otra ITS / Infección", icon: "⚠️" },
+    { id: "hepatitis_a", name: language === "es" ? "Hepatitis A" : "Hepatitis A", icon: "💉" },
+    { id: "other", name: language === "es" ? "Otra ITS / Infección" : "Other STI / Infection", icon: "⚠️" },
   ];
 
   const handleSend = () => {
     audioEngine.playPulse();
     const item = itsList.find((x) => x.id === itsType);
-    sendAnonymousItsAlert(itsType, item?.name || itsType, daysWindow);
+    sendAnonymousItsAlert(itsType, item?.name || itsType, daysWindow, selectedPartners);
     setSentSuccess(true);
     setTimeout(() => {
       setSentSuccess(false);
@@ -83,20 +84,23 @@ export const ItsExposureModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-white flex items-center gap-2">
-                <span>Alerta Clínica Anónima</span>
+                <span>{language === "es" ? "Alerta Clínica Anónima" : "Anonymous Health Alert"}</span>
                 <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">
-                  100% ANÓNIMO
+                  {language === "es" ? "100% ANÓNIMO" : "100% ANONYMOUS"}
                 </span>
               </h2>
               <p className="text-[10px] text-neutral-400 font-mono">
-                Cuidado colectivo de salud sexual sin revelar tu identidad
+                {language === "es"
+                  ? "Cuidado colectivo de salud sexual sin revelar tu identidad"
+                  : "Collective sexual health care without disclosing your identity"}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={closeItsExposureModal}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-mono transition-all"
+            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-mono transition-all cursor-pointer min-h-[44px] min-w-[44px]"
+            aria-label={language === "es" ? "Cerrar modal" : "Close modal"}
           >
             ✕
           </button>
@@ -110,10 +114,12 @@ export const ItsExposureModal: React.FC = () => {
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="text-sm font-mono font-bold text-white uppercase tracking-wider">
-                Alerta Clínica Despachada
+                {language === "es" ? "Alerta Clínica Despachada" : "Health Alert Dispatched"}
               </h3>
               <p className="text-xs text-neutral-400 font-mono max-w-xs leading-relaxed">
-                Tus contactos han recibido el aviso médico preventivo de forma 100% anónima. Gracias por cuidar a la comunidad.
+                {language === "es"
+                  ? "Tus contactos han recibido el aviso médico preventivo de forma 100% anónima. Gracias por cuidar a la comunidad."
+                  : "Your contacts received the preventive medical alert 100% anonymously. Thank you for protecting the community."}
               </p>
             </div>
           ) : (
@@ -122,17 +128,23 @@ export const ItsExposureModal: React.FC = () => {
               <div className="p-3 rounded-xl bg-red-950/20 border border-red-500/20 space-y-1.5 font-mono text-[11px] text-neutral-300">
                 <div className="flex items-center gap-1.5 text-red-400 font-bold uppercase">
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Protocolo Zero-Knowledge (Cero Identificación)</span>
+                  <span>
+                    {language === "es"
+                      ? "Protocolo de Cero Identificación (100% Anónimo)"
+                      : "Zero-Knowledge Anonymous Protocol"}
+                  </span>
                 </div>
                 <p className="text-[10px] text-neutral-400 leading-relaxed">
-                  Las infecciones de transmisión sexual son parte de la vida sexual activa. Este sistema permite avisar a quienes compartieron encuentros contigo para que se revisen a tiempo, sin que nadie sepa jamás quién envió la alerta.
+                  {language === "es"
+                    ? "Las infecciones de transmisión sexual son parte de la vida sexual activa. Este sistema permite avisar a quienes compartieron encuentros con vos para que se revisen a tiempo, sin que nadie sepa jamás quién envió la alerta."
+                    : "Sexually transmitted infections can happen with active sex lives. This protocol allows you to notify past partners so they can get tested early, without anyone ever knowing who sent the alert."}
                 </p>
               </div>
 
               {/* Selector de ITS */}
               <div>
                 <label className="font-mono text-[11px] font-bold text-red-300 uppercase tracking-wider block mb-2">
-                  1. Diagnóstico o Sospecha Clínica:
+                  {language === "es" ? "1. Diagnóstico o Sospecha Clínica:" : "1. Clinical Diagnosis or Suspicion:"}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                   {itsList.map((item) => (
@@ -156,13 +168,13 @@ export const ItsExposureModal: React.FC = () => {
               {/* Ventana Temporal */}
               <div>
                 <label className="font-mono text-[11px] font-bold text-red-300 uppercase tracking-wider block mb-1.5">
-                  2. Período Aproximado del Encuentro:
+                  {language === "es" ? "2. Período Aproximado del Encuentro:" : "2. Approximate Encounter Period:"}
                 </label>
                 <div className="grid grid-cols-3 gap-2 font-mono text-xs">
                   {[
-                    { label: "Últimos 7 días", days: 7 },
-                    { label: "Últimos 14 días", days: 14 },
-                    { label: "Últimos 30 días", days: 30 },
+                    { label: language === "es" ? "Últimos 7 días" : "Last 7 days", days: 7 },
+                    { label: language === "es" ? "Últimos 14 días" : "Last 14 days", days: 14 },
+                    { label: language === "es" ? "Últimos 30 días" : "Last 30 days", days: 30 },
                   ].map((period) => (
                     <button
                       key={period.days}
@@ -184,15 +196,15 @@ export const ItsExposureModal: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="font-mono text-[11px] font-bold text-red-300 uppercase tracking-wider">
-                    3. Contactos a Notificar:
+                    {language === "es" ? "3. Contactos a Notificar:" : "3. Contacts to Notify:"}
                   </label>
                   {recentPartners.length > 0 && (
                     <button
                       type="button"
                       onClick={selectAll}
-                      className="text-[10px] font-mono text-electricViolet-glow hover:underline font-bold"
+                      className="text-[10px] font-mono text-electricViolet-glow hover:underline font-bold cursor-pointer"
                     >
-                      Seleccionar Todos ({recentPartners.length})
+                      {language === "es" ? `Seleccionar Todos (${recentPartners.length})` : `Select All (${recentPartners.length})`}
                     </button>
                   )}
                 </div>
@@ -220,7 +232,9 @@ export const ItsExposureModal: React.FC = () => {
                   </div>
                 ) : (
                   <p className="p-3 rounded-xl bg-black/40 border border-neutral-800 text-[11px] text-neutral-500 font-mono">
-                    No tienes contactos registrados en el Date Diary. La alerta se transmitirá como difusión general preventiva en tus chats recientes.
+                    {language === "es"
+                      ? "No tenés contactos registrados en la Agenda de Encuentros. La alerta se transmitirá como difusión general preventiva en tus chats recientes."
+                      : "No contacts logged in your Date Diary yet. The alert will be sent as a preventive broadcast to your recent chats."}
                   </p>
                 )}
               </div>
@@ -234,17 +248,17 @@ export const ItsExposureModal: React.FC = () => {
             <button
               type="button"
               onClick={closeItsExposureModal}
-              className="px-4 py-2 rounded-xl font-mono text-xs text-neutral-400 hover:text-white transition-colors"
+              className="px-4 py-2 min-h-[44px] rounded-xl font-mono text-xs text-neutral-400 hover:text-white transition-colors cursor-pointer"
             >
-              Cancelar
+              {language === "es" ? "Cancelar" : "Cancel"}
             </button>
             <button
               type="button"
               onClick={handleSend}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+              className="px-4 py-2 min-h-[44px] bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>ENVIAR ALERTA ANÓNIMA</span>
+              <span>{language === "es" ? "ENVIAR ALERTA ANÓNIMA" : "SEND ANONYMOUS ALERT"}</span>
             </button>
           </div>
         )}

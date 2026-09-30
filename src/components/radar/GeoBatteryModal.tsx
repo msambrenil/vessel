@@ -36,6 +36,7 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
     isLocating,
     geoError,
     refreshRealGeolocation,
+    t,
   } = useVessel();
 
   const privacyOptions: {
@@ -70,13 +71,13 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
   const getModeLabel = (mode: string) => {
     switch (mode) {
       case "foreground_active":
-        return { label: "Primer Plano // Actualiza cada 30s", color: "text-electricViolet-glow bg-electricViolet/15 border-electricViolet/30 shadow-violet-soft" };
+        return { label: "Primer Plano - Actualiza cada 30s", color: "text-electricViolet-glow bg-electricViolet/15 border-electricViolet/30 shadow-violet-soft" };
       case "background_coarse":
-        return { label: "Segundo Plano // Actualiza cada 15 min", color: "text-neutral-300 bg-white/10 border-white/20" };
+        return { label: "Segundo Plano - Actualiza cada 15 min", color: "text-neutral-300 bg-white/10 border-white/20" };
       case "passive_geofence":
-        return { label: "Reposo // Solo al cambiar de zona", color: "text-neutral-400 bg-neutral-800 border-neutral-700" };
+        return { label: "Reposo - Solo al cambiar de zona", color: "text-neutral-400 bg-neutral-800 border-neutral-700" };
       case "eco_saver":
-        return { label: "Modo Ahorro Eco-Saver // Cada 5 min", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" };
+        return { label: "Modo Ahorro de Batería - Cada 5 min", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" };
       default:
         return { label: mode, color: "text-white bg-white/10" };
     }
@@ -133,11 +134,11 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
                     {batteryEngineState.hasHardwareApi ? (
                       <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-1.5 py-0.5 rounded-full inline-flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        HARDWARE REAL
+                        {t.system?.deviceReal || "SENSOR FÍSICO CONECTADO"}
                       </span>
                     ) : (
                       <span className="text-[9px] font-mono text-neutral-500 bg-neutral-900 border border-white/5 px-1.5 py-0.5 rounded-full">
-                        MODO ADAPTATIVO
+                        MODO INTELIGENTE
                       </span>
                     )}
                   </p>
@@ -147,7 +148,7 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
               <div
                 className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${modeInfo.color}`}
               >
-                {batteryEngineState.mode.toUpperCase()}
+                {modeInfo.label}
               </div>
             </div>
 
@@ -164,7 +165,7 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
               <div>
                 <span className="text-neutral-500 block text-[9px] uppercase">Precisión GPS</span>
                 <span className={batteryEngineState.highAccuracyGps ? "text-electricViolet-glow font-bold" : "text-neutral-300"}>
-                  {batteryEngineState.highAccuracyGps ? "Alta Precisión" : "Coarse / Red"}
+                  {batteryEngineState.highAccuracyGps ? (t.system?.gpsHigh || "Alta Precisión") : (t.system?.gpsImprecise || "Imprecisa")}
                 </span>
               </div>
             </div>
@@ -172,9 +173,9 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
             {/* Toggle Manual de Modo Ahorro */}
             <div className="pt-2 border-t border-white/5 flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-white">Forzar Modo Eco-Saver</div>
+                <div className="text-xs font-bold text-white">Modo Ahorro de Energía (Eco)</div>
                 <div className="text-[10px] text-neutral-400">
-                  Reduce el muestreo a 5 min y desactiva animaciones GPU
+                  Reduce el uso de GPS a 5 min y cuida la batería de tu dispositivo
                 </div>
               </div>
               <button
@@ -192,48 +193,28 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
             </div>
           </div>
 
-          {/* SECCIÓN 2: ZONA DE CONEXIÓN LOCAL */}
+          {/* SECCIÓN 2: ZONA DE PROTECCIÓN GEOESPACIAL (ANTI-TRIANGULACIÓN) */}
           <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-3 shadow-card-elevation">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-electricViolet-glow" />
               <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                Zona de Conexión Cifrada
+                Zona de Protección Anti-Triangulación
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-obsidian p-2.5 rounded-xl border border-white/5">
-                <span className="text-[10px] text-neutral-400 block uppercase font-mono">Tu Zona Actual</span>
-                <span className="text-electricViolet-glow font-mono font-bold text-sm block mt-0.5">
-                  {myGeohashCell.hash}
+            <div className="bg-obsidian p-3.5 rounded-xl border border-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-white font-mono font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  Área Protegida (~152m × 152m)
                 </span>
-                <span className="text-[9px] text-neutral-500">Área segura (~152m x 152m)</span>
-              </div>
-
-              <div className="bg-obsidian p-2.5 rounded-xl border border-white/5">
-                <span className="text-[10px] text-neutral-400 block uppercase font-mono">Código de Seguridad</span>
-                <span className="text-white font-mono font-bold text-sm block mt-0.5">
-                  {myGeohashCell.s2Token}
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                  PRIVACIDAD ACTIVA
                 </span>
-                <span className="text-[9px] text-neutral-500">Identificador local</span>
               </div>
-            </div>
-
-            {/* Celdas Vecinas (Neighbors) */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] text-neutral-400 font-semibold block uppercase font-mono">
-                8 Zonas Vecinas Escaneadas
-              </span>
-              <div className="flex flex-wrap gap-1">
-                {myGeohashCell.neighbors.map((neighbor: string, idx: number) => (
-                  <span
-                    key={idx}
-                    className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-mono text-[10px] text-neutral-300"
-                  >
-                    {neighbor}
-                  </span>
-                ))}
-              </div>
+              <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                Tu posición se proyecta en una celda general de manzana. Nadie en el radar puede deducir la dirección exacta de tu departamento, casa o lugar de trabajo.
+              </p>
             </div>
 
             {/* GPS REAL: Botón de sincronización con hardware */}

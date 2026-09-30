@@ -8,6 +8,7 @@ Bienvenido al repositorio central de **VESSEL**. Este documento sirve como punto
 
 - @.agents/rules/antigravity_global_rules.md — **Operating System, Reglas Globales y Estándares de Calidad de Gentle-AI (`trigger: always_on`)**.
 - @.agents/skills/impeccable/SKILL.md — **Impeccable UI (v4.3.1)**: Sistema y autoridad obligatoria N°1 para diseño visual, jerarquía ergonómica y auditoría UX/UI en VESSEL.
+- @.agents/skills/ponytail/SKILL.md — **Ponytail**: Skill de ingeniería senior pragmática (YAGNI, The Ladder, reutilización interna, cero dependencias infladas y corrección de causa raíz).
 - @REGLAS_DE_NEGOCIO.md — **Reglas de Negocio y Producto**: Cuotas de cuentas Free/Premium, doble consentimiento, protocolo Anti-Ghost, desconexión gradual y salud preventiva.
 - @HABILIDADES_Y_TELEMETRIA.md — **Habilidades, Telemetría y Experiencia Sensorial**: Mapeo acústico sub-bass (45-80Hz), eventos de ciclo de vida y telemetría de hardware.
 

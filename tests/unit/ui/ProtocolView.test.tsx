@@ -41,6 +41,8 @@ vi.mock("@/context/VesselContext", () => ({
     myReceivedTestimonials: [],
     boundaries: { "user-02": { profileId: "user-02", protocol: "slow_down" } },
     openAppSettingsModal: mockOpenAppSettingsModal,
+    setSelectedProfile: vi.fn(),
+    myFullProfile: { id: "user-lucas-01", codename: "LUCAS_BA" },
     language: "es",
     t: TRANSLATIONS.es,
   }),
@@ -74,59 +76,47 @@ describe("ProtocolView — Rediseño Táctico en 3 Macro-Paneles", () => {
     expect(screen.getAllByText("LUCAS_BA").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Pongo Casa/i)).toBeInTheDocument();
     expect(screen.getByText(/28 años/i)).toBeInTheDocument();
-    expect(screen.getByText(/PROTOCOLO \/\/ MI PERFIL/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/MI PERFIL/i).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("debe renderizar las 3 macro-pestañas: Mi Perfil, Álbumes, Seguridad", () => {
+  it("debe renderizar las 3 macro-pestañas: Mi Ficha, Fotos & Bóvedas, Privacidad & Respeto", () => {
     render(<ProtocolView />);
 
-    expect(screen.getByRole("button", { name: /Mi Perfil/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Álbumes/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Seguridad/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Mi Ficha/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Fotos & Bóvedas/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Privacidad & Respeto/i })).toBeInTheDocument();
   });
 
-  it("debe conmutar entre Datos & Bio y Qué te morbosea dentro del panel de Mi Perfil", () => {
+  it("debe renderizar Datos & Bio y Qué te morbosea en scroll continuo dentro de Mi Perfil", () => {
     render(<ProtocolView />);
 
-    // Por defecto está en Datos & Bio
     expect(screen.getByTestId("bio-tab")).toBeInTheDocument();
-
-    // Clic en Qué te morbosea
-    const kinksBtn = screen.getByRole("button", { name: /Qué te morbosea/i });
-    fireEvent.click(kinksBtn);
-
     expect(screen.getByTestId("kinks-tab")).toBeInTheDocument();
   });
 
-  it("debe conmutar al macro-panel de Álbumes y renderizar AlbumsTab", () => {
+  it("debe conmutar al macro-panel de Fotos & Bóvedas y renderizar AlbumsTab", () => {
     render(<ProtocolView />);
 
-    const vaultsTabBtn = screen.getByRole("button", { name: /Álbumes/i });
+    const vaultsTabBtn = screen.getByRole("tab", { name: /Fotos & Bóvedas/i });
     fireEvent.click(vaultsTabBtn);
 
     expect(screen.getByTestId("albums-tab")).toBeInTheDocument();
   });
 
-  it("debe conmutar al macro-panel de Seguridad y permitir alternar entre Límites y Anti-Ghost", () => {
+  it("debe conmutar al macro-panel de Privacidad & Respeto y renderizar Límites y Anti-Ghost en scroll continuo", () => {
     render(<ProtocolView />);
 
-    const securityTabBtn = screen.getByRole("button", { name: /Seguridad/i });
+    const securityTabBtn = screen.getByRole("tab", { name: /Privacidad & Respeto/i });
     fireEvent.click(securityTabBtn);
 
-    // Por defecto en Seguridad muestra Límites & Privacidad
     expect(screen.getByTestId("boundaries-tab")).toBeInTheDocument();
-
-    // Clic en Anti-Ghost & Karma
-    const karmaSubBtn = screen.getByRole("button", { name: /Anti-Ghost & Karma/i });
-    fireEvent.click(karmaSubBtn);
-
     expect(screen.getByTestId("reputation-tab")).toBeInTheDocument();
   });
 
-  it("debe invorer toggleFogMode al hacer clic en el switch de Modo Niebla", () => {
+  it("debe invocar toggleFogMode al hacer clic en el switch de Modo Niebla", () => {
     render(<ProtocolView />);
 
-    const fogToggle = screen.getByRole("button", { name: /Conmutar Modo Niebla/i });
+    const fogToggle = screen.getByRole("switch", { name: /Modo Niebla/i });
     fireEvent.click(fogToggle);
 
     expect(mockToggleFogMode).toHaveBeenCalledTimes(1);

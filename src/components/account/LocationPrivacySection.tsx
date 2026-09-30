@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   Sparkles,
   Compass,
+  Plane,
+  Radio,
 } from "lucide-react";
 
 export const LocationPrivacySection: React.FC = () => {
@@ -25,6 +27,9 @@ export const LocationPrivacySection: React.FC = () => {
     manualEcoSaver,
     toggleEcoSaverMode,
     myGeohashCell,
+    openTravelModal,
+    openGeoBatteryModal,
+    travelMode,
   } = useVessel();
 
   const privacyOptions: {
@@ -81,7 +86,7 @@ export const LocationPrivacySection: React.FC = () => {
         };
       case "eco_saver":
         return {
-          title: "Modo Ahorro Eco-Saver Activo",
+          title: "Modo Ahorro de Energía Activo",
           frequency: "Actualiza cada 5 minutos",
           accuracy: "Bajo Consumo",
           tagColor: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30",
@@ -238,7 +243,7 @@ export const LocationPrivacySection: React.FC = () => {
         <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between gap-3">
           <div className="space-y-0.5 min-w-0">
             <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
-              <span>Forzar Modo Ahorro (Eco-Saver)</span>
+              <span>Forzar Modo Ahorro de Energía</span>
             </div>
             <p className="text-[10px] text-neutral-400 font-mono">
               Reduce las consultas de GPS a 5 minutos y optimiza el consumo cuando tenés poca batería
@@ -278,6 +283,63 @@ export const LocationPrivacySection: React.FC = () => {
           <p className="text-[10px] font-mono text-neutral-400 leading-normal">
             Este código de zona permite encontrar otros perfiles a tu alrededor al instante sin necesidad de guardar tus coordenadas exactas en internet.
           </p>
+        </div>
+
+        {/* 4. HERRAMIENTAS TÁCTICAS DE UBICACIÓN & RADAR */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              openTravelModal();
+              audioEngine.playPulse();
+            }}
+            className="p-3 bg-neutral-900 border border-white/10 hover:border-electricViolet/50 rounded-2xl text-left flex items-center justify-between transition-all cursor-pointer group active:scale-98"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-electricViolet/15 text-electricViolet-glow">
+                <Plane className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-mono text-xs font-bold text-white block">
+                  Modo Viajero (Teletransporte)
+                </span>
+                <span className="text-[10px] font-mono text-neutral-400">
+                  {travelMode.isActive
+                    ? `Activo: ${travelMode.cityName}`
+                    : "Simular presencia en otra ciudad"}
+                </span>
+              </div>
+            </div>
+            <span className="text-xs font-mono text-electricViolet-glow group-hover:translate-x-0.5 transition-transform">
+              →
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              openGeoBatteryModal();
+              audioEngine.playPulse();
+            }}
+            className="p-3 bg-neutral-900 border border-white/10 hover:border-mintNeon/50 rounded-2xl text-left flex items-center justify-between transition-all cursor-pointer group active:scale-98"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-mintNeon/15 text-mintNeon">
+                <Radio className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-mono text-xs font-bold text-white block">
+                  Calibrar GPS & Telemetría
+                </span>
+                <span className="text-[10px] font-mono text-neutral-400">
+                  Forzar refresco de satélite y batería
+                </span>
+              </div>
+            </div>
+            <span className="text-xs font-mono text-mintNeon group-hover:translate-x-0.5 transition-transform">
+              →
+            </span>
+          </button>
         </div>
       </div>
     </div>

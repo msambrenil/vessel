@@ -253,3 +253,70 @@ export function discretizeDistance(
     isObfuscated: true,
   };
 }
+
+/**
+ * Tiempo de vida (TTL) en la Matrix tras abrir la app (Estilo Grindr / The Blowers): 30 minutos.
+ * Si el usuario no vuelve a abrir la app en 30 minutos, desaparece del radar de los demás.
+ */
+export const PRESENCE_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Tiempo de vida anclado (Party Anchor Lock) cuando el usuario confirma "Llegué" en una fiesta: 4 horas.
+ * Permite apagar el GPS continuo dentro del club/darkroom para ahorrar batería sin desaparecer de la Matrix.
+ */
+export const PARTY_ANCHOR_TTL_MS = 4 * 60 * 60 * 1000;
+
+/**
+ * Calcula el timestamp UNIX (ms) de expiración de presencia según si está anclado en una fiesta o en modo normal (30m)
+ */
+export function computePresenceExpiry(isPartyAnchored: boolean, nowMs: number = Date.now()): number {
+  return nowMs + (isPartyAnchored ? PARTY_ANCHOR_TTL_MS : PRESENCE_TTL_MS);
+}
+
+/**
+ * Verifica si un perfil sigue dentro de la ventana activa de la Matrix (<= 30m desde su último ping o anclado en fiesta).
+ * Si no posee `presenceExpiresAt` pero tiene `lastActiveAt`, evalúa contra `PRESENCE_TTL_MS`.
+ */
+export function isProfileActiveInMatrix(
+  profile: {
+    presenceExpiresAt?: number;
+    lastActiveAt?: number;
+    isPartyAnchored?: boolean;
+  },
+  nowMs: number = Date.now()
+): boolean {
+  if (typeof profile.presenceExpiresAt === "number") {
+    return profile.presenceExpiresAt > nowMs;
+  }
+  if (typeof profile.lastActiveAt === "number") {
+    const ttl = profile.isPartyAnchored ? PARTY_ANCHOR_TTL_MS : PRESENCE_TTL_MS;
+    return profile.lastActiveAt + ttl > nowMs;
+  }
+  return true;
+}
+
+/**
+ * Recalcula la distancia en metros respecto a la ubicación actual del usuario y ordena de más cercano a más lejano (Estilo Grindr / The Blowers)
+ */
+export function sortAndEnrichProfilesByProximity<
+  T extends { coordinates: { lat: number; lng: number }; distanceMeters?: number }
+>(profiles: T[], myCoords: { lat: number; lng: number }): Array<T & { distanceMeters?: number }> {
+  return profiles
+    .map((profile) => {
+      if (!profile.coordinates || typeof profile.coordinates.lat !== "number") {
+        return profile;
+      }
+      const dist = calculateHaversineDistance(
+        myCoords.lat,
+        myCoords.lng,
+        profile.coordinates.lat,
+        profile.coordinates.lng
+      );
+      return {
+        ...profile,
+        distanceMeters: dist,
+      };
+    })
+    .sort((a, b) => (a.distanceMeters ?? 999999) - (b.distanceMeters ?? 999999));
+}
+

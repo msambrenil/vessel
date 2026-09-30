@@ -14,7 +14,7 @@ Este documento define las reglas de operación, calidad, contexto y arquitectura
 * **Criterio:** Priorizar velocidad de entrega (speed-to-market), código limpio y mantenible, y una experiencia de usuario (UX) sobresaliente.
 * **Comunicación:** Explicar el **POR QUÉ (Why)** antes del **CÓMO (How)**. Evitar respuestas genéricas o robóticas.
 * **Validación por Arquetipos (Invariante Obligatoria):** Cada tarea, feature, ajuste de UI/UX, microinteracción o refactor debe concebirse y evaluarse pensando en los **20 Arquetipos de Usuario** de VESSEL ([arquetipos.md](./docs/contexto/arquetipos.md)). Toda solución técnica y de diseño debe justificar: *¿A qué arquetipos beneficia directamente? ¿Genera fricción en conectividad baja, batería degradada, accesibilidad o necesidad de discreción?*
-* **Pragmatismo:** Claridad > Complejidad innecesaria. No sobre-diseñar.
+* **Pragmatismo & Eficiencia Extrema (Criterio Ponytail - `.agents/skills/ponytail/SKILL.md`):** Claridad > Complejidad innecesaria. No sobre-diseñar. Aplicar la escalera de decisiones (**The Ladder**: *1. YAGNI ➔ 2. Reusar en el codebase ➔ 3. Stdlib nativa ➔ 4. Plataforma Web/CSS ➔ 5. Dependencias ya instaladas ➔ 6. ¿Una sola línea? ➔ 7. Solo entonces el código mínimo funcional*). Prohibido añadir dependencias npm innecesarias o abstracciones especulativas. Todo fix debe atacar la causa raíz inspeccionando llamadores con `grep` antes de editar.
 
 ---
 
@@ -38,7 +38,7 @@ Antes de dar por concluida cualquier tarea:
 1. **Explicación & Arquetipos:** Justificar la solución técnica adoptada (Why) y el cambio realizado (How), explicitando a qué arquetipo(s) de usuario de `docs/contexto/arquetipos.md` beneficia o protege.
 2. **Integridad de Código:** Validación estricta de tipos (`npm run typecheck` o `npx tsc --noEmit`) y ejecución de pruebas.
    - ⛔ **PROHIBICIÓN ESTRICTA:** **NUNCA ejecutar `npm run build` (`next build`) en caliente mientras el servidor de desarrollo (`npm run dev`) esté corriendo**. Esto sobreescribe `.next/` con manifiestos de producción, rompiendo la entrega de CSS y JS dev en el servidor local y dejando la app en pantalla blanca sin estilos (Gotcha #8 / #12). Para validación de tipos y compilación en caliente, usar exclusivamente `npm run typecheck`.
-3. **Verificación Visual (Solo cambios de UI):** Si el cambio afecta la interfaz de usuario, verificar el renderizado visual y estados del sistema (Loading, Empty, Error, Success) bajo la disciplina de Impeccable UI.
+3. **Sin Capturas Obligatorias de UI:** A petición expresa del usuario, NO tomar capturas de pantalla de antes/después al modificar características de la app.
 4. **Higiene de Código:** No dejar archivos basura, logs temporales ni código comentado sin justificación.
 5. **No Regresión en Perfiles Sensibles:** Corroborar que la solución no degrade el rendimiento en dispositivos con batería baja (`BatteryStateEngine`), con datos móviles medidos ni vulnere la discreción de perfiles reservados.
 
@@ -90,11 +90,7 @@ El contexto vivo del proyecto se mantiene en la carpeta `docs/contexto/`:
 * **Protocolo de Aplicación:**
   - Antes de alterar UI: invocar mental o procedimentalmente los playbooks de Impeccable (`shape`, `critique`, `polish`, `audit`, `distill`, `harden`, `colorize`, `typeset`).
   - Respetar siempre el *Craft Floor* (contraste WCAG AA/AAA, antipatrones de diseño, sin layouts rotos ni bordes genéricos).
+* **Coexistencia con Ponytail:** Ponytail gobierna la lógica, estado, hooks, dependencias y minimización del bundle, pero NUNCA debe degradar la superficie visual, la identidad estética brutalista ni los elementos sensoriales (audio sub-bass, háptica, modales tácticos) a controles estándar o sin estilo del navegador.
 
 ---
 
-## 8. Integraciones de Soporte del Ecosistema
-
-1. **Graphify (si existe `graphify-out/`):**
-   * Consultar la topología del grafo (`graphify path`, `graphify query`) antes de refactors profundos.
-   * Tras modificar código estructural, ejecutar `graphify extract . --code-only` o `graphify update .`.

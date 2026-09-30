@@ -43,7 +43,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   const getMethodLabel = () => {
     switch (verification.method) {
       case "biometric_liveness":
-        return "Biometría Facial // Liveness 3D";
+        return "Biometría Facial Dinámica";
       case "oauth_google":
         return "Google OAuth Seguro";
       case "id_document":
@@ -71,7 +71,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
         className={`inline-flex items-center gap-1 bg-mintNeon/15 border border-mintNeon/40 text-mintNeon rounded-full px-2 py-0.5 font-bold shadow-mint-glow transition-all select-none ${
           interactive ? "cursor-pointer hover:bg-mintNeon/25 hover:border-mintNeon" : ""
         } ${className}`}
-        title="Usuario Verificado por ID // 100% Humano Real"
+        title="Identidad Verificada • 100% Humano Real"
       >
         <ShieldCheck className={`${iconSizes[size]} flex-shrink-0 text-mintNeon stroke-[2.5]`} />
 
@@ -83,7 +83,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
 
         {showLabel && (
           <span className="text-[10px] uppercase font-mono tracking-tight font-extrabold text-white">
-            {verification.hasFacialPrivacy ? "ID Verificado • Stealth" : "ID Verificado"}
+            {verification.hasFacialPrivacy ? "ID Verificado • Discreto" : "ID Verificado"}
           </span>
         )}
       </div>
@@ -109,10 +109,10 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
                 </div>
                 <div>
                   <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">
-                    Identidad Verificada // ID
+                    Identidad Verificada
                   </h3>
                   <p className="text-[10px] text-mintNeon-glow font-mono">
-                    Protocolo Anti-Bot & Zero-Fake
+                    Protocolo Anti-Bots • Identidad Auténtica
                   </p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
                   <span>Rostro Verificado en Vivo</span>
                 </div>
                 <p className="text-[10px] text-neutral-300 leading-relaxed font-sans">
-                  La fotografía coincide con la prueba biométrica de liveness 3D realizada durante el registro.
+                  La fotografía coincide con la prueba biométrica facial en vivo realizada durante el registro.
                 </p>
               </div>
             )}

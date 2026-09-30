@@ -22,8 +22,9 @@ export const IdentityVerificationCard: React.FC = () => {
   const {
     myProfile,
     openAuthModal,
+    openLivenessModal,
     updateUserAvatar,
-    removeVerification,
+    t,
   } = useVessel();
 
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -91,7 +92,7 @@ export const IdentityVerificationCard: React.FC = () => {
               <span className="text-[11px] text-neutral-400">Método de Validación:</span>
               <span className="text-xs font-medium text-white">
                 {verification.method === "biometric_liveness"
-                  ? "Biometría Liveness 3D"
+                  ? (t.account.livenessMethod || "Biometría Facial 3D")
                   : verification.method === "oauth_google"
                   ? "Google OAuth"
                   : "Documento ID Criptográfico"}
@@ -122,13 +123,15 @@ export const IdentityVerificationCard: React.FC = () => {
 
             {verification.certificateHash && (
               <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] font-mono">
-                <span className="text-neutral-500">Hash ZK Cert:</span>
+                <span className="text-neutral-500">
+                  {t.account.zkCertLabel || "Certificado Criptográfico:"}
+                </span>
                 <span className="text-neutral-400">{verification.certificateHash}</span>
               </div>
             )}
           </div>
 
-          {/* Botones de Gestión */}
+          {/* Botones de Gestión (44px Touch Targets, sin duplicar Modo Niebla) */}
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
@@ -136,7 +139,7 @@ export const IdentityVerificationCard: React.FC = () => {
                 setShowAvatarPicker(!showAvatarPicker);
                 audioEngine.playPulse();
               }}
-              className="py-2.5 px-2 bg-white/10 hover:bg-white/15 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-all"
+              className="min-h-[44px] py-2.5 px-2 bg-white/10 hover:bg-white/15 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
             >
               <EyeOff className="w-3.5 h-3.5 text-electricViolet-glow" />
               <span>{showAvatarPicker ? "Cerrar" : "Avatar"}</span>
@@ -145,18 +148,14 @@ export const IdentityVerificationCard: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                updateUserAvatar(myProfile.avatarUrl, myProfile.isStylizedAvatar, !myProfile.isFogMode);
+                openLivenessModal();
                 audioEngine.playPulse();
               }}
-              className={`py-2.5 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-all border cursor-pointer ${
-                myProfile.isFogMode
-                  ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
-                  : "bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10"
-              }`}
-              title="Conmutar difuminado de privacidad"
+              className="min-h-[44px] py-2.5 px-2 bg-purple-950/40 hover:bg-purple-900/60 border border-electricViolet/30 text-electricViolet-glow rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer font-mono shadow-violet-soft"
+              title="Prueba de vida biométrica 3D"
             >
-              <span>🌫️</span>
-              <span>{myProfile.isFogMode ? "Niebla ON" : "Niebla OFF"}</span>
+              <Camera className="w-3.5 h-3.5" />
+              <span>{t.account.livenessMethod || "Biometría Facial 3D"}</span>
             </button>
 
             <button
@@ -165,31 +164,12 @@ export const IdentityVerificationCard: React.FC = () => {
                 openAuthModal("verify");
                 audioEngine.playPulse();
               }}
-              className="py-2.5 px-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+              className="min-h-[44px] py-2.5 px-2 bg-white/10 hover:bg-white/15 border border-white/20 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Re-verificar</span>
             </button>
           </div>
-
-          {/* AVISO DE IMPACTO DE VISIBILIDAD DE MODO NIEBLA */}
-          {myProfile.isFogMode && (
-            <div className="bg-purple-950/20 border border-electricViolet/30 rounded-xl p-2.5 flex items-start gap-2 text-xs font-mono text-neutral-300 animate-fade-in">
-              <div className="p-1 rounded-lg bg-electricViolet/20 text-electricViolet-glow mt-0.5 flex-shrink-0">
-                <AlertTriangle className="w-3.5 h-3.5" />
-              </div>
-              <div className="space-y-0.5 leading-tight">
-                <span className="text-electricViolet-glow font-bold uppercase text-[10px] block">
-                  Impacto de Modo Niebla:
-                </span>
-                <p className="text-[11px] text-neutral-300">
-                  • Menor visibilidad en el ranking de <strong>Cerca</strong>.
-                  <br />
-                  • <strong>No visible</strong> en la vista <strong>Radar</strong>.
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Catálogo Rápido de Avatares Estilizados */}
           {showAvatarPicker && (
@@ -219,7 +199,7 @@ export const IdentityVerificationCard: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1.5">
                         <span className="text-[8px] font-bold text-white truncate">
-                          {item.name.split("//")[0].trim()}
+                          {(item.name.split(" - ")[0] || item.name).trim()}
                         </span>
                       </div>
                       {isCurrent && (
@@ -247,14 +227,28 @@ export const IdentityVerificationCard: React.FC = () => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => openAuthModal("verify")}
-            className="w-full py-3 bg-mintNeon text-obsidian-deep hover:bg-emerald-400 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-mint-glow cursor-pointer"
-          >
-            <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
-            <span>Verificar Mi Identidad Ahora</span>
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => openAuthModal("verify")}
+              className="w-full py-3 bg-mintNeon text-obsidian-deep hover:bg-emerald-400 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-mint-glow cursor-pointer font-mono"
+            >
+              <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
+              <span>Verificar con DNI</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                openLivenessModal();
+                audioEngine.playPulse();
+              }}
+              className="w-full py-3 bg-electricViolet text-white hover:bg-electricViolet-glow rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer font-mono"
+            >
+              <Camera className="w-4 h-4 stroke-[2.5]" />
+              <span>Prueba Facial 3D</span>
+            </button>
+          </div>
         </div>
       )}
     </div>

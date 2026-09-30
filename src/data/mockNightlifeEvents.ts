@@ -3,7 +3,7 @@ import { NightlifeEvent, MissedConnection } from "@/types/vessel";
 export const MOCK_NIGHTLIFE_EVENTS: NightlifeEvent[] = [
   {
     id: "event_niceto_darkroom",
-    name: "RAW // Darkroom Sessions",
+    name: "RAW - Sesiones en Cuarto Oscuro",
     venueName: "Niceto Club (Lado B)",
     address: "Niceto Vega 5510",
     neighborhood: "Palermo Soho",
@@ -25,7 +25,7 @@ export const MOCK_NIGHTLIFE_EVENTS: NightlifeEvent[] = [
   },
   {
     id: "event_crobar_savage",
-    name: "SAVAGE CIRCUIT // Mega Fiesta",
+    name: "SAVAGE CIRCUIT - Mega Fiesta",
     venueName: "Crobar Buenos Aires",
     address: "Av. Coronel Marcelino Freyre s/n",
     neighborhood: "Bosques de Palermo",
@@ -47,7 +47,7 @@ export const MOCK_NIGHTLIFE_EVENTS: NightlifeEvent[] = [
   },
   {
     id: "event_feliza_multiespacio",
-    name: "NOCHE LIBRE // 7 Pisos & Terraza",
+    name: "NOCHE LIBRE - 7 Pisos y Terraza",
     venueName: "Feliza Multiespacio Queer",
     address: "Av. Córdoba 3271",
     neighborhood: "Almagro / Recoleta",
@@ -69,7 +69,7 @@ export const MOCK_NIGHTLIFE_EVENTS: NightlifeEvent[] = [
   },
   {
     id: "event_amerika_mega",
-    name: "AMERIKA DISCO // Noche de Espuma",
+    name: "AMERIKA DISCO - Noche de Espuma",
     venueName: "Amerika Disco",
     address: "Gascón 1040",
     neighborhood: "Almagro",
@@ -91,7 +91,7 @@ export const MOCK_NIGHTLIFE_EVENTS: NightlifeEvent[] = [
   },
   {
     id: "event_underbar_bunker",
-    name: "LEATHER & BEARS // Cruising Social",
+    name: "CUERO Y OSOS - Encuentro Social",
     venueName: "UnderBar Bunker",
     address: "Humberto 1º 400",
     neighborhood: "San Telmo",
@@ -117,7 +117,7 @@ export const MOCK_INITIAL_MISSED_CONNECTIONS: MissedConnection[] = [
   {
     id: "missed_1",
     eventId: "event_niceto_darkroom",
-    eventName: "RAW // Darkroom Sessions",
+    eventName: "RAW - Sesiones en Cuarto Oscuro",
     venueName: "Niceto Club (Lado B)",
     peerProfileId: "p1",
     peerCodename: "Klaus_030",
@@ -135,7 +135,7 @@ export const MOCK_INITIAL_MISSED_CONNECTIONS: MissedConnection[] = [
   {
     id: "missed_2",
     eventId: "event_crobar_savage",
-    eventName: "SAVAGE CIRCUIT // Mega Fiesta",
+    eventName: "SAVAGE CIRCUIT - Mega Fiesta",
     venueName: "Crobar Buenos Aires",
     peerProfileId: "p3",
     peerCodename: "Liam_Raw",
@@ -152,7 +152,7 @@ export const MOCK_INITIAL_MISSED_CONNECTIONS: MissedConnection[] = [
   {
     id: "missed_3",
     eventId: "event_niceto_darkroom",
-    eventName: "RAW // Darkroom Sessions",
+    eventName: "RAW - Sesiones en Cuarto Oscuro",
     venueName: "Niceto Club (Lado B)",
     peerProfileId: "p2",
     peerCodename: "Receptor_V",

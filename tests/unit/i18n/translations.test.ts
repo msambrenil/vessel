@@ -4,6 +4,11 @@ import {
   getTranslations,
   formatDistance,
 } from "@/lib/i18n/translations";
+import {
+  getKinkLocalizedLabel,
+  getYoSoyLocalizedLabel,
+} from "@/lib/kinks/kinkAdminService";
+import { getRoleDisplayLabel, ALL_ROLE_TYPES } from "@/data/roleActionCatalog";
 import { SupportedLanguage } from "@/types/vessel";
 
 describe("i18n — Internacionalización, Paridad de Diccionarios y Formato", () => {
@@ -120,4 +125,73 @@ describe("i18n — Internacionalización, Paridad de Diccionarios y Formato", ()
       });
     });
   });
+
+  describe("Localización de Morbos (Kinks) y Arquetipos (Yo Soy)", () => {
+    const tEs = getTranslations("es");
+    const tEn = getTranslations("en");
+
+    it("debe localizar morbos en español rioplatense gay 2026 sin hardcodeos", () => {
+      expect(getKinkLocalizedLabel("raw-carnal", tEs)).toBe("Sin Filtros");
+      expect(getKinkLocalizedLabel("immediate-host", tEs)).toBe("Pone Casa Ya");
+      expect(getKinkLocalizedLabel("leather", tEs)).toBe("Cuero y Arnés");
+      expect(getKinkLocalizedLabel("harness", tEs)).toBe("Arnés de Pecho");
+      expect(getKinkLocalizedLabel("darkroom", tEs)).toBe("Sala Oscura");
+    });
+
+    it("debe localizar morbos en inglés cuando el idioma es en", () => {
+      expect(getKinkLocalizedLabel("raw-carnal", tEn)).toBe("Raw / Unfiltered");
+      expect(getKinkLocalizedLabel("immediate-host", tEn)).toBe("Hosting Right Now");
+      expect(getKinkLocalizedLabel("leather", tEn)).toBe("Heavy Leather");
+      expect(getKinkLocalizedLabel("harness", tEn)).toBe("Chest Harness");
+    });
+
+    it("debe localizar arquetipos identitarios Yo Soy en ambos idiomas", () => {
+      expect(getYoSoyLocalizedLabel("LEATHER / ARNÉS", tEs)).toBe("Cuero y Arnés");
+      expect(getYoSoyLocalizedLabel("LEATHER / ARNÉS", tEn)).toBe("Leather / Harness");
+
+      expect(getYoSoyLocalizedLabel("MUSCULOSO / GYM", tEs)).toBe("Musculoso");
+      expect(getYoSoyLocalizedLabel("NUTRIA / PELUDO", tEs)).toBe("Nutria y Peludo");
+      expect(getYoSoyLocalizedLabel("TWINK / JOVEN", tEs)).toBe("Joven");
+      expect(getYoSoyLocalizedLabel("DISCRETO / PERFIL BAJO", tEs)).toBe("Discreto");
+    });
+
+    it("debe devolver fallback cuando el morbo o arquetipo no tiene mapeo", () => {
+      expect(getKinkLocalizedLabel("desconocido_xyz", tEs, "Fallback Name")).toBe("Fallback Name");
+      expect(getYoSoyLocalizedLabel(undefined, tEs)).toBe("");
+    });
+
+    it("debe localizar roles corporales en español rioplatense sin anglicismos", () => {
+      expect(getRoleDisplayLabel("Top", "es", tEs)).toBe("Activo");
+      expect(getRoleDisplayLabel("Bottom", "es", tEs)).toBe("Pasivo");
+      expect(getRoleDisplayLabel("Versatile", "es", tEs)).toBe("Versátil");
+      expect(getRoleDisplayLabel("Vers Top", "es", tEs)).toBe("Versátil Activo");
+      expect(getRoleDisplayLabel("Vers Bottom", "es", tEs)).toBe("Versátil Pasivo");
+      expect(getRoleDisplayLabel("Side", "es", tEs)).toBe("Sin penetración");
+      expect(getRoleDisplayLabel("Dominant", "es", tEs)).toBe("Dominante");
+      expect(getRoleDisplayLabel("Submissive", "es", tEs)).toBe("Sumiso");
+      expect(getRoleDisplayLabel("Oral Focus", "es", tEs)).toBe("Enfoque oral");
+    });
+
+    it("debe localizar roles corporales en inglés cuando lang es en", () => {
+      expect(getRoleDisplayLabel("Top", "en", tEn)).toBe("Top");
+      expect(getRoleDisplayLabel("Bottom", "en", tEn)).toBe("Bottom");
+      expect(getRoleDisplayLabel("Vers Top", "en", tEn)).toBe("Vers Top");
+      expect(getRoleDisplayLabel("Oral Focus", "en", tEn)).toBe("Oral Focus");
+    });
+
+    it("todos los ALL_ROLE_TYPES deben tener traducción válida y no vacía en es y en", () => {
+      for (const role of ALL_ROLE_TYPES) {
+        const esLabel = getRoleDisplayLabel(role, "es", tEs);
+        const enLabel = getRoleDisplayLabel(role, "en", tEn);
+        expect(esLabel.length).toBeGreaterThan(0);
+        expect(enLabel.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("debe contener menuLabel y menuSubtitle para preFlight / Pacto Previo", () => {
+      expect(tEs.tacticalSuite.preFlight.menuLabel).toBe("Pacto Previo");
+      expect(tEn.tacticalSuite.preFlight.menuLabel).toBe("Pre-Flight");
+    });
+  });
 });
+

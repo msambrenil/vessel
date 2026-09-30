@@ -9,10 +9,11 @@ import {
   HIV_STATUS_OPTIONS,
 } from "@/data/mockProfiles";
 import { GENDER_INTEREST_OPTIONS } from "@/data/genderCatalog";
+import { getYoSoyLocalizedLabel } from "@/lib/kinks/kinkAdminService";
+import { ALL_ROLE_TYPES, getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import {
   GENDER_IDENTITY_OPTIONS,
   PRONOUN_OPTIONS,
-  DESIRE_OPTIONS,
   INTENTION_OPTIONS,
   BOUNDARY_OPTIONS,
   ENERGY_VIBE_CATALOG,
@@ -33,65 +34,54 @@ import {
   Sparkles,
   Zap,
   ShieldCheck,
-  Check,
   BadgeCheck,
-  Clock,
   Sliders,
-  Mic,
-  Trash2,
+  Users,
+  Edit3,
+  RotateCcw,
 } from "lucide-react";
-import { BrutalistButton, TacticalBadge, SectionHeroHeader } from "@/components/ui";
-import { VoiceVibePlayer } from "@/components/profile/VoiceVibePlayer";
+import { BrutalistButton, SectionHeroHeader } from "@/components/ui";
 
-export const BioTab: React.FC = () => {
+export interface BioTabProps {
+  children?: React.ReactNode;
+}
+
+export const BioTab: React.FC<BioTabProps> = ({ children }) => {
   const {
     myProfile,
     updateMyProfile,
-    myOnTheClock,
-    startOnTheClock,
-    stopOnTheClock,
-    myVoiceVibe,
-    openVoiceRecorder,
-    deleteMyVoiceVibe,
     language,
     t,
+    openDuoModal,
+    myDuoLink,
   } = useVessel();
 
-  const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [onTheClockNote, setOnTheClockNote] = useState<string>("");
 
-  // Estados locales del formulario
-  const [codenameInput, setCodenameInput] = useState<string>(
-    myProfile.codename || "VESSEL_USER"
+  // Estados locales del formulario (el codename vive en una única fuente de verdad en el Hero)
+  const [ageInput, setAgeInput] = useState<string>(
+    myProfile.age && myProfile.age > 0 ? myProfile.age.toString() : ""
   );
-  const [ageInput, setAgeInput] = useState<string>(myProfile.age.toString());
   const [showAge, setShowAge] = useState<boolean>(myProfile.showAge);
   const [twitterHandle, setTwitterHandle] = useState<string>(
     myProfile.twitterHandle || ""
   );
-  const [yoSoy, setYoSoy] = useState<YoSoyType>(myProfile.yoSoy);
-  const [mobility, setMobility] = useState<MobilityType>(myProfile.mobility);
-  const [hivStatus, setHivStatus] = useState<HivStatusType>(myProfile.hivStatus);
-  const [myRole, setMyRole] = useState<RoleType>(myProfile.role);
-  const [myHeight, setMyHeight] = useState(myProfile.heightCm);
-  const [myWeight, setMyWeight] = useState(myProfile.weightKg);
+  const [yoSoy, setYoSoy] = useState<YoSoyType>(myProfile.yoSoy || ("" as YoSoyType));
+  const [mobility, setMobility] = useState<MobilityType>(myProfile.mobility || ("" as MobilityType));
+  const [hivStatus, setHivStatus] = useState<HivStatusType>(myProfile.hivStatus || ("" as HivStatusType));
+  const [myRole, setMyRole] = useState<RoleType>(myProfile.role || ("" as RoleType));
+  const [myHeight, setMyHeight] = useState<number>(myProfile.heightCm || 0);
+  const [myWeight, setMyWeight] = useState<number>(myProfile.weightKg || 0);
 
-  useEffect(() => {
-    if (myProfile.codename) {
-      setCodenameInput(myProfile.codename);
-    }
-  }, [myProfile.codename]);
-
-  // Identidad y acuerdos
+  // Identidad y acuerdos (Sin valores de prueba pre-cargados)
   const [genderIdentity, setGenderIdentity] = useState<string>(
-    myProfile.genderIdentity || "Hombre Cis"
+    myProfile.genderIdentity || ""
   );
   const [pronouns, setPronouns] = useState<string>(
-    myProfile.pronouns || "Él / He / Him"
+    myProfile.pronouns || ""
   );
   const [genderInterests, setGenderInterests] = useState<GenderInterest[]>(
-    myProfile.genderInterests || ["all"]
+    myProfile.genderInterests || []
   );
 
   const toggleGenderInterest = (interest: GenderInterest) => {
@@ -99,41 +89,37 @@ export const BioTab: React.FC = () => {
       prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]
     );
   };
-  const [desires, setDesires] = useState<string[]>(
-    myProfile.desires || ["Conexión carnal intensa", "Sensualidad pausada"]
-  );
   const [intentions, setIntentions] = useState<string[]>(
-    myProfile.intentions || [
-      "Ahora mismo (Inmediato)",
-      "Follamigos / Contacto regular",
-    ]
+    myProfile.intentions || []
   );
   const [myBoundaries, setMyBoundaries] = useState<string[]>(
-    myProfile.boundaries || [
-      "Solo sexo seguro con protección",
-      "Respeto estricto a Safe-Words",
-    ]
+    myProfile.boundaries || []
   );
   const [energyVibes, setEnergyVibes] = useState<EnergyVibe[]>(
-    myProfile.energyVibes || ["fogoso", "kinky"]
+    myProfile.energyVibes || []
   );
 
-  const [customDesire, setCustomDesire] = useState("");
+  // Sincronizar los estados del formulario cuando cambia el usuario logueado o hidrata desde Firestore
+  useEffect(() => {
+    setAgeInput(myProfile.age && myProfile.age > 0 ? myProfile.age.toString() : "");
+    setShowAge(myProfile.showAge);
+    setTwitterHandle(myProfile.twitterHandle || "");
+    setYoSoy(myProfile.yoSoy || ("" as YoSoyType));
+    setMobility(myProfile.mobility || ("" as MobilityType));
+    setHivStatus(myProfile.hivStatus || ("" as HivStatusType));
+    setMyRole(myProfile.role || ("" as RoleType));
+    setMyHeight(myProfile.heightCm || 0);
+    setMyWeight(myProfile.weightKg || 0);
+    setGenderIdentity(myProfile.genderIdentity || "");
+    setPronouns(myProfile.pronouns || "");
+    setGenderInterests(myProfile.genderInterests || []);
+    setIntentions(myProfile.intentions || []);
+    setMyBoundaries(myProfile.boundaries || []);
+    setEnergyVibes(myProfile.energyVibes || []);
+  }, [myProfile]);
+
   const [customIntention, setCustomIntention] = useState("");
   const [customBoundary, setCustomBoundary] = useState("");
-
-  const toggleDesire = (item: string) => {
-    setDesires((prev) =>
-      prev.includes(item) ? prev.filter((d) => d !== item) : [...prev, item]
-    );
-  };
-
-  const addCustomDesire = () => {
-    if (customDesire.trim() && !desires.includes(customDesire.trim())) {
-      setDesires((prev) => [...prev, customDesire.trim()]);
-      setCustomDesire("");
-    }
-  };
 
   const toggleIntention = (item: string) => {
     setIntentions((prev) =>
@@ -167,232 +153,183 @@ export const BioTab: React.FC = () => {
     );
   };
 
-  const handleSave = () => {
-    setIsSaving(true);
-    audioEngine.playPulse();
+  const isDirty = React.useMemo(() => {
+    const origAgeStr = myProfile.age && myProfile.age > 0 ? myProfile.age.toString() : "";
+    if (ageInput !== origAgeStr) return true;
+    if (showAge !== myProfile.showAge) return true;
+    if (twitterHandle.trim().replace(/^@/, "") !== (myProfile.twitterHandle || "").replace(/^@/, "")) return true;
+    if ((yoSoy || "") !== (myProfile.yoSoy || "")) return true;
+    if ((mobility || "") !== (myProfile.mobility || "")) return true;
+    if ((hivStatus || "") !== (myProfile.hivStatus || "")) return true;
+    if ((myRole || "") !== (myProfile.role || "")) return true;
+    if ((myHeight || 0) !== (myProfile.heightCm || 0)) return true;
+    if ((myWeight || 0) !== (myProfile.weightKg || 0)) return true;
+    if (genderIdentity !== (myProfile.genderIdentity || "")) return true;
+    if (pronouns !== (myProfile.pronouns || "")) return true;
 
-    setTimeout(() => {
-      const cleanCodename =
-        codenameInput.trim().toUpperCase() || myProfile.codename || "VESSEL_USER";
-      updateMyProfile({
-        codename: cleanCodename,
-        age: parseInt(ageInput) || 41,
-        showAge,
-        twitterHandle: twitterHandle.trim().replace(/^@/, ""),
-        yoSoy,
-        mobility,
-        hivStatus,
-        role: myRole,
-        heightCm: myHeight,
-        weightKg: myWeight,
-        genderIdentity,
-        pronouns,
-        genderInterests,
-        desires,
-        intentions,
-        boundaries: myBoundaries,
-        energyVibes,
-      });
-      setIsSaving(false);
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2200);
-    }, 450);
+    const currentGenderInterests = [...genderInterests].sort().join(",");
+    const origGenderInterests = [...(myProfile.genderInterests || [])].sort().join(",");
+    if (currentGenderInterests !== origGenderInterests) return true;
+
+    const currentIntentions = [...intentions].sort().join(",");
+    const origIntentions = [...(myProfile.intentions || [])].sort().join(",");
+    if (currentIntentions !== origIntentions) return true;
+
+    const currentBoundaries = [...myBoundaries].sort().join(",");
+    const origBoundaries = [...(myProfile.boundaries || [])].sort().join(",");
+    if (currentBoundaries !== origBoundaries) return true;
+
+    const currentVibes = [...energyVibes].sort().join(",");
+    const origVibes = [...(myProfile.energyVibes || [])].sort().join(",");
+    if (currentVibes !== origVibes) return true;
+
+    return false;
+  }, [
+    ageInput,
+    showAge,
+    twitterHandle,
+    yoSoy,
+    mobility,
+    hivStatus,
+    myRole,
+    myHeight,
+    myWeight,
+    genderIdentity,
+    pronouns,
+    genderInterests,
+    intentions,
+    myBoundaries,
+    energyVibes,
+    myProfile,
+  ]);
+
+  const buildProfilePayload = React.useCallback(() => {
+    return {
+      age: parseInt(ageInput) || 0,
+      showAge,
+      twitterHandle: twitterHandle.trim().replace(/^@/, ""),
+      yoSoy,
+      mobility,
+      hivStatus,
+      role: myRole,
+      heightCm: myHeight || 0,
+      weightKg: myWeight || 0,
+      genderIdentity,
+      pronouns,
+      genderInterests,
+      desires: myProfile.desires || [],
+      intentions,
+      boundaries: myBoundaries,
+      energyVibes,
+      isProfileCustomized: true,
+    };
+  }, [
+    ageInput,
+    showAge,
+    twitterHandle,
+    yoSoy,
+    mobility,
+    hivStatus,
+    myRole,
+    myHeight,
+    myWeight,
+    genderIdentity,
+    pronouns,
+    genderInterests,
+    myProfile.desires,
+    intentions,
+    myBoundaries,
+    energyVibes,
+  ]);
+
+  // Auto-save al desmontar (cambio de pestaña) si quedaron cambios sin guardar
+  const autoSaveRef = React.useRef({ isDirty: false, save: () => {} });
+  useEffect(() => {
+    autoSaveRef.current = {
+      isDirty,
+      save: () => updateMyProfile(buildProfilePayload()),
+    };
+  }, [isDirty, updateMyProfile, buildProfilePayload]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveRef.current.isDirty) {
+        autoSaveRef.current.save();
+      }
+    };
+  }, []);
+
+  const handleSave = () => {
+    audioEngine.playPulse();
+    updateMyProfile(buildProfilePayload());
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 2200);
+  };
+
+  const handleDiscard = () => {
+    audioEngine.playPulse();
+    setAgeInput(myProfile.age && myProfile.age > 0 ? myProfile.age.toString() : "");
+    setShowAge(myProfile.showAge);
+    setTwitterHandle(myProfile.twitterHandle || "");
+    setYoSoy(myProfile.yoSoy || ("" as YoSoyType));
+    setMobility(myProfile.mobility || ("" as MobilityType));
+    setHivStatus(myProfile.hivStatus || ("" as HivStatusType));
+    setMyRole(myProfile.role || ("" as RoleType));
+    setMyHeight(myProfile.heightCm || 0);
+    setMyWeight(myProfile.weightKg || 0);
+    setGenderIdentity(myProfile.genderIdentity || "");
+    setPronouns(myProfile.pronouns || "");
+    setGenderInterests(myProfile.genderInterests || []);
+    setIntentions(myProfile.intentions || []);
+    setMyBoundaries(myProfile.boundaries || []);
+    setEnergyVibes(myProfile.energyVibes || []);
+    autoSaveRef.current.isDirty = false;
   };
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Panel Radar On-The-Clock (Listo YA - 60 min) */}
-      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-amber-500/40 space-y-4 shadow-card-elevation backdrop-blur-md relative overflow-hidden">
-        <SectionHeroHeader
-          title="RADAR ON-THE-CLOCK // DISPONIBILIDAD"
-          tag={
-            myOnTheClock.isActive
-              ? `${Math.max(
-                  0,
-                  Math.ceil(
-                    ((myOnTheClock.expiresAt
-                      ? new Date(myOnTheClock.expiresAt).getTime()
-                      : 0) -
-                      Date.now()) /
-                      60000
-                  )
-                )}M RESTANTES`
-              : "⚡ LISTO YA"
-          }
-          subtitle="Prioridad visual en la matriz por 60 min con auto-apagado táctico"
-          variant="amber"
-          icon={<Zap className="w-4 h-4 text-amber-400" />}
-        />
-
-        {myOnTheClock.isActive ? (
-          <div className="space-y-3">
-            <div className="p-3 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-xs font-mono text-amber-200 flex items-start gap-2">
-              <span className="text-amber-400 mt-0.5">●</span>
-              <div>
-                <span className="font-bold">
-                  Tu perfil está brillando como "Listo YA".
-                </span>
-                {myOnTheClock.statusNote && (
-                  <p className="text-[11px] text-neutral-300 mt-1">
-                    Nota: "{myOnTheClock.statusNote}"
-                  </p>
-                )}
-              </div>
-            </div>
-            <BrutalistButton
-              variant="secondary"
-              size="default"
-              onClick={stopOnTheClock}
-              className="w-full"
-            >
-              Desactivar On-The-Clock
-            </BrutalistButton>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-neutral-300 leading-relaxed">
-              ¿Tenés ganas de encontrarte ya mismo? Activá el radar para que los
-              usuarios cercanos vean tu borde pulsante y sepan que tenés
-              disponibilidad inmediata.
-            </p>
-            <input
-              type="text"
-              value={onTheClockNote}
-              onChange={(e) => setOnTheClockNote(e.target.value)}
-              placeholder="Nota rápida opcional (Ej: 'Tomando algo en Palermo', 'Libre en mi depto')..."
-              className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-colors"
-            />
-            <BrutalistButton
-              variant="amber"
-              size="lg"
-              onClick={() => {
-                startOnTheClock(60, onTheClockNote.trim() || undefined);
-                setOnTheClockNote("");
-              }}
-              className="w-full font-black tracking-wider text-xs sm:text-sm py-3.5 shadow-[0_0_30px_rgba(245,158,11,0.5)] border border-amber-300"
-            >
-              <Zap className="w-4 h-4 fill-current animate-pulse" />
-              <span>ACTIVAR LISTO YA // 60 MINUTOS</span>
-            </BrutalistButton>
-          </div>
-        )}
-      </div>
-
-      {/* NOTA DE VOZ // VOICE VIBE (AUDIO 5s) */}
-      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-4 shadow-card-elevation backdrop-blur-md">
-        <SectionHeroHeader
-          title="VOICE VIBE // NOTA DE VOZ"
-          tag={myVoiceVibe ? "ACTIVA // 5S" : "SIN AUDIO"}
-          subtitle="Audio de 5 segundos con tu tono y presencia para generar confianza"
-          variant="violet"
-          icon={<Mic className="w-4 h-4 text-electricViolet-glow" />}
-        />
-
-        {myVoiceVibe ? (
-          <div className="space-y-3">
-            <div className="p-3.5 rounded-2xl bg-black/50 border border-electricViolet/30">
-              <VoiceVibePlayer voice={myVoiceVibe} />
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  openVoiceRecorder();
-                }}
-                className="flex-1 py-2.5 px-3 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-bold shadow-violet-soft transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Mic className="w-3.5 h-3.5" />
-                <span>{language === "es" ? "Regrabar Audio (5s)" : "Re-record Audio (5s)"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playError();
-                  deleteMyVoiceVibe();
-                }}
-                className="py-2.5 px-3 rounded-xl bg-red-950/30 hover:bg-red-900/40 border border-red-500/30 text-red-400 font-mono text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>{language === "es" ? "Eliminar" : "Delete"}</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-neutral-300 leading-relaxed">
-              {language === "es"
-                ? "Los perfiles con nota de voz verificada reciben hasta 3 veces más interacción y respuestas. Grabá un audio corto de 5 segundos diciendo qué pinta para hoy."
-                : "Profiles with verified voice notes get up to 3x more interaction. Record a short 5-second audio saying what you're up to."}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                openVoiceRecorder();
-              }}
-              className="w-full py-3 px-4 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-black uppercase tracking-wider shadow-violet-glow transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Mic className="w-4 h-4" />
-              <span>{language === "es" ? "🎙️ GRABAR NOTA DE VOZ (5s)" : "🎙️ RECORD VOICE NOTE (5s)"}</span>
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Información Corporal & Ficha */}
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-5 shadow-card-elevation backdrop-blur-md">
         <SectionHeroHeader
-          title="DATOS VITALES // FICHA TÁCTICA"
-          tag="// PERFIL"
-          subtitle="Parámetros físicos y atributos visibles en la matriz y el radar"
+          title={language === "es" ? "DATOS VITALES DEL PERFIL" : "PROFILE VITAL STATS"}
+          tag={language === "es" ? "PERFIL" : "PROFILE"}
+          subtitle={language === "es" ? "Parámetros físicos y atributos visibles en la matriz y el radar" : "Physical parameters and attributes"}
           variant="violet"
           icon={<Sliders className="w-4 h-4 text-electricViolet-glow" />}
         />
 
-        {/* 1. NOMBRE DE USUARIO / ALIAS (CODENAME) EN VESSEL */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-mono font-bold text-white block uppercase tracking-wider">
-              {t.account.codenameLabel || "Nombre de Usuario / Codename"}{" "}
-              <span className="text-electricViolet-glow">*</span>
-            </label>
-            <span className="text-[10px] font-mono text-neutral-400">
-              {t.account.codenameSub || "Visible en tarjetas públicas & radar"}
-            </span>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-electricViolet-glow">
+        {/* 1. NOMBRE DE USUARIO / ALIAS EN VESSEL (Single Source of Truth en el Hero) */}
+        <div className="flex items-center justify-between gap-3 bg-black/50 border border-white/10 rounded-2xl px-3.5 py-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-electricViolet/15 border border-electricViolet/30 text-electricViolet-glow flex-shrink-0">
               <User className="w-4 h-4" />
             </div>
-            <input
-              type="text"
-              required
-              value={codenameInput}
-              onChange={(e) => setCodenameInput(e.target.value)}
-              placeholder={
-                t.account.codenamePlaceholder || "Ej: ALEX_01, MARCUS, KLAUS..."
-              }
-              className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono pl-10 pr-9 py-2.5 focus:outline-none focus:border-electricViolet focus:ring-1 focus:ring-electricViolet transition-colors uppercase tracking-wide font-bold"
-            />
-            {codenameInput && (
-              <button
-                type="button"
-                onClick={() => setCodenameInput("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-                title="Borrar texto"
-                aria-label="Borrar texto del nombre"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <div className="min-w-0">
+              <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider block">
+                {t.account.codenameLabel || "Nombre de Usuario"}
+              </span>
+              <span className="text-xs font-mono font-bold text-white uppercase tracking-wide truncate block">
+                @{myProfile.codename || "VESSEL_USER"}
+              </span>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              audioEngine.playPulse();
+              window.dispatchEvent(new CustomEvent("vessel:edit-codename"));
+            }}
+            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 flex-shrink-0"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-electricViolet-glow" />
+            <span>{language === "es" ? "Cambiar Alias" : "Edit Alias"}</span>
+          </button>
         </div>
 
         {/* 2. EDAD CON CONTROL DE MOSTRAR / OCULTAR */}
         <div className="space-y-2">
           <label className="text-xs font-mono font-bold text-white block">
-            Edad
+            {t.account.ageLabel || "Edad"}
           </label>
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-[140px]">
@@ -400,7 +337,7 @@ export const BioTab: React.FC = () => {
                 type="number"
                 value={ageInput}
                 onChange={(e) => setAgeInput(e.target.value)}
-                placeholder="Edad"
+                placeholder={t.account.ageLabel || "Edad"}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-4 py-2.5 focus:outline-none focus:border-electricViolet transition-colors"
               />
               {ageInput && (
@@ -416,14 +353,18 @@ export const BioTab: React.FC = () => {
 
             <div className="flex items-center gap-3 bg-black/40 border border-white/5 px-3 py-2 rounded-xl min-h-[44px]">
               <span className="text-xs text-neutral-300 font-mono">
-                Mostrar edad
+                {t.account.showAgeLabel}
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-mono font-bold text-neutral-400">
-                  {showAge ? "SÍ" : "NO"}
+                  {showAge
+                    ? (language === "es" ? "SÍ" : "YES")
+                    : "NO"}
                 </span>
                 <button
                   type="button"
+                  role="switch"
+                  aria-checked={showAge}
                   onClick={() => {
                     setShowAge(!showAge);
                     audioEngine.playPulse();
@@ -431,7 +372,7 @@ export const BioTab: React.FC = () => {
                   className={`w-11 h-6 rounded-full transition-colors relative p-0.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
                     showAge ? "bg-electricViolet shadow-violet-soft" : "bg-neutral-800"
                   }`}
-                  aria-label="Conmutar visibilidad de la edad"
+                  aria-label={t.account.showAgeLabel}
                 >
                   <div
                     className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
@@ -448,14 +389,17 @@ export const BioTab: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs font-mono font-bold text-white block">
-              Identidad de Género
+              {t.account.genderLabel}
             </label>
             <div className="relative">
               <select
-                value={genderIdentity}
+                value={genderIdentity || ""}
                 onChange={(e) => setGenderIdentity(e.target.value)}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-3 appearance-none focus:outline-none focus:border-electricViolet transition-colors cursor-pointer"
               >
+                <option value="" className="bg-obsidian text-neutral-500">
+                  {language === "es" ? "Seleccionar..." : "Select..."}
+                </option>
                 {GENDER_IDENTITY_OPTIONS.map((opt) => (
                   <option key={opt} value={opt} className="bg-obsidian text-white">
                     {opt}
@@ -468,14 +412,17 @@ export const BioTab: React.FC = () => {
 
           <div className="space-y-1.5">
             <label className="text-xs font-mono font-bold text-white block">
-              Pronombres
+              {t.account.pronounsLabel}
             </label>
             <div className="relative">
               <select
-                value={pronouns}
+                value={pronouns || ""}
                 onChange={(e) => setPronouns(e.target.value)}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-3 appearance-none focus:outline-none focus:border-electricViolet transition-colors cursor-pointer"
               >
+                <option value="" className="bg-obsidian text-neutral-500">
+                  {language === "es" ? "Seleccionar..." : "Select..."}
+                </option>
                 {PRONOUN_OPTIONS.map((opt) => (
                   <option key={opt} value={opt} className="bg-obsidian text-white">
                     {opt}
@@ -491,17 +438,20 @@ export const BioTab: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs font-mono font-bold text-white block">
-              Yo Soy
+              {language === "es" ? "Yo Soy" : "I Am"}
             </label>
             <div className="relative">
               <select
-                value={yoSoy}
+                value={yoSoy || ""}
                 onChange={(e) => setYoSoy(e.target.value as YoSoyType)}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-3 appearance-none focus:outline-none focus:border-electricViolet transition-colors cursor-pointer"
               >
+                <option value="" className="bg-obsidian text-neutral-500">
+                  {language === "es" ? "Seleccionar..." : "Select..."}
+                </option>
                 {YO_SOY_OPTIONS.map((opt) => (
                   <option key={opt} value={opt} className="bg-obsidian text-white">
-                    {opt}
+                    {getYoSoyLocalizedLabel(opt, t)}
                   </option>
                 ))}
               </select>
@@ -511,14 +461,17 @@ export const BioTab: React.FC = () => {
 
           <div className="space-y-1.5">
             <label className="text-xs font-mono font-bold text-white block">
-              Movilidad
+              {t.account.mobilityLabel}
             </label>
             <div className="relative">
               <select
-                value={mobility}
+                value={mobility || ""}
                 onChange={(e) => setMobility(e.target.value as MobilityType)}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-3 appearance-none focus:outline-none focus:border-electricViolet transition-colors cursor-pointer"
               >
+                <option value="" className="bg-obsidian text-neutral-500">
+                  {language === "es" ? "Seleccionar..." : "Select..."}
+                </option>
                 {MOBILITY_OPTIONS.map((opt) => (
                   <option key={opt} value={opt} className="bg-obsidian text-white">
                     {opt}
@@ -531,14 +484,17 @@ export const BioTab: React.FC = () => {
 
           <div className="space-y-1.5">
             <label className="text-xs font-mono font-bold text-white block">
-              Estado VIH
+              {t.account.hivLabel}
             </label>
             <div className="relative">
               <select
-                value={hivStatus}
+                value={hivStatus || ""}
                 onChange={(e) => setHivStatus(e.target.value as HivStatusType)}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-3 appearance-none focus:outline-none focus:border-electricViolet transition-colors cursor-pointer"
               >
+                <option value="" className="bg-obsidian text-neutral-500">
+                  {language === "es" ? "Seleccionar..." : "Select..."}
+                </option>
                 {HIV_STATUS_OPTIONS.map((opt) => (
                   <option key={opt} value={opt} className="bg-obsidian text-white">
                     {opt}
@@ -554,23 +510,22 @@ export const BioTab: React.FC = () => {
         <div className="grid grid-cols-3 gap-2.5 pt-1 text-xs">
           <div>
             <label className="text-[11px] font-mono text-neutral-400 block mb-1">
-              Rol
+              {t.account.roleLabel}
             </label>
             <div className="relative">
               <select
-                value={myRole}
+                value={myRole || ""}
                 onChange={(e) => setMyRole(e.target.value as RoleType)}
                 className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-2.5 appearance-none focus:border-electricViolet focus:outline-none cursor-pointer"
               >
-                <option value="Top">Top</option>
-                <option value="Bottom">Bottom</option>
-                <option value="Versatile">Versatile</option>
-                <option value="Vers Top">Vers Top</option>
-                <option value="Vers Bottom">Vers Bottom</option>
-                <option value="Side">Side</option>
-                <option value="Dominant">Dominant</option>
-                <option value="Submissive">Submissive</option>
-                <option value="Oral Focus">Oral Focus</option>
+                <option value="" className="bg-obsidian text-neutral-500">
+                  {language === "es" ? "Seleccionar..." : "Select..."}
+                </option>
+                {ALL_ROLE_TYPES.map((r) => (
+                  <option key={r} value={r}>
+                    {getRoleDisplayLabel(r, language, t)}
+                  </option>
+                ))}
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-neutral-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -578,25 +533,27 @@ export const BioTab: React.FC = () => {
 
           <div>
             <label className="text-[11px] font-mono text-neutral-400 block mb-1">
-              Altura (cm)
+              {language === "es" ? "Altura (cm)" : "Height (cm)"}
             </label>
             <input
               type="number"
-              value={myHeight}
-              onChange={(e) => setMyHeight(parseInt(e.target.value) || 180)}
-              className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-2.5 focus:border-electricViolet focus:outline-none"
+              value={myHeight && myHeight > 0 ? myHeight : ""}
+              onChange={(e) => setMyHeight(parseInt(e.target.value) || 0)}
+              placeholder="Ej. 178"
+              className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-2.5 placeholder:text-neutral-500 focus:border-electricViolet focus:outline-none"
             />
           </div>
 
           <div>
             <label className="text-[11px] font-mono text-neutral-400 block mb-1">
-              Peso (kg)
+              {language === "es" ? "Peso (kg)" : "Weight (kg)"}
             </label>
             <input
               type="number"
-              value={myWeight}
-              onChange={(e) => setMyWeight(parseInt(e.target.value) || 75)}
-              className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-2.5 focus:border-electricViolet focus:outline-none"
+              value={myWeight && myWeight > 0 ? myWeight : ""}
+              onChange={(e) => setMyWeight(parseInt(e.target.value) || 0)}
+              placeholder="Ej. 75"
+              className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono p-2.5 placeholder:text-neutral-500 focus:border-electricViolet focus:outline-none"
             />
           </div>
         </div>
@@ -604,7 +561,7 @@ export const BioTab: React.FC = () => {
         {/* 6. NICKNAME DE X (OPCIONAL) */}
         <div className="space-y-1.5">
           <label className="text-xs font-mono font-bold text-white block">
-            Cuenta de 𝕏 (Opcional)
+            {t.account.twitterLabel}
           </label>
           <div className="relative">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-bold font-mono">
@@ -626,10 +583,10 @@ export const BioTab: React.FC = () => {
         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <label className="text-xs font-mono font-bold text-white flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-electricViolet-glow" />
-            <span>Intereses de Encuentro</span>
+            <span>{language === "es" ? "Intereses de Encuentro" : "Encounter Interests"}</span>
           </label>
           <span className="text-[10px] text-neutral-400 font-mono">
-            {genderInterests.length} seleccionados
+            {genderInterests.length} {language === "es" ? "seleccionados" : "selected"}
           </span>
         </div>
 
@@ -667,10 +624,10 @@ export const BioTab: React.FC = () => {
         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <label className="text-xs font-mono font-bold text-white flex items-center gap-2">
             <Flame className="w-4 h-4 text-electricViolet-glow" />
-            <span>Energía Deseada // Vibes Actuales</span>
+            <span>{t.account.energyVibesSection}</span>
           </label>
           <span className="text-[10px] text-neutral-400 font-mono">
-            {energyVibes.length} seleccionadas
+            {energyVibes.length} {language === "es" ? "seleccionadas" : "selected"}
           </span>
         </div>
 
@@ -706,90 +663,15 @@ export const BioTab: React.FC = () => {
         </div>
       </div>
 
-      {/* DESEOS & BÚSQUEDA */}
-      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-3.5 shadow-card-elevation backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-          <label className="text-xs font-mono font-bold text-white flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-electricViolet-glow" />
-            <span>Deseos & Búsqueda</span>
-          </label>
-          <span className="text-[10px] text-neutral-400 font-mono">
-            {desires.length} seleccionados
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {DESIRE_OPTIONS.map((item) => {
-            const isSelected = desires.includes(item);
-            return (
-              <button
-                type="button"
-                key={item}
-                onClick={() => {
-                  toggleDesire(item);
-                  audioEngine.playPulse();
-                }}
-                className={`px-3 py-2 min-h-[38px] rounded-xl text-xs font-mono transition-all border cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                  isSelected
-                    ? "bg-electricViolet text-white border-electricViolet font-bold shadow-violet-soft"
-                    : "bg-black/50 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {item}
-              </button>
-            );
-          })}
-          {desires
-            .filter((d) => !(DESIRE_OPTIONS as readonly string[]).includes(d))
-            .map((custom) => (
-              <button
-                type="button"
-                key={custom}
-                onClick={() => {
-                  toggleDesire(custom);
-                  audioEngine.playPulse();
-                }}
-                className="px-3 py-2 min-h-[38px] rounded-xl text-xs font-mono font-bold bg-electricViolet text-white border border-electricViolet flex items-center gap-1.5 cursor-pointer shadow-violet-soft active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-              >
-                <span>{custom}</span>
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ))}
-        </div>
-
-        <div className="flex items-center gap-2 pt-1">
-          <input
-            type="text"
-            value={customDesire}
-            onChange={(e) => setCustomDesire(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addCustomDesire();
-              }
-            }}
-            placeholder="Añadir otro deseo..."
-            className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet"
-          />
-          <BrutalistButton
-            variant="secondary"
-            size="default"
-            onClick={addCustomDesire}
-          >
-            + Añadir
-          </BrutalistButton>
-        </div>
-      </div>
-
       {/* INTENCIONES CLARAS */}
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-3.5 shadow-card-elevation backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <label className="text-xs font-mono font-bold text-white flex items-center gap-2">
             <Zap className="w-4 h-4 text-bloodNeon" />
-            <span>Intenciones Claras</span>
+            <span>{t.account.intentionsLabel}</span>
           </label>
           <span className="text-[10px] text-neutral-400 font-mono">
-            {intentions.length} seleccionadas
+            {intentions.length} {language === "es" ? "seleccionadas" : "selected"}
           </span>
         </div>
 
@@ -804,7 +686,7 @@ export const BioTab: React.FC = () => {
                   toggleIntention(item);
                   audioEngine.playPulse();
                 }}
-                className={`px-3 py-2 min-h-[38px] rounded-xl text-xs font-mono transition-all border cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon ${
+                className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-mono transition-all border cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon ${
                   isSelected
                     ? "bg-bloodNeon text-white border-bloodNeon font-bold shadow-blood-glow"
                     : "bg-black/50 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
@@ -824,7 +706,7 @@ export const BioTab: React.FC = () => {
                   toggleIntention(custom);
                   audioEngine.playPulse();
                 }}
-                className="px-3 py-2 min-h-[38px] rounded-xl text-xs font-mono font-bold bg-bloodNeon text-white border border-bloodNeon flex items-center gap-1.5 cursor-pointer shadow-blood-glow active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon"
+                className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold bg-bloodNeon text-white border border-bloodNeon flex items-center gap-1.5 cursor-pointer shadow-blood-glow active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon"
               >
                 <span>{custom}</span>
                 <X className="w-3.5 h-3.5" />
@@ -843,7 +725,7 @@ export const BioTab: React.FC = () => {
                 addCustomIntention();
               }
             }}
-            placeholder="Añadir otra intención..."
+            placeholder={language === "es" ? "Añadir otra intención..." : "Add custom intention..."}
             className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-bloodNeon"
           />
           <BrutalistButton
@@ -851,7 +733,7 @@ export const BioTab: React.FC = () => {
             size="default"
             onClick={addCustomIntention}
           >
-            + Añadir
+            {language === "es" ? "+ Añadir" : "+ Add"}
           </BrutalistButton>
         </div>
       </div>
@@ -861,10 +743,10 @@ export const BioTab: React.FC = () => {
         <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
           <label className="text-xs font-mono font-bold text-white flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-purple-400" />
-            <span>Límites Personales & Consentimiento</span>
+            <span>{t.account.boundariesLabel}</span>
           </label>
           <span className="text-[10px] text-neutral-400 font-mono">
-            {myBoundaries.length} definidos
+            {myBoundaries.length} {language === "es" ? "definidos" : "defined"}
           </span>
         </div>
 
@@ -879,7 +761,7 @@ export const BioTab: React.FC = () => {
                   toggleBoundary(item);
                   audioEngine.playPulse();
                 }}
-                className={`px-3 py-2 min-h-[38px] rounded-xl text-xs font-mono transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 ${
+                className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-mono transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 ${
                   isSelected
                     ? "bg-purple-950/40 border-purple-500 text-purple-300 font-bold shadow-sm"
                     : "bg-black/50 border-white/10 text-neutral-400 hover:bg-white/10 hover:text-white"
@@ -900,7 +782,7 @@ export const BioTab: React.FC = () => {
                   toggleBoundary(custom);
                   audioEngine.playPulse();
                 }}
-                className="px-3 py-2 min-h-[38px] rounded-xl text-xs font-mono font-bold bg-purple-950/40 text-purple-300 border border-purple-500 flex items-center gap-1.5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+                className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold bg-purple-950/40 text-purple-300 border border-purple-500 flex items-center gap-1.5 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>{custom}</span>
@@ -920,7 +802,7 @@ export const BioTab: React.FC = () => {
                 addCustomBoundary();
               }
             }}
-            placeholder="Añadir otro límite claro..."
+            placeholder={language === "es" ? "Añadir otro límite claro..." : "Add custom boundary..."}
             className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-purple-500"
           />
           <BrutalistButton
@@ -928,28 +810,87 @@ export const BioTab: React.FC = () => {
             size="default"
             onClick={addCustomBoundary}
           >
-            + Añadir
+            {language === "es" ? "+ Añadir" : "+ Add"}
           </BrutalistButton>
         </div>
       </div>
 
-      {/* BOTÓN PRIMARIO DE GUARDAR CAMBIOS */}
-      <div className="pt-4 pb-2">
-        <BrutalistButton
-          variant="primary"
-          size="lg"
-          onClick={handleSave}
-          isSaving={isSaving}
-          isSuccess={savedSuccess}
-          savingText="GUARDANDO PERFIL..."
-          successText={t.account.savedSuccess || "¡PERFIL GUARDADO!"}
-          className="w-full shadow-violet-soft font-bold tracking-wider"
-        >
-          <BadgeCheck className="w-4 h-4" />
-          <span>{t.account.saveBtn}</span>
-        </BrutalistButton>
+      {/* MODO DÚO // PERFIL DE PAREJA */}
+      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-3 shadow-card-elevation backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-electricViolet/15 border border-electricViolet/30 text-electricViolet-glow flex-shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-mono text-xs font-bold text-white uppercase tracking-wider truncate">
+                {language === "es" ? "Modo Dúo // Perfil de Pareja" : "Duo Mode // Couple Profile"}
+              </h4>
+              <p className="text-[10px] text-neutral-400 font-sans truncate">
+                {myDuoLink?.isLinked
+                  ? `Vinculado actualmente con @${myDuoLink.partnerCodename}`
+                  : (language === "es" ? "Vinculá tu perfil con tu pareja para citas compartidas" : "Link your profile with your partner")}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={openDuoModal}
+            className={`px-3 py-1.5 min-h-[44px] rounded-xl font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex-shrink-0 active:scale-95 ${
+              myDuoLink?.isLinked
+                ? "bg-electricViolet/20 border border-electricViolet text-electricViolet-glow hover:bg-electricViolet/30"
+                : "bg-white/10 hover:bg-white/20 text-white border border-white/15"
+            }`}
+          >
+            {myDuoLink?.isLinked
+              ? (language === "es" ? "Gestionar Dúo" : "Manage Duo")
+              : (language === "es" ? "+ Activar Dúo" : "+ Activate Duo")}
+          </button>
+        </div>
       </div>
-      <div className="h-8" />
+
+      {children}
+
+      {/* FLOATING SAVE BAR (Thumb Zone sticky bottom-20 z-40) */}
+      {(isDirty || savedSuccess) && (
+        <div className="sticky bottom-20 z-40 pt-2 animate-fade-in">
+          <div className="bg-obsidian-surface/95 backdrop-blur-xl border border-electricViolet/50 rounded-2xl p-3 shadow-2xl flex items-center justify-between gap-3 ring-1 ring-electricViolet/30">
+            <div className="flex items-center gap-2 min-w-0 pl-1">
+              <span
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  savedSuccess ? "bg-emerald-400" : "bg-amber-400 animate-pulse"
+                }`}
+              />
+              <span className="text-xs font-mono font-bold text-white truncate">
+                {savedSuccess
+                  ? (t.account.savedSuccess || "¡PERFIL GUARDADO!")
+                  : (t.account.unsavedChangesLabel || "Cambios sin guardar")}
+              </span>
+            </div>
+            {isDirty && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDiscard}
+                  className="min-h-[44px] px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-neutral-300 hover:text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{t.account.discardBtn || "Descartar"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="min-h-[44px] px-4 py-2 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-violet-soft transition-all cursor-pointer active:scale-95"
+                >
+                  <BadgeCheck className="w-4 h-4" />
+                  <span>{t.account.saveNowBtn || "Guardar Ahora"}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

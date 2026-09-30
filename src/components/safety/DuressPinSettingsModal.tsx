@@ -79,7 +79,7 @@ export const DuressPinSettingsModal: React.FC = () => {
               Si un atacante o situación hostil te exige desbloquear el Guardián o la app bajo amenaza, ingresas tu <strong>PIN de Coacción</strong> configurado aquí (4 dígitos).
             </p>
             <p className="text-[11px] text-neutral-400 leading-relaxed">
-              La app aparentará desactivarse normalmente pero abrirá el <strong>Bloc de Notas señuelo</strong> y despachará la señal silenciosa de alerta a tu contacto de confianza.
+              La app aparentará desactivarse normalmente pero activará tu <strong>pantalla señuelo de camuflaje (Calculadora o Bloc de Notas)</strong> y despachará la señal silenciosa de alerta a tu contacto de confianza.
             </p>
           </div>
 
