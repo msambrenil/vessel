@@ -88,4 +88,26 @@ describe("SubBassAudioEngine — Motor Acústico Sub-Bass & Respuesta Háptica",
     audioEngine.playSignalSent();
     expect(vibrateMock).toHaveBeenCalledWith([20, 30, 45]);
   });
+
+  it("debe gestionar la suscripción reactiva y el desbloqueo gestual de Web Audio API", async () => {
+    let unlockedState = false;
+    const unsubscribe = audioEngine.subscribeAudioUnlocked((unlocked) => {
+      unlockedState = unlocked;
+    });
+
+    expect(typeof unlockedState).toBe("boolean");
+
+    // Simular desbloqueo por gesto de usuario
+    const success = await audioEngine.unlockAudioOnUserGesture();
+    expect(typeof success).toBe("boolean");
+    expect(audioEngine.getIsAudioUnlocked()).toBe(unlockedState);
+
+    unsubscribe();
+  });
+
+  it("debe gestionar el ciclo de vida en segundo plano (suspendAudioOnHidden / resumeAudioOnVisible)", async () => {
+    await expect(audioEngine.suspendAudioOnHidden()).resolves.toBeUndefined();
+    await expect(audioEngine.resumeAudioOnVisible()).resolves.toBeUndefined();
+  });
 });
+

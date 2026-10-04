@@ -11,6 +11,7 @@ import {
   UserCog,
   FileText,
   Compass,
+  Wrench,
 } from "lucide-react";
 
 export type AdminTabId =
@@ -20,6 +21,7 @@ export type AdminTabId =
   | "hotspots"
   | "memberships"
   | "moderation"
+  | "beta"
   | "staff"
   | "audit";
 
@@ -86,6 +88,12 @@ export const AdminNav: React.FC<AdminNavProps> = ({
       badge: pendingReportsCount > 0 ? pendingReportsCount : undefined,
       badgeColor: "bg-bloodNeon text-white animate-pulse",
       roles: ["superadmin", "moderator"],
+    },
+    {
+      id: "beta" as AdminTabId,
+      label: "Beta Testers & Feedback",
+      icon: Wrench,
+      roles: ["superadmin", "moderator", "support"],
     },
     {
       id: "staff" as AdminTabId,

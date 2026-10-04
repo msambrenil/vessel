@@ -130,29 +130,27 @@ export const INITIAL_AUDIT_LOGS: AdminAuditLogEntry[] = [
 
 /**
  * Valida si un email o passcode cuenta con autorización para acceder a la consola administrativa.
- * En producción/modo real, solo emails en la lista blanca de NEXT_PUBLIC_ADMIN_EMAILS
- * o portadores del passcode maestro NEXT_PUBLIC_ADMIN_PASSCODE obtienen acceso.
+ * En producción/modo real, un passcode maestro válido (NEXT_PUBLIC_ADMIN_PASSCODE)
+ * o un email verificado en la lista blanca de administradores otorgan acceso.
  */
 export const checkIsAdminAuthorized = (
   userEmail?: string | null,
   passcode?: string | null
 ): boolean => {
+  const configuredPasscode = process.env.NEXT_PUBLIC_ADMIN_PASSCODE?.trim();
+  // Si se provee passcode y coincide con la clave maestra configurada, autorizar inmediatamente
+  if (passcode && configuredPasscode && passcode.trim() === configuredPasscode) {
+    return true;
+  }
+
   const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
   const allowedEmails = envEmails
     ? envEmails.split(",").map((e) => e.trim().toLowerCase())
     : ["admin@vessel.network", "ojitos@vessel.app", "msambrenil@gmail.com"];
 
-  const isEmailMatch = Boolean(
+  return Boolean(
     userEmail && allowedEmails.includes(userEmail.trim().toLowerCase())
   );
-
-  const configuredPasscode = process.env.NEXT_PUBLIC_ADMIN_PASSCODE?.trim();
-  // Si se provee passcode, solo es válido si coincide con la clave configurada explícitamente y el email pertenece al staff
-  if (passcode && configuredPasscode) {
-    return isEmailMatch && passcode.trim() === configuredPasscode;
-  }
-
-  return isEmailMatch;
 };
 
 export const STAFF_COLLECTION = "vessel_staff";
@@ -448,8 +446,51 @@ export const getManagedProfiles = (
   return merged;
 };
 
-export const saveManagedProfiles = (profiles: ManagedUserProfile[]): void => {
-  saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, profiles);
+export const saveManagedProfiles = (
+  profiles: ManagedUserProfile[],
+  mode: AppMode = getActiveAppMode()
+): void => {
+  saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, profiles, mode);
+
+  if (mode === "real" && typeof window !== "undefined") {
+    for (const profile of profiles) {
+      if (profile.id.startsWith("usr-mock-")) continue;
+      try {
+        const profileRef = doc(db, "vessel_profiles", profile.id);
+        setDoc(
+          profileRef,
+          sanitizeForFirestore({
+            moderationStatus: profile.moderationStatus,
+            respectScore: profile.respectScore,
+            isAntiGhost: profile.isAntiGhost,
+            isFogMode: profile.isFogMode,
+            verification: profile.verification,
+            userPlan: profile.userPlan,
+            isUnlimited: profile.isUnlimited,
+          }),
+          { merge: true }
+        ).catch((err) =>
+          console.warn("[VESSEL Admin] Error sincronizando perfil en Firestore:", err)
+        );
+
+        if (profile.moderationStatus === "banned") {
+          const blacklistRef = doc(db, "vessel_blacklist", profile.id);
+          setDoc(
+            blacklistRef,
+            {
+              bannedAt: new Date().toISOString(),
+              reason: profile.moderationNotes?.slice(-1)[0] || "Banned by admin",
+            },
+            { merge: true }
+          ).catch((err) =>
+            console.warn("[VESSEL Admin] Error registrando en blacklist:", err)
+          );
+        }
+      } catch (err) {
+        console.warn("[VESSEL Admin] Excepción sincronizando perfil en Firestore:", err);
+      }
+    }
+  }
 };
 
 export const applyUserModeration = (
@@ -457,9 +498,11 @@ export const applyUserModeration = (
   newStatus: UserModerationStatus,
   reason: string,
   operator: StaffMember,
-  hours?: number
+  hours?: number,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
 ): ManagedUserProfile | null => {
-  const profiles = getManagedProfiles();
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
   const index = profiles.findIndex((p) => p.id === userId);
   if (index === -1) return null;
 
@@ -475,7 +518,7 @@ export const applyUserModeration = (
   };
 
   profiles[index] = updated;
-  saveManagedProfiles(profiles);
+  saveManagedProfiles(profiles, mode);
 
   logAdminAction({
     operatorId: operator.id,
@@ -501,9 +544,11 @@ export const adjustUserKarma = (
   userId: string,
   delta: number,
   reason: string,
-  operator: StaffMember
+  operator: StaffMember,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
 ): ManagedUserProfile | null => {
-  const profiles = getManagedProfiles();
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
   const index = profiles.findIndex((p) => p.id === userId);
   if (index === -1) return null;
 
@@ -518,7 +563,7 @@ export const adjustUserKarma = (
   };
 
   profiles[index] = updated;
-  saveManagedProfiles(profiles);
+  saveManagedProfiles(profiles, mode);
 
   logAdminAction({
     operatorId: operator.id,
@@ -537,9 +582,11 @@ export const verifyUserProfile = (
   userId: string,
   approved: boolean,
   notes: string,
-  operator: StaffMember
+  operator: StaffMember,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
 ): ManagedUserProfile | null => {
-  const profiles = getManagedProfiles();
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
   const index = profiles.findIndex((p) => p.id === userId);
   if (index === -1) return null;
 
@@ -559,7 +606,7 @@ export const verifyUserProfile = (
   };
 
   profiles[index] = updated;
-  saveManagedProfiles(profiles);
+  saveManagedProfiles(profiles, mode);
 
   logAdminAction({
     operatorId: operator.id,
@@ -579,9 +626,11 @@ export const verifyUserProfile = (
 export const toggleUserForcedFogMode = (
   userId: string,
   forceFog: boolean,
-  operator: StaffMember
+  operator: StaffMember,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
 ): ManagedUserProfile | null => {
-  const profiles = getManagedProfiles();
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
   const index = profiles.findIndex((p) => p.id === userId);
   if (index === -1) return null;
 
@@ -593,7 +642,7 @@ export const toggleUserForcedFogMode = (
   };
 
   profiles[index] = updated;
-  saveManagedProfiles(profiles);
+  saveManagedProfiles(profiles, mode);
 
   logAdminAction({
     operatorId: operator.id,
@@ -614,9 +663,11 @@ export const changeUserPlan = (
   userId: string,
   tier: UserSubscriptionTier,
   reason: string,
-  operator: StaffMember
+  operator: StaffMember,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
 ): ManagedUserProfile | null => {
-  const profiles = getManagedProfiles();
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
   const index = profiles.findIndex((p) => p.id === userId);
   if (index === -1) return null;
 
@@ -628,7 +679,7 @@ export const changeUserPlan = (
   };
 
   profiles[index] = updated;
-  saveManagedProfiles(profiles);
+  saveManagedProfiles(profiles, mode);
 
   logAdminAction({
     operatorId: operator.id,
@@ -645,9 +696,11 @@ export const changeUserPlan = (
 
 export const clearUserDuressAlert = (
   userId: string,
-  operator: StaffMember
+  operator: StaffMember,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
 ): ManagedUserProfile | null => {
-  const profiles = getManagedProfiles();
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
   const index = profiles.findIndex((p) => p.id === userId);
   if (index === -1) return null;
 
@@ -658,7 +711,7 @@ export const clearUserDuressAlert = (
   };
 
   profiles[index] = updated;
-  saveManagedProfiles(profiles);
+  saveManagedProfiles(profiles, mode);
 
   logAdminAction({
     operatorId: operator.id,

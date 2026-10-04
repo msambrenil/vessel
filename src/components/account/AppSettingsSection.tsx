@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AppModeModal } from "@/components/settings/AppModeModal";
+import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
+import { checkIsAdminAuthorized } from "@/lib/admin/adminService";
 
 import { createVipInviteCode } from "@/lib/firebase/inviteService";
 
@@ -140,60 +142,70 @@ export const AppSettingsSection: React.FC = () => {
           </span>
         </div>
 
-        {/* 1-Tap Switch: Modo Real vs Modo Prueba */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-neutral-300">
-            <span>{language === "es" ? "Entorno de Ejecución" : "Runtime Environment"}</span>
-            <span className={appMode === "real" ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
-              {appMode === "real"
-                ? `LIVE MATRIX (${profiles.length} ACTIVOS <30M)`
-                : "SANDBOX LOCAL (DEMO)"}
+        {/* 1-Tap Switch: Modo Real vs Modo Prueba (Solo en desarrollo local) */}
+        {isLocalEnvironment() ? (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-neutral-300">
+              <span>{language === "es" ? "Entorno de Ejecución" : "Runtime Environment"}</span>
+              <span className={appMode === "real" ? "text-emerald-400 font-bold" : "text-amber-400 font-bold"}>
+                {appMode === "real"
+                  ? `LIVE MATRIX (${profiles.length} ACTIVOS <30M)`
+                  : "SANDBOX LOCAL (DEMO)"}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAppMode("real");
+                  audioEngine.playVesselCrescendoAlert();
+                  showToast(
+                    language === "es"
+                      ? "Modo Real Activado (Firestore + TTL 30m)"
+                      : "Real Mode Activated (Firestore + 30m TTL)"
+                  );
+                }}
+                className={`h-11 rounded-xl border font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  appMode === "real"
+                    ? "bg-emerald-500/25 border-emerald-400 text-white shadow-sm"
+                    : "bg-black/50 border-white/15 text-neutral-400 hover:text-white"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{language === "es" ? "Modo Real" : "Real Mode"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAppMode("test");
+                  audioEngine.playPulse();
+                  showToast(
+                    language === "es"
+                      ? "Modo Prueba Activado (Sandbox Local)"
+                      : "Test Mode Activated (Local Sandbox)"
+                  );
+                }}
+                className={`h-11 rounded-xl border font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  appMode === "test"
+                    ? "bg-amber-500/25 border-amber-400 text-white shadow-sm"
+                    : "bg-black/50 border-white/15 text-neutral-400 hover:text-white"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>{language === "es" ? "Modo Prueba" : "Test Mode"}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-emerald-500/25 text-[10px] font-mono uppercase tracking-wider">
+            <span className="text-neutral-400">{language === "es" ? "Entorno Operativo" : "Operating Environment"}</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{language === "es" ? "PRODUCCIÓN ONLINE // REAL TIME" : "LIVE PRODUCTION // REAL TIME"}</span>
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setAppMode("real");
-                audioEngine.playVesselCrescendoAlert();
-                showToast(
-                  language === "es"
-                    ? "Modo Real Activado (Firestore + TTL 30m)"
-                    : "Real Mode Activated (Firestore + 30m TTL)"
-                );
-              }}
-              className={`h-11 rounded-xl border font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                appMode === "real"
-                  ? "bg-emerald-500/25 border-emerald-400 text-white shadow-sm"
-                  : "bg-black/50 border-white/15 text-neutral-400 hover:text-white"
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>{language === "es" ? "Modo Real" : "Real Mode"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setAppMode("test");
-                audioEngine.playPulse();
-                showToast(
-                  language === "es"
-                    ? "Modo Prueba Activado (Sandbox Local)"
-                    : "Test Mode Activated (Local Sandbox)"
-                );
-              }}
-              className={`h-11 rounded-xl border font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                appMode === "test"
-                  ? "bg-amber-500/25 border-amber-400 text-white shadow-sm"
-                  : "bg-black/50 border-white/15 text-neutral-400 hover:text-white"
-              }`}
-            >
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span>{language === "es" ? "Modo Prueba" : "Test Mode"}</span>
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Estado de GPS 30m & Modo Fiesta ("Llegué" -> Hibernación de GPS) */}
         <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-2.5">
@@ -772,7 +784,8 @@ export const AppSettingsSection: React.FC = () => {
       </div>
 
       {/* 6. CONSOLA OPERATIVA & PERSONAL (ADMIN / STAFF) */}
-      <div className="space-y-3 pt-2 border-t border-white/5">
+      {(isLocalEnvironment() || (authUser?.email && checkIsAdminAuthorized(authUser.email))) && (
+        <div className="space-y-3 pt-2 border-t border-white/5">
         <div className="flex items-center gap-2 text-xs font-bold text-neutral-400 uppercase tracking-wider font-mono">
           <Terminal className="w-4 h-4 text-electricViolet-glow" />
           <span>Acceso Operativo // Staff & Admin</span>
@@ -802,24 +815,27 @@ export const AppSettingsSection: React.FC = () => {
               <span>CONSOLA ADMIN (/admin)</span>
             </Link>
 
-            <button
-              type="button"
-              onClick={() => {
-                setIsAppModeModalOpen(true);
-                audioEngine.playPulse();
-              }}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-200 border border-white/10 font-bold text-xs font-mono tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Sliders className="w-4 h-4 text-electricViolet-glow" />
-              <span>{language === "es" ? "MODO DE ENTORNO (REAL / TEST)" : "ENVIRONMENT (REAL / TEST)"}</span>
-            </button>
+            {isLocalEnvironment() && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAppModeModalOpen(true);
+                  audioEngine.playPulse();
+                }}
+                className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-200 border border-white/10 font-bold text-xs font-mono tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Sliders className="w-4 h-4 text-electricViolet-glow" />
+                <span>{language === "es" ? "MODO DE ENTORNO (REAL / TEST)" : "ENVIRONMENT (REAL / TEST)"}</span>
+              </button>
+            )}
           </div>
         </div>
+      </div>
+      )}
 
-        {/* Kernel & Version info */}
-        <div className="pt-2 text-center text-[10px] font-mono text-neutral-500">
-          <span>{t.settings.systemStatus}</span>
-        </div>
+      {/* Kernel & Version info */}
+      <div className="pt-2 text-center text-[10px] font-mono text-neutral-500">
+        <span>{t.settings.systemStatus}</span>
       </div>
 
       {/* Modal de Selector de Entorno Operativo */}

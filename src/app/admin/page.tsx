@@ -33,18 +33,21 @@ import {
 } from "@/lib/admin/adminService";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminNav, AdminTabId } from "@/components/admin/AdminNav";
+import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { DashboardOverviewTab } from "@/components/admin/tabs/DashboardOverviewTab";
 import { UserManagementTab } from "@/components/admin/tabs/UserManagementTab";
 import { MembershipsTab } from "@/components/admin/tabs/MembershipsTab";
 import { ModerationTab } from "@/components/admin/tabs/ModerationTab";
 import { StaffManagementTab } from "@/components/admin/tabs/StaffManagementTab";
 import { AuditLogsTab } from "@/components/admin/tabs/AuditLogsTab";
+import { BetaManagementTab } from "@/components/admin/tabs/BetaManagementTab";
 import { KinksManagementTab } from "@/components/admin/tabs/KinksManagementTab";
 import { HotspotsManagementTab } from "@/components/admin/tabs/HotspotsManagementTab";
 import { AdminAuthGuard } from "@/components/admin/AdminAuthGuard";
 import { useVessel } from "@/context/VesselContext";
 import { createVipInviteCode } from "@/lib/firebase/inviteService";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { getAllKinks } from "@/lib/kinks/kinkAdminService";
 
 export default function AdminConsolePage() {
   const {
@@ -56,6 +59,7 @@ export default function AdminConsolePage() {
     confirmPartyArrivalLock,
     checkOutOfEvent,
     authUser,
+    tacticalHotspots,
   } = useVessel();
   const [vipCopiedMsg, setVipCopiedMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTabId>("dashboard");
@@ -141,7 +145,7 @@ export default function AdminConsolePage() {
     hours?: number
   ) => {
     if (!currentStaff) return;
-    applyUserModeration(userId, status, reason, currentStaff, hours);
+    applyUserModeration(userId, status, reason, currentStaff, hours, appMode, users);
     refreshData();
     // Actualizar usuario seleccionado si está abierto
     if (selectedUser?.id === userId) {
@@ -151,7 +155,7 @@ export default function AdminConsolePage() {
 
   const handleAdjustKarma = (userId: string, delta: number, reason: string) => {
     if (!currentStaff) return;
-    adjustUserKarma(userId, delta, reason, currentStaff);
+    adjustUserKarma(userId, delta, reason, currentStaff, appMode, users);
     refreshData();
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) =>
@@ -162,7 +166,7 @@ export default function AdminConsolePage() {
 
   const handleVerifyUser = (userId: string, approved: boolean, notes: string) => {
     if (!currentStaff) return;
-    verifyUserProfile(userId, approved, notes, currentStaff);
+    verifyUserProfile(userId, approved, notes, currentStaff, appMode, users);
     refreshData();
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) =>
@@ -181,7 +185,7 @@ export default function AdminConsolePage() {
 
   const handleToggleFogMode = (userId: string, forceFog: boolean) => {
     if (!currentStaff) return;
-    toggleUserForcedFogMode(userId, forceFog, currentStaff);
+    toggleUserForcedFogMode(userId, forceFog, currentStaff, appMode, users);
     refreshData();
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) => (prev ? { ...prev, isFogMode: forceFog, forcedFogMode: forceFog } : null));
@@ -190,7 +194,7 @@ export default function AdminConsolePage() {
 
   const handleChangePlan = (userId: string, tier: "free" | "unlimited", reason: string) => {
     if (!currentStaff) return;
-    changeUserPlan(userId, tier, reason, currentStaff);
+    changeUserPlan(userId, tier, reason, currentStaff, appMode, users);
     refreshData();
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) =>
@@ -201,7 +205,7 @@ export default function AdminConsolePage() {
 
   const handleClearDuress = (userId: string) => {
     if (!currentStaff) return;
-    clearUserDuressAlert(userId, currentStaff);
+    clearUserDuressAlert(userId, currentStaff, appMode, users);
     refreshData();
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) => (prev ? { ...prev, hasSafetyAlert: false } : null));
@@ -296,6 +300,8 @@ export default function AdminConsolePage() {
         pendingReportsCount={pendingReportsCount}
         totalUsersCount={users.length}
         unlimitedCount={unlimitedCount}
+        kinksCount={getAllKinks().length}
+        hotspotsCount={tacticalHotspots.length}
       />
 
       {/* Contenedor Principal de la Consola */}
@@ -327,38 +333,45 @@ export default function AdminConsolePage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 min-w-[290px] bg-black/60 p-1.5 rounded-lg border border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAppMode("real");
-                    audioEngine.playVesselCrescendoAlert();
-                  }}
-                  className={`px-3 py-2.5 rounded-md font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    appMode === "real"
-                      ? "bg-emerald-500/25 border-2 border-emerald-400 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.35)]"
-                      : "bg-white/[0.02] border border-transparent text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${appMode === "real" ? "bg-emerald-400 animate-ping" : "bg-neutral-600"}`} />
-                  🟢 MODO REAL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAppMode("test");
-                    audioEngine.playStateSwitch("dormant");
-                  }}
-                  className={`px-3 py-2.5 rounded-md font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    appMode === "test"
-                      ? "bg-amber-500/25 border-2 border-amber-400 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.35)]"
-                      : "bg-white/[0.02] border border-transparent text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${appMode === "test" ? "bg-amber-400 animate-pulse" : "bg-neutral-600"}`} />
-                  🧪 MODO PRUEBA
-                </button>
-              </div>
+              {isLocalEnvironment() ? (
+                <div className="grid grid-cols-2 gap-2 min-w-[290px] bg-black/60 p-1.5 rounded-lg border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppMode("real");
+                      audioEngine.playVesselCrescendoAlert();
+                    }}
+                    className={`px-3 py-2.5 rounded-md font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      appMode === "real"
+                        ? "bg-emerald-500/25 border-2 border-emerald-400 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.35)]"
+                        : "bg-white/[0.02] border border-transparent text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${appMode === "real" ? "bg-emerald-400 animate-ping" : "bg-neutral-600"}`} />
+                    🟢 MODO REAL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppMode("test");
+                      audioEngine.playStateSwitch("dormant");
+                    }}
+                    className={`px-3 py-2.5 rounded-md font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      appMode === "test"
+                        ? "bg-amber-500/25 border-2 border-amber-400 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.35)]"
+                        : "bg-white/[0.02] border border-transparent text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${appMode === "test" ? "bg-amber-400 animate-pulse" : "bg-neutral-600"}`} />
+                    🧪 MODO PRUEBA
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>ONLINE REAL // FIRESTORE SYNC</span>
+                </div>
+              )}
             </div>
 
             {/* Acciones Rápidas: Links VIP Beta + Modo Fiesta (Llegué) + Vibración Crescendo */}
@@ -470,6 +483,8 @@ export default function AdminConsolePage() {
             }}
           />
         )}
+
+        {activeTab === "beta" && <BetaManagementTab />}
 
         {activeTab === "staff" && currentStaff.role === "superadmin" && (
           <StaffManagementTab

@@ -10,6 +10,7 @@ import { ProfileGridSkeleton } from "@/components/matrix/ProfileGridSkeleton";
 import { PulsesListSkeleton } from "@/components/pulses/PulsesListSkeleton";
 import { ModalHost } from "@/components/modals/ModalHost";
 import { BetaVipGateScreen } from "@/components/auth/BetaVipGateScreen";
+import { BetaFeedbackFab } from "@/components/beta/BetaFeedbackFab";
 import { getLocalVipVerification } from "@/lib/firebase/inviteService";
 
 // Carga perezosa (Code-Splitting) para el radar local-first sin desajuste de hidratación SSR
@@ -140,6 +141,9 @@ export default function VesselApp() {
 
         {/* Barra de Navegación Monolítica */}
         <BrutalistNav />
+
+        {/* Herramientas Flotantes de Tester Beta */}
+        <BetaFeedbackFab />
 
         {/* Orquestador Desacoplado de Modales & Overlays (Fase 4: Arquitectura & Performance) */}
         <ModalHost />

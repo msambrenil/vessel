@@ -8,13 +8,26 @@ export const APP_MODE_STORAGE_KEY = "vessel_app_mode";
 const isUnitTestEnv = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
 let currentActiveAppMode: AppMode = isUnitTestEnv ? "test" : "real";
 
+export const isLocalEnvironment = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+};
+
 /**
  * Obtiene el modo de la aplicación activo (test vs real)
- * Prioridad: URL param (?mode=test|real o ?vip=CODIGO) > localStorage > fallback default ('real' en app, 'test' en Vitest)
+ * Regla de producción estricta: Online SIEMPRE es 'real'.
+ * 'test' (modo de prueba) queda confinado exclusivamente a localhost y pruebas unitarias.
  */
 export const getActiveAppMode = (): AppMode => {
   if (typeof window === "undefined") return currentActiveAppMode;
   try {
+    // Si estamos en producción online (no es localhost ni unit test), forzar 'real' de forma estricta
+    if (!isUnitTestEnv && !isLocalEnvironment()) {
+      currentActiveAppMode = "real";
+      return "real";
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const vipParam = urlParams.get("vip") || urlParams.get("invite");
     if (vipParam) {
@@ -40,9 +53,13 @@ export const getActiveAppMode = (): AppMode => {
 };
 
 /**
- * Establece y persiste el modo activo
+ * Establece y persiste el modo activo (solo permitido en localhost o testing)
  */
 export const setActiveAppMode = (mode: AppMode): void => {
+  if (!isUnitTestEnv && !isLocalEnvironment()) {
+    currentActiveAppMode = "real";
+    return;
+  }
   currentActiveAppMode = mode;
   if (typeof window !== "undefined") {
     try {

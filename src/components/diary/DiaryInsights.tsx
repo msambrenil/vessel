@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { EncounterTestimonial, VesselProfile } from "@/types/vessel";
+import Image from "next/image";
 
 export const DiaryInsights: React.FC = () => {
   const {
@@ -377,12 +378,15 @@ export const DiaryInsights: React.FC = () => {
                               }
                             }}
                           >
-                            <img
+                            <Image
                               src={
                                 testimonial.authorAvatar ||
                                 "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80"
                               }
                               alt={testimonial.authorCodename}
+                              width={36}
+                              height={36}
+                              unoptimized
                               className="w-9 h-9 rounded-xl object-cover border border-white/10 group-hover:border-electricViolet transition-colors"
                             />
                             <div>

@@ -41,3 +41,7 @@ next-env.d.ts
 .idea/
 *.swp
 *.swo
+
+# Obsidian Vault (Workspace & local cache)
+.obsidian/
+

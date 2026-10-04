@@ -11,6 +11,7 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
+import Image from "next/image";
 import { ExitProtocol, VesselProfile } from "@/types/vessel";
 import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
@@ -111,12 +112,13 @@ export const PulseCard: React.FC<PulseCardProps> = ({
           title={t.pulses?.viewProfile || "Ver Perfil"}
           className="relative w-14 h-14 min-w-[44px] min-h-[44px] rounded-2xl overflow-hidden flex-shrink-0 bg-neutral-900 border-2 border-electricViolet/50 hover:border-electricViolet transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
-          <img
+          <Image
             src={profile.avatarUrl}
             alt={profile.codename}
+            fill
+            sizes="56px"
+            unoptimized
             className={`w-full h-full object-cover ${profile.isFogMode ? "filter blur-[3px]" : ""}`}
-            loading="lazy"
-            decoding="async"
           />
           {!isRead && mode !== "sent" && (
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-bloodNeon rounded-full animate-ping border border-black" />

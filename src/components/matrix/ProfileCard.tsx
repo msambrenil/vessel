@@ -9,6 +9,7 @@ import {
   useSettings,
 } from "@/context/VesselContext";
 import { Lock, MessageCircle, Star } from "lucide-react";
+import Image from "next/image";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getRoleActionMeta, getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
@@ -42,7 +43,11 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const { getProfileDossier } = useDiary();
   const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
   const [isPulsing, setIsPulsing] = React.useState(false);
-  const [imgError, setImgError] = React.useState(false);
+  const [imgError, setImgError] = React.useState(!profile.avatarUrl);
+
+  React.useEffect(() => {
+    setImgError(!profile.avatarUrl);
+  }, [profile.avatarUrl]);
 
   const isPaidMember =
     profile.userPlan === "unlimited" ||
@@ -137,9 +142,12 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       {/* Foto de Perfil Full Bleed con Fallback Seguro */}
       {!imgError ? (
         <div className="relative w-full h-full overflow-hidden">
-          <img
+          <Image
             src={profile.avatarUrl}
             alt={profile.codename}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            unoptimized
             onError={() => setImgError(true)}
             className={`w-full h-full object-cover transition-transform duration-500 ${
               profile.isFogMode
@@ -150,9 +158,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 ? "filter blur-[8px] contrast-90 brightness-90 scale-105"
                 : "group-hover:scale-105"
             } ${isAttenuated ? "grayscale-[25%]" : ""}`}
-            loading={isPriority ? "eager" : "lazy"}
-            decoding="async"
-            fetchPriority={isPriority ? "high" : "auto"}
+            priority={isPriority}
           />
           {/* Trama de scanlines tácticas para perfiles con señal remota fuera de rango */}
           {isLockedByDistance && !isQuotaLocked && (

@@ -151,15 +151,25 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
 
   const [userPlan, setUserPlanState] = useState<UserSubscriptionTier>("free");
-  const [userAlbums, setUserAlbums] = useState<UserAlbum[]>(() =>
-    getActiveAppMode() === "real" ? [] : INITIAL_MY_ALBUMS
-  );
+  const [userAlbums, setUserAlbums] = useState<UserAlbum[]>(() => {
+    const defaultAlbums = INITIAL_MY_ALBUMS;
+    const loaded = loadFromStorage<UserAlbum[]>(STORAGE_KEYS.ALBUMS, defaultAlbums, getActiveAppMode());
+    return (!loaded || loaded.length === 0) ? defaultAlbums : loaded;
+  });
   const [isUnlimitedModalOpen, setIsUnlimitedModalOpen] = useState(false);
   const [weekendPass, setWeekendPass] = useState<WeekendPassState>(INITIAL_WEEKEND_PASS);
 
   const [currentUserUid, setCurrentUserUid] = useState<string>("local-user");
   const uidRef = useRef<string>("local-user");
   uidRef.current = currentUserUid;
+
+  // Sincronizar reactivamente appMode en la hidratación cliente con getActiveAppMode() (URL ?mode= o localStorage)
+  useEffect(() => {
+    const active = getActiveAppMode();
+    if (active !== appMode) {
+      setAppModeState(active);
+    }
+  }, [appMode]);
 
   // Escuchar ciclo de autenticación para sincronización en la nube
   useEffect(() => {
@@ -168,7 +178,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       setCurrentUserUid(uid);
       uidRef.current = uid;
       if (!user) {
-        const defaultAlbums = getActiveAppMode() === "real" ? [] : INITIAL_MY_ALBUMS;
+        const defaultAlbums = INITIAL_MY_ALBUMS;
         setUserAlbums(defaultAlbums);
         setUserPlanState("free");
       }
@@ -184,9 +194,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       if (cloudAlbums && cloudAlbums.length > 0) {
         setUserAlbums(cloudAlbums);
         saveToStorage(STORAGE_KEYS.ALBUMS, cloudAlbums, appMode);
-      } else if (appMode === "real") {
-        setUserAlbums([]);
-        saveToStorage(STORAGE_KEYS.ALBUMS, [], "real");
+      } else {
+        const defaultAlbums = INITIAL_MY_ALBUMS;
+        setUserAlbums(defaultAlbums);
+        saveToStorage(STORAGE_KEYS.ALBUMS, defaultAlbums, appMode);
       }
     });
 
@@ -217,7 +228,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     };
 
     const handleUserSwitched = () => {
-      const defaultAlbums = appMode === "real" ? [] : INITIAL_MY_ALBUMS;
+      const defaultAlbums = INITIAL_MY_ALBUMS;
       setUserAlbums(defaultAlbums);
       setUserPlanState("free");
     };
@@ -242,9 +253,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     const localPlan = loadFromStorage<UserSubscriptionTier>(STORAGE_KEYS.PLAN, "free", appMode);
     if (localPlan !== "free") setUserPlanState(localPlan);
 
-    const defaultAlbums = appMode === "real" ? [] : INITIAL_MY_ALBUMS;
+    const defaultAlbums = INITIAL_MY_ALBUMS;
     const rawAlbums = loadFromStorage<UserAlbum[]>(STORAGE_KEYS.ALBUMS, defaultAlbums, appMode);
-    const cleanAlbums = (rawAlbums || []).map((a) => ({
+    const albumsToUse = (!rawAlbums || rawAlbums.length === 0) ? defaultAlbums : rawAlbums;
+    const cleanAlbums = albumsToUse.map((a) => ({
       ...a,
       photos: (a.photos || []).map((p) => ({
         ...p,
@@ -295,7 +307,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   }, [appMode]);
 
   const cleanupUserSessionData = useCallback(() => {
-    const defaultAlbums = appMode === "real" ? [] : INITIAL_MY_ALBUMS;
+    const defaultAlbums = INITIAL_MY_ALBUMS;
     setUserAlbums(defaultAlbums);
     setUserPlanState("free");
     removeFromStorage(STORAGE_KEYS.ALBUMS, appMode);
@@ -619,8 +631,29 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       };
 
       setUserAlbums((prev) => {
-        const next = prev.map((a) => {
-          if (a.id === albumId) {
+        let currentAlbums = prev;
+        const albumExists = prev.some((a) => a.id === albumId);
+        if (!albumExists) {
+          const fallbackAlbum: UserAlbum = {
+            id: albumId || "album-pub-01",
+            title: "Galería Pública Principal",
+            description: "Fotos visibles para todos en el radar y la matriz.",
+            privacy: "public",
+            coverUrl: newPhoto.url,
+            createdAt: "Hoy",
+            photos: [],
+          };
+          currentAlbums = [fallbackAlbum, ...prev];
+          if (uidRef.current && uidRef.current !== "local-user") {
+            saveCloudAlbum(uidRef.current, fallbackAlbum).catch((err) =>
+              console.warn("Fallo al inicializar álbum en Firestore:", err)
+            );
+          }
+        }
+
+        const targetId = albumExists ? albumId : (albumId || "album-pub-01");
+        const next = currentAlbums.map((a) => {
+          if (a.id === targetId) {
             const updatedPhotos = [...a.photos, newPhoto];
             return {
               ...a,
@@ -637,14 +670,21 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           .flatMap((a) => a.photos)
           .filter((p) => p.mediaType !== "video");
 
-        if (allPublicPhotos.length === 1 && newPhoto.mediaType !== "video" && !newPhoto.isUploading && onAvatarUpdated) {
-          onAvatarUpdated(newPhoto.url);
+        if (allPublicPhotos.length === 1 && newPhoto.mediaType !== "video" && !newPhoto.isUploading) {
+          if (onAvatarUpdated) {
+            onAvatarUpdated(newPhoto.url);
+          }
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("vessel:avatar-updated", { detail: { url: newPhoto.url, isStylized: false } })
+            );
+          }
         }
 
         if (!newPhoto.isUploading) {
           saveToStorage(STORAGE_KEYS.ALBUMS, next);
           if (uidRef.current && uidRef.current !== "local-user") {
-            addMediaToCloudAlbum(uidRef.current, albumId, newPhoto).catch((err) =>
+            addMediaToCloudAlbum(uidRef.current, targetId, newPhoto).catch((err) =>
               console.warn("Fallo al agregar media a álbum en Firestore:", err)
             );
           }
@@ -701,15 +741,57 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   const setProfileCoverPhoto = useCallback((photoUrl: string) => {
     setUserAlbums((prev) => {
       const publicAlbum = prev.find((a) => a.privacy === "public");
-      if (!publicAlbum) return prev;
-      const next = prev.map((a) =>
-        a.id === publicAlbum.id ? { ...a, coverUrl: photoUrl } : a
-      );
+      let next: UserAlbum[];
+      if (!publicAlbum) {
+        const newAlbum: UserAlbum = {
+          id: "album-pub-01",
+          title: "Galería Pública Principal",
+          description: "Fotos visibles para todos en el radar y la matriz.",
+          privacy: "public",
+          coverUrl: photoUrl,
+          createdAt: "Hoy",
+          photos: [
+            {
+              id: `photo-${Date.now()}`,
+              url: photoUrl,
+              createdAt: "Hoy",
+            },
+          ],
+        };
+        next = [newAlbum, ...prev];
+        if (uidRef.current && uidRef.current !== "local-user") {
+          saveCloudAlbum(uidRef.current, newAlbum).catch((err) =>
+            console.warn("Fallo al crear álbum público en Firestore:", err)
+          );
+        }
+      } else {
+        const photoExists = publicAlbum.photos.some((p) => p.url === photoUrl);
+        const updatedPhotos = photoExists
+          ? publicAlbum.photos
+          : [{ id: `photo-${Date.now()}`, url: photoUrl, createdAt: "Hoy" }, ...publicAlbum.photos];
+        next = prev.map((a) =>
+          a.id === publicAlbum.id ? { ...a, coverUrl: photoUrl, photos: updatedPhotos } : a
+        );
+        if (uidRef.current && uidRef.current !== "local-user") {
+          const updatedAlbum = next.find((a) => a.id === publicAlbum.id);
+          if (updatedAlbum) {
+            saveCloudAlbum(uidRef.current, updatedAlbum).catch((err) =>
+              console.warn("Fallo al actualizar cover en Firestore:", err)
+            );
+          }
+        }
+      }
       saveToStorage(STORAGE_KEYS.ALBUMS, next);
       return next;
     });
+
     if (onAvatarUpdated) {
       onAvatarUpdated(photoUrl);
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("vessel:avatar-updated", { detail: { url: photoUrl, isStylized: false } })
+      );
     }
     audioEngine.playSignalSent();
   }, [onAvatarUpdated]);

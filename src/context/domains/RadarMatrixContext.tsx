@@ -37,6 +37,7 @@ import {
   clearPulseInCloud,
 } from "@/lib/firebase/pulseService";
 import { saveFullUserDataToCloud, FullUserDataPayload } from "@/lib/firebase/userDataService";
+import { enqueueOfflineMutation } from "@/lib/sync/offlineMutationQueue";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
 import { checkGenderInterestMatch } from "@/data/genderCatalog";
 import { MOCK_PROFILES } from "@/data/mockProfiles";
@@ -222,14 +223,35 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     const validProfiles = MOCK_PROFILES.map((mock) => {
       const custom = localCustom.find((c) => c.id === mock.id);
       if (!custom) return mock;
+
+      // Sanear coordenadas en caso de que hayan quedado cacheadas coordenadas heredadas de Berlín (>50° lat) o Buenos Aires (~-34.588)
+      const isStaleCoords =
+        !custom.coordinates ||
+        custom.coordinates.lat > 50 ||
+        Math.abs(custom.coordinates.lat + 34.588) < 0.2;
+      const coordinates = isStaleCoords ? mock.coordinates : custom.coordinates;
+
+      let onTheClock = custom.onTheClock || mock.onTheClock;
+      if (
+        onTheClock?.isActive &&
+        onTheClock.expiresAt &&
+        new Date(onTheClock.expiresAt).getTime() < Date.now()
+      ) {
+        onTheClock = {
+          ...onTheClock,
+          expiresAt: new Date(Date.now() + 1000 * 60 * 45).toISOString(),
+        };
+      }
+
       return {
         ...mock,
         ...custom,
+        coordinates,
         substanceAtmosphere: custom.substanceAtmosphere || mock.substanceAtmosphere,
         exitProtocol: custom.exitProtocol || mock.exitProtocol,
         ambientVibe: custom.ambientVibe || mock.ambientVibe,
         kinkMatrix: custom.kinkMatrix || mock.kinkMatrix,
-        onTheClock: custom.onTheClock || mock.onTheClock,
+        onTheClock,
       };
     });
 
@@ -249,14 +271,34 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     return MOCK_PROFILES.map((mock) => {
       const custom = localCustom.find((c) => c.id === mock.id);
       if (!custom) return mock;
+
+      const isStaleCoords =
+        !custom.coordinates ||
+        custom.coordinates.lat > 50 ||
+        Math.abs(custom.coordinates.lat + 34.588) < 0.2;
+      const coordinates = isStaleCoords ? mock.coordinates : custom.coordinates;
+
+      let onTheClock = custom.onTheClock || mock.onTheClock;
+      if (
+        onTheClock?.isActive &&
+        onTheClock.expiresAt &&
+        new Date(onTheClock.expiresAt).getTime() < Date.now()
+      ) {
+        onTheClock = {
+          ...onTheClock,
+          expiresAt: new Date(Date.now() + 1000 * 60 * 45).toISOString(),
+        };
+      }
+
       return {
         ...mock,
         ...custom,
+        coordinates,
         substanceAtmosphere: custom.substanceAtmosphere || mock.substanceAtmosphere,
         exitProtocol: custom.exitProtocol || mock.exitProtocol,
         ambientVibe: custom.ambientVibe || mock.ambientVibe,
         kinkMatrix: custom.kinkMatrix || mock.kinkMatrix,
-        onTheClock: custom.onTheClock || mock.onTheClock,
+        onTheClock,
       };
     });
   });
@@ -407,11 +449,27 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       setFilters(DEFAULT_FILTERS);
     };
 
+    const handleOfflineQueueFlushed = () => {
+      setSentPulsesMeta((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const [key, val] of Object.entries(next)) {
+          if (val.syncStatus === "queued_offline") {
+            next[key] = { ...val, syncStatus: "synced" };
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    };
+
     window.addEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
     window.addEventListener("vessel:user-switched", handleUserSwitched);
+    window.addEventListener("vessel:offline-queue-flushed", handleOfflineQueueFlushed);
     return () => {
       window.removeEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
       window.removeEventListener("vessel:user-switched", handleUserSwitched);
+      window.removeEventListener("vessel:offline-queue-flushed", handleOfflineQueueFlushed);
     };
   }, [appMode]);
 
@@ -590,6 +648,12 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           myProfile.codename || "VESSEL_USER"
         ).catch((err) => {
           console.warn("Error enviando pulso a la nube:", err);
+          enqueueOfflineMutation("SEND_PULSE", {
+            currentUserUid,
+            fromUid: senderId,
+            toUid: profileId,
+            fromCodename: myProfile.codename || "VESSEL_USER",
+          });
           setSentPulsesMeta((prev) => ({
             ...prev,
             [profileId]: { lastSentAt: nowIso, syncStatus: "queued_offline" },
@@ -633,9 +697,15 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           senderId,
           profileId,
           myProfile.codename || "VESSEL_USER"
-        ).catch((err) =>
-          console.warn("Error devolviendo pulso a la nube:", err)
-        );
+        ).catch((err) => {
+          console.warn("Error devolviendo pulso a la nube:", err);
+          enqueueOfflineMutation("SEND_PULSE", {
+            currentUserUid,
+            fromUid: senderId,
+            toUid: profileId,
+            fromCodename: myProfile.codename || "VESSEL_USER",
+          });
+        });
         if (matchedPulseId) {
           returnPulseInCloud(matchedPulseId).catch((err) =>
             console.warn("Error marcando pulso devuelto en Firestore:", err)
@@ -1056,7 +1126,19 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           !myProfile.avatarUrl?.includes("images.unsplash.com")
       );
 
-    return hasValidRealSelfCard ? [myFullProfile, ...otherFilteredProfiles] : otherFilteredProfiles;
+    const sortedFiltered = [...otherFilteredProfiles].sort((a, b) => {
+      const verifiedA = a.verification?.isVerified ? 1 : 0;
+      const verifiedB = b.verification?.isVerified ? 1 : 0;
+      if (verifiedA !== verifiedB) return verifiedB - verifiedA;
+
+      const antiGhostA = a.isAntiGhost ? 1 : 0;
+      const antiGhostB = b.isAntiGhost ? 1 : 0;
+      if (antiGhostA !== antiGhostB) return antiGhostB - antiGhostA;
+
+      return (a.distanceMeters ?? 999999) - (b.distanceMeters ?? 999999);
+    });
+
+    return hasValidRealSelfCard ? [myFullProfile, ...sortedFiltered] : sortedFiltered;
   }, [processedProfiles, filters, profileDossiers, boundaries, myFullProfile, myKinkMatrix, nightlifeEvents, isOnTheClockFilterActive, myProfile, favoriteProfileIds, appMode, authUser]);
 
   const value = useMemo<RadarMatrixContextType>(

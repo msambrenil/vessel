@@ -242,6 +242,7 @@ export interface VesselProfile {
   presenceExpiresAt?: number; // Timestamp UNIX (ms) en que el perfil expira de la Matrix (30m normal o 4h en fiesta)
   isPartyAnchored?: boolean; // Indica si el usuario confirmó "Llegué" en una fiesta (GPS en hibernación y posición anclada)
   partyVenueName?: string; // Nombre del club o fiesta donde está anclado
+  isBetaTester?: boolean; // Flag de usuario tester con acceso a herramientas de diagnóstico y reporte
 }
 
 export interface FilterState {
@@ -1101,5 +1102,35 @@ export interface PartyPassState {
   expiresAt: string | null;
   eventId?: string;
 }
+
+// ==========================================
+// 25. SUITE DE HERRAMIENTAS BETA & REPORTES
+// ==========================================
+
+export type BetaReportType = "bug" | "ui_ux" | "performance" | "suggestion";
+export type BetaReportStatus = "new" | "investigating" | "resolved" | "dismissed";
+
+export interface BetaFeedbackReport {
+  id: string;
+  userId: string;
+  userCodename: string;
+  userAvatar?: string;
+  type: BetaReportType;
+  title: string;
+  description: string;
+  currentPath: string;
+  deviceInfo: {
+    userAgent: string;
+    screenResolution: string;
+    batteryLevel?: number;
+    batteryCharging?: boolean;
+    batteryMode?: string;
+  };
+  recentLogs?: string[];
+  status: BetaReportStatus;
+  createdAt: number;
+  adminNotes?: string;
+}
+
 
 

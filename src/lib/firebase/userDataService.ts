@@ -53,6 +53,9 @@ export const subscribeToFullUserData = (
   initialFallback: FullUserDataPayload,
   onUpdate: (data: FullUserDataPayload) => void
 ): Unsubscribe => {
+  if (!uid || uid === "local-user" || !db || (!("app" in db) && !("type" in db))) {
+    return () => {};
+  }
   const userRef = doc(db, USERS_COLLECTION, uid);
 
   return onSnapshot(
@@ -107,7 +110,9 @@ export const saveFullUserDataToCloud = async (
   uid: string,
   payload: FullUserDataPayload
 ): Promise<boolean> => {
-  if (!uid || uid === "local-user") return false;
+  if (!uid || uid === "local-user" || !db || (!("app" in db) && !("type" in db))) {
+    return false;
+  }
 
   try {
     const userRef = doc(db, USERS_COLLECTION, uid);

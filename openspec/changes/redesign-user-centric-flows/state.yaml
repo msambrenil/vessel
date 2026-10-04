@@ -1,0 +1,15 @@
+schema: spec-driven
+change: redesign-user-centric-flows
+phase: propose
+status: active
+created_at: "2026-10-04T13:41:00-03:00"
+updated_at: "2026-10-04T13:41:00-03:00"
+dag:
+  explore: done
+  propose: done
+  spec: pending
+  design: pending
+  tasks: pending
+  apply: pending
+  verify: pending
+  archive: pending

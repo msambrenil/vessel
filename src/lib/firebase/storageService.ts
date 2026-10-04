@@ -8,7 +8,7 @@ import { storage } from "./config";
  * Reduce archivos de 10MB a ~30-60KB manteniendo excelente calidad visual.
  */
 export const compressImage = async (
-  file: File,
+  file: File | Blob,
   maxWidth = 1080,
   maxHeight = 1080,
   quality = 0.78
@@ -88,12 +88,13 @@ export const compressImage = async (
 export const uploadMediaFile = async (
   userId: string,
   albumId: string,
-  file: File,
+  file: File | Blob,
   onProgress?: (percent: number) => void
 ): Promise<{ url: string; isCloudStorage: boolean }> => {
   const isImage = file.type.startsWith("image/");
   const isVideo = file.type.startsWith("video/");
-  const fileExt = file.name.split(".").pop() || (isVideo ? "mp4" : "webp");
+  const fileName = "name" in file ? (file as File).name : "upload.webp";
+  const fileExt = fileName.split(".").pop() || (isVideo ? "mp4" : "webp");
   const uniqueId = `media_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const storagePath = `vessel_users/${userId || "anonymous"}/albums/${albumId}/${uniqueId}.${fileExt}`;
 
@@ -171,7 +172,7 @@ export const uploadMediaFile = async (
   };
 };
 
-const readFileAsDataUrl = (file: File): Promise<string> => {
+const readFileAsDataUrl = (file: Blob | File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);

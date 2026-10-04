@@ -62,6 +62,7 @@ export interface MyProfileState {
   seekingRoles?: RoleType[];
   isProfileSetupComplete?: boolean;
   isProfileCustomized?: boolean;
+  isBetaTester?: boolean;
 }
 
 export const INITIAL_MY_PROFILE: MyProfileState = {
@@ -777,6 +778,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
     [syncProfileToCloudAndStorage]
   );
 
+  // Sincronizar reactivamente el avatar ante eventos de actualización de foto de portada
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleAvatarUpdated = (e: Event) => {
+      const detail = (e as CustomEvent<{ url: string; isStylized?: boolean; isFogMode?: boolean }>).detail;
+      if (detail && detail.url) {
+        updateUserAvatar(detail.url, detail.isStylized ?? false, detail.isFogMode);
+      }
+    };
+    window.addEventListener("vessel:avatar-updated", handleAvatarUpdated);
+    return () => window.removeEventListener("vessel:avatar-updated", handleAvatarUpdated);
+  }, [updateUserAvatar]);
+
   const openLivenessModal = useCallback(() => {
     setIsLivenessModalOpen(true);
     audioEngine.playPulse();
@@ -787,7 +801,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
   }, []);
 
   const completeLivenessVerification = useCallback(() => {
+    const currentScore = myProfile.respectScore || 70;
+    const boostedScore = Math.min(100, currentScore + 20);
+
     updateMyProfile({
+      respectScore: boostedScore,
       verification: {
         isVerified: true,
         method: "biometric_liveness",
@@ -800,7 +818,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
     });
     setIsLivenessModalOpen(false);
     audioEngine.playSubBass(85);
-  }, [myProfile.verification?.hasFacialPrivacy, updateMyProfile]);
+  }, [myProfile.verification?.hasFacialPrivacy, myProfile.respectScore, updateMyProfile]);
 
   const value = useMemo<AuthContextType>(
     () => ({

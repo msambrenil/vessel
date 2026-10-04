@@ -76,7 +76,7 @@ export const syncMyProfileToCloud = async (
     const safeCoordinates =
       existingCoords && typeof existingCoords.lat === "number"
         ? existingCoords
-        : { lat: -34.588, lng: -58.43 };
+        : { lat: -33.1325, lng: -64.3470 };
 
     await setDoc(
       publicProfileRef,

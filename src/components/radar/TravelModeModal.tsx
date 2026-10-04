@@ -16,6 +16,7 @@ export const TravelModeModal: React.FC = () => {
   if (!isTravelModalOpen) return null;
 
   const cities = [
+    { name: "Río Cuarto", country: "Argentina", coords: { lat: -33.1325, lng: -64.3470 }, flag: "🇦🇷" },
     { name: "Buenos Aires", country: "Argentina", coords: { lat: -34.5885, lng: -58.4376 }, flag: "🇦🇷" },
     { name: "Córdoba", country: "Argentina", coords: { lat: -31.4201, lng: -64.1888 }, flag: "🇦🇷" },
     { name: "Rosario", country: "Argentina", coords: { lat: -32.9468, lng: -60.6393 }, flag: "🇦🇷" },

@@ -216,7 +216,7 @@ describe("ProfileGrid — División en Personas/Lugares y Modo Viajero", () => {
     expect(favPill).toHaveTextContent("2");
   });
 
-  it("utiliza la cuadrícula táctica de 2 columnas en mobile y 3 columnas en desktop", () => {
+  it("utiliza la cuadrícula táctica de 2 columnas en mobile, 3 en tablet y 4 en desktop", () => {
     const { container } = render(
       <ProfileGrid
         onSelectProfile={mockOnSelectProfile}
@@ -224,7 +224,7 @@ describe("ProfileGrid — División en Personas/Lugares y Modo Viajero", () => {
       />
     );
 
-    const gridContainer = container.querySelector(".grid-cols-2.sm\\:grid-cols-3");
+    const gridContainer = container.querySelector(".grid-cols-2.sm\\:grid-cols-3.md\\:grid-cols-4");
     expect(gridContainer).toBeInTheDocument();
   });
 });

@@ -27,6 +27,7 @@ export default [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
+      "@next/next/no-img-element": "off",
     },
   },
   {
@@ -36,6 +37,7 @@ export default [
       "build/**",
       "next-env.d.ts",
       "node_modules/**",
+      "coverage/**",
       ".agents/**",
       "eslint.config.mjs",
     ],

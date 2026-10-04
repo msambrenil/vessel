@@ -1553,3 +1553,82 @@ Historial cronológico estricto de las decisiones técnicas y de producto adopta
      - Estandarizar la derivación de claves criptográficas a `local-sovereign-user` con soporte retroactivo para imágenes previamente cifradas con alias anteriores.
 - **Motivación**:
   Garantizar un estándar de seguridad de nivel bancario y cero brechas OWASP antes de exponer la aplicación en producción a usuarios reales.
+
+### [ADR-119] · [2026-10-04 00:25] Desbloqueo Gestual de Web Audio API, Micro-Indicador Sensorial y Periodic Background Sync Modulada por Batería
+- **Decisión**:
+  1. **Desbloqueo Gestual en Web Audio API con Buffer Silencioso (`SubBassAudioEngine.ts`)**:
+     - Registrar listeners pasivos de primer gesto (`pointerdown`, `touchstart`, `keydown`) en `window` para auto-desbloquear `AudioContext` inmediatamente al primer toque, emitiendo una muestra de buffer silencioso (1 muestra a 22050Hz) para forzar la inicialización del hardware en iOS Safari.
+     - Exponer `subscribeAudioUnlocked` para vincular de forma reactiva componentes de interfaz.
+  2. **Micro-Indicador Sensorial Acústico en Cabecera (`BrutalistHeader.tsx`)**:
+     - Integrar botón táctico de 36px en la cápsula de cabecera con icono `Volume2`/`VolumeX`, señal parpadeante en caso de audio pendiente de desbloqueo, y conmutación con respuesta háptica y pulso sub-bass a 65Hz.
+  3. **Periodic Background Sync API Modulada por Batería (`sw.js` & `periodicSyncService.ts`)**:
+     - Implementar listener `periodicsync` en el Service Worker con la etiqueta `vessel-geo-battery-sync` despachando mensajes `postMessage` a los clientes de la PWA.
+     - Modular el intervalo según `BatteryStateEngine`: 15 minutos en activo, 60 minutos en modo eco, y desregistro total si la batería es <=15% o el estado es `dormant`.
+- **Motivación**:
+  Llevar la app al pináculo de su stack tecnológico: resolver la restricción de autoplay de audio en dispositivos móviles sin intervención manual forzada, brindar feedback transparente al usuario, y permitir la sincronización en segundo plano sin penalizar la batería en situaciones críticas.
+
+### [ADR-120] · [2026-10-04 01:15] Hardening de Reglas de Seguridad de Firestore para Reportes Beta e Higiene de Repositorio
+- **Decisión**:
+  1. **Hardening de `firestore.rules` para `vessel_beta_reports`**:
+     - Declarar regla explícita de seguridad permitiendo `create: if true` (para que cualquier tester autenticado o anónimo pueda remitir diagnósticos y bugs) y restringiendo `read, update, delete: if isAdmin()` para el equipo administrativo.
+     - Validar sintaxis y lógica mediante `firebase_validate_security_rules`.
+  2. **Enlace Dinámico de Métricas en `/admin`**:
+     - Conectar `kinksCount` (`getAllKinks().length`) y `hotspotsCount` (`tacticalHotspots.length`) a `AdminNav.tsx`.
+  3. **Higiene de Repositorio**:
+     - Incorporar `.obsidian/` en `.gitignore` para prevenir fugas de configuración local del editor.
+- **Motivación**:
+  Resolver el fallo latente de `permission-denied` que afectaba el reporte de bugs y la consola administrativa en producción online debido a la regla de *Default Deny* en Firestore.
+
+### [ADR-121] · [2026-10-04 01:30] Cola de Mutaciones Offline, Ciclo de Vida Web Audio API en Segundo Plano e Índices Compuestos Firestore
+- **Decisión**:
+  1. **Cola Soberana de Mutaciones Offline (`src/lib/sync/offlineMutationQueue.ts`)**:
+     - Implementar gestor de cola local *Offline-First* persistido en `localStorage` con reintentos exponenciales (backoff hasta 30s, máximo 5 intentos) para `SEND_PULSE`, `SEND_CHAT_MESSAGE`, `UPDATE_MY_PRESENCE` y `SUBMIT_BETA_FEEDBACK`.
+     - Suscribir auto-despacho al evento nativo `window.addEventListener('online', ...)` y a mensajes `vessel:flush-mutation-queue` desde el Service Worker (`sw.js`).
+     - Integrar en `RadarMatrixContext.tsx` e inicializar listeners en `LogisticsContext.tsx`.
+  2. **Suspensión Automática de Web Audio API en Background (`SubBassAudioEngine.ts`)**:
+     - Escuchar `document.visibilitychange`: al pasar a segundo plano (`document.hidden === true`), detener osciladores y suspender `AudioContext` (`ctx.suspend()`) para erradicar el consumo innecesario de batería y CPU.
+     - Al volver al primer plano, reanudar limpiamente (`ctx.resume()`) si el usuario ya desbloqueó el hardware de sonido.
+  3. **Esquema de Índices Compuestos de Firestore (`firestore.indexes.json`)**:
+     - Definir 7 índices compuestos declarativos para consultas combinadas con filtros de igualdad e inecuación/ordenamiento en `vessel_pulses`, `vessel_testimonials`, `vessel_beta_reports`, `vessel_hotspots` y `vessel_profiles`.
+- **Motivación**:
+  Alcanzar el 100% de solidez y resiliencia en condiciones hostiles de conectividad (subsuelos de boliches, fiestas masivas, red intermitente) y optimizar el consumo de hardware sin penalizar la batería del dispositivo.
+
+### [ADR-122] · [2026-10-04 01:50] Visibilidad y Proximidad de Perfiles Mock en Modo Sandbox
+- **Decisión**:
+  1. **Reubicación Geográfica de Perfiles Base (`src/data/mockProfiles.ts`)**:
+     - Actualizar las coordenadas de los 7 perfiles principales (`vessel-01` a `vessel-07`) de Berlín (`lat: 52.498, lng: 13.418`) a sus barrios porteños reales (Palermo, Recoleta, Colegiales, Belgrano, Almagro y San Telmo, `-34.56` a `-34.61`).
+  2. **Disponibilidad de 'Listo YA' en Mocks Generados**:
+     - Dotar a 1 de cada 5 perfiles generados (`index % 5 === 0`) con `onTheClock: { isActive: true, ... }` y expiración dinámica a 45 minutos.
+  3. **Sanitización y Refresco en `RadarMatrixContext.tsx`**:
+     - Descartar coordenadas cacheadas antiguas en Berlín (`lat > 50`) y refrescar timestamps de `onTheClock` expirados en `localStorage`.
+  4. **Sincronización Reactiva de `appMode` en `SettingsContext.tsx`**:
+     - Añadir efecto en cliente para actualizar el estado React ante parámetros de URL `?mode=test`.
+  5. **Banner Informativo de Filtros en `ProfileGrid.tsx`**:
+     - Mostrar aviso y botón de restablecimiento cuando los filtros activos aíslen únicamente la tarjeta propia.
+- **Motivación**:
+  Garantizar que al alternar a modo de prueba en localhost, la cuadrícula siempre ofrezca perfiles mock explorables acordes a la ubicación por defecto y a los filtros rápidos de disponibilidad.
+
+### [ADR-123] · [2026-10-04 02:00] Geolocalización Nativa del Modo Prueba en Saavedra 620 (Río Cuarto, Córdoba) y Cobertura Mock Completa
+- **Decisión**:
+  1. **Anclaje Geográfico Central en Río Cuarto (`Saavedra 620`)**:
+     - Configurar `{ lat: -33.1325, lng: -64.3470 }` (Geohash `6d45x8r`) como las coordenadas geográficas predeterminadas de `myCoordinates` y `virtualCoords` en `LogisticsContext.tsx`.
+     - Implementar guardas de migración automática de caché local en `LogisticsContext.tsx` y `RadarMatrixContext.tsx` que detectan y sobrescriben coordenadas antiguas heredadas de Buenos Aires (`~-34.588`) o Berlín (`>50°`), evitando que usuarios locales queden atrapados a cientos de kilómetros de los perfiles mock.
+  2. **Reubicación Integral de los 7 Perfiles Base (`src/data/mockProfiles.ts`)**:
+     - `vessel-01` (Klaus): Saavedra al 600, Macrocentro (~50m, `-33.1320, -64.3465`).
+     - `vessel-02` (Receptor): Centro / Plaza Roca (~600m, `-33.1275, -64.3490`).
+     - `vessel-03` (Void Monolith): Barrio Alberdi (~850m, `-33.1365, -64.3410`).
+     - `vessel-04` (Amber Pulse): Macrocentro / Terminal (~650m, `-33.1295, -64.3420`).
+     - `vessel-05` (Stealth Hex): Banda Norte (~1.8km, `-33.1160, -64.3480`).
+     - `vessel-06` (Dark Ritual): Costanera / Parque Sarmiento (~1.4km, `-33.1215, -64.3540`).
+     - `vessel-07` (Titan): Bimaco / Castelli (~1.1km, `-33.1410, -64.3520`).
+  3. **Dispersión de los 100 Perfiles Adicionales**:
+     - Radio de 80m a 3.2km alrededor de Saavedra 620 cubriendo Centro, Macrocentro, Alberdi, Banda Norte, Bimaco, Castelli, UNRC y Costanera.
+  4. **Adaptación de Puntos Tácticos y Vida Nocturna (`mockHotspots.ts` & `mockNightlifeEvents.ts`)**:
+     - Club Táctico Centro (Constitución 850), Sauna Imperio (Sobremonte 1100), Búnker Alberdi (Av. Colombres 350) y Cruising Costanera Norte (Parque Sarmiento).
+  5. **Presets en Diagnósticos y Modo Viajero**:
+     - Presets directos de Río Cuarto en `TravelModeModal.tsx` y `BetaDiagnosticsModal.tsx`.
+- **Motivación**:
+  Cumplir de forma precisa con el requerimiento del usuario de residir en Saavedra 620, Río Cuarto (Córdoba), garantizando que al abrir el modo prueba los perfiles mock, distancias, audios, hotspots y eventos nocturnos reflejen la geografía real e inmediata del usuario en un radio táctico de menos de 3.5 km.
+
+
+

@@ -296,10 +296,17 @@ export function isProfileActiveInMatrix(
 }
 
 /**
- * Recalcula la distancia en metros respecto a la ubicación actual del usuario y ordena de más cercano a más lejano (Estilo Grindr / The Blowers)
+ * Recalcula la distancia en metros y ordena con prioridad para personas reales verificadas con biometría
+ * Orden: 1° Verificados (Humano Real) > 2° Anti-Ghost > 3° Proximidad física
  */
 export function sortAndEnrichProfilesByProximity<
-  T extends { coordinates: { lat: number; lng: number }; distanceMeters?: number }
+  T extends {
+    coordinates: { lat: number; lng: number };
+    distanceMeters?: number;
+    verification?: { isVerified: boolean };
+    isAntiGhost?: boolean;
+    respectScore?: number;
+  }
 >(profiles: T[], myCoords: { lat: number; lng: number }): Array<T & { distanceMeters?: number }> {
   return profiles
     .map((profile) => {
@@ -317,6 +324,23 @@ export function sortAndEnrichProfilesByProximity<
         distanceMeters: dist,
       };
     })
-    .sort((a, b) => (a.distanceMeters ?? 999999) - (b.distanceMeters ?? 999999));
+    .sort((a, b) => {
+      // 1° Prioridad Absoluta: Humano Real Verificado
+      const verifiedA = a.verification?.isVerified ? 1 : 0;
+      const verifiedB = b.verification?.isVerified ? 1 : 0;
+      if (verifiedA !== verifiedB) {
+        return verifiedB - verifiedA;
+      }
+
+      // 2° Prioridad: Compromiso Anti-Ghost
+      const antiGhostA = a.isAntiGhost ? 1 : 0;
+      const antiGhostB = b.isAntiGhost ? 1 : 0;
+      if (antiGhostA !== antiGhostB) {
+        return antiGhostB - antiGhostA;
+      }
+
+      // 3° Prioridad: Proximidad física Haversine
+      return (a.distanceMeters ?? 999999) - (b.distanceMeters ?? 999999);
+    });
 }
 

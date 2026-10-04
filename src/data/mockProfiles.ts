@@ -107,9 +107,9 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     bodyArchetype: "Muscular / Athletic",
     intensity: 4,
     hosting: "Tengo depto / lugar",
-    tagline: "El cuerpo es arquitectura. Comandalo.",
+    tagline: "Macrocentro Río Cuarto. El cuerpo es arquitectura.",
     statement:
-      "Depto con luces bajas en Palermo. Puerta abierta para vernos ya al palo. Cero vueltas, pura química y piel.",
+      "Depto con luces bajas en Saavedra al 600, Río Cuarto. Puerta abierta para vernos ya al palo. Cero vueltas, pura química y piel.",
     avatarUrl:
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: false,
@@ -178,8 +178,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       label: "Nota de voz - Instrucciones de llegada",
     },
     coordinates: {
-      lat: 52.498,
-      lng: 13.418,
+      lat: -33.1320,
+      lng: -64.3465,
     },
     hostCard: {
       hasPlace: true,
@@ -208,7 +208,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       durationSeconds: 5,
       waveform: [25, 45, 80, 100, 75, 90, 60, 40, 85, 95, 70, 50, 30],
       recordedAt: "2026-08-30",
-      label: "Nota de voz: 'Directo y sin vueltas en Palermo'",
+      label: "Nota de voz: 'Directo y sin vueltas en Saavedra'",
     },
     exitProtocol: "fast_encounter",
     isLivenessVerified: true,
@@ -217,7 +217,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       isActive: true,
       expiresAt: new Date(Date.now() + 1000 * 60 * 35).toISOString(),
       durationMinutes: 45,
-      statusNote: "Listo en 10 min - Tengo depto en Palermo",
+      statusNote: "Listo en 10 min - Tengo depto en Saavedra",
     },
     kinkMatrix: {
       leather: "love",
@@ -306,8 +306,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       details: "PrEP On-Demand verificado",
     },
     coordinates: {
-      lat: 52.501,
-      lng: 13.425,
+      lat: -33.1275,
+      lng: -64.3490,
     },
     exitProtocol: "chill_cuddle",
     voiceVibe: {
@@ -316,7 +316,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       durationSeconds: 4,
       waveform: [40, 60, 50, 80, 70, 65, 85, 90, 75, 55, 35],
       recordedAt: "2026-08-31",
-      label: "Nota de voz: 'Me muevo por Colegiales o Palermo'",
+      label: "Nota de voz: 'Me muevo por Centro o Macrocentro'",
     },
     isLivenessVerified: true,
     livenessVerifiedDate: "Hace 5 días",
@@ -363,9 +363,9 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     bodyArchetype: "Heavy / Bull",
     intensity: 4,
     hosting: "Tengo depto / lugar",
-    tagline: "Profundidad sobre distancia. Rendite o salí.",
+    tagline: "Alberdi / Macrocentro Río Cuarto. Profundidad sobre distancia.",
     statement:
-      "En sesión activa por los próximos 45 min. Disponible después para segundo turno. Morbo pesado, arnés de cuero crudo y control total.",
+      "En sesión activa por 45 min en depto propio en Alberdi. Disponible después para segundo turno. Morbo pesado, arnés de cuero crudo y control total.",
     avatarUrl:
       "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: true, // Avatar estilizado para privacidad facial
@@ -412,8 +412,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       details: "U=U (Indetectable = Intransmisible) + Vacunas Mpox/VPH al día",
     },
     coordinates: {
-      lat: 52.504,
-      lng: 13.412,
+      lat: -33.1365,
+      lng: -64.3410,
     },
     kinkMatrix: {
       leather: "love",
@@ -431,7 +431,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     codename: "AMBER_PULSE",
     age: 27,
     showAge: true,
-    twitterHandle: "amberpulse_berlin",
+    twitterHandle: "amberpulse_rio4",
     yoSoy: "Nutria / Peludo",
     mobility: "Tengo lugar y me muevo",
     hivStatus: "Negativo en PrEP",
@@ -453,9 +453,9 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     bodyArchetype: "Defined / Ottermuscular",
     intensity: 2,
     hosting: "Tengo lugar y me muevo",
-    tagline: "Química pura. Entregarse y conquistar.",
+    tagline: "Macrocentro Río Cuarto. Química pura. Entregarse y conquistar.",
     statement:
-      "Me adapto a lo que pinte. Me gusta alternar dinámicas sin etiquetas rígidas. Buena onda, previa tranqui y conexión física real.",
+      "Me adapto a lo que pinte por Río Cuarto. Me gusta alternar dinámicas sin etiquetas rígidas. Buena onda, previa tranqui y conexión física real.",
     avatarUrl:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: false,
@@ -483,8 +483,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       details: "PrEP verificado",
     },
     coordinates: {
-      lat: 52.493,
-      lng: 13.431,
+      lat: -33.1295,
+      lng: -64.3420,
     },
     exitProtocol: "chill_cuddle",
     substanceAtmosphere: "green_420",
@@ -516,9 +516,9 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     bodyArchetype: "Athletic",
     intensity: 2,
     hosting: "Me muevo / voy",
-    tagline: "Presencia en sigilo. Se activa con la señal correcta.",
+    tagline: "Banda Norte, Río Cuarto. Presencia en sigilo.",
     statement:
-      "En modo discreto. Tirame un zumbido para reactivarme si estás cerca y con ganas.",
+      "En modo discreto por Banda Norte. Tirame un zumbido para reactivarme si estás cerca con lugar y ganas.",
     avatarUrl:
       "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: true, // Avatar estilizado
@@ -545,8 +545,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       details: "VIH negativo verificado",
     },
     coordinates: {
-      lat: 52.511,
-      lng: 13.401,
+      lat: -33.1160,
+      lng: -64.3480,
     },
     exitProtocol: "fast_encounter",
   },
@@ -555,7 +555,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     codename: "DARK_RITUAL",
     age: 30,
     showAge: true,
-    twitterHandle: "darkritual_bln",
+    twitterHandle: "darkritual_rio4",
     yoSoy: "Morbo / Carnal",
     mobility: "En boliche / darkroom / cruising",
     hivStatus: "Negativo en PrEP",
@@ -577,9 +577,9 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     bodyArchetype: "Lean Muscular",
     intensity: 3,
     hosting: "En boliche / darkroom / cruising",
-    tagline: "Devoción pura. Sobran las palabras.",
+    tagline: "Costanera / Pque Sarmiento Río Cuarto. Devoción pura.",
     statement:
-      "En el club ahora mismo cerca del guardarropa. Listo para atención directa e inmediata en zona oscura.",
+      "Por la zona de Costanera y Parque Sarmiento. Listo para atención directa e inmediata sin caretas.",
     avatarUrl:
       "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: true, // Avatar estilizado
@@ -613,8 +613,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       details: "PrEP verificado",
     },
     coordinates: {
-      lat: 52.508,
-      lng: 13.442,
+      lat: -33.1215,
+      lng: -64.3540,
     },
     exitProtocol: "sleepover",
   },
@@ -623,7 +623,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     codename: "LEATHER_TITAN",
     age: 34,
     showAge: true,
-    twitterHandle: "titan_leather_bln",
+    twitterHandle: "titan_leather_rio4",
     yoSoy: "Leather / Arnés",
     mobility: "Tengo depto / lugar",
     hivStatus: "Negativo en PrEP",
@@ -645,8 +645,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     bodyArchetype: "Muscular / Athletic",
     intensity: 4,
     hosting: "Tengo depto / lugar",
-    tagline: "El cuero no miente. Resonancia pura.",
-    statement: "Depto acondicionado para sesiones intensas. Luces rojas, música sub-bass y límites claros.",
+    tagline: "Bimaco / Castelli, Río Cuarto. El cuero no miente.",
+    statement: "Depto acondicionado en zona sur de Río Cuarto. Luces rojas, música sub-bass y límites claros.",
     avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: false,
     isFogMode: false,
@@ -675,35 +675,35 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       details: "PrEP verificado",
     },
     coordinates: {
-      lat: 52.495,
-      lng: 13.385,
+      lat: -33.1410,
+      lng: -64.3520,
     },
     exitProtocol: "chill_cuddle",
   },
 ];
 
 const ADDITIONAL_CODENAMES = [
-  "SANTI_PALERMO", "AXEL_RAW", "TOMAS_RECOLETA", "NICO_TELMO", "RAMA_ALMAGRO",
-  "LUCAS_BELGRANO", "FRAN_CABALLITO", "JULIAN_CRESPO", "MARCOS_COLEGIAL", "GONZA_CHACARITA",
-  "FACU_DEVOTO", "AGUS_NUÑEZ", "IVAN_SAAVEDRA", "MATI_MONSERRAT", "LEO_BOEDO",
-  "EMILIANO_COGHLAN", "ESTEBAN_URQUIZA", "JOACO_FLORES", "MANU_BARRACAS", "ENZO_PARQUE_P",
-  "DIEGO_RETIRO", "SEBA_SAN_CRISTOBAL", "MARTIN_PUYRREDON", "IAN_SAAVEDRA", "FEDE_HOLLYWOOD",
-  "ALEX_CAÑITAS", "RODRIGO_CONGRESO", "BAUTI_RECOLETA", "MAXI_DEVOTO", "LUCIO_BELGRANO",
-  "SANTINO_NORDELTA", "CAMILO_OLIVOS", "THIAGO_V_LOPEZ", "GABRIEL_S_ISIDRO", "PABLO_MARTINEZ",
-  "BENJA_TIGRE", "ALAN_LANUS", "CRISTIAN_QUILMES", "HERNAN_LOMAS", "MAURO_AVELLANEDA",
-  "DANTE_BANFIELD", "SIMON_ADROGUE", "FELIPE_RAMOS_M", "GERMAN_HAEDO", "LEANDRO_CASTELAR",
-  "ADRIAN_MORON", "JERO_ITUZAINGO", "TOBIAS_S_MARTIN", "LIONEL_CASEROS", "VALENTIN_FLORIDA",
-  "NEHUEN_ACASSUSO", "CIRO_BECCAR", "LAUTARO_VICTORIA", "ELIAN_BOULOGNE", "RENZO_ADELINA",
-  "LISANDRO_MUNRO", "GAEL_CARAPACHAY", "MATEO_BALLESTER", "TADEO_CHILAVERT", "URIEL_ANDRES",
-  "AITOR_S_FERNANDO", "BRUNO_PUNTA_CHICA", "FABRIZIO_B_CHICO", "LEONEL_TIGRE", "KEVIN_URQUIZA",
-  "GUIDO_ORTUZAR", "EZE_PARQUE_CHAS", "BLAS_AGRONOMIA", "SANTOS_PATERNAL", "GASTON_MITRE",
-  "CONRADO_SANTA_RITA", "AMADEO_REAL", "BORJA_M_CASTRO", "TEO_VERSALLES", "RAMON_LINIERS",
-  "SALVADOR_MATADEROS", "FAUSTO_LUGANO", "AURELIO_RIACHUELO", "OCTAVIO_AVELLANEDA", "CASIANO_SOLDATI",
-  "SILVIO_POMPEYA", "BERNARDO_CONSTITUCION", "JUSTO_BALVANERA", "FIDEL_S_NICOLAS", "ELISEO_MONSERRAT",
-  "GENARO_P_MADERO", "DONATO_COSTANERA", "HILARIO_CATALINAS", "CAYETANO_P_MAYO", "CRUZ_TRIBUNALES",
-  "ULISES_B_NORTE", "INAKI_BOTANICO", "SERGIO_P_ITALIA", "ROMAN_LAS_HERAS", "ALVARO_ALTO_PALERMO",
-  "ORLANDO_ARMENIA", "CORIOLANO_SERRANO", "DARIO_PALERMO_SOHO", "ISMAEL_ARCOS", "NATAN_PACIFICO",
-  "NESTOR_BARRANCAS", "WALDO_CHINATOWN", "XAVIER_BELGRANO_C",
+  "SANTI_CENTRO", "AXEL_RAW", "TOMAS_MACRO", "NICO_ALBERDI", "RAMA_B_NORTE",
+  "LUCAS_BIMACO", "FRAN_CASTELLI", "JULIAN_COSTANERA", "MARCOS_CENTRO", "GONZA_MACRO",
+  "FACU_ALBERDI", "AGUS_B_NORTE", "IVAN_SAAVEDRA", "MATI_PLAZA_ROCA", "LEO_BIMACO",
+  "EMILIANO_UNRC", "ESTEBAN_GOLF", "JOACO_CASTELLI", "MANU_COSTANERA", "ENZO_CENTRO",
+  "DIEGO_MACRO", "SEBA_ALBERDI", "MARTIN_B_NORTE", "IAN_SAAVEDRA", "FEDE_CENTRO",
+  "ALEX_COSTANERA", "RODRIGO_MACRO", "BAUTI_PLAZA_ROCA", "MAXI_ALBERDI", "LUCIO_B_NORTE",
+  "SANTINO_BIMACO", "CAMILO_CASTELLI", "THIAGO_COSTANERA", "GABRIEL_UNRC", "PABLO_CENTRO",
+  "BENJA_MACRO", "ALAN_ALBERDI", "CRISTIAN_B_NORTE", "HERNAN_BIMACO", "MAURO_CASTELLI",
+  "DANTE_COSTANERA", "SIMON_CENTRO", "FELIPE_MACRO", "GERMAN_ALBERDI", "LEANDRO_B_NORTE",
+  "ADRIAN_BIMACO", "JERO_CASTELLI", "TOBIAS_COSTANERA", "LIONEL_CENTRO", "VALENTIN_MACRO",
+  "NEHUEN_ALBERDI", "CIRO_B_NORTE", "LAUTARO_BIMACO", "ELIAN_CASTELLI", "RENZO_COSTANERA",
+  "LISANDRO_CENTRO", "GAEL_MACRO", "MATEO_ALBERDI", "TADEO_B_NORTE", "URIEL_SAAVEDRA",
+  "AITOR_BIMACO", "BRUNO_CASTELLI", "FABRIZIO_COSTANERA", "LEONEL_CENTRO", "KEVIN_MACRO",
+  "GUIDO_ALBERDI", "EZE_B_NORTE", "BLAS_BIMACO", "SANTOS_CASTELLI", "GASTON_COSTANERA",
+  "CONRADO_CENTRO", "AMADEO_MACRO", "BORJA_ALBERDI", "TEO_B_NORTE", "RAMON_SAAVEDRA",
+  "SALVADOR_BIMACO", "FAUSTO_CASTELLI", "AURELIO_COSTANERA", "OCTAVIO_CENTRO", "CASIANO_MACRO",
+  "SILVIO_ALBERDI", "BERNARDO_B_NORTE", "JUSTO_BIMACO", "FIDEL_CASTELLI", "ELISEO_COSTANERA",
+  "GENARO_CENTRO", "DONATO_MACRO", "HILARIO_ALBERDI", "CAYETANO_B_NORTE", "CRUZ_SAAVEDRA",
+  "ULISES_BIMACO", "INAKI_CASTELLI", "SERGIO_COSTANERA", "ROMAN_CENTRO", "ALVARO_MACRO",
+  "ORLANDO_ALBERDI", "CORIOLANO_B_NORTE", "DARIO_BIMACO", "ISMAEL_CASTELLI", "NATAN_COSTANERA",
+  "NESTOR_CENTRO", "WALDO_MACRO", "XAVIER_ALBERDI",
 ];
 
 const AVATAR_POOL = [
@@ -755,7 +755,7 @@ function generateAdditionalProfiles(): VesselProfile[] {
       codename,
       age,
       showAge: true,
-      twitterHandle: `${codename.toLowerCase()}_ba`,
+      twitterHandle: `${codename.toLowerCase()}_rc`,
       yoSoy,
       mobility,
       hivStatus,
@@ -777,7 +777,7 @@ function generateAdditionalProfiles(): VesselProfile[] {
       bodyArchetype: BODY_ARCHETYPES[index % BODY_ARCHETYPES.length],
       intensity: (((index % 4) + 1) as 1 | 2 | 3 | 4),
       hosting: hasPlace ? "Tengo depto / lugar" : "Voy a la tuya / Viajo 🚗",
-      tagline: `Presencia en ${codename.split("_")[1] || "CABA"}. Conexión táctica y respeto.`,
+      tagline: `Presencia en ${codename.split("_")[1] || "Río Cuarto"}. Conexión táctica y respeto.`,
       statement: "Buena onda, directo y sin vueltas. Si hay piel y respeto, coordinamos en 1 tap.",
       avatarUrl,
       isStylizedAvatar: false,
@@ -808,10 +808,16 @@ function generateAdditionalProfiles(): VesselProfile[] {
         details: "PrEP verificado",
       },
       coordinates: {
-        lat: -34.5885 + (index * 0.0012) * (index % 2 === 0 ? 1 : -1),
-        lng: -58.4376 + (index * 0.0012) * (index % 3 === 0 ? 1 : -1),
+        lat: -33.1325 + (index * 0.00028) * (index % 2 === 0 ? 1 : -1),
+        lng: -64.3470 + (index * 0.00030) * (index % 3 === 0 ? 1 : -1),
       },
       exitProtocol,
+      onTheClock: index % 5 === 0 ? {
+        isActive: true,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 45).toISOString(),
+        durationMinutes: 45,
+        statusNote: hasPlace ? "Listo en 10 min - Tengo depto" : "Listo ya - Puedo moverme",
+      } : undefined,
     };
   });
 }

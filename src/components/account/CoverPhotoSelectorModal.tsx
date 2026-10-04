@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { uploadMediaFile } from "@/lib/firebase/storageService";
+import { uploadMediaFile, compressImage } from "@/lib/firebase/storageService";
 import {
   X,
   Camera,
@@ -29,6 +29,8 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
     myProfile,
     userAlbums,
     setProfileCoverPhoto,
+    updateUserAvatar,
+    createAlbum,
     addPhotoToAlbum,
     currentUserUid,
     t,
@@ -47,6 +49,7 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
 
   const handleSelectPhoto = (url: string) => {
     setProfileCoverPhoto(url);
+    updateUserAvatar(url, false);
     setSuccessToast("¡Foto de portada actualizada!");
     audioEngine.playVaultUnlock();
     setTimeout(() => {
@@ -56,42 +59,57 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
   };
 
   const handleFileUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !publicAlbum) return;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
     audioEngine.playPulse();
 
     try {
       const file = files[0];
-      const previewUrl = URL.createObjectURL(file);
+      const targetAlbumId = publicAlbum?.id || "album-pub-01";
+
+      // 1. Si no existe álbum público, crearlo automáticamente
+      if (!publicAlbum) {
+        createAlbum({
+          title: "Galería Pública Principal",
+          privacy: "public",
+          description: "Fotos visibles para todos en el radar y la matriz.",
+        });
+      }
+
+      // 2. Comprimir en WebP de alta definición (1080x1080 a 85% calidad)
+      const { blob, dataUrl } = await compressImage(file, 1080, 1080, 0.85);
       const tempId = `media-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
 
-      // 1. Agregar a la galería del usuario y asignar automáticamente como portada
-      addPhotoToAlbum(publicAlbum.id, {
+      // 3. Asignar inmediatamente la foto HD como avatar y portada
+      updateUserAvatar(dataUrl, false);
+      setProfileCoverPhoto(dataUrl);
+
+      // 4. Agregar a la galería pública del usuario
+      addPhotoToAlbum(targetAlbumId, {
         id: tempId,
-        url: previewUrl,
-        blurredUrl: previewUrl,
+        url: dataUrl,
+        blurredUrl: dataUrl,
         caption: "Foto de Portada",
         mediaType: "photo",
       });
 
-      setProfileCoverPhoto(previewUrl);
-
-      // 2. Subida a Firebase Storage en segundo plano
+      // 5. Subida a Firebase Storage en segundo plano
       try {
         const uploadResult = await uploadMediaFile(
           currentUserUid,
-          publicAlbum.id,
-          file
+          targetAlbumId,
+          blob
         );
         if (uploadResult?.url) {
+          updateUserAvatar(uploadResult.url, false);
           setProfileCoverPhoto(uploadResult.url);
         }
       } catch (cloudErr) {
-        console.warn("Subida local completada con preview:", cloudErr);
+        console.warn("Subida en nube con fallback local HD:", cloudErr);
       }
 
-      setSuccessToast("¡Foto subida y asignada como portada!");
+      setSuccessToast("¡Foto en alta definición asignada como portada!");
       audioEngine.playVaultUnlock();
       setTimeout(() => {
         setIsUploading(false);
@@ -100,6 +118,10 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
     } catch (err) {
       console.error("Error al procesar archivo:", err);
       setIsUploading(false);
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -159,17 +181,21 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
               type="button"
               disabled={isUploading}
               onClick={() => fileInputRef.current?.click()}
-              className="w-full p-4 bg-purple-950/20 hover:bg-purple-950/40 border-2 border-dashed border-electricViolet/50 hover:border-electricViolet rounded-2xl flex items-center justify-center gap-3 transition-all cursor-pointer group active:scale-98"
+              className="w-full p-4 bg-purple-950/20 hover:bg-purple-950/40 border-2 border-dashed border-electricViolet/50 hover:border-electricViolet rounded-2xl flex items-center justify-center gap-3 transition-all cursor-pointer group active:scale-98 disabled:opacity-50 disabled:cursor-wait"
             >
               <div className="p-2.5 rounded-xl bg-electricViolet text-white font-bold group-hover:scale-110 transition-transform shadow-violet-soft">
-                <UploadCloud className="w-5 h-5 stroke-[2.5]" />
+                {isUploading ? (
+                  <Sparkles className="w-5 h-5 animate-spin" />
+                ) : (
+                  <UploadCloud className="w-5 h-5 stroke-[2.5]" />
+                )}
               </div>
               <div className="text-left">
                 <span className="text-xs font-bold font-mono text-white group-hover:text-electricViolet-glow transition-colors block uppercase">
-                  Subir Nueva Foto desde tu Dispositivo
+                  {isUploading ? "Optimizando y Subiendo en Alta Definición..." : "Subir Nueva Foto desde tu Dispositivo"}
                 </span>
                 <span className="text-[10px] text-neutral-400 font-mono block">
-                  JPG, PNG o WEBP • Se agrega a tu álbum y se define como portada
+                  {isUploading ? "Generando WebP HD (1080×1080) y sincronizando..." : "JPG, PNG o WEBP • Se agrega a tu álbum y se define como portada"}
                 </span>
               </div>
             </button>

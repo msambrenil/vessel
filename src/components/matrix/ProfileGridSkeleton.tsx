@@ -22,7 +22,7 @@ export const ProfileGridSkeleton: React.FC = () => {
       </div>
 
       {/* Skeleton de la grilla de perfiles */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 p-2 sm:p-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5 p-2 sm:p-3">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}

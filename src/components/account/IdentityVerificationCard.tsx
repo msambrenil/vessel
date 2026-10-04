@@ -217,14 +217,39 @@ export const IdentityVerificationCard: React.FC = () => {
       ) : (
         /* Estado No Verificado */
         <div className="space-y-3">
-          <div className="p-3.5 bg-red-950/20 border border-red-500/30 rounded-2xl text-xs space-y-1.5">
+          <div className="p-3.5 bg-red-950/20 border border-red-500/30 rounded-2xl text-xs space-y-2">
             <div className="font-bold text-red-300 flex items-center gap-1.5">
               <ShieldAlert className="w-4 h-4 text-red-400" />
               <span>Verificación de Identidad Requerida</span>
             </div>
             <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
-              Para erradicar perfiles falsos y bots, VESSEL exige validación digital. Puedes mantener tu rostro oculto con un avatar estilizado mientras conservas tu estatus de Verificado.
+              Para erradicar perfiles falsos y bots, VESSEL exige validación digital de persona real. Puedes mantener tu rostro público difuminado o usar un avatar estilizado mientras conservas tu estatus de Verificado.
             </p>
+
+            {/* Incentivos Exclusivos */}
+            <div className="pt-2 border-t border-white/10 space-y-1.5 font-mono text-[10px]">
+              <span className="text-white font-bold uppercase tracking-wider block">
+                Beneficios Inmediatos al Verificar:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-neutral-300">
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-mintNeon font-bold">👑 Radar VIP:</span>
+                  <span>Prioridad en grilla</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-electricViolet-glow font-bold">⚡ +20 Karma:</span>
+                  <span>Respect Score boost</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-emerald-400 font-bold">🛡️ Escudo:</span>
+                  <span>Filtrá cuentas no verificadas</span>
+                </div>
+                <div className="flex items-center gap-1.5 p-1.5 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-amber-400 font-bold">🔒 Privacidad:</span>
+                  <span>Zero-Knowledge local</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

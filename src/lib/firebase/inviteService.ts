@@ -176,6 +176,8 @@ export async function validateAndRedeemVipCode(
         );
       }
 
+      const isBetaCode = code === "VESSEL-BETA" || code.startsWith("VESSEL-BETA-");
+
       if (uid && uid !== "local-user" && uid !== "unauthenticated") {
         await setDoc(
           doc(db, USERS_COLLECTION, uid),
@@ -183,6 +185,7 @@ export async function validateAndRedeemVipCode(
             vipVerified: true,
             vipCode: code,
             vipVerifiedAt: serverTimestamp(),
+            ...(isBetaCode ? { isBetaTester: true } : {}),
           }),
           { merge: true }
         );
@@ -194,6 +197,8 @@ export async function validateAndRedeemVipCode(
 
     // Si no existe documento previo en Firestore pero es un código maestro o serie oficial VESSEL-VIP-XX
     if (isPreAuthorized) {
+      const isBetaCode = code === "VESSEL-BETA" || code.startsWith("VESSEL-BETA-");
+
       if (uid && uid !== "local-user" && uid !== "unauthenticated") {
         await setDoc(
           inviteRef,
@@ -216,6 +221,7 @@ export async function validateAndRedeemVipCode(
             vipVerified: true,
             vipCode: code,
             vipVerifiedAt: serverTimestamp(),
+            ...(isBetaCode ? { isBetaTester: true } : {}),
           }),
           { merge: true }
         ).catch(() => {});

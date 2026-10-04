@@ -1,0 +1,37 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: Next.js 16 (App Router), React 19, Tailwind CSS v4.3, TypeScript 7.0+
+  State & Data: VesselContext (React Context API + LocalStorage + Firebase SDK v12)
+  Sensory & Geo: Web Audio API (SubBassAudioEngine 45-80Hz), Google S2 / Geohash 7 (~152m)
+  Testing: Vitest (194 tests) -> npm run test
+  Typecheck: npm run typecheck
+  Design System: Impeccable UI v4.3.1 (Dark Brutalism: obsidian, electricViolet, bloodNeon)
+  Architecture: Ponytail (The Ladder, zero bloated dependencies, root-cause fixes, reuse internal state)
+  User Center: 20 Arquetipos tácticos de Argentina (arquetipos.md)
+
+rules:
+  proposal:
+    - Must evaluate impact across the 20 user archetypes in docs/contexto/arquetipos.md
+    - Must prevent Grindr-clone patterns (pure Euclidean distance grids, empty chats, ghosting)
+    - Must include clear phased rollout
+  specs:
+    - Use Given/When/Then for user scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include ASCII or Mermaid flow diagrams for updated screen navigations
+    - Respect Impeccable UI Touch Targets (min 44x44px, thumb zone navigation)
+    - Document data model additions in src/types/vessel.ts
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Include verification steps per task
+  apply:
+    - Follow existing code patterns and TypeScript strict typing (zero any)
+    - Never run npm run build while dev server is active
+    - Test changes with npm run typecheck and npm run test
+  verify:
+    test_command: "npm run test"
+    typecheck_command: "npm run typecheck"
+  archive:
+    - Update docs/contexto/registro-de-features.md and ADR in docs/contexto/decisiones.md

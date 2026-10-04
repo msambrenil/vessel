@@ -28,6 +28,8 @@ import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { audioPlayerService } from "@/lib/audio/audioPlayerService";
 import { getGeohashCell, calculateHaversineDistance } from "@/lib/geo/GeospatialEngine";
 import { batteryStateEngine, INITIAL_BATTERY_STATE } from "@/lib/geo/BatteryStateEngine";
+import { registerPeriodicGeoSync } from "@/lib/pwa/periodicSyncService";
+import { initOfflineQueueListeners, flushOfflineMutations } from "@/lib/sync/offlineMutationQueue";
 import { loadFromStorage, saveToStorage, removeFromStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
 import { saveFullUserDataToCloud, FullUserDataPayload } from "@/lib/firebase/userDataService";
 import { MOCK_HOTSPOTS } from "@/data/mockHotspots";
@@ -65,7 +67,7 @@ const INITIAL_MY_HOST_CARD: HostCardInfo = {
     poppers: true,
     wipes: true,
   },
-  notes: "Depto en Palermo con aire acondicionado, luces bajas y sonido ambiente listo.",
+  notes: "Depto en Saavedra al 600 (Río Cuarto) con aire acondicionado, luces bajas y sonido ambiente listo.",
   updatedAt: new Date().toISOString(),
 };
 
@@ -81,9 +83,9 @@ const INITIAL_EN_ROUTE: EnRouteState = {
 
 const INITIAL_TRAVEL_MODE: TravelModeConfig = {
   isActive: false,
-  cityName: "Buenos Aires",
+  cityName: "Río Cuarto",
   country: "Argentina",
-  virtualCoords: { lat: -34.5885, lng: -58.4376 },
+  virtualCoords: { lat: -33.1325, lng: -64.3470 },
 };
 
 const INITIAL_DUO_LINK: DuoLink = {
@@ -131,6 +133,7 @@ export interface LogisticsContextType {
   toggleEcoSaverMode: () => void;
   myGeohashCell: GeohashCell;
   myCoordinates: { lat: number; lng: number };
+  setMyCoordinates: (coords: { lat: number; lng: number }) => void;
   isGeoBatteryModalOpen: boolean;
   openGeoBatteryModal: () => void;
   closeGeoBatteryModal: () => void;
@@ -260,16 +263,16 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
   const [manualEcoSaver, setManualEcoSaver] = useState<boolean>(false);
   const [isGeoBatteryModalOpen, setIsGeoBatteryModalOpen] = useState<boolean>(false);
   const [myCoordinates, setMyCoordinates] = useState<{ lat: number; lng: number }>(() => {
-    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, {
-      lat: -34.588,
-      lng: -58.43,
-    });
+    const defaultRioCuarto = { lat: -33.1325, lng: -64.3470 };
+    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, defaultRioCuarto);
     if (
       !stored ||
       (Math.abs(stored.lat - 52.52) < 0.05 && Math.abs(stored.lng - 13.405) < 0.05) ||
+      (Math.abs(stored.lat + 34.588) < 0.1 && Math.abs(stored.lng + 58.43) < 0.1) ||
       (Math.abs(stored.lat) < 0.01 && Math.abs(stored.lng) < 0.01)
     ) {
-      return { lat: -34.588, lng: -58.43 };
+      saveToStorage(STORAGE_KEYS.COORDINATES, defaultRioCuarto);
+      return defaultRioCuarto;
     }
     return stored;
   });
@@ -717,6 +720,45 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     };
   }, [appMode, isGpsHibernating, refreshRealGeolocation]);
 
+  // Sincronización periódica en segundo plano vía Periodic Background Sync API modulada por batería
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    registerPeriodicGeoSync(
+      batteryEngineState.mode,
+      batteryEngineState.level,
+      myBodyState
+    ).catch(() => {});
+  }, [batteryEngineState.mode, batteryEngineState.level, myBodyState]);
+
+  // Listener de eventos postMessage despachados por el Service Worker durante periodicsync / sync
+  useEffect(() => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (
+        data &&
+        (data.type === "VESSEL_PERIODIC_SYNC_TRIGGER" || data.type === "VESSEL_SYNC_PING")
+      ) {
+        if (appMode === "real" && !isGpsHibernating) {
+          refreshRealGeolocation();
+        }
+        flushOfflineMutations().catch(() => {});
+      }
+    };
+
+    navigator.serviceWorker.addEventListener("message", handleServiceWorkerMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener("message", handleServiceWorkerMessage);
+    };
+  }, [appMode, isGpsHibernating, refreshRealGeolocation]);
+
+  // Inicialización de la cola resiliente de mutaciones offline (disparo ante reconexión 'online')
+  useEffect(() => {
+    return initOfflineQueueListeners();
+  }, []);
+
   const openGeoBatteryModal = useCallback(() => setIsGeoBatteryModalOpen(true), []);
   const closeGeoBatteryModal = useCallback(() => setIsGeoBatteryModalOpen(false), []);
 
@@ -898,8 +940,8 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         category: data.category || "cruising_area",
         address: data.address?.trim() || "Zona Urbana",
         activeVesselsCount: 0,
-        coordinates: data.coordinates || { lat: -34.5885, lng: -58.4376 },
-        geohash: data.geohash || "69y7pu2",
+        coordinates: data.coordinates || { lat: -33.1325, lng: -64.3470 },
+        geohash: data.geohash || "6d45x8r",
         description: data.description?.trim() || "",
         isCheckedIn: false,
         status: "proposed",
@@ -1351,6 +1393,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       toggleEcoSaverMode,
       myGeohashCell,
       myCoordinates,
+      setMyCoordinates,
       isGeoBatteryModalOpen,
       openGeoBatteryModal,
       closeGeoBatteryModal,
@@ -1460,6 +1503,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       toggleEcoSaverMode,
       myGeohashCell,
       myCoordinates,
+      setMyCoordinates,
       isGeoBatteryModalOpen,
       openGeoBatteryModal,
       closeGeoBatteryModal,

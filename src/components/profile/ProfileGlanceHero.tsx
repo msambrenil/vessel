@@ -6,6 +6,7 @@ import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
 
 interface ProfileGlanceHeroProps {
   profile: VesselProfile;
@@ -38,9 +39,13 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
     <div className="w-full md:w-[46%] lg:w-[42%] md:h-full md:overflow-y-auto p-0 md:p-5 md:border-r md:border-white/10 space-y-4 no-scrollbar">
       {/* Contenedor Principal de Fotografía */}
       <div className="relative aspect-[4/5] sm:aspect-[4/4.5] md:aspect-[4/5] bg-black overflow-hidden group md:rounded-2xl md:border md:border-white/10 shadow-lg">
-        <img
+        <Image
           src={photos[selectedPhotoIdx]}
           alt={profile.codename}
+          fill
+          sizes="(max-width: 768px) 100vw, 42vw"
+          unoptimized
+          priority
           className={`w-full h-full object-cover select-none transition-all duration-300 ${
             profile.isFogMode ? "blur-[8px] scale-105" : ""
           }`}
@@ -205,7 +210,14 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
                   : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
               }`}
             >
-              <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+              <Image
+                src={photoUrl}
+                alt=""
+                fill
+                sizes="48px"
+                unoptimized
+                className="w-full h-full object-cover"
+              />
             </button>
           ))}
         </div>

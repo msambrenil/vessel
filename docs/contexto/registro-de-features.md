@@ -27,10 +27,19 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
 
 ---
 
-## 📊 Matriz Resumen de Entregas del Sistema (Inventario Completo: 123 Features)
+## 📊 Matriz Resumen de Entregas del Sistema (Inventario Completo: 132 Features)
 
 | ID | Fecha | Módulos | Tipo | Resumen del Alcance / Hito Técnico | Estado |
 |---|---|---|---|---|---|
+| **FEAT-132** | 2026-10-04 | Geoespacial, Radar, Matriz, Hotspots, Fiesta, Mock | `Coherencia Geográfica & Geolocalización Táctica` | Geolocalización Nativa del Modo Prueba en Saavedra 620 (Río Cuarto, Córdoba) y Cobertura Mock Completa: (1) Reubicación exacta de las coordenadas por defecto del sistema (`myCoordinates`, `virtualCoords`) a `Saavedra 620, Macrocentro, Río Cuarto` (`lat: -33.1325, lng: -64.3470`, Geohash `6d45x8r`), con migración y purga automática de coordenadas cacheadas antiguas de Buenos Aires y Berlín en `localStorage`; (2) Reubicación y contextualización de los 7 perfiles base de prueba (`vessel-01` a `vessel-07`) en barrios reales de Río Cuarto (Saavedra/Macrocentro, Centro/Plaza Roca, Alberdi, Costanera, Banda Norte, Bimaco, Castelli) con bios, handles y audios adaptados; (3) Algoritmo de dispersión en `generateAdditionalProfiles()` calibrado a un radio de 80m–3.2km alrededor de Saavedra 620 para los 100 perfiles adicionales; (4) Actualización de `MOCK_HOTSPOTS` y `MOCK_NIGHTLIFE_EVENTS` a Río Cuarto (Club Táctico Centro, Sauna Imperio, Búnker Alberdi, Costanera Norte); (5) Inclusión de Río Cuarto en `TravelModeModal` y `BetaDiagnosticsModal` (GPS presets); (6) Suite unitaria `mockProfilesProximity.test.ts` pasando al 100% (353 tests en 54 suites). | **100%** ✅ |
+| **FEAT-131** | 2026-10-04 | Matriz, Radar, Core, UX/UI, Datos Mock | `Bug Fix (Corrección) & Coherencia Geográfica` | Visibilidad y Proximidad de Usuarios de Prueba en Modo Sandbox (Coordenadas Buenos Aires, Distribución Listo YA y Sincronización Cliente): (1) Corrección de causa raíz en las coordenadas de los 7 perfiles base (`vessel-01` a `vessel-07`) reubicándolos desde Berlín a barrios reales de Buenos Aires (Palermo, Recoleta, Colegiales, etc.), evitando que el filtro por defecto de 5km los oculte; (2) Inclusión de estado activo `onTheClock` en perfiles mock generados para que al pulsar 'Disponible YA' se mantengan usuarios visibles; (3) Sincronización reactiva de `appMode` al hidratar el cliente en `SettingsContext`; (4) Banner explicativo de relajación de filtros en `ProfileGrid` cuando los filtros activos aíslan únicamente la tarjeta propia; (5) Suite unitaria `mockProfilesProximity.test.ts` con 54 suites y 353 tests pasando al 100%. | **100%** ✅ |
+| **FEAT-130** | 2026-10-04 | Offline & Sync, Audio & Háptica, Cloud & Firestore, PWA, Infra | `Perfección Tecnológica Full-Stack & Resiliencia Offline` | Cola de Mutaciones Offline (PWA Background Sync), Ciclo de Vida Web Audio API en Segundo Plano e Índices Compuestos Firestore: (1) Motor soberano de cola de mutaciones offline (`offlineMutationQueue.ts`) para sincronización diferida de pulsos, chats, presencia y reportes beta con reintentos exponenciales y reanudación automática ante reconexión o eventos de service worker; (2) Optimización acústica en `SubBassAudioEngine.ts` con escucha del ciclo de vida de visibilidad del documento (`visibilitychange`) que suspende el `AudioContext` en background para ahorrar batería y lo reactiva al primer plano si fue desbloqueado previamente; (3) Esquema de índices compuestos de Firestore (`firestore.indexes.json`) para 7 consultas críticas de pulsos, testimonios, reportes beta, hotspots y perfiles; (4) Validación estricta con 53 suites y 350 tests pasando al 100%, 0 errores de TypeScript y 0 linter warnings. | **100%** ✅ |
+| **FEAT-129** | 2026-10-04 | Admin, Seguridad, Cloud, PWA, Auditoría | `Auditoría Integral & Hardening de Seguridad` | Auditoría Forense de Modos (Usuario/Admin, Local/Online), Hardening de `firestore.rules` para Reportes Beta, Enlace Táctico de Kinks/Hotspots y Aislamiento de Entorno: (1) Detección y corrección de causa raíz en `firestore.rules` añadiendo regla de seguridad para `vessel_beta_reports` (creación abierta para testers y lectura/administración exclusiva para admins), validado con `firebase_validate_security_rules`; (2) Enlace dinámico de conteos de morbos/kinks (`getAllKinks().length`) y puntos de cruising/hotspots (`tacticalHotspots.length`) a `AdminNav.tsx` en `/admin`; (3) Limpieza de `.gitignore` para ignorar la suite Obsidian por completo (`.obsidian/`); (4) Verificación integral de paridad de diccionarios i18n (`es` vs `en`), suite Vitest pasando al 100% (52 suites, 343 tests), compilador de TypeScript con 0 errores y linter con 0 errores. | **100%** ✅ |
+| **FEAT-128** | 2026-10-04 | Perfil & Cuenta, Storage & Cloud, Matriz & Radar, Arquitectura & Core | `Bug Fix (Corrección) & Resiliencia Full-Stack` | Pipeline de Carga y Optimización de Fotos de Portada en Alta Definición, Corrección de Thumbnail OAuth y Sincronización Reactiva de Avatar: (1) Reingeniería de `CoverPhotoSelectorModal.tsx` con compresión inmediata en WebP 1080×1080px (85% calidad), creación automática resiliente de álbum público (`album-pub-01`), asignación instantánea en 0ms y subida en segundo plano a Firebase Storage; (2) Diagnóstico y corrección de pixelación extrema originada por thumbnails OAuth de Google (`=s96-c`), habilitando actualización directa de `myProfile.avatarUrl` en Firestore y almacenamiento local; (3) Hardening de `SettingsContext.tsx` asegurando que `userAlbums` nunca sea inicializado en un array vacío `[]` sin galería pública por defecto, enriqueciendo `addPhotoToAlbum` y `setProfileCoverPhoto` con auto-creación de álbumes y despacho del evento reactivo `vessel:avatar-updated`; (4) Suscripción en `AuthContext.tsx` al evento `vessel:avatar-updated` y composición bidireccional en `VesselFacadeBridge` (`VesselContext.tsx`); (5) Reset reactivo de `imgError` en `ProfileCard.tsx` ante cambios en `profile.avatarUrl`; (6) Validación completa: 52 suites y 343 tests pasando al 100%, linter con 0 errores y TypeScript con 0 errores. | **100%** ✅ |
+| **FEAT-127** | 2026-10-04 | Audio & Háptica, PWA, Radar, Logística, UX/UI | `Perfección Tecnológica PWA & Sensorial` | Desbloqueo Gestual de Web Audio API, Micro-Indicador Sensorial Acústico y Periodic Background Sync Modulada por Batería: (1) Desbloqueo gestual automático en `SubBassAudioEngine.ts` escuchando el primer gesto pasivo de puntero/toque en iOS Safari con micro-buffer de silencio y suscripción reactiva `subscribeAudioUnlocked`; (2) Micro-indicador sensorial acústico táctico en `BrutalistHeader.tsx` integrado en la cápsula con conmutación de sonido, desbloqueo en 1 toque, feedback háptico y sub-bass de 65Hz; (3) Integración de Periodic Background Sync API en `public/sw.js` y servicio adaptativo `periodicSyncService.ts` conectado a `LogisticsContext.tsx` con modulación de intervalo según el motor de batería (15m en activo, 60m en eco y desregistro si la batería es <=15% o el estado es dormant); (4) Nuevas suites de pruebas en `SubBassAudioEngine.test.ts` y `periodicSyncService.test.ts` (343 tests pasando al 100% en 52 suites, linter en 0 errores y validación estricta de tipos). | **100%** ✅ |
+| **FEAT-126** | 2026-10-04 | Admin, Core, PWA, Seguridad, Storage, Cloud | `Auditoría Integral & Resiliencia Full-Stack` | Auditoría Completa de Modos (Usuario vs Admin, Local vs Online), Corrección de Desbloqueo Maestro, Sincronización de Moderación en Vivo y Resiliencia PWA Offline: (1) Fix de causa raíz en `checkIsAdminAuthorized`: desbloqueo directo e inmediato con clave maestra `NEXT_PUBLIC_ADMIN_PASSCODE` sin requerir email pre-aprobado; (2) Sincronización de moderación en la nube: actualización de `applyUserModeration`, `adjustUserKarma`, `verifyUserProfile`, `toggleUserForcedFogMode`, `changeUserPlan` y `clearUserDuressAlert` para aceptar `mode` y `currentProfiles`, persistiendo en `real_vessel_custom_profiles_v1`, `vessel_profiles` y `vessel_blacklist` en Firestore; (3) Blindaje de guardas Firestore en `userDataService.ts` contra instancias `db` no inicializadas o mock; (4) Aislamiento de acceso operativo en `AppSettingsSection.tsx` restringido a localhost o staff verificado; (5) PWA Service Worker táctico (`public/sw.js` y `PwaRegister.tsx`) para navegación offline resiliente en subsuelos y eventos; (6) Nueva suite unitaria `tests/unit/admin/adminService.test.ts` (14 tests) elevando la cobertura a 51 suites y 335 tests 100% pasando sin errores. | **100%** ✅ |
+| **FEAT-125** | 2026-10-03 | Core, Infra, Admin, Matriz, Identidad | `Nueva Feature & Blindaje Arquitectónico` | Aislamiento Estricto de Producción Online, Suite de Testing Beta y Priorización Algorítmica con Incentivos para Verificación Biométrica: (1) Host Guard en `localStorageSync.ts` confinando el modo `test` y mocks exclusivamente a localhost, forzando `real` en producción online; (2) Suite integral de testing beta: servicio `betaFeedbackService.ts`, widget flotante in-app `BetaFeedbackFab.tsx` con reporte de bugs (`BetaFeedbackModal.tsx`) y simulador de sensores (`BetaDiagnosticsModal.tsx`), más pestaña de triage y generador VIP en `/admin` (`BetaManagementTab.tsx`); (3) Priorización algorítmica de humanos reales en el Radar/Matrix (`GeospatialEngine.ts` y `RadarMatrixContext.tsx`), +20 Respect Karma bonus al verificar liveness 3D en `AuthContext.tsx` y panel de incentivos en `IdentityVerificationCard.tsx`; (4) 50 suites / 321 tests en verde y TypeScript estricto con 0 errores. | **100%** ✅ |
+| **FEAT-124** | 2026-10-03 | Matriz, UX/UI, Responsive Design | `Enhancement (Mejora/Refactor)` | Densidad Táctica en Escritorio (4 Cards por Fila en la Matriz): Incorporación del breakpoint responsivo `md:grid-cols-4` en `ProfileGrid.tsx` y su skeleton gemelo `ProfileGridSkeleton.tsx` para optimizar el viewport en desktop/laptops y alinear la carga prioritaria (4 primeras tarjetas eager/high-priority), sin alterar la visualización móvil de 2 columnas ni de tablets pequeñas (3 columnas); actualización de suite de tests en `ProfileGrid.test.tsx`. | **100%** ✅ |
 | **FEAT-123** | 2026-09-30 | Seguridad, Infra & Despliegue | `Infra/Seguridad & Blindaje Pre-Despliegue` | Blindaje de Seguridad y Preparación para Despliegue con Usuarios Reales: (1) Corrección de CWE-287 en `firestore.rules` exigiendo `email_verified == true` en `isAdmin()` para evitar spoofing de Superadmin con cuentas sin verificar; (2) Hardening de `storage.rules` eliminando wildcard pública de escritura/lectura y aplicando Default Deny con validación de propiedad y cuota de 15MB; (3) Eliminación de clave maestra hardcodeada `"VESSEL-ROOT-2026"` en `adminService.ts` para evitar fuga en bundle público; (4) Erradicación de antipatrón de purga de base de datos (`deleteDoc`) desde el listener de cliente en `matrixService.ts`; (5) Corrección de derivación de clave en fotos del diario íntimo (`encryptedPhotoService.ts`, `CreateDiaryEntryModal.tsx`, `LoverDossierModal.tsx`) estandarizando en `local-sovereign-user` con fallback retroactivo; (6) 50 suites / 321 tests en verde (100% pasando) y TypeScript estricto con 0 errores. | **100%** ✅ |
 | **FEAT-122** | 2026-09-22 | Matriz, Radar, Diario & Salud, i18n, UX/UI, Accesibilidad WCAG 2.1 | `Auditoría Integral & Reingeniería UX/UI + Full-Stack` | Reingeniería Integral de la "Página Principal" (`ProfileGrid`, `StatusToggle`, `ProfileCard`, `BrutalistHeader`, `DynamicFilterDrawer`, `UpcomingEncounterBanner` y `CreateDiaryEntryModal`): (1) Recuperación de `+62px` a `+110px` de viewport vertical en mobile compactando `StatusToggle.tsx` a una única barra ergonómica (`min-h-[36px] sm:min-h-[38px]` con cabecera accesible `sr-only`) y reduciendo `ProfileGrid.tsx` de 3 filas sticky a 2 filas unificadas (integrando conteos en tabs `Personas (N)` / `Lugares & Fiestas (N)`, moviendo `✈️ Viajero` a Fila 1 y fusionando el selector de ordenamiento `📍 Cerca / ⚡ Activos / 🔥 Afinidad` al inicio de Fila 2); (2) Resolución del fallo WCAG 4.1.2 en `ProfileCard.tsx` transformando el contenedor `<div role="button">` con `<button>` anidados en un `<article>` semántico con `<button>` base desacoplado, ampliando el cluster inferior de acciones a `32–36px` (`44×44px` hit area) con indicador de cola offline (`⏳`); (3) Erradicación de Spanglish y hardcodes en `DynamicFilterDrawer.tsx`, `BrutalistHeader.tsx` (`.ACT` en ES), `substanceCatalog.ts`, `energyCatalog.ts` y `mockProfiles.ts`; (4) Nuevo componente `UpcomingEncounterBanner.tsx` en `page.tsx`, chips de relajación selectiva de filtros en el Empty State de `ProfileGrid.tsx`, previsualización 24h (`Intl.DateTimeFormat`) en `CreateDiaryEntryModal.tsx` y filtros prospectivos (`Hoy`, `Mañana`, `Próximos 7 días`) en `DiaryScheduleSection.tsx`; (5) 48 suites / 319 tests en verde y `npm run typecheck` con 0 errores. | **100%** ✅ |
 | **FEAT-121** | 2026-09-22 | Chat Darkroom, Logística & Encuentros, Audio & Háptica, UX/UI, Accesibilidad WCAG 2.1 | `Auditoría Integral & Reingeniería UX/UI + Full-Stack` | Reingeniería Integral del Subsistema de Chat & Coordinación de Encuentros (Fases 0, 1 y 2): (1) Corrección de Causa Raíz en `formatLocaleTime24h()` (`src/lib/calendar/dateLocale.ts`) para parsear timestamps `"HH:mm"`, `"HH:mm AM/PM"` y `"Ahora"` sin producir `Invalid Date`, restaurando la hora en `DarkroomListView.tsx`; (2) Traducción centralizada de enums crudos de Pre-Flight (`fast_carnal`, `bareback_prep`, `oral_focus`) y Boundary Protocols (`polite_archive`) vía `formatLocalizedPreFlightSummary()` y `formatBoundaryProtocolLabel()`; (3) Eliminación de drenaje ocioso de CPU en `ChatVoiceMessageBubble.tsx` restringiendo `setInterval(..., 100)` exclusivamente a `isPlaying === true` (`BatteryStateEngine`); (4) Compactación de tarjetas en `DarkroomListView.tsx` (duplicando densidad vertical en mobile, eliminando riel duplicado `"Con Lugar Ahora"` en la pestaña `"Con Lugar"` y haciendo toda la fila interactiva con un solo botón rápido `44×44px`); (5) Autocompletado inteligente desde `myHostCard` y chips de hora rápida (`⚡ Ahora (+30m)`, `🌙 22:00 hs`, `🔥 01:00 hs`) en `RendezvousSheet.tsx`; (6) Poda de código muerto (`isWaypointModalOpen` y cajón redundante `isPlusMenuOpen` en `DarkroomChatModal.tsx`), botón directo de **Modo Efímero (`🔥`)** en la barra de composición, reemplazo de `window.confirm()` por confirmación inline no bloqueante, estado vacío táctico con rompehielos de 1 toque y estado bilateral H-2 en `EncounterTicket`; (7) 48 suites / 319 tests en verde y `npm run typecheck` con 0 errores. | **100%** ✅ |
@@ -41,6 +50,324 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
 | **FEAT-116** | 2026-09-22 | Diario & Salud, Chat Darkroom, Seguridad & DRM, Logística & Encuentros | `Nueva Feature Disruptiva (Killer Feature)` | Evolución Disruptiva de la Agenda de Encuentros ("The Black Vault", "La Ficha de Cada Amante", "Ticket de Encuentro", "VESSEL Wrapped" y "Revancha Táctica"): (1) Tarjetas interactivas de "Ticket de Encuentro" en Darkroom Chat generadas desde `RendezvousSheet` con aceptación en 1 toque y protocolo anti-plantón H-2 (confirmación 2 horas antes), (2) Bóveda Visual del Amante ("La Ficha de Cada Amante") en `LoverDossierModal.tsx` con archivado directo desde el chat (`Archivar en Ficha`) o al crear cita (`CreateDiaryEntryModal`), protegida con DRM "Hold to Reveal" (10px blur, audio sub-bass 65Hz y blackout ante captura), (3) "The Black Vault" en `DateDiaryView.tsx` (Muro de Trofeos y Conquistas soberano Local-First / Zero-Cloud inmune a bloqueos o borrado de cuentas ajenas), (4) "Revancha Táctica" (carrusel de amantes 5★ para enviar pulso de repetición en 1 toque), (5) "VESSEL Wrapped" (`VesselWrappedModal.tsx`) con telemetría de placer, percentil de ciudad, compañero MVP, la noche más salvaje y mapa de calor de conquistas barriales, (6) Exportación camuflada a calendario (`.ics`) con título señuelo ("Reunión Táctica / Gimnasio") y alarma H-2, (7) 290/290 tests en verde (42 suites en Vitest) y TypeScript estricto con 0 errores. | **100%** ✅ |
 | **FEAT-115** | 2026-09-21 | Core, Agentes, Arquitectura, Calidad | `Infra / Agentes & Calidad de Código` | Integración Calibrada de la Skill y Filosofía Ponytail (Lazy Senior Dev) en VESSEL: Creación de `.agents/skills/ponytail/SKILL.md` adaptada con la escalera de decisiones (The Ladder: YAGNI, reuso interno de codebase, APIs nativas Web, cero librerías npm innecesarias, fixes de causa raíz con grep), articulada con cláusula de salvaguarda inquebrantable para Impeccable UI (estética brutalista, sub-bass 45-80Hz y diseño sensorial intocables); sincronización en `antigravity_global_rules.md` y `GEMINI.md`. | **100%** ✅ |
 | **FEAT-114** | 2026-09-21 | Desconexión, Radar, Salud, Testimonios, Audio, Seguridad | `Auditoría TIER 4 & Purificación Lingüística` | Auditoría Integral TIER 4: Contexto y Retención a Largo Plazo, Humanización de Desconexión, Expansión de Modo Viajero y Erradicación de Spanglish: (1) Reemplazo de archivo mal nombrado `AppDisguiseModal.tsx` por `AppDisguiseSection.tsx` (DEL-1), (2) Humanización de estados y protocolos en `BoundaryManagerModal.tsx` y `BoundariesTab.tsx` (DEL-2) sustituyendo tokens crudos (`POLITE_ARCHIVE`, `readonly`, `attenuated`) por "Cierre Respetuoso", "Solo Lectura", "Atenuado", "Señal atenuada sutil" y "+5 Respeto", (3) Expansión táctica de Modo Viajero en `TravelModeModal.tsx` incorporando polos turísticos y ciudades clave de Argentina (Córdoba, Rosario, Mendoza, Mar del Plata) y traducción de pie a "Modo Viajero", (4) Purificación en `DiaryHealthSection.tsx` ("Nuevo Recordatorio", "Contacto del Encuentro") y `DoxyPepTrackerCard.tsx` (eliminación de slashes), (5) Reemplazo de "Ocultar (+1 ID)" por "Guardar Privado" y saneamiento de slashes en `PendingTestimonialsManager.tsx`, (6) Traducción de Voice Vibe a "Audio de Presentación" en `VoiceVibePlayer.tsx` y "Escuchar Grabación" en `VoiceVibeRecorderModal.tsx`, (7) Actualización de `DuressPinSettingsModal.tsx` aclarando activación de señuelo (Calculadora o Notas), (8) 276/276 tests en verde (39 suites en Vitest) y TypeScript 100% estricto con 0 errores. | **100%** ✅ |
+
+### [FEAT-132] · [2026-10-04] Geolocalización Nativa del Modo Prueba en Saavedra 620 (Río Cuarto, Córdoba) y Cobertura Mock Completa
+- **Tipo**: `Coherencia Geográfica & Geolocalización Táctica`
+- **Módulo / Eje**: `Matriz`, `Radar`, `Logística & Encuentros`, `Geoespacial`, `Datos Mock`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Adaptación y anclaje geográfico exhaustivo del modo prueba (`localhost:3001/?mode=test`) al domicilio exacto del usuario en **Saavedra 620, Río Cuarto, Córdoba** (`lat: -33.1325, lng: -64.3470`, Geohash precisión 7 `6d45x8r`):
+  1. **Geolocalización del Usuario y Reset de Caché (`LogisticsContext.tsx` & `RadarMatrixContext.tsx`)**:
+     - Se fijó la posición por defecto en `{ lat: -33.1325, lng: -64.3470 }` (Saavedra 620).
+     - Guardas automáticas de migración de caché que detectan si `localStorage` conservaba coordenadas de Buenos Aires (`-34.588, -58.43`) o Berlín (`52.52`), purgándolas y guardando automáticamente las de Río Cuarto para que el usuario no quede atrapado a 600km de distancia.
+  2. **Calibración de Perfiles Base (`vessel-01` a `vessel-07` en `mockProfiles.ts`)**:
+     - `vessel-01` (Klaus): Saavedra al 600, Macrocentro (~50m de distancia, `lat: -33.1320, lng: -64.3465`).
+     - `vessel-02` (Receptor): Centro / Plaza Roca (~600m, `lat: -33.1275, lng: -64.3490`).
+     - `vessel-03` (Void Monolith): Barrio Alberdi (~850m, `lat: -33.1365, lng: -64.3410`).
+     - `vessel-04` (Amber Pulse): Macrocentro / Terminal (~650m, `lat: -33.1295, lng: -64.3420`).
+     - `vessel-05` (Stealth Hex): Banda Norte (~1.8km, `lat: -33.1160, lng: -64.3480`).
+     - `vessel-06` (Dark Ritual): Costanera / Parque Sarmiento (~1.4km, `lat: -33.1215, lng: -64.3540`).
+     - `vessel-07` (Leather Titan): Bimaco / Castelli (~1.1km, `lat: -33.1410, lng: -64.3520`).
+  3. **Dispersión de los 100 Perfiles Adicionales (`generateAdditionalProfiles`)**:
+     - Centro de emisión trasladado a Río Cuarto con fórmula de dispersión escalonada entre 80m y 3.2km cubriendo Macrocentro, Centro, Alberdi, Banda Norte, Bimaco, Castelli, UNRC y Costanera.
+     - Codenames y taglines contextualizados a barrios de Río Cuarto.
+  4. **Adaptación de Hotspots y Vida Nocturna (`mockHotspots.ts` & `mockNightlifeEvents.ts`)**:
+     - Puntos tácticos y boliches reubicados en la geografía de Río Cuarto (Club Táctico Centro en Constitución 850, Sauna Imperio en Sobremonte 1100, Búnker Alberdi en Av. Colombres 350, Cruising Costanera Norte en Parque Sarmiento) con Geohashes exactos de precisión 7 (`6d45x9n`, `6d45x8w`, etc.).
+  5. **Presets en Diagnósticos y Modo Viajero**:
+     - Inclusión de Río Cuarto en `TravelModeModal.tsx` y presets de Saavedra 620, Plaza Roca, Alberdi y Banda Norte en `BetaDiagnosticsModal.tsx`.
+  6. **Validación**:
+     - Suite unitaria `tests/unit/matrix/mockProfilesProximity.test.ts` actualizada y pasando al 100%. Total: 54 suites y 353 tests en verde.
+- **Componentes & Archivos Clave**:
+  - `src/data/mockProfiles.ts`
+  - `src/context/domains/LogisticsContext.tsx`
+  - `src/context/domains/RadarMatrixContext.tsx`
+  - `src/components/matrix/PlacesGrid.tsx`
+  - `src/components/radar/TravelModeModal.tsx`
+  - `src/components/beta/BetaDiagnosticsModal.tsx`
+  - `src/data/mockHotspots.ts`
+  - `src/data/mockNightlifeEvents.ts`
+  - `tests/unit/matrix/mockProfilesProximity.test.ts`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Usuario geolocalizado en Saavedra 620, Río Cuarto por defecto.
+  - [x] Migración automática de caché local para evitar aislamiento geográfico.
+  - [x] Perfiles base y adicionales distribuidos en Río Cuarto.
+  - [x] Hotspots y eventos de fiesta anclados en Río Cuarto.
+  - [x] Suite Vitest completa al 100% (54 suites / 353 tests) y `npm run typecheck` en 0 errores.
+
+### [FEAT-131] · [2026-10-04] Visibilidad y Proximidad de Usuarios de Prueba en Modo Sandbox (Coordenadas Buenos Aires, Distribución Listo YA y Sincronización Cliente)
+- **Tipo**: `Bug Fix (Corrección) & Coherencia Geográfica`
+- **Módulo / Eje**: `Matriz`, `Radar`, `Core`, `UX/UI`, `Datos Mock`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Diagnóstico de causa raíz y solución completa a la aparente desaparición de usuarios de prueba en la Matrix al operar en `localhost:3001/?mode=test`:
+  1. **Corrección de Causa Raíz en Coordenadas de Perfiles Base (`mockProfiles.ts`)**:
+     - Los 7 perfiles principales (`vessel-01` a `vessel-07`: Klaus, Receptor, Nico, Dante, Facu, Martin, Lucas) describían barrios de Buenos Aires en sus declaraciones (Palermo Soho, Recoleta, Colegiales, etc.), pero conservaban coordenadas geográficas de Berlín (`lat: 52.498, lng: 13.418`).
+     - Al calcular la distancia Haversine respecto a las coordenadas del usuario en Buenos Aires (`-34.588, -58.43`), la distancia resultante era de ~11.900 km, quedando inmediatamente descartados por el filtro por defecto `maxDistanceKm: 5` (5 km).
+     - Se actualizaron las coordenadas geográficas de los 7 perfiles a sus respectivos barrios de CABA (-34.56 a -34.61), quedando en un rango de 100m a 3.5km.
+  2. **Disponibilidad de 'Listo YA' (`onTheClock`) en Perfiles Mock Generados**:
+     - Ninguno de los 100 perfiles generados en `generateAdditionalProfiles()` contaba con `onTheClock: { isActive: true }`. Al activar el chip rápido `⚡ Disponible YA` (que activa `isOnTheClockFilterActive`), todos los perfiles mock eran excluidos de la vista, aislando únicamente la tarjeta del usuario actual ("VOS") y dejando `Personas (1)`.
+     - Se dotó al 20% de los perfiles generados (`index % 5 === 0`) de disponibilidad activa `onTheClock` con notas contextuales y expiración dinámica a 45 minutos.
+  3. **Sanitización y Refresco de Caché en `RadarMatrixContext.tsx`**:
+     - `getSanitizedMockProfiles()` ahora detecta y descarta automáticamente coordenadas cacheadas antiguas en Berlín (`lat > 50`), refrescando timestamps de `onTheClock` si habían expirado en `localStorage`.
+  4. **Sincronización Reactiva de `appMode` en `SettingsContext.tsx`**:
+     - Se añadió un efecto de sincronización en cliente para que al hidratarse desde la URL `?mode=test`, `appMode` actualice el estado de React si el SSR inicializó en `real`.
+  5. **Banner Táctico de Relajación en `ProfileGrid.tsx`**:
+     - Si los filtros activos reducen los resultados únicamente a la tarjeta del usuario propio, se renderiza un banner informativo brutalista con botón directo de 1 toque para restablecer los filtros.
+  6. **Validación**:
+     - Nueva suite `tests/unit/matrix/mockProfilesProximity.test.ts` verificando que los 7 perfiles base estén a <10km, que al menos 20 perfiles pasen los filtros por defecto, y que existan al menos 5 usuarios disponibles con el filtro "Listo YA" activo.
+     - 54 suites / 353 tests pasando al 100% en verde, linter y typecheck con 0 errores.
+- **Componentes & Archivos Clave**:
+  - `src/data/mockProfiles.ts`
+  - `src/context/domains/RadarMatrixContext.tsx`
+  - `src/context/domains/SettingsContext.tsx`
+  - `src/components/matrix/ProfileGrid.tsx`
+  - `tests/unit/matrix/mockProfilesProximity.test.ts`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Perfiles base reubicados con coordenadas reales de Buenos Aires.
+  - [x] Perfiles mock con `onTheClock` activo disponibles para el filtro "Listo YA".
+  - [x] Sincronización cliente de `appMode` en hidratación.
+  - [x] Banner de restablecimiento de filtros interactivo.
+  - [x] 100% tests en verde (54 suites / 353 tests).
+
+### [FEAT-130] · [2026-10-04] Cola de Mutaciones Offline (PWA Background Sync), Ciclo de Vida Web Audio API en Segundo Plano e Índices Compuestos Firestore
+- **Tipo**: `Perfección Tecnológica Full-Stack & Resiliencia Offline`
+- **Módulo / Eje**: `Offline & Sync`, `Audio & Háptica`, `Storage & Cloud`, `PWA`, `Arquitectura & Core`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Implementación integral de las 3 mejoras de arquitectura identificadas en la auditoría para alcanzar la máxima resiliencia técnica en VESSEL:
+  1. **Motor de Cola de Mutaciones Offline Soberana (`offlineMutationQueue.ts`)**:
+     - Arquitectura *Offline-First* con persistencia local en `localStorage` (`vessel_offline_mutation_queue_v1`) y despacho asíncrono diferido de mutaciones críticas: `SEND_PULSE`, `SEND_CHAT_MESSAGE`, `UPDATE_MY_PRESENCE` y `SUBMIT_BETA_FEEDBACK`.
+     - Sistema resiliente de reintentos exponenciales (hasta 5 reintentos con cálculo de backoff `min(30000, 1000 * 2^(retryCount-1))`), deduplicación por ID de mutación y auto-despacho reactivo ante eventos `online` de ventana o mensajes `vessel:flush-mutation-queue` desde el Service Worker.
+     - Integración desacoplada en `RadarMatrixContext.tsx` para captura automática de fallos de red al enviar pulsos, e inicialización de listeners del ciclo de vida en `LogisticsContext.tsx`.
+     - Suite unitaria dedicada `tests/unit/sync/offlineMutationQueue.test.ts` con 6 pruebas automatizadas validando ciclo de vida, persistencia y despacho de eventos.
+  2. **Ciclo de Vida y Ahorro de Energía en Web Audio API (`SubBassAudioEngine.ts`)**:
+     - Integración de listeners pasivos al evento nativo `document.visibilitychange` mediante `attachVisibilityLifecycleListeners()`.
+     - Cuando la app pasa a segundo plano o la pestaña se oculta (`document.hidden === true`), se detienen los osciladores activos y el contexto acústico se suspende de inmediato (`ctx.suspend()`), erradicando cualquier drenaje innecesario de batería o ciclos de CPU.
+     - Al retornar al primer plano, si el usuario ya había desbloqueado el audio por interacción gestual (`isAudioUnlocked === true`), el contexto se reanuda limpiamente (`ctx.resume()`) sin violar las políticas de autoplay de Safari/Chrome.
+     - Suite de pruebas enriquecida en `tests/unit/audio/SubBassAudioEngine.test.ts` cubriendo la suspensión y reanudación automática.
+  3. **Esquema de Índices Compuestos de Producción en Firestore (`firestore.indexes.json`)**:
+     - Configuración declarativa formal de 7 índices compuestos esenciales para evitar errores `FAILED_PRECONDITION: The query requires an index` en entornos online reales:
+       - `vessel_pulses`: `toUid` (ASC) + `timestamp` (DESC) y `toUid` (ASC) + `isRead` (ASC) + `timestamp` (DESC).
+       - `vessel_testimonials`: `targetUid` (ASC) + `createdAt` (DESC).
+       - `vessel_beta_reports`: `status` (ASC) + `createdAt` (DESC) y `type` (ASC) + `createdAt` (DESC).
+       - `vessel_hotspots`: `status` (ASC) + `activeVesselsCount` (DESC).
+       - `vessel_profiles`: `status` (ASC) + `updatedAt` (DESC).
+  4. **Verificación Integral de Calidad y Tests**:
+     - 53 suites de pruebas y 350 tests unitarios y de integración pasando al 100% en Vitest.
+     - Validación estricta de compilador TypeScript (`npm run typecheck` con 0 errores).
+     - Validación estricta de linter (`npm run lint` con 0 errores).
+- **Componentes & Archivos Clave**:
+  - `src/lib/sync/offlineMutationQueue.ts`
+  - `src/lib/audio/SubBassAudioEngine.ts`
+  - `firestore.indexes.json`
+  - `src/context/domains/RadarMatrixContext.tsx`
+  - `src/context/domains/LogisticsContext.tsx`
+  - `tests/unit/sync/offlineMutationQueue.test.ts`
+  - `tests/unit/audio/SubBassAudioEngine.test.ts`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Cola de mutaciones offline con serialización JSON, persistencia local y soporte para 4 tipos de operaciones críticas.
+  - [x] Ciclo de vida de AudioContext suspendido automáticamente cuando la ventana está oculta (`visibilitychange`).
+  - [x] Índices compuestos de Firestore definidos para todas las consultas con ordenamiento y filtros múltiples.
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Linter estricto validado (`npm run lint` con 0 errores).
+  - [x] 100% de la suite de pruebas unitarias en verde (53 suites / 350 tests).
+
+### [FEAT-129] · [2026-10-04] Auditoría Forense de Modos (Usuario/Admin, Local/Online), Hardening de firestore.rules para Reportes Beta, Enlace Táctico de Kinks/Hotspots y Aislamiento de Entorno
+- **Tipo**: `Auditoría Integral & Hardening de Seguridad`
+- **Módulo / Eje**: `Admin`, `Seguridad & DRM`, `Storage & Cloud`, `PWA`, `Arquitectura & Core`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Auditoría exhaustiva y transversal de los tres vectores solicitados: (1) Modo Usuario vs Modo Admin; (2) Modo Local (desarrollo/sandbox) vs Producción Online; (3) Coherencia absoluta, corrección de fallas latentes y diagnóstico de perfección tecnológica:
+  1. **Hardening de Reglas de Seguridad de Firestore (`firestore.rules`)**:
+     - Detección de causa raíz en `firestore.rules`: La colección `vessel_beta_reports` carecía de regla explícita, provocando que la cláusula `match /{document=**} { allow read, write: if false; }` denegara en producción online con `permission-denied` cualquier intento de envío de bugs desde el widget flotante (`BetaFeedbackModal`) y cualquier intento de lectura/actualización desde el panel `/admin` (`BetaManagementTab`).
+     - Se incorporó la regla oficial permitiendo `create: if true` (para que cualquier tester autenticado o anónimo pueda reportar incidentes) y `read, update, delete: if isAdmin()` para el equipo operativo. Validado formalmente mediante `firebase_validate_security_rules` arrojando `OK: No errors detected`.
+  2. **Enlace Dinámico de Conteos en Consola Administrativa (`AdminNav.tsx` & `/admin/page.tsx`)**:
+     - Las pestañas de "Morbos & Fetiches" y "Puntos & Cruising" no recibían sus conteos dinámicos en la barra de navegación. Se conectaron `getAllKinks().length` y `tacticalHotspots.length` a las propiedades `kinksCount` y `hotspotsCount` de `<AdminNav />`, visualizando la cantidad real de fetiches y hotspots activos.
+  3. **Higiene de Repositorio y Blindaje de Entorno (`.gitignore`)**:
+     - Se actualizó `.gitignore` para omitir por completo el directorio de trabajo local `.obsidian/`.
+  4. **Verificación Integral de Calidad y Tests**:
+     - Verificación estricta de tipos (`tsc --noEmit` con 0 errores).
+     - Verificación de linter (`eslint .` con 0 errores).
+     - Suite completa de Vitest en verde (52 suites, 343 tests pasando al 100%).
+- **Componentes & Archivos Clave**:
+  - `firestore.rules`
+  - `.gitignore`
+  - `src/app/admin/page.tsx`
+  - `src/components/admin/AdminNav.tsx`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Reglas de Firestore validadas formalmente sin errores de sintaxis ni bypasses inseguros.
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Linter estricto validado (`npm run lint` con 0 errores).
+  - [x] 100% de la suite de pruebas unitarias e integración en verde (52 suites / 343 tests).
+  - [x] Registro en memoria persistente Engram y actualización del Feature Ledger.
+
+### [FEAT-128] · [2026-10-04] Pipeline de Carga y Optimización de Fotos de Portada en Alta Definición, Corrección de Thumbnail OAuth y Sincronización Reactiva de Avatar
+- **Tipo**: `Bug Fix (Corrección) & Resiliencia Full-Stack`
+- **Módulo / Eje**: `Perfil & Cuenta`, `Storage & Cloud`, `Matriz & Radar`, `Arquitectura & Core`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Diagnóstico de causa raíz y solución completa a los tres problemas encadenados de imágenes en la aplicación: fotos invisibles/pixeladas, bloqueo silencioso al subir imágenes desde el dispositivo y desincronización entre álbumes y avatar del perfil:
+  1. **Diagnóstico de Causa Raíz en Foto Pixelada de la Matrix**:
+     - Al autenticarse mediante Google OAuth, la URL provista por el proveedor contiene el modificador de tamaño estricto `=s96-c` (thumbnail cuadrado de 96×96 píxeles). Google firma digitalmente dichas URLs, por lo que alterar el parámetro (`=s800`, `=s0`) devuelve `403 Forbidden`. Al renderizarse en pantallas móviles o tarjetas de la Matrix (~180px–300px) y en la cabecera del perfil (`ProfileGlanceHero`, ~500px), la imagen de 96px se estiraba inevitablemente generando pixelación extrema.
+     - La solución definitiva requería habilitar al usuario para que pueda subir su propia fotografía en alta definición desde su dispositivo y reemplazar el avatar OAuth en 0ms.
+  2. **Diagnóstico y Corrección de Bloqueo al Subir Foto en `CoverPhotoSelectorModal.tsx`**:
+     - En `CoverPhotoSelectorModal.tsx`, la variable `publicAlbum` se evaluaba como `userAlbums.find(a => a.privacy === 'public') || userAlbums[0]`. En modo real o para usuarios nuevos sin álbumes en Firestore, `userAlbums` inicializaba en `[]`, dejando `publicAlbum` como `undefined`.
+     - El manejador `handleFileUpload` contenía la guarda `if (!files || files.length === 0 || !publicAlbum) return;`, lo que provocaba que al seleccionar una foto del dispositivo, la función abortara en silencio absoluto sin emitir error ni procesar la imagen.
+     - Se eliminó el bloqueo, creando automáticamente el álbum público `"album-pub-01"` (`Galería Pública Principal`) si no existe.
+  3. **Compresión Local en WebP HD (1080×1080px) & Subida Asíncrona**:
+     - Se integró `compressImage(file, 1080, 1080, 0.85)` de `storageService.ts`, generando tanto un `Blob` optimizado como un `dataUrl` en base64 de alta resolución (~40-80KB en vez de 5-10MB).
+     - La foto se asigna en 0ms como avatar activo del usuario (`updateUserAvatar(dataUrl, false)`) y portada del perfil (`setProfileCoverPhoto(dataUrl)`), permitiendo feedback visual inmediato.
+     - En segundo plano, se sube el archivo a Firebase Storage (`uploadMediaFile`), actualizando la URL remota definitiva al completar la carga.
+     - Se agregó indicador de progreso visual en el botón de subida y reseteo del `fileInput.value = ""` para permitir volver a cargar la misma imagen si el usuario lo desea.
+  4. **Blindaje de Álbumes por Defecto y Sincronización Reactiva Multidominio**:
+     - En `SettingsContext.tsx`, se corrigió la inicialización para que `userAlbums` conserve siempre la estructura base `INITIAL_MY_ALBUMS`, evitando que suscripciones vacías de Firestore reduzcan el estado a `[]`.
+     - `addPhotoToAlbum` y `setProfileCoverPhoto` ahora auto-crean el álbum público si no existe, añaden la imagen a la lista de fotos y despachan el evento reactivo del sistema `vessel:avatar-updated`.
+     - `AuthContext.tsx` se suscribió a `vessel:avatar-updated`, sincronizando reactivamente `myProfile.avatarUrl`, guardando en Firestore y actualizando todos los componentes observadores.
+     - `VesselFacadeBridge` (`VesselContext.tsx`) compone `setProfileCoverPhoto` para ejecutar en simultáneo la mutación de álbumes y la actualización de avatar en `AuthContext`.
+  5. **Reset Reactivo de Errores de Carga en `ProfileCard.tsx`**:
+     - Se añadió un efecto reactivo en `ProfileCard.tsx` (`useEffect(() => setImgError(!profile.avatarUrl), [profile.avatarUrl])`), garantizando que si una imagen falló anteriormente, se recupere y reintente automáticamente al actualizar la URL del avatar.
+- **Componentes & Archivos Clave**:
+  - `src/components/account/CoverPhotoSelectorModal.tsx`
+  - `src/context/domains/SettingsContext.tsx`
+  - `src/context/domains/AuthContext.tsx`
+  - `src/context/VesselContext.tsx`
+  - `src/components/matrix/ProfileCard.tsx`
+  - `src/lib/firebase/storageService.ts`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` en 0 errores).
+  - [x] Linter limpio con 0 errores y 0 warnings (`npm run lint`).
+  - [x] 52 suites de pruebas y 343 tests pasando al 100% en Vitest (`npm run test`).
+  - [x] Pipeline de validación integral completado con éxito (`npm run validate`).
+  - [x] Sincronización en memoria Engram y registro de features.
+
+### [FEAT-127] · [2026-10-04] Perfección Tecnológica PWA & Sensorial: Desbloqueo Gestual de Web Audio API, Micro-Indicador Sensorial y Sincronización Periódica en Segundo Plano
+- **Tipo**: `Perfección Tecnológica PWA & Sensorial`
+- **Módulo / Eje**: `Audio & Háptica`, `PWA & Offline`, `Radar & Matriz`, `Logística & Encuentros`, `UX/UI (Impeccable Operate Mode)`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Implementación integral de las propuestas de excelencia sensorial, rendimiento PWA y resiliencia offline para llevar la experiencia técnica de VESSEL al estado óptimo de producción:
+  1. **Desbloqueo Gestual Automático de Web Audio API (`SubBassAudioEngine.ts`)**:
+     - Escucha pasiva de gestos táctiles (`pointerdown`, `touchstart`, `keydown`) en `window` para auto-desbloquear el `AudioContext` en el primer toque del usuario, eliminando el bloqueo de autoplay de Safari iOS y WebView.
+     - Emisión de un micro-buffer de silencio analógico (1 muestra a 22050Hz) para forzar la salida de hardware en dispositivos Apple.
+     - API reactiva de suscripción `subscribeAudioUnlocked` y despacho del evento del sistema `vessel:audio-unlocked`.
+  2. **Micro-Indicador Sensorial Acústico en Cabecera (`BrutalistHeader.tsx`)**:
+     - Botón táctico de 36px integrado en la cápsula de identidad de la cabecera: muestra el estado del sintetizador analógico de 45Hz (`Volume2` / `VolumeX`).
+     - Alerta visual sutil si el audio está habilitado pero pendiente de primer toque (`animate-ping` ámbar).
+     - Conmutación en 1 toque con feedback háptico táctico y pulso sub-bass de confirmación a 65Hz.
+     - Paridad idiomática completa en `translations.ts` (`es` / `en`) con descripciones de accesibilidad semánticas.
+  3. **Periodic Background Sync API Modulada por Batería (`public/sw.js` & `periodicSyncService.ts`)**:
+     - En `public/sw.js`, implementación del listener `periodicsync` con el tag `vessel-geo-battery-sync` que despierta a los clientes de la PWA para actualizar telemetría y coordenadas. Fallback a `sync` de un disparo (`vessel-sync-ping`).
+     - Servicio modular `periodicSyncService.ts` conectado a `LogisticsContext.tsx`: modula el intervalo de sincronización según el estado de `BatteryStateEngine` (15 minutos en activo, 60 minutos en modo eco, y desregistro total si la batería es <=15% o el estado corporal es `dormant` para proteger la autonomía del usuario).
+  4. **Optimización de Renderizado con Next.js Image y Linter Limpio**:
+     - Migración de imágenes en componentes clave (`ProfileCard.tsx`, `ProfileGlanceHero.tsx`, `PulseCard.tsx`, `DiaryInsights.tsx`) al componente `<Image />` de Next.js.
+     - Configuración de ESLint en `eslint.config.mjs` ignorando carpetas de cobertura y desactivando reglas conflictivas con blobs cifrados, logrando **0 errores y 0 warnings** en `npm run lint`.
+  5. **Corrección de Causa Raíz en Desaparición de Imágenes (`unoptimized={true}`)**:
+     - En Next.js App Router, usar `<Image>` con URLs externas remotas (Unsplash, Firebase, Google) sin la propiedad `unoptimized` forzaba a que el servidor Node intentara actuar como proxy de optimización en `/_next/image`. Ante fallos de conexión o restricciones de entorno dev, el proxy devolvía HTTP 500, activando el manejador `onError` que conmutaba a pantalla negra con el fallback `⚡ [INICIALES]`.
+     - Se configuró `unoptimized` incondicionalmente en `ProfileCard.tsx`, `ProfileGlanceHero.tsx`, `PulseCard.tsx` y `DiaryInsights.tsx`, permitiendo que el navegador descargue directamente la imagen con decodificación asíncrona nativa, eliminando los errores 500 y restaurando al 100% las fotos en la Matrix.
+- **Componentes & Archivos Clave**:
+  - `src/lib/audio/SubBassAudioEngine.ts`
+  - `src/components/brand/BrutalistHeader.tsx`
+  - `public/sw.js`
+  - `src/lib/pwa/periodicSyncService.ts`
+  - `src/context/domains/LogisticsContext.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `tests/unit/audio/SubBassAudioEngine.test.ts`
+  - `tests/unit/pwa/periodicSyncService.test.ts`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] 100% de la suite de pruebas unitarias e integración en verde (52 suites, 343 tests pasando sin fallos).
+  - [x] Linter estricto verificado (`npm run lint` con 0 errores y 0 advertencias).
+  - [x] Pipeline de validación completo (`npm run validate`) en verde.
+  - [x] Protección de la experiencia en los 20 arquetipos de VESSEL (dispositivos de gama media, baja batería, sigilo y Safari iOS).
+
+### [FEAT-126] · [2026-10-04] Auditoría Integral de Modos (Usuario vs Admin, Local vs Online), Corrección de Desbloqueo Maestro, Sincronización de Moderación en Vivo y Resiliencia PWA Offline
+- **Tipo**: `Auditoría Integral & Resiliencia Full-Stack`
+- **Módulo / Eje**: `Admin & Operaciones`, `Arquitectura & Core`, `Infra/Seguridad & Despliegue`, `PWA & Offline`, `Storage & Cloud`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Auditoría multidimensional exhaustiva del sistema VESSEL cubriendo los modos Usuario vs Admin y Local vs Producción Online, garantizando coherencia absoluta y solucionando fallos arquitectónicos:
+  1. **Corrección de Causa Raíz en Desbloqueo con Clave Maestra (`checkIsAdminAuthorized`)**:
+     - En `src/lib/admin/adminService.ts`, la validación de clave maestra condicionaba erróneamente el passcode a `isEmailMatch && passcode === configuredPasscode`. Dado que el formulario de ingreso de clave en `AdminAuthGuard.tsx` solo se presenta a usuarios cuyo email NO está en la lista blanca (`isEmailMatch === false`), era matemáticamente imposible desbloquear la consola con el passcode maestro. Se desacopló la condición de modo que cualquier ingreso que coincida con `NEXT_PUBLIC_ADMIN_PASSCODE` otorgue acceso inmediato.
+  2. **Sincronización de Moderación en Modo Real y en la Nube**:
+     - En `src/lib/admin/adminService.ts` y `src/app/admin/page.tsx`, las acciones de moderación (`applyUserModeration`, `adjustUserKarma`, `verifyUserProfile`, `toggleUserForcedFogMode`, `changeUserPlan` y `clearUserDuressAlert`) llamaban a `getManagedProfiles()` sin argumentos (`mode`, `liveRealProfiles`), provocando que en `appMode === "real"` la lista fuera un array vacío y las acciones fallaran en silencio. Se refactorizaron para aceptar `mode` y `currentProfiles`, persistiendo en `real_vessel_custom_profiles_v1` y sincronizando en segundo plano con las colecciones `vessel_profiles` y `vessel_blacklist` en Firestore.
+  3. **Blindaje contra Instancias No Inicializadas de Firestore**:
+     - En `src/lib/firebase/userDataService.ts`, `saveFullUserDataToCloud` y `subscribeToFullUserData` llamaban a `doc(db, ...)` aún cuando `db` fuera un objeto no inicializado o un mock de pruebas sin instancias de Firebase, arrojando excepciones no capturadas de `invalid-argument`. Se añadieron guardas de verificación estricta (`!db || (!("app" in db) && !("type" in db))`).
+  4. **Aislamiento Seguro de la Consola Operativa en Ajustes (`AppSettingsSection.tsx`)**:
+     - La tarjeta de acceso `CONSOLA ADMIN (/admin)` se mostraba indiscriminadamente a todos los usuarios gratuitos en producción. Se aisló para renderizarse únicamente en entornos locales (`isLocalEnvironment()`) o para cuentas autenticadas cuyo email pertenezca al personal autorizado.
+  5. **Resiliencia PWA Offline con Service Worker (`public/sw.js` & `PwaRegister.tsx`)**:
+     - Para satisfacer la regla de funcionamiento en subsuelos y clubes con cero conectividad (cruising y fiestas nocturnas), se implementó un Service Worker nativo con estrategia Stale-While-Revalidate para activos estáticos de Next.js y Network-first con respaldo en App Shell para navegación, excluyendo llamadas directas de autenticación y APIs de Firebase.
+  6. **Suite Exhaustiva de Pruebas Unitarias para Administración**:
+     - Creación de `tests/unit/admin/adminService.test.ts` con 14 pruebas automáticas cubriendo RBAC, verificación de claves, listas blancas, ajuste de karma con recalculación de anti-ghost, suspensión/bloqueo de usuarios y trazabilidad en logs de auditoría.
+- **Componentes & Archivos Clave**:
+  - `src/lib/admin/adminService.ts`
+  - `src/app/admin/page.tsx`
+  - `src/lib/firebase/userDataService.ts`
+  - `src/components/account/AppSettingsSection.tsx`
+  - `public/sw.js` [NEW]
+  - `src/components/pwa/PwaRegister.tsx` [NEW]
+  - `src/app/layout.tsx`
+  - `tests/unit/admin/adminService.test.ts` [NEW]
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite completa de pruebas en verde (`npm run validate` con 335/335 tests en 51 suites).
+  - [x] Corrección de causa raíz en `checkIsAdminAuthorized` comprobada en tests unitarios.
+  - [x] Service Worker táctico y registro cliente PWA implementados.
+  - [x] Registro en `registro-de-features.md` y memoria Engram.
+
+### [FEAT-125] · [2026-10-03] Aislamiento Estricto de Producción Online, Suite de Testing Beta y Priorización Algorítmica con Incentivos para Verificación Biométrica
+- **Tipo**: `Nueva Feature & Blindaje Arquitectónico`
+- **Módulo / Eje**: `Arquitectura & Core`, `Infra/Seguridad & Despliegue`, `Matriz & Radar`, `Admin & Operaciones`, `Identidad & Privacidad`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Implementación integral de los 3 pilares de transición de prototipo a lanzamiento operativo con usuarios reales:
+  1. **Aislamiento Estricto de Producción Online**:
+     - Función guard `isLocalEnvironment()` en `src/lib/storage/localStorageSync.ts`: Si la aplicación se ejecuta fuera de `localhost` o `127.0.0.1`, `getActiveAppMode()` y `setActiveAppMode()` quedan forzados irrevocablemente a `"real"`, neutralizando cualquier intento de inyección de mocks vía parámetro de URL `?mode=test` o claves residuales de `localStorage`.
+     - Ocultamiento y bloqueo de los switchers a "Modo Prueba" y el modal `AppModeModal` en la consola de administración (`AdminHeader.tsx`, `admin/page.tsx`) y en los ajustes de usuario (`AppSettingsSection.tsx`).
+  2. **Suite de Herramientas para Usuarios Beta**:
+     - Flag `isBetaTester?: boolean` en `VesselProfile`, `MyProfileState` y Firestore, con asignación automática cuando el usuario canjea un código VIP oficial `VESSEL-BETA-*`.
+     - Servicio de persistencia y suscripción en tiempo real `betaFeedbackService.ts` sobre la colección Firestore `vessel_beta_reports` con soporte offline resiliente.
+     - Botón flotante contextual `BetaFeedbackFab.tsx` en la app móvil/desktop (exclusivo para testers o entorno local) que abre el modal de reporte táctico `BetaFeedbackModal.tsx` con captura automática de ruta, resolución de pantalla, batería y versión, y el simulador de sensores `BetaDiagnosticsModal.tsx` (teletransportación GPS para auditar distancias del radar, oscilador sub-bass 45-80Hz y telemetría de hardware).
+     - Pestaña táctica en `/admin` (`BetaManagementTab.tsx`) con 5 KPIs de seguimiento, bandeja de triage con actualización de estado (`new` / `investigating` / `resolved`) y generador de enlaces de invitación VIP Beta con 1 tap y copia al portapapeles.
+  3. **Priorización Algorítmica e Incentivos de Verificación Biométrica**:
+     - Rediseño del algoritmo de proximidad y ranking en `GeospatialEngine.ts` (`sortAndEnrichProfilesByProximity`) y `RadarMatrixContext.tsx` (`filteredProfiles`): los perfiles verificados con personas reales y prueba de vida facial 3D se ordenan prioritariamente en la parte superior del Radar y la Matriz, seguidos por el compromiso Anti-Ghost y la distancia física.
+     - Bonificación automática de **+20 puntos de Respect Karma** en `AuthContext.tsx` (`completeLivenessVerification`) al completar la prueba de vida facial 3D.
+     - Ficha de incentivos tangibles en `IdentityVerificationCard.tsx` detallando al usuario los 4 beneficios clave de verificarse (Prioridad Radar VIP, +20 Respect Karma, Escudo Anti-Bots y Privacidad Zero-Knowledge sin almacenamiento de fotos faciales en servidores).
+- **Componentes & Archivos Clave**:
+  - `src/lib/storage/localStorageSync.ts`
+  - `src/components/settings/AppModeModal.tsx`
+  - `src/components/admin/AdminHeader.tsx`
+  - `src/app/admin/page.tsx`
+  - `src/components/account/AppSettingsSection.tsx`
+  - `src/types/vessel.ts`
+  - `src/context/domains/AuthContext.tsx`
+  - `src/lib/firebase/inviteService.ts`
+  - `src/lib/firebase/betaFeedbackService.ts` [NEW]
+  - `src/components/beta/BetaFeedbackModal.tsx` [NEW]
+  - `src/components/beta/BetaDiagnosticsModal.tsx` [NEW]
+  - `src/components/beta/BetaFeedbackFab.tsx` [NEW]
+  - `src/components/admin/tabs/BetaManagementTab.tsx` [NEW]
+  - `src/components/admin/AdminNav.tsx`
+  - `src/app/page.tsx`
+  - `src/lib/geo/GeospatialEngine.ts`
+  - `src/context/domains/RadarMatrixContext.tsx`
+  - `src/context/domains/LogisticsContext.tsx`
+  - `src/components/account/IdentityVerificationCard.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript 100% estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite completa de pruebas en verde (`npm run test` con 50/50 suites y 321/321 tests pasando).
+  - [x] Resguardo total de privacidad facial (*Privacy by Design*) sin almacenamiento de biometría en nube.
+  - [x] Cero mocks en producción online garantizado mediante Guard de Host.
+  - [x] Sincronización en memoria Engram y Feature Ledger.
+
+### [FEAT-124] · [2026-10-03] Densidad Táctica de Escritorio: 4 Cards por Fila en la Matriz de Perfiles
+- **Tipo**: `Enhancement (Mejora/Refactor)`
+- **Módulo / Eje**: `Matriz`, `Arquitectura & Core`, `UX/UI`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Optimización de densidad visual y escaneabilidad para la versión de escritorio de la Matriz de perfiles de VESSEL. Anteriormente, la cuadrícula utilizaba `grid-cols-2 sm:grid-cols-3` de forma indiscriminada para cualquier resolución superior a 640px, lo que provocaba que en pantallas de escritorio o laptops las tarjetas se renderizaran excesivamente anchas y desproporcionadas dentro del contenedor central `max-w-4xl`. Se incorporó el breakpoint responsivo `md:grid-cols-4` tanto en `ProfileGrid.tsx` como en su skeleton gemelo `ProfileGridSkeleton.tsx`, permitiendo que en pantallas medianas y grandes se visualicen exactamente 4 tarjetas por fila con proporción áurea/aspect ratio 2:3 perfectamente balanceado, alineándose además con la política de carga anticipada `isPriority={index < 4}` de las 4 primeras fotos.
+- **Componentes & Archivos Clave**:
+  - `src/components/matrix/ProfileGrid.tsx`
+  - `src/components/matrix/ProfileGridSkeleton.tsx`
+  - `tests/unit/ui/ProfileGrid.test.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de Vitest pasando al 100% (50/50 suites, 321/321 tests).
+  - [x] Invariante de hidratación SSR y skeleton gemelo sin layout shift en desktop.
+  - [x] Sincronización en memoria Engram y registro en Feature Ledger.
 
 ### [FEAT-123] · [2026-09-30] Blindaje de Seguridad Integral Pre-Despliegue (CWE-287, CWE-798, CWE-284, Cifrado & Suite Verde)
 - **Tipo**: `Infra/Seguridad & Blindaje Pre-Despliegue`

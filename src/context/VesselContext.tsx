@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useCallback } from "react";
 import {
   SettingsProvider,
   useSettings,
@@ -85,6 +85,14 @@ const VesselFacadeBridge: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isUnlimited = settings.isUnlimited || Boolean(logistics.partyPass?.isActive);
 
+  const setProfileCoverPhoto = useCallback(
+    (photoUrl: string) => {
+      settings.setProfileCoverPhoto(photoUrl);
+      auth.updateUserAvatar(photoUrl, false);
+    },
+    [settings.setProfileCoverPhoto, auth.updateUserAvatar]
+  );
+
   const facadeValue = useMemo<VesselContextType>(
     () => ({
       ...settings,
@@ -94,9 +102,10 @@ const VesselFacadeBridge: React.FC<{ children: React.ReactNode }> = ({ children 
       ...diary,
       ...chat,
       ...radarMatrix,
+      setProfileCoverPhoto,
       isUnlimited,
     }),
-    [settings, auth, safety, logistics, diary, chat, radarMatrix, isUnlimited]
+    [settings, auth, safety, logistics, diary, chat, radarMatrix, setProfileCoverPhoto, isUnlimited]
   );
 
   return (

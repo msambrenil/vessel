@@ -8,6 +8,8 @@ import {
   Navigation,
   HeartPulse,
   QrCode,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { BeaconCountdownWidget } from "@/components/safety/BeaconCountdownWidget";
@@ -26,8 +28,35 @@ export const BrutalistHeader: React.FC = () => {
     safetyBeacon,
     harmReductionSession,
     openHarmReductionModal,
+    appSettings,
+    updateAppSettings,
     t,
   } = useVessel();
+
+  const [isAudioUnlocked, setIsAudioUnlocked] = React.useState<boolean>(() =>
+    audioEngine.getIsAudioUnlocked()
+  );
+
+  React.useEffect(() => {
+    const unsubscribe = audioEngine.subscribeAudioUnlocked((unlocked) => {
+      setIsAudioUnlocked(unlocked);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleToggleAudio = React.useCallback(async () => {
+    if (!isAudioUnlocked) {
+      await audioEngine.unlockAudioOnUserGesture();
+    }
+    const nextSound = !appSettings.soundEnabled;
+    updateAppSettings({ soundEnabled: nextSound });
+    if (nextSound) {
+      audioEngine.triggerTacticalPulse();
+      audioEngine.playSubBass(65, 0.15);
+    } else {
+      audioEngine.triggerTacticalPulse();
+    }
+  }, [isAudioUnlocked, appSettings.soundEnabled, updateAppSettings]);
 
   const isVerified = isAuthenticated && Boolean(myProfile.verification?.isVerified);
   const isUnlimited = userPlan === "unlimited";
@@ -145,6 +174,45 @@ export const BrutalistHeader: React.FC = () => {
               }`}
             >
               <ShieldCheck className={`w-4 h-4 ${isVerified ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+            </button>
+
+            {/* Separador micro */}
+            <span className="w-[1px] h-4 bg-white/10 mx-0.5" />
+
+            {/* Micro-Indicador Sensorial Acústico Sub-Bass (45Hz) */}
+            <button
+              type="button"
+              onClick={handleToggleAudio}
+              aria-label={
+                !appSettings.soundEnabled
+                  ? (t.header?.soundMuted || "Audio Silenciado")
+                  : !isAudioUnlocked
+                  ? (t.header?.soundWaitingUnlock || "Tocar para calibrar audio sub-bass (45Hz)")
+                  : (t.header?.soundActive || "Audio de Baja Frecuencia Activado")
+              }
+              title={
+                !appSettings.soundEnabled
+                  ? `${t.header?.soundMuted || "Audio Silenciado"} — Tocar para activar`
+                  : !isAudioUnlocked
+                  ? `${t.header?.soundWaitingUnlock || "Tocar para calibrar audio sub-bass (45Hz)"}`
+                  : `${t.header?.soundActive || "Audio Sub-Bass 45-80Hz Activo"} — Tocar para silenciar`
+              }
+              className={`min-w-[34px] min-h-[34px] sm:min-w-[36px] sm:min-h-[36px] p-1.5 rounded-full transition-all flex items-center justify-center cursor-pointer active:scale-90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-electricViolet relative ${
+                !appSettings.soundEnabled
+                  ? "text-neutral-500 hover:text-neutral-300 hover:bg-white/5"
+                  : !isAudioUnlocked
+                  ? "text-amber-400 bg-amber-400/10 hover:bg-amber-400/20"
+                  : "text-electricViolet-glow hover:text-white hover:bg-electricViolet/30 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+              }`}
+            >
+              {!appSettings.soundEnabled ? (
+                <VolumeX className="w-4 h-4 stroke-[2]" />
+              ) : (
+                <Volume2 className="w-4 h-4 stroke-[2.2]" />
+              )}
+              {appSettings.soundEnabled && !isAudioUnlocked && (
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              )}
             </button>
 
             {/* Separador micro */}

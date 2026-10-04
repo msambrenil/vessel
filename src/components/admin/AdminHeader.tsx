@@ -5,6 +5,7 @@ import Link from "next/link";
 import { StaffMember } from "@/types/admin";
 import { VesselLogo } from "@/components/brand/VesselLogo";
 import { useVessel } from "@/context/VesselContext";
+import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   ShieldAlert,
@@ -109,40 +110,47 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               <span>{timeStr || "00:00:00"} LOC</span>
             </div>
 
-            {/* Switch Directo Modo Real vs Modo Prueba en la Cabecera de /admin */}
-            <div className="flex items-center p-1 rounded-xl bg-black/80 border border-white/15 gap-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setAppMode("real");
-                  audioEngine.playVesselCrescendoAlert();
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-                  appMode === "real"
-                    ? "bg-emerald-500/25 text-emerald-300 border border-emerald-400/60 shadow-sm"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${appMode === "real" ? "bg-emerald-400 animate-pulse" : "bg-neutral-600"}`} />
-                <span>MODO REAL</span>
-              </button>
+            {/* Switch Directo Modo Real vs Modo Prueba en la Cabecera de /admin (Solo en localhost) */}
+            {isLocalEnvironment() ? (
+              <div className="flex items-center p-1 rounded-xl bg-black/80 border border-white/15 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppMode("real");
+                    audioEngine.playVesselCrescendoAlert();
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                    appMode === "real"
+                      ? "bg-emerald-500/25 text-emerald-300 border border-emerald-400/60 shadow-sm"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${appMode === "real" ? "bg-emerald-400 animate-pulse" : "bg-neutral-600"}`} />
+                  <span>MODO REAL</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setAppMode("test");
-                  audioEngine.playPulse();
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
-                  appMode === "test"
-                    ? "bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm"
-                    : "text-neutral-400 hover:text-white"
-                }`}
-              >
-                <FlaskConical className="w-3 h-3" />
-                <span>MODO PRUEBA</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppMode("test");
+                    audioEngine.playPulse();
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                    appMode === "test"
+                      ? "bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-sm"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  <FlaskConical className="w-3 h-3" />
+                  <span>MODO PRUEBA</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>PROD REAL-TIME</span>
+              </div>
+            )}
           </div>
         </div>
 

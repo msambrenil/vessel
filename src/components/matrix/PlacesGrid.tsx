@@ -141,7 +141,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
     if (travelMode.isActive && travelMode.virtualCoords) {
       return travelMode.virtualCoords;
     }
-    return myCoordinates || { lat: -34.5885, lng: -58.4376 };
+    return myCoordinates || { lat: -33.1325, lng: -64.3470 };
   }, [travelMode, myCoordinates]);
 
   // Lista combinada de Hotspots filtrada y ordenada

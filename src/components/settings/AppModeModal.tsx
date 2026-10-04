@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useVessel } from "@/context/VesselContext";
+import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { FlaskConical, Zap, Trash2, X, CheckCircle2, ShieldAlert, Sparkles } from "lucide-react";
 
@@ -13,7 +14,7 @@ interface AppModeModalProps {
 export const AppModeModal: React.FC<AppModeModalProps> = ({ isOpen, onClose }) => {
   const { appMode, setAppMode, resetModeData, language } = useVessel();
 
-  if (!isOpen) return null;
+  if (!isOpen || !isLocalEnvironment()) return null;
 
   const isReal = appMode === "real";
 

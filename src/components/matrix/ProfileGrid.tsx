@@ -840,7 +840,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           onOpenNightlifeModal={openNightlifeModal}
         />
       ) : sortedProfiles.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 p-2 sm:p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5 p-2 sm:p-3">
           {sortedProfiles.map((profile, index) => {
             const isLockedByLimit = !isUnlimited && index >= FREE_TIER_LIMITS.maxFreeProfilesInMatrix;
             const showPromoAfterThis = !isUnlimited && index === FREE_TIER_LIMITS.maxFreeProfilesInMatrix - 1;
@@ -867,6 +867,34 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
               </React.Fragment>
             );
           })}
+
+          {sortedProfiles.length === 1 && sortedProfiles[0].isCurrentUser && hasActiveFilters && (
+            <div className="col-span-2 sm:col-span-3 md:col-span-4 p-5 rounded-2xl bg-electricViolet/10 border border-electricViolet/30 text-center space-y-3 my-2 flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-electricViolet/20 border border-electricViolet/40 flex items-center justify-center text-electricViolet-glow">
+                <SlidersHorizontal className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                  {language === "es"
+                    ? "Filtros activos sin coincidencias"
+                    : "Active filters with no matches"}
+                </p>
+                <p className="text-[11px] text-neutral-400 font-sans max-w-xs mx-auto">
+                  {language === "es"
+                    ? "Los filtros aplicados excluyen al resto de los perfiles disponibles en el radar."
+                    : "Your active filters exclude all other profiles available on the radar."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetAllFilters}
+                className="px-3.5 py-1.5 min-h-[36px] rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white text-xs font-mono font-bold transition-all shadow-violet-soft cursor-pointer flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{language === "es" ? "Restablecer Filtros" : "Reset Filters"}</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : !hasActiveFilters && appMode === "real" ? (
         /* Estado Vacío Táctico: Modo Real Limpio */

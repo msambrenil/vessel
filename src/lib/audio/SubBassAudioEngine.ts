@@ -6,6 +6,120 @@ class SubBassAudioEngine {
   private hapticsEnabled: boolean = true;
   private fillOscillator: OscillatorNode | null = null;
   private fillGain: GainNode | null = null;
+  private isAudioUnlocked: boolean = false;
+  private unlockListeners: ((unlocked: boolean) => void)[] = [];
+  private hasAttachedGestureListeners: boolean = false;
+  private hasAttachedVisibilityListener: boolean = false;
+
+  constructor() {
+    if (typeof window !== "undefined") {
+      this.attachAutoUnlockListeners();
+      this.attachVisibilityLifecycleListeners();
+    }
+  }
+
+  public getIsAudioUnlocked(): boolean {
+    return this.isAudioUnlocked;
+  }
+
+  public subscribeAudioUnlocked(callback: (unlocked: boolean) => void): () => void {
+    this.unlockListeners.push(callback);
+    callback(this.isAudioUnlocked);
+    return () => {
+      this.unlockListeners = this.unlockListeners.filter((cb) => cb !== callback);
+    };
+  }
+
+  public attachAutoUnlockListeners() {
+    if (typeof window === "undefined" || this.hasAttachedGestureListeners) return;
+    this.hasAttachedGestureListeners = true;
+
+    const unlockHandler = () => {
+      this.unlockAudioOnUserGesture().then((success) => {
+        if (success) {
+          window.removeEventListener("pointerdown", unlockHandler, true);
+          window.removeEventListener("touchstart", unlockHandler, true);
+          window.removeEventListener("keydown", unlockHandler, true);
+        }
+      });
+    };
+
+    window.addEventListener("pointerdown", unlockHandler, { capture: true, passive: true });
+    window.addEventListener("touchstart", unlockHandler, { capture: true, passive: true });
+    window.addEventListener("keydown", unlockHandler, { capture: true, passive: true });
+  }
+
+  public attachVisibilityLifecycleListeners(): void {
+    if (typeof document === "undefined" || this.hasAttachedVisibilityListener) return;
+    this.hasAttachedVisibilityListener = true;
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        this.suspendAudioOnHidden();
+      } else if (document.visibilityState === "visible") {
+        this.resumeAudioOnVisible();
+      }
+    });
+  }
+
+  public async suspendAudioOnHidden(): Promise<void> {
+    if (this.fillOscillator) {
+      this.stopFillSound();
+    }
+    if (this.ctx && this.ctx.state === "running") {
+      try {
+        await this.ctx.suspend();
+      } catch {}
+    }
+  }
+
+  public async resumeAudioOnVisible(): Promise<void> {
+    if (this.ctx && this.ctx.state === "suspended" && this.isAudioUnlocked) {
+      try {
+        await this.ctx.resume();
+      } catch {}
+    }
+  }
+
+  public async unlockAudioOnUserGesture(): Promise<boolean> {
+    if (typeof window === "undefined") return false;
+    this.initContext();
+    if (!this.ctx) return false;
+
+    try {
+      if (this.ctx.state === "suspended") {
+        await this.ctx.resume();
+      }
+
+      // iOS Safari silent buffer ping to force hardware output unlock
+      const silentBuffer = this.ctx.createBuffer(1, 1, 22050);
+      const source = this.ctx.createBufferSource();
+      source.buffer = silentBuffer;
+      source.connect(this.ctx.destination);
+      source.start(0);
+    } catch {
+      // Ignore if autoplay policy prevents immediate resume
+    }
+
+    if (this.ctx.state === "running") {
+      if (!this.isAudioUnlocked) {
+        this.isAudioUnlocked = true;
+        this.unlockListeners.forEach((listener) => {
+          try {
+            listener(true);
+          } catch {}
+        });
+        window.dispatchEvent(
+          new CustomEvent("vessel:audio-unlocked", {
+            detail: { sampleRate: this.ctx.sampleRate },
+          })
+        );
+      }
+      return true;
+    }
+
+    return false;
+  }
 
   private initContext() {
     if (typeof window === "undefined") return;
@@ -19,7 +133,23 @@ class SubBassAudioEngine {
       }
     }
     if (this.ctx && this.ctx.state === "suspended") {
-      this.ctx.resume();
+      this.ctx.resume().then(() => {
+        if (this.ctx?.state === "running" && !this.isAudioUnlocked) {
+          this.isAudioUnlocked = true;
+          this.unlockListeners.forEach((listener) => {
+            try {
+              listener(true);
+            } catch {}
+          });
+        }
+      }).catch(() => {});
+    } else if (this.ctx && this.ctx.state === "running" && !this.isAudioUnlocked) {
+      this.isAudioUnlocked = true;
+      this.unlockListeners.forEach((listener) => {
+        try {
+          listener(true);
+        } catch {}
+      });
     }
   }
 
