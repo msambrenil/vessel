@@ -1649,5 +1649,28 @@ Historial cronológico estricto de las decisiones técnicas y de producto adopta
 - **Motivación**:
   Superar el modelo mental de catálogo de cuerpos y compras por dopamina visual heredado de 2009 (Grindr), transformando a VESSEL en una suite de encuentro intencional, seguro y sin fricción, adaptada a las necesidades de los 20 arquetipos de usuario.
 
+### [ADR-125] · [2026-10-04 15:20] Rediseño Táctico Zen (Progressive Disclosure Radical) & Vernáculo Rioplatense Queer 2026
+- **Decisión**:
+  1. **Progressive Disclosure Radical en 3 Niveles contra la Asfixia Cognitiva**:
+     - *Nivel 1 (Radar & Tarjeta Zen - `ProfileCard.tsx`)*: Eliminación de la botonera saturada de 4 botones al pie de la tarjeta. Establecimiento de exactamente **UN botón de acción primario** ergonómico (`Sintonizar` con audio sub-bass y háptica que abre el Pre-Flight) y el botón táctico de favoritos (`★`). Retención de badges esenciales de glanceability (nombre, edad, rol, si pone lugar/viaja, PrEP/I=I y temporizador Listo YA).
+     - *Nivel 2 (Dossier Profundo - `ProfileDetailModal.tsx`)*: Consolidación del modal como el hogar exclusivo de la Tríada de Compatibilidad completa (catálogo de morbos y kinks coincidentes, límites y respeto, logística detallada de lugar y protocolos de salida).
+     - *Nivel 3 (Chat Darkroom - `DarkroomChatModal.tsx`)*: Retención del pacto previo en banner fijado compacto (`pinned-preflight-banner`) con calibración en 1 toque.
+  2. **Cabecera Táctica Zen & Menú de Acciones Rápidas (`BrutalistHeader.tsx`)**:
+     - Eliminación de la botonera apiñada de 5 micro-botones en la esquina superior derecha.
+     - Creación de una **Cápsula de Usuario unificada de 44px** (`data-testid="header-user-menu-btn"`) con menú táctico desplegable que contiene las 5 herramientas (Audio Sub-bass con switch reactivo, Pase QR de fiesta, Verificación facial 3D, Unlimited y Sesión).
+     - Zona central limpia y zen en reposo, reservada exclusivamente para telemetría crítica de emergencia (PIN de encuentro activo o baliza Guardián en marcha).
+  3. **Localización Lingüística Integral Rioplatense Queer 2026 (`src/lib/i18n/translations.ts`, `BrutalistNav.tsx`)**:
+     - Estandarización mandatoria por requerimiento del producto y usuario:
+       - *"Ondas"* reemplazado estrictamente por **"Zumbidos"** en todo el sistema.
+       - *"Bitácora"* reemplazado estrictamente por **"Agenda"** en toda la interfaz y flujos.
+       - *"Matriz / Grid"* por **"Radar"**.
+       - *"Host Inmediato"* por **"Pone Lugar"** / *"Recibe Solo"*.
+       - *"Anti-Ghost"* por **"0% Fantasmas"**.
+       - *"Dormant"* por **"Modo Discreto"**.
+       - *"Kinks"* por **"Morbos y Fetiches"**.
+       - *"Aceptar Zumbido ⚡"* y *"Paso, gracias"* en flujos de doble consentimiento.
+- **Motivación**:
+  Erradicar la sobrecarga sensorial e informativa ("asfixia visual") que impedía a los usuarios escanear el radar con tranquilidad, unificar la coherencia arquitectónica entre todos los niveles de interacción y conectar emocionalmente con la comunidad LGBT+ argentina en 2026 mediante un lenguaje identitario, auténtico, respetuoso y sin acartonamientos.
+
 
 

@@ -73,7 +73,7 @@ describe("i18n — Internacionalización, Paridad de Diccionarios y Formato", ()
   describe("getTranslations — Selección de Idioma Reactiva", () => {
     it("debe retornar el diccionario en español cuando lang es 'es'", () => {
       const t = getTranslations("es");
-      expect(t.nav.grid).toBe("Cerca");
+      expect(t.nav.grid).toBe("Radar");
       expect(t.bodyState.open).toBe("Visible en radar");
     });
 

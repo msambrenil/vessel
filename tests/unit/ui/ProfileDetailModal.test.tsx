@@ -184,7 +184,7 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
       />
     );
 
-    const pulseBtn = screen.getByLabelText(/Enviar pulso a VALENTIN_CYBER/i);
+    const pulseBtn = screen.getByLabelText(/Enviar (zumbido|pulso) a VALENTIN_CYBER/i);
     fireEvent.click(pulseBtn);
 
     expect(mockTransmitSignal).toHaveBeenCalledWith("profile-77");

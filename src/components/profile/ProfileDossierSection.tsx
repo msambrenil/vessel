@@ -473,7 +473,7 @@ export const ProfileDossierSection: React.FC<ProfileDossierSectionProps> = ({
             </div>
           </div>
 
-          {/* 5. NOTAS PRIVADAS & BITÁCORA */}
+          {/* 5. NOTAS PRIVADAS & AGENDA */}
           <div className="space-y-1.5 pt-1 border-t border-white/5">
             <label
               htmlFor={`notes-${profileId}`}

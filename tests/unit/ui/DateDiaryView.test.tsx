@@ -186,7 +186,7 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     vi.clearAllMocks();
   });
 
-  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas 📖 (Bitácora)' y credencial AES-256", () => {
+  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas 📖 (Agenda)' y credencial AES-256", () => {
     render(<DateDiaryView />);
 
     expect(screen.getByText(/Chongos & Citas/i)).toBeInTheDocument();

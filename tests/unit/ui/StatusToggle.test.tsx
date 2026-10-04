@@ -144,7 +144,7 @@ describe("StatusToggle — Botón Listo YA con Reloj Fucsia Neón Dinámico", ()
     expect(screen.getByText("No disponible")).toBeInTheDocument();
 
     expect(screen.getByText("INCÓGNITO")).toBeInTheDocument();
-    expect(screen.getByText("De incógnito")).toBeInTheDocument();
+    expect(screen.getByText("Modo Discreto")).toBeInTheDocument();
   });
 
   it("al seleccionar OCUPADO, dispara setMyBodyState con 'occupied'", () => {

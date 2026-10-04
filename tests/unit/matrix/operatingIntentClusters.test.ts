@@ -7,10 +7,10 @@ describe("Operating Intent Modes and Intent Clusters", () => {
     expect(TRANSLATIONS.es.intents).toBeDefined();
     expect(TRANSLATIONS.en.intents).toBeDefined();
 
-    expect(TRANSLATIONS.es.intents.now).toBe("Encuentro Ya");
-    expect(TRANSLATIONS.es.intents.nightlife).toBe("Noche & Fiestas");
-    expect(TRANSLATIONS.es.intents.kink).toBe("Sintonía Kink");
-    expect(TRANSLATIONS.es.intents.stealth).toBe("Modo Sigilo");
+    expect(TRANSLATIONS.es.intents.now).toBe("Ahora");
+    expect(TRANSLATIONS.es.intents.nightlife).toBe("Noche");
+    expect(TRANSLATIONS.es.intents.kink).toBe("Kink & Morbos");
+    expect(TRANSLATIONS.es.intents.stealth).toBe("Modo Discreto");
 
     expect(TRANSLATIONS.en.intents.now).toBe("Now (Ready)");
     expect(TRANSLATIONS.en.intents.nightlife).toBe("Nightlife & Parties");

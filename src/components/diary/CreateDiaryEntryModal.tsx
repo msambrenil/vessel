@@ -1274,12 +1274,12 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
               ========================================== */}
           {!isUpcoming && currentStep === 4 && (
             <div className="space-y-4 animate-in fade-in">
-              {/* Bitácora de Impresiones Privadas */}
+              {/* Agenda de Impresiones Privadas */}
               <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-white flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-mintNeon" />
-                    Bitácora Personal & Impresiones Privadas
+                    Agenda Personal & Impresiones Privadas
                   </label>
                   <span className="text-[10px] text-neutral-500 font-mono">100% Cifrado Local</span>
                 </div>
@@ -1512,7 +1512,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
               className="px-6 py-2.5 min-h-[44px] rounded-2xl bg-electricViolet text-white hover:bg-electricViolet-glow text-xs font-mono font-bold flex items-center gap-2 shadow-violet-soft transition-all ml-auto disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
             >
               <CheckCircle2 className="w-4 h-4" />
-              {isSaving ? "Guardando..." : editingDiaryEntry ? "Guardar Cambios" : "Guardar en Bitácora"}
+              {isSaving ? "Guardando..." : editingDiaryEntry ? "Guardar Cambios" : "Guardar en Agenda"}
             </button>
           )}
         </div>

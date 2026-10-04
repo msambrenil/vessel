@@ -334,7 +334,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     <span className="text-base">{isMutualPulseActive ? "🔥" : "🛰️"}</span>
                     <span className="font-mono text-xs font-black uppercase tracking-wider text-white">
                       {isMutualPulseActive
-                        ? (t.card.mutualPulseBanner || "🔥 SINTONÍA MUTUA - ¡Pulsos recíprocos! Chat libre desbloqueado.")
+                        ? (t.card.mutualPulseBanner || "🔥 SINTONÍA MUTUA - ¡Zumbidos recíprocos! Chat libre desbloqueado.")
                         : (t.card.distantSignalBanner || "SEÑAL FUERA DE RANGO LOCAL (> 1.0 KM)")}
                     </span>
                   </div>
@@ -345,9 +345,9 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 <p className="text-[11px] text-neutral-300 leading-relaxed font-sans">
                   {isMutualPulseActive
                     ? (language === "es"
-                        ? "Ambos se enviaron un pulso. La barrera de distancia queda desactivada para chatear gratis."
+                        ? "Ambos se enviaron un zumbido. La barrera de distancia queda desactivada para chatear gratis."
                         : "Both sent a pulse. The distance barrier is bypassed for free chatting.")
-                    : (t.card.distantSignalDesc || "Transmití un pulso para activar sintonía mutua o desbloqueá chat inmediato con VESSEL UNLIMITED.")}
+                    : (t.card.distantSignalDesc || "Transmití un zumbido para activar sintonía mutua o desbloqueá chat inmediato con VESSEL UNLIMITED.")}
                 </p>
                 {!isMutualPulseActive && (
                   <button
@@ -858,14 +858,14 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             </button>
           ) : (
             <>
-              {/* Botón 1: Pulso Cinético de Rol (1-Tap Kinetic Reaction Instantáneo) */}
+              {/* Botón 1: Zumbido Cinético de Rol (1-Tap Kinetic Reaction Instantáneo) */}
               <button
                 type="button"
                 onClick={() => {
                   audioEngine.playPulse();
                   transmitSignal(currentProfile.id);
                 }}
-                aria-label={`Enviar pulso a ${currentProfile.codename}`}
+                aria-label={`Enviar zumbido a ${currentProfile.codename}`}
                 title={signalCount > 0 ? roleAction.sentLabel : roleAction.tooltipTemplate}
                 className={`p-3 min-h-[48px] min-w-[48px] rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-75 shadow-md flex-shrink-0 ${
                   signalCount > 0
@@ -895,13 +895,13 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   audioEngine.playSubBass(60);
                   setIsRendezvousOpen(true);
                 }}
-                aria-label={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Pulso")}
+                aria-label={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Zumbido")}
                 className={`p-3 min-h-[48px] min-w-[48px] border rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0 ${
                   canChatDirectly
                     ? "bg-white/5 border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white"
                     : "bg-white/5 border-purple-500/30 text-electricViolet-glow hover:border-purple-400"
                 }`}
-                title={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Pulso")}
+                title={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Zumbido")}
               >
                 {canChatDirectly ? (
                   <Navigation className="w-4 h-4 text-electricViolet" />
@@ -911,13 +911,13 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 <span className="hidden md:inline font-mono text-[11px]">{t.card.rendezvousBtn}</span>
               </button>
 
-              {/* Botón 3: Diario de Encuentros */}
+              {/* Botón 3: Agenda de Encuentros */}
               <button
                 type="button"
                 onClick={() => openCreateDiaryModal(currentProfile.id)}
-                aria-label="Documentar o agendar encuentro en el Diario"
+                aria-label="Documentar o agendar encuentro en la Agenda"
                 className="p-3 min-h-[48px] min-w-[48px] bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0"
-                title="Documentar o agendar encuentro con este perfil en el Diario"
+                title="Documentar o agendar encuentro con este perfil en la Agenda"
               >
                 <BookOpen className="w-4 h-4 text-electricViolet" />
                 <span className="hidden md:inline font-mono text-[11px]">{t.card.diaryBtn}</span>

@@ -96,7 +96,7 @@ export const UpcomingEncounterBanner: React.FC = () => {
               openCreateDiaryModal(nextEncounter.person.profileId, nextEncounter.id);
             }}
             className="px-2 py-1 min-h-[28px] rounded-lg bg-bloodNeon/25 hover:bg-bloodNeon/40 border border-bloodNeon/50 text-white text-[9.5px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-            title={language === "es" ? "Ver o confirmar cita en Bitácora" : "View or confirm encounter in Diary"}
+            title={language === "es" ? "Ver o confirmar cita en Agenda" : "View or confirm encounter in Diary"}
           >
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
             <span>{language === "es" ? "Cita" : "Details"}</span>

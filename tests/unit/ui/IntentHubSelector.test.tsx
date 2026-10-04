@@ -61,16 +61,16 @@ describe("IntentHubSelector — Selector Táctico de Sintonías", () => {
   it("renderiza los 4 modos de sintonía operativa (YA, Noche, Kink, Sigilo)", () => {
     render(<IntentHubSelector />);
 
-    expect(screen.getByTitle("Encuentro Ya")).toBeInTheDocument();
-    expect(screen.getByTitle("Noche & Fiestas")).toBeInTheDocument();
-    expect(screen.getByTitle("Sintonía Kink")).toBeInTheDocument();
-    expect(screen.getByTitle("Modo Sigilo")).toBeInTheDocument();
+    expect(screen.getByTitle("Ahora")).toBeInTheDocument();
+    expect(screen.getByTitle("Noche")).toBeInTheDocument();
+    expect(screen.getByTitle("Kink & Morbos")).toBeInTheDocument();
+    expect(screen.getByTitle("Modo Discreto")).toBeInTheDocument();
   });
 
   it("al tocar una pestaña de modo, invoca setOperatingIntent", () => {
     render(<IntentHubSelector />);
 
-    const nightlifeTab = screen.getByTitle("Noche & Fiestas");
+    const nightlifeTab = screen.getByTitle("Noche");
     fireEvent.click(nightlifeTab);
 
     expect(mockSetOperatingIntent).toHaveBeenCalledWith("nightlife");

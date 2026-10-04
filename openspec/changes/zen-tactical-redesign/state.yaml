@@ -1,0 +1,16 @@
+schema: spec-driven
+change: zen-tactical-redesign
+phase: verify
+status: completed
+created_at: "2026-10-04T14:46:00-03:00"
+updated_at: "2026-10-04T15:20:00-03:00"
+dag:
+  explore: done
+  propose: done
+  spec: done
+  design: done
+  tasks: done
+  apply: done
+  verify: done
+  archive: pending
+

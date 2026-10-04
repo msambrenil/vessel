@@ -424,10 +424,10 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           ) : null}
         </div>
 
-        {/* Fila 3: Cluster de Acciones Tácticas (Sintonizar como Botón Primario + Favorito + Chat + Pulso) */}
+        {/* Fila 3: Acción Primaria Zen (Sintonizar con Pre-Flight) + Favorito */}
         {!profile.isCurrentUser && (
-          <div className="flex items-center justify-between gap-1 w-full pt-0.5 pointer-events-auto relative z-20">
-            {/* Botón Primario Sintonizar (Pre-Flight en 3 taps) */}
+          <div className="flex items-center gap-1.5 w-full pt-0.5 pointer-events-auto relative z-20">
+            {/* Botón Primario Único: Sintonizar */}
             <button
               type="button"
               data-testid={`profile-sintonizar-btn-${profile.id}`}
@@ -441,120 +441,37 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 audioEngine.playSubBass(55);
                 setIsRendezvousOpen(true);
               }}
-              className="flex-1 min-h-[30px] sm:min-h-[32px] px-2 py-0.5 rounded-lg bg-gradient-to-r from-electricViolet via-fuchsia-600 to-electricViolet hover:brightness-110 text-white font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-violet-soft active:scale-95 transition-all cursor-pointer border border-white/20"
+              className="flex-1 min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 rounded-xl bg-gradient-to-r from-electricViolet via-fuchsia-600 to-electricViolet hover:brightness-110 text-white font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-violet-soft active:scale-95 transition-all cursor-pointer border border-white/20"
               title={language === "es" ? "Sintonizar y acordar en 3 taps" : "Tune in & agree in 3 taps"}
               aria-label={`${language === "es" ? "Sintonizar con" : "Tune in with"} ${profile.codename}`}
             >
-              <Zap className="w-3 h-3 fill-amber-300 text-amber-300 flex-shrink-0" />
+              <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300 flex-shrink-0" />
               <span className="truncate">{language === "es" ? "Sintonizar" : "Tune In"}</span>
             </button>
 
-            {/* Acciones Secundarias */}
-            <div className="flex-shrink-0 flex items-center gap-1">
-              {/* Botón Favorito (★) 1-Tap */}
-              <button
-                type="button"
-                data-testid={`profile-favorite-toggle-${profile.id}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavoriteProfile(profile.id);
-                }}
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer relative after:absolute after:-inset-1.5 after:content-[''] ${
-                  isFavoriteProfile(profile.id)
-                    ? "border-amber-400 bg-amber-950/80 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] focus-visible:ring-amber-400"
-                    : "border-white/20 bg-black/90 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black focus-visible:ring-amber-400"
+            {/* Botón Favorito (★) 1-Tap (Ergonómico 34px) */}
+            <button
+              type="button"
+              data-testid={`profile-favorite-toggle-${profile.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavoriteProfile(profile.id);
+              }}
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer ${
+                isFavoriteProfile(profile.id)
+                  ? "border-amber-400 bg-amber-950/80 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] focus-visible:ring-amber-400"
+                  : "border-white/20 bg-black/90 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black focus-visible:ring-amber-400"
+              }`}
+              title={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
+              aria-label={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
+              aria-pressed={isFavoriteProfile(profile.id)}
+            >
+              <Star
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2] transition-transform ${
+                  isFavoriteProfile(profile.id) ? "fill-amber-400 text-amber-400 scale-110" : ""
                 }`}
-                title={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
-                aria-label={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
-                aria-pressed={isFavoriteProfile(profile.id)}
-              >
-                <Star
-                  className={`w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.2] transition-transform ${
-                    isFavoriteProfile(profile.id) ? "fill-amber-400 text-amber-400 scale-110" : ""
-                  }`}
-                />
-              </button>
-
-              {/* Botón 1: Chat Rápido Directo o Candado de VESSEL UNLIMITED */}
-              {canChatDirectly ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    audioEngine.playPulse();
-                    onOpenChat(profile.id);
-                  }}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer relative after:absolute after:-inset-1.5 after:content-[''] ${
-                    isMutualPulseActive
-                      ? "border-emerald-400/80 bg-emerald-950/90 text-emerald-300 hover:bg-emerald-900 shadow-[0_0_10px_rgba(52,211,153,0.5)] focus-visible:ring-emerald-400"
-                      : "border-white/20 bg-black/90 text-white hover:border-electricViolet hover:text-electricViolet-glow hover:bg-black focus-visible:ring-electricViolet"
-                  }`}
-                  title={
-                    isMutualPulseActive
-                      ? (t.card.mutualPulseChat || (language === "es" ? "Chat Sintonía Mutua" : "Mutual Pulse Chat"))
-                      : (language === "es" ? "Abrir chat directo" : "Open direct chat")
-                  }
-                  aria-label={
-                    isMutualPulseActive
-                      ? (t.card.mutualPulseChat || (language === "es" ? "Chat Sintonía Mutua" : "Mutual Pulse Chat"))
-                      : (language === "es" ? `Abrir chat directo con ${profile.codename}` : `Open direct chat with ${profile.codename}`)
-                  }
-                >
-                  <MessageCircle className={`w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.2] ${isMutualPulseActive ? "text-emerald-400" : ""}`} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    audioEngine.playPulse();
-                    openUnlimitedModal();
-                  }}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-champagneGold/50 bg-black/90 text-champagneGold hover:border-champagneGold hover:bg-amber-950/60 hover:text-white flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagneGold cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
-                  title={t.card.distantChatLocked || "Chatear requiere VESSEL UNLIMITED o Zumbido Mutuo"}
-                  aria-label={t.card.distantChatLocked || "Chatear requiere VESSEL UNLIMITED o Zumbido Mutuo"}
-                >
-                  <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-champagneGold stroke-[2.4]" />
-                </button>
-              )}
-
-              {/* Botón 2: Pulso Cinético de Rol */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsPulsing(true);
-                  transmitSignal(profile.id);
-                  setTimeout(() => setIsPulsing(false), 650);
-                }}
-                className={`relative overflow-hidden w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer after:absolute after:-inset-1.5 after:content-[''] ${
-                  signalCount > 0
-                    ? `bg-electricViolet text-white border-electricViolet ${roleAction.glowClass} scale-105`
-                    : "bg-black/90 text-white border-white/20 hover:border-electricViolet hover:scale-105 hover:bg-black"
-                }`}
-                title={signalCount > 0 ? roleAction.sentLabel : roleAction.tooltipTemplate}
-                aria-label={roleAction.tooltipTemplate}
-              >
-                {isPulsing && (
-                  <span className="absolute inset-0 rounded-full bg-electricViolet-glow/70 animate-pulse-wave pointer-events-none" />
-                )}
-                <span
-                  className={`leading-none select-none text-[11px] sm:text-[12px] transition-transform duration-200 ${
-                    isPulsing ? "scale-125" : ""
-                  }`}
-                >
-                  {roleAction.icon}
-                </span>
-                {signalCount > 0 && typeof navigator !== "undefined" && !navigator.onLine && (
-                  <span
-                    title={language === "es" ? "En cola offline" : "Queued offline"}
-                    className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-amber-500 text-black text-[8px] font-black flex items-center justify-center"
-                  >
-                    ⏳
-                  </span>
-                )}
-              </button>
-            </div>
+              />
+            </button>
           </div>
         )}
       </div>
