@@ -220,5 +220,93 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
     expect(screen.queryByText("PUNTUAL")).toBeNull();
     expect(screen.queryByRole("dialog", { name: /dossier táctico/i })).toBeNull();
   });
+
+  describe("Tríada de Compatibilidad & Botón Sintonizar (De-Grindrización)", () => {
+    it("renderiza la micro-ficha de hospedaje Recibe Solo cuando tiene lugar propio", () => {
+      const hostProfile = createMockProfile({
+        hostCard: {
+          hasPlace: true,
+          livingArrangement: "solo",
+          spaceType: "private_apt",
+          amenities: { cleanTowels: true, showerReady: true, elevator: true, easyParking: false, acOrHeating: true },
+          pets: "none",
+          supplies: { condoms: true, lube: true, poppers: false, wipes: true },
+        },
+      });
+
+      render(
+        <ProfileCard
+          profile={hostProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+
+      const hostBadge = screen.getByTestId(`host-badge-${hostProfile.id}`);
+      expect(hostBadge).toBeInTheDocument();
+      expect(hostBadge).toHaveTextContent("Recibe Solo");
+      expect(hostBadge).toHaveTextContent("🚿");
+    });
+
+    it("renderiza el badge de salud PrEP cuando el perfil lo declara", () => {
+      const prepProfile = createMockProfile({
+        hivStatus: "Negativo en PrEP",
+      });
+
+      render(
+        <ProfileCard
+          profile={prepProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+
+      const healthBadge = screen.getByTestId(`health-badge-${prepProfile.id}`);
+      expect(healthBadge).toBeInTheDocument();
+      expect(healthBadge).toHaveTextContent("PrEP");
+    });
+
+    it("renderiza el contador de minutos restantes en el badge superior cuando Listo YA está activo", () => {
+      const readyProfile = createMockProfile({
+        onTheClock: {
+          isActive: true,
+          durationMinutes: 60,
+          startedAt: "2026-10-04T12:00:00Z",
+          expiresAt: new Date(Date.now() + 45 * 60 * 1000).toISOString(),
+        },
+      });
+
+      render(
+        <ProfileCard
+          profile={readyProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+
+      expect(screen.getByText(/LISTO \d+m/)).toBeInTheDocument();
+    });
+
+    it("renderiza el botón primario Sintonizar y permite disparar el acuerdo de Pre-Flight", () => {
+      const targetProfile = createMockProfile();
+
+      render(
+        <ProfileCard
+          profile={targetProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+
+      const sintonizarBtn = screen.getByTestId(`profile-sintonizar-btn-${targetProfile.id}`);
+      expect(sintonizarBtn).toBeInTheDocument();
+      expect(sintonizarBtn).toHaveTextContent("Sintonizar");
+
+      fireEvent.click(sintonizarBtn);
+      // Al hacer click en Sintonizar, no se abre el detalle del perfil (stopPropagation)
+      expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+  });
 });
+
 

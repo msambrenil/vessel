@@ -15,6 +15,8 @@ import {
   UserBoundarySetting,
   ProfileDossier,
   EncounterTestimonial,
+  OperatingIntentMode,
+  IntentClusterGroup,
 } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -158,6 +160,9 @@ export interface RadarMatrixContextType {
   favoriteProfileIds: string[];
   toggleFavoriteProfile: (profileId: string) => void;
   isFavoriteProfile: (profileId: string) => boolean;
+  operatingIntent: OperatingIntentMode;
+  setOperatingIntent: (intent: OperatingIntentMode) => void;
+  intentClusters: IntentClusterGroup[];
 }
 
 const RadarMatrixContext = createContext<RadarMatrixContextType | undefined>(undefined);
@@ -307,6 +312,15 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   const [activeView, setActiveView] = useState<ActiveNavView>("grid");
   const [selectedProfile, setSelectedProfile] = useState<VesselProfile | null>(null);
   const [matrixTab, setMatrixTabState] = useState<"people" | "places">("people");
+  const [operatingIntent, setOperatingIntentState] = useState<OperatingIntentMode>(() => {
+    return loadFromStorage<OperatingIntentMode>(STORAGE_KEYS.OPERATING_INTENT, "now", getActiveAppMode());
+  });
+
+  const setOperatingIntent = useCallback((intent: OperatingIntentMode) => {
+    audioEngine.playSubBass(55, 0.12);
+    setOperatingIntentState(intent);
+    saveToStorage(STORAGE_KEYS.OPERATING_INTENT, intent, getActiveAppMode());
+  }, []);
 
   const [favoriteProfileIds, setFavoriteProfileIds] = useState<string[]>(() => {
     return loadFromStorage<string[]>(STORAGE_KEYS.FAVORITES, [], getActiveAppMode());
@@ -1141,6 +1155,248 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     return hasValidRealSelfCard ? [myFullProfile, ...sortedFiltered] : sortedFiltered;
   }, [processedProfiles, filters, profileDossiers, boundaries, myFullProfile, myKinkMatrix, nightlifeEvents, isOnTheClockFilterActive, myProfile, favoriteProfileIds, appMode, authUser]);
 
+  const intentClusters = useMemo((): IntentClusterGroup[] => {
+    const list = filteredProfiles;
+    if (operatingIntent === "now") {
+      // 1. Con lugar disponible ahora (Hosts inmediatos)
+      const hostProfiles = list.filter(
+        (p) =>
+          !p.isCurrentUser &&
+          p.bodyState !== "dormant" &&
+          (p.hostCard?.hasPlace ||
+            /casa|depto|sitio|lugar/i.test(p.hosting || "") ||
+            /casa|depto|sitio|lugar/i.test(p.mobility || ""))
+      );
+      const hostIds = new Set(hostProfiles.map((p) => p.id));
+
+      // 2. Listos para salir / On the clock
+      const readyProfiles = list.filter(
+        (p) =>
+          !p.isCurrentUser &&
+          !hostIds.has(p.id) &&
+          (p.onTheClock?.isActive || p.bodyState === "open")
+      );
+      const readyIds = new Set(readyProfiles.map((p) => p.id));
+
+      // 3. Con movilidad / Pueden desplazarse
+      const mobileProfiles = list.filter(
+        (p) =>
+          !p.isCurrentUser &&
+          !hostIds.has(p.id) &&
+          !readyIds.has(p.id) &&
+          (/viaj|muev|desplaz/i.test(p.hosting || "") || /viaj|muev|desplaz/i.test(p.mobility || ""))
+      );
+      const mobileIds = new Set(mobileProfiles.map((p) => p.id));
+
+      // 4. Cercanía táctica
+      const nearbyProfiles = list.filter(
+        (p) => !p.isCurrentUser && !hostIds.has(p.id) && !readyIds.has(p.id) && !mobileIds.has(p.id)
+      );
+
+      const nowClusters: IntentClusterGroup[] = [
+        {
+          id: "cluster-now-host",
+          intent: "now",
+          title: language === "es" ? "Con Lugar Inmediato (Hosts Activos)" : "Immediate Hosts Available",
+          subtitle: language === "es" ? "Listos para recibir con privacidad" : "Ready to host with privacy",
+          icon: "🏠",
+          accentColor: "border-electricViolet text-electricViolet",
+          profiles: hostProfiles,
+        },
+        {
+          id: "cluster-now-ready",
+          intent: "now",
+          title: language === "es" ? "Listos para Salir (On The Clock)" : "Ready to Go (Active Timer)",
+          subtitle: language === "es" ? "Disponibilidad inmediata declarada" : "Immediate availability declared",
+          icon: "⚡",
+          accentColor: "border-amber-400 text-amber-400",
+          profiles: readyProfiles,
+        },
+        {
+          id: "cluster-now-mobile",
+          intent: "now",
+          title: language === "es" ? "Listos para Desplazarse" : "Ready to Travel",
+          subtitle: language === "es" ? "Tienen movilidad o pueden viajar" : "Have mobility or can travel",
+          icon: "🚗",
+          accentColor: "border-cyan-400 text-cyan-400",
+          profiles: mobileProfiles,
+        },
+        {
+          id: "cluster-now-nearby",
+          intent: "now",
+          title: language === "es" ? "Cercanía Táctica" : "Tactical Proximity",
+          subtitle: language === "es" ? "Perfiles en tu radio de alcance" : "Profiles within your radius",
+          icon: "📍",
+          accentColor: "border-zinc-500 text-zinc-400",
+          profiles: nearbyProfiles,
+        },
+      ];
+      return nowClusters.filter((c) => c.profiles.length > 0);
+    }
+
+    if (operatingIntent === "nightlife") {
+      const partyProfiles = list.filter(
+        (p) =>
+          !p.isCurrentUser &&
+          (/boliche|club|party|fiesta|darkroom|cruising/i.test(p.mobility || "") ||
+            /boliche|club|party|fiesta|darkroom|cruising/i.test(p.yoSoy || "") ||
+            (p.intentions && p.intentions.some((i) => /noche|fiesta|club|after/i.test(i))))
+      );
+      const partyIds = new Set(partyProfiles.map((p) => p.id));
+
+      const afterProfiles = list.filter(
+        (p) =>
+          !p.isCurrentUser &&
+          !partyIds.has(p.id) &&
+          (p.bodyState === "open" || p.onTheClock?.isActive)
+      );
+      const afterIds = new Set(afterProfiles.map((p) => p.id));
+
+      const otherNight = list.filter((p) => !p.isCurrentUser && !partyIds.has(p.id) && !afterIds.has(p.id));
+
+      const nightlifeClusters: IntentClusterGroup[] = [
+        {
+          id: "cluster-night-venues",
+          intent: "nightlife",
+          title: language === "es" ? "En Fiestas & Hotspots de Hoy" : "Tonight's Hotspots & Venues",
+          subtitle: language === "es" ? "Clubes, saunas y eventos activos" : "Active clubs, saunas, and venues",
+          icon: "🍸",
+          accentColor: "border-pink-500 text-pink-400",
+          profiles: partyProfiles,
+        },
+        {
+          id: "cluster-night-after",
+          intent: "nightlife",
+          title: language === "es" ? "Buscando After / Continuar la Noche" : "Looking for After / Late Night",
+          subtitle: language === "es" ? "Sintonía abierta para la madrugada" : "Open for late night encounters",
+          icon: "🔥",
+          accentColor: "border-bloodNeon text-bloodNeon",
+          profiles: afterProfiles,
+        },
+        {
+          id: "cluster-night-near",
+          intent: "nightlife",
+          title: language === "es" ? "Ruta Nocturna Cercana" : "Nearby Night Route",
+          subtitle: language === "es" ? "Perfiles activos en la noche" : "Active profiles tonight",
+          icon: "🌙",
+          accentColor: "border-violet-400 text-violet-300",
+          profiles: otherNight,
+        },
+      ];
+      return nightlifeClusters.filter((c) => c.profiles.length > 0);
+    }
+
+    if (operatingIntent === "kink") {
+      const intenseProfiles = list.filter((p) => !p.isCurrentUser && p.intensity >= 3);
+      const intenseIds = new Set(intenseProfiles.map((p) => p.id));
+
+      const roleSpecific = list.filter(
+        (p) =>
+          !p.isCurrentUser &&
+          !intenseIds.has(p.id) &&
+          (p.role === "Dominant" ||
+            p.role === "Submissive" ||
+            p.role === "Top" ||
+            p.role === "Bottom" ||
+            /Leather|Arnés|Pup|Amo|Sumiso/i.test(p.yoSoy || ""))
+      );
+      const roleIds = new Set(roleSpecific.map((p) => p.id));
+
+      const otherKink = list.filter(
+        (p) => !p.isCurrentUser && !intenseIds.has(p.id) && !roleIds.has(p.id) && p.kinks && p.kinks.length > 0
+      );
+      const otherKinkIds = new Set(otherKink.map((p) => p.id));
+
+      const rest = list.filter(
+        (p) => !p.isCurrentUser && !intenseIds.has(p.id) && !roleIds.has(p.id) && !otherKinkIds.has(p.id)
+      );
+
+      const kinkClusters: IntentClusterGroup[] = [
+        {
+          id: "cluster-kink-intense",
+          intent: "kink",
+          title: language === "es" ? "Intensidad Carnal & Raw (Nivel 3 & 4)" : "Raw & Extreme Intensity (Tier 3 & 4)",
+          subtitle: language === "es" ? "Encuentros intensos sin inhibiciones" : "Intense raw carnal dynamics",
+          icon: "⛓️",
+          accentColor: "border-bloodNeon text-bloodNeon",
+          profiles: intenseProfiles,
+        },
+        {
+          id: "cluster-kink-roles",
+          intent: "kink",
+          title: language === "es" ? "Roles Definidos (Top / Bottom / BDSM)" : "Explicit Roles (Top / Bottom / BDSM)",
+          subtitle: language === "es" ? "Dinámicas de poder y posiciones claras" : "Power dynamics and clear roles",
+          icon: "🛡️",
+          accentColor: "border-electricViolet text-electricViolet",
+          profiles: roleSpecific,
+        },
+        {
+          id: "cluster-kink-fetish",
+          intent: "kink",
+          title: language === "es" ? "Sintonía de Fetiches y Morbo" : "Fetish & Morbo Affinity",
+          subtitle: language === "es" ? "Perfiles con gustos específicos declarados" : "Profiles with declared tastes",
+          icon: "⚡",
+          accentColor: "border-emerald-400 text-emerald-400",
+          profiles: otherKink,
+        },
+        {
+          id: "cluster-kink-rest",
+          intent: "kink",
+          title: language === "es" ? "Exploración Kink General" : "General Kink Exploration",
+          subtitle: language === "es" ? "Perfiles abiertos a dinámicas" : "Profiles open to explore",
+          icon: "🌐",
+          accentColor: "border-zinc-500 text-zinc-400",
+          profiles: rest,
+        },
+      ];
+      return kinkClusters.filter((c) => c.profiles.length > 0);
+    }
+
+    // stealth (Modo Sigilo)
+    const fogProfiles = list.filter((p) => !p.isCurrentUser && (p.isFogMode || p.isStylizedAvatar));
+    const fogIds = new Set(fogProfiles.map((p) => p.id));
+
+    const antiGhostVerified = list.filter(
+      (p) => !p.isCurrentUser && !fogIds.has(p.id) && p.isAntiGhost && (p.respectScore || 0) >= 80
+    );
+    const antiGhostIds = new Set(antiGhostVerified.map((p) => p.id));
+
+    const discreetProfiles = list.filter(
+      (p) => !p.isCurrentUser && !fogIds.has(p.id) && !antiGhostIds.has(p.id)
+    );
+
+    const stealthClusters: IntentClusterGroup[] = [
+      {
+        id: "cluster-stealth-fog",
+        intent: "stealth",
+        title: language === "es" ? "Modo Niebla Activo (Privacidad Facial)" : "Fog Mode Active (Facial Privacy)",
+        subtitle: language === "es" ? "Identidad visual protegida por criptografía" : "Visual identity protected by cipher",
+        icon: "🌫️",
+        accentColor: "border-cyan-400 text-cyan-300",
+        profiles: fogProfiles,
+      },
+      {
+        id: "cluster-stealth-antighost",
+        intent: "stealth",
+        title: language === "es" ? "Cero Rastro / Anti-Ghost Verificado" : "Zero Trace / Verified Anti-Ghost",
+        subtitle: language === "es" ? "Karma de respeto intachable y confidencial" : "High respect karma and discretion",
+        icon: "🛡️",
+        accentColor: "border-emerald-400 text-emerald-400",
+        profiles: antiGhostVerified,
+      },
+      {
+        id: "cluster-stealth-discreet",
+        intent: "stealth",
+        title: language === "es" ? "Perfiles Reservados" : "Discreet Profiles",
+        subtitle: language === "es" ? "Navegación protegida sin exposición" : "Protected navigation without exposure",
+        icon: "🔒",
+        accentColor: "border-zinc-500 text-zinc-400",
+        profiles: discreetProfiles,
+      },
+    ];
+    return stealthClusters.filter((c) => c.profiles.length > 0);
+  }, [filteredProfiles, operatingIntent, language]);
+
   const value = useMemo<RadarMatrixContextType>(
     () => ({
       profiles: processedProfiles,
@@ -1187,6 +1443,9 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       favoriteProfileIds,
       toggleFavoriteProfile,
       isFavoriteProfile,
+      operatingIntent,
+      setOperatingIntent,
+      intentClusters,
     }),
     [
       processedProfiles,
@@ -1228,6 +1487,9 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       favoriteProfileIds,
       toggleFavoriteProfile,
       isFavoriteProfile,
+      operatingIntent,
+      setOperatingIntent,
+      intentClusters,
     ]
   );
 

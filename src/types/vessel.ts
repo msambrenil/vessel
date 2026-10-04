@@ -1,5 +1,25 @@
 export type BodyState = "open" | "occupied" | "dormant";
 
+export type OperatingIntentMode = "now" | "nightlife" | "kink" | "stealth";
+
+export interface IntentClusterGroup {
+  id: string;
+  intent: OperatingIntentMode;
+  title: string;
+  subtitle: string;
+  icon: string;
+  accentColor?: string;
+  profiles: VesselProfile[];
+}
+
+export interface CompatibilitySummary {
+  hostStatus: "host_solo" | "host_shared" | "can_travel" | "no_place";
+  hostLabel: string;
+  matchingKinksCount: number;
+  healthBadges: ("prep" | "doxy" | "tested_recent")[];
+  readinessMinutesRemaining?: number;
+}
+
 export type RoleType =
   | "Top"
   | "Bottom"

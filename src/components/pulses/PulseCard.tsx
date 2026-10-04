@@ -217,6 +217,72 @@ export const PulseCard: React.FC<PulseCardProps> = ({
         </div>
       </div>
 
+      {/* Tarjeta Táctica de Revisión de Sintonía (Pre-Flight & Doble Consentimiento) */}
+      {mode === "received" && !isMutual && (
+        <div
+          data-testid="pulse-sintonia-review"
+          className="mt-3 p-3 rounded-xl bg-gradient-to-r from-purple-950/40 via-obsidian-surface to-purple-950/20 border border-electricViolet/30 space-y-2 text-left"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-mono font-black uppercase text-electricViolet-glow tracking-wider flex items-center gap-1.5">
+              <span>⚡</span>
+              <span>{t.intents?.title || (language === "es" ? "Propuesta de Sintonía" : "Intent Proposal")}</span>
+            </span>
+            <span className="text-[9.5px] font-mono text-neutral-400">
+              {language === "es" ? "Doble Consentimiento Requerido" : "Double Consent Required"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[10.5px] font-mono">
+            <div className="p-2 rounded-lg bg-black/40 border border-white/5 space-y-0.5">
+              <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
+                {language === "es" ? "Rol & Posición" : "Role & Dynamic"}
+              </span>
+              <span className="text-white font-bold block truncate">
+                {getRoleDisplayLabel(profile.role, language)}
+              </span>
+            </div>
+
+            <div className="p-2 rounded-lg bg-black/40 border border-white/5 space-y-0.5">
+              <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
+                {t.intents?.triadHost || (language === "es" ? "Logística" : "Hosting")}
+              </span>
+              <span className="text-emerald-300 font-bold block truncate">
+                {isImmediateHost
+                  ? (language === "es" ? "Tiene Lugar 🏠" : "Has Place 🏠")
+                  : (language === "es" ? "Puede Desplazarse 🚗" : "Can Travel 🚗")}
+              </span>
+            </div>
+
+            {profile.healthStatus?.prep && (
+              <div className="p-2 rounded-lg bg-black/40 border border-white/5 space-y-0.5">
+                <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
+                  {t.intents?.triadPreflight || (language === "es" ? "Salud" : "Health")}
+                </span>
+                <span className="text-mintNeon font-bold block truncate">
+                  🛡️ PrEP Activa
+                </span>
+              </div>
+            )}
+
+            {profile.exitProtocol && (
+              <div className="p-2 rounded-lg bg-black/40 border border-white/5 space-y-0.5">
+                <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
+                  {language === "es" ? "Salida" : "Exit"}
+                </span>
+                <span className="text-purple-300 font-bold block truncate">
+                  {profile.exitProtocol === "fast_encounter"
+                    ? (language === "es" ? "⏱️ Sin Sobremesa" : "⏱️ Fast Exit")
+                    : profile.exitProtocol === "chill_cuddle"
+                    ? (language === "es" ? "🫂 Ducha & Charla" : "🫂 Cuddle/Shower")
+                    : (language === "es" ? "🌙 Pasar la Noche" : "🌙 Sleepover")}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Botonera Ergonómica (44px Touch Targets & 5 Estados Impeccable UI) */}
       <div className="pt-2.5 mt-2.5 border-t border-white/10 grid grid-cols-2 gap-2">
         {isMutual ? (
@@ -233,17 +299,20 @@ export const PulseCard: React.FC<PulseCardProps> = ({
             <span className="truncate">{t.pulses?.scheduleEncounterCta || "Agendar Encuentro"}</span>
           </button>
         ) : mode === "received" ? (
-          /* Si es Recibido no mutuo: Responder Zumbido */
+          /* Si es Recibido no mutuo: Acción Rápida de Doble Consentimiento - Declinar con Respeto */
           <button
             type="button"
             onClick={() => {
-              audioEngine.playSignalSent();
-              onReturnPulse(profile.id);
+              audioEngine.playPulse();
+              if (pulseId && onDismissPulse) {
+                onDismissPulse(pulseId);
+              }
             }}
-            className="min-h-[44px] px-3 py-2.5 rounded-xl bg-electricViolet/20 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/50 transition-all text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] shadow-violet-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-40"
+            aria-label={t.intents?.declinePolite || "Declinar con Respeto"}
+            className="min-h-[44px] px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 transition-all text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
-            <Zap className="w-4 h-4 stroke-[2.5]" />
-            <span className="truncate">{t.pulses?.returnPulse || "Responder Zumbido 🔥"}</span>
+            <X className="w-4 h-4 text-neutral-400" />
+            <span className="truncate">{t.intents?.declinePolite || (language === "es" ? "Declinar con Respeto" : "Decline with Care")}</span>
           </button>
         ) : (
           /* Si es Enviado no mutuo: Ver Ficha Completa */
@@ -259,18 +328,34 @@ export const PulseCard: React.FC<PulseCardProps> = ({
           </button>
         )}
 
-        {/* CTA Secundario/Primario: Abrir Conversación */}
-        <button
-          type="button"
-          onClick={() => {
-            audioEngine.playPulse();
-            onOpenChat(profile.id);
-          }}
-          className="min-h-[44px] px-3 py-2.5 rounded-xl bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft transition-all text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-40"
-        >
-          <MessageSquare className="w-3.5 h-3.5 stroke-[2.4]" />
-          <span className="truncate">{t.pulses?.openChat || "Abrir Conversación"}</span>
-        </button>
+        {/* CTA Secundario/Primario: Abrir Conversación o Aceptar Sintonía */}
+        {mode === "received" && !isMutual ? (
+          <button
+            type="button"
+            onClick={() => {
+              audioEngine.playSubBass(60);
+              onReturnPulse(profile.id);
+              onOpenChat(profile.id);
+            }}
+            aria-label={t.intents?.acceptTone || "Aceptar Sintonía"}
+            className="min-h-[44px] px-3 py-2.5 rounded-xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:brightness-110 shadow-violet-soft border border-electricViolet/60 transition-all text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            <Zap className="w-4 h-4 fill-current stroke-[2.5]" />
+            <span className="truncate">{t.intents?.acceptTone ? `${t.intents.acceptTone} ⚡` : (language === "es" ? "Aceptar Sintonía ⚡" : "Accept Intent ⚡")}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              audioEngine.playPulse();
+              onOpenChat(profile.id);
+            }}
+            className="min-h-[44px] px-3 py-2.5 rounded-xl bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft transition-all text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:opacity-40"
+          >
+            <MessageSquare className="w-3.5 h-3.5 stroke-[2.4]" />
+            <span className="truncate">{t.pulses?.openChat || "Abrir Conversación"}</span>
+          </button>
+        )}
       </div>
     </article>
   );

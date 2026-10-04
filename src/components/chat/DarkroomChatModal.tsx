@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useVessel } from "@/context/VesselContext";
 import {
   X,
@@ -104,6 +104,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
     openLoverDossierModal,
     updateEncounterTicketStatus,
     confirmH2Ticket,
+    hasMutualPulse,
   } = useVessel();
 
   const [archivedMediaIds, setArchivedMediaIds] = useState<Record<string, boolean>>({});
@@ -156,6 +157,49 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const profile = profiles.find((p) => p.id === profileId);
   const currentRetention = profile ? getChatRetentionForProfile(profile.id) : "persistent";
   const messages = chatMessages[profileId] || [];
+  const isMutual = profile ? hasMutualPulse(profile.id) : false;
+
+  const tempoLabels: Record<string, string> = {
+    fast_carnal: language === "es" ? "⚡ Rápido & Carnal" : "⚡ Fast & Carnal",
+    sensual_slow: language === "es" ? "🔥 Sensual & Pausado" : "🔥 Sensual & Slow",
+    rough_dom: language === "es" ? "⛓️ Dominación & Fuerte" : "⛓️ Dom & Intense",
+    chill: language === "es" ? "🫂 Tranqui / Mimos" : "🫂 Chill / Cuddle",
+  };
+
+  const protectionLabels: Record<string, string> = {
+    bareback_prep: language === "es" ? "PrEP e I=I" : "PrEP + U=U",
+    prep_doxypep: language === "es" ? "PrEP + Doxy-PEP" : "PrEP + Doxy-PEP",
+    condoms: language === "es" ? "Preservativo estricto" : "Strict Condoms",
+    discuss: language === "es" ? "Conversar en persona" : "Discuss in person",
+  };
+
+  const pinnedPreFlight = useMemo(() => {
+    const latestPreFlightMsg = [...messages].reverse().find((m) => m.isPreFlightChecklist && m.preFlightData);
+    if (latestPreFlightMsg?.preFlightData) {
+      return {
+        source: "explicit" as const,
+        tempo: latestPreFlightMsg.preFlightData.tempo,
+        protection: latestPreFlightMsg.preFlightData.protection,
+        dynamics: latestPreFlightMsg.preFlightData.dynamics || [],
+        vibe: latestPreFlightMsg.preFlightData.vibe,
+        hosting: profile?.hosting || profile?.mobility,
+        exitProtocol: profile?.exitProtocol,
+      };
+    }
+
+    if (isMutual && profile) {
+      return {
+        source: "mutual" as const,
+        tempo: profile.onTheClock?.isActive ? "fast_carnal" : "sensual_slow",
+        protection: profile.healthStatus?.prep ? "bareback_prep" : "condoms",
+        dynamics: profile.kinks || [],
+        hosting: profile.hosting || profile.mobility,
+        exitProtocol: profile.exitProtocol,
+      };
+    }
+
+    return null;
+  }, [messages, isMutual, profile]);
 
   // Marcar mensajes como leídos
   useEffect(() => {
@@ -967,6 +1011,60 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             )}
           </button>
         </div>
+
+        {/* BANNER DE DINÁMICAS Y SINTONÍA ACORDADA FIJADA (PRE-FLIGHT PINNED) */}
+        {pinnedPreFlight && (
+          <div
+            data-testid="pinned-preflight-banner"
+            className="px-3.5 py-2.5 bg-gradient-to-r from-purple-950/70 via-obsidian-surface to-electricViolet/15 border-b border-electricViolet/40 flex items-center justify-between gap-3 text-xs z-10 shadow-sm flex-shrink-0"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-base flex-shrink-0">⚡</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-[10px] font-black uppercase tracking-wider text-electricViolet-glow">
+                    {t.intents?.title || (language === "es" ? "Sintonía Acordada" : "Agreed Pre-Flight")}
+                  </span>
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-electricViolet/25 border border-electricViolet/40 text-purple-200">
+                    {pinnedPreFlight.source === "explicit"
+                      ? (language === "es" ? "Pacto Confirmado" : "Confirmed Accord")
+                      : (language === "es" ? "Sintonía Mutua" : "Mutual Intent")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-300 truncate mt-0.5">
+                  <span>{tempoLabels[pinnedPreFlight.tempo] || pinnedPreFlight.tempo}</span>
+                  <span>•</span>
+                  <span>{protectionLabels[pinnedPreFlight.protection] || pinnedPreFlight.protection}</span>
+                  {pinnedPreFlight.exitProtocol && (
+                    <>
+                      <span>•</span>
+                      <span className="text-purple-300">
+                        {pinnedPreFlight.exitProtocol === "fast_encounter"
+                          ? (language === "es" ? "⏱️ Sin sobremesa" : "⏱️ Fast exit")
+                          : pinnedPreFlight.exitProtocol === "chill_cuddle"
+                          ? (language === "es" ? "🫂 Ducha & charla" : "🫂 Cuddle")
+                          : (language === "es" ? "🌙 Pasar la noche" : "🌙 Sleepover")}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playSubBass(60);
+                setIsRendezvousSheetOpen(true);
+              }}
+              aria-label="Ajustar sintonía"
+              title="Ajustar sintonía o coordinar encuentro"
+              className="px-2.5 py-1.5 rounded-xl bg-electricViolet/20 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 transition-all font-mono text-[10px] font-black uppercase tracking-wider flex-shrink-0 cursor-pointer active:scale-95"
+            >
+              {language === "es" ? "Ajustar ⚡" : "Adjust ⚡"}
+            </button>
+          </div>
+        )}
 
         {/* ZONA DE MENSAJES SENSORIAL */}
         <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-3.5 bg-gradient-to-b from-obsidian-deep via-[#070709] to-obsidian-deep overscroll-contain">

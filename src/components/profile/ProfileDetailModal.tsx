@@ -1,9 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { VesselProfile } from "@/types/vessel";
 import { useVessel } from "@/context/VesselContext";
 import { INTENSITY_LABELS } from "@/data/kinkCatalog";
+
+const RendezvousSheet = dynamic(
+  () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
+  { ssr: false }
+);
 import { PrivateVault } from "./PrivateVault";
 import { TestimonialsSection } from "./TestimonialsSection";
 import {
@@ -92,6 +98,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
   const [isBoundaryModalOpen, setIsBoundaryModalOpen] = useState(false);
+  const [isRendezvousOpen, setIsRendezvousOpen] = useState(false);
 
   const isDistant = !currentProfile.isCurrentUser && currentProfile.distanceMeters > FREE_TIER_LIMITS.maxFreeRadarDistanceMeters;
   const isLockedByDistance = isDistant && !isUnlimited;
@@ -699,14 +706,13 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        audioEngine.playPulse();
-                        onClose();
-                        onOpenChat(currentProfile.id);
+                        audioEngine.playSubBass(60);
+                        setIsRendezvousOpen(true);
                       }}
                       className="w-full min-h-[46px] py-2.5 px-4 bg-electricViolet hover:bg-electricViolet-glow text-white text-xs font-mono font-black rounded-xl uppercase tracking-wider shadow-violet-soft flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
                     >
                       <Zap className="w-4 h-4 fill-current" />
-                      <span>Coordinar Encuentro en Chat 🔥</span>
+                      <span>Sintonizar con Pre-Flight ⚡</span>
                     </button>
                   </div>
                 )}
@@ -886,17 +892,16 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     openUnlimitedModal();
                     return;
                   }
-                  sendRendezvousPin(currentProfile.id);
-                  onClose();
-                  onOpenChat(currentProfile.id);
+                  audioEngine.playSubBass(60);
+                  setIsRendezvousOpen(true);
                 }}
-                aria-label={canChatDirectly ? "Enviar Ubicación y Abrir Chat" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Pulso")}
+                aria-label={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Pulso")}
                 className={`p-3 min-h-[48px] min-w-[48px] border rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0 ${
                   canChatDirectly
                     ? "bg-white/5 border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white"
                     : "bg-white/5 border-purple-500/30 text-electricViolet-glow hover:border-purple-400"
                 }`}
-                title={canChatDirectly ? "Enviar Ubicación y Abrir Chat" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Pulso")}
+                title={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Pulso")}
               >
                 {canChatDirectly ? (
                   <Navigation className="w-4 h-4 text-electricViolet" />
@@ -918,24 +923,49 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 <span className="hidden md:inline font-mono text-[11px]">{t.card.diaryBtn}</span>
               </button>
 
-              {/* Botón 4: Principal Abrir Chat Darkroom o Desbloqueo Unlimited */}
+              {/* Botón 4: Principal Sintonizar con Pre-Flight o Abrir Chat Darkroom / Desbloqueo Unlimited */}
               {canChatDirectly ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenChat(currentProfile.id);
-                  }}
-                  aria-label="Abrir chat efímero"
-                  className={`flex-1 min-h-[48px] py-3 px-4 text-xs font-extrabold rounded-2xl shadow-violet-soft flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98 ${
-                    isMutualPulseActive
-                      ? "bg-mintNeon hover:bg-emerald-400 text-obsidian-deep font-black shadow-mint-glow focus-visible:ring-emerald-400"
-                      : "bg-electricViolet text-white hover:bg-electricViolet-glow focus-visible:ring-electricViolet"
-                  }`}
-                >
-                  <MessageSquare className="w-4 h-4 fill-current" />
-                  <span>{isMutualPulseActive ? (t.card.mutualPulseChat || "Chat Sintonía Mutua") : t.card.openChat}</span>
-                </button>
+                isMutualPulseActive ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenChat(currentProfile.id);
+                    }}
+                    aria-label="Abrir chat efímero"
+                    className="flex-1 min-h-[48px] py-3 px-4 text-xs font-black rounded-2xl bg-mintNeon hover:bg-emerald-400 text-obsidian-deep shadow-mint-glow flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                  >
+                    <MessageSquare className="w-4 h-4 fill-current" />
+                    <span>{t.card.mutualPulseChat || "Chat Sintonía Mutua"}</span>
+                  </button>
+                ) : (
+                  <div className="flex-1 flex items-center gap-2 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        audioEngine.playSubBass(60);
+                        setIsRendezvousOpen(true);
+                      }}
+                      aria-label="Sintonizar con Pre-Flight"
+                      className="flex-1 min-h-[48px] py-3 px-3.5 bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft text-xs font-black rounded-2xl flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                    >
+                      <Zap className="w-4 h-4 fill-current text-white flex-shrink-0" />
+                      <span className="truncate">Sintonizar con Pre-Flight ⚡</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenChat(currentProfile.id);
+                      }}
+                      aria-label="Abrir chat efímero"
+                      title={t.card.openChat || "Abrir chat efímero"}
+                      className="p-3 min-h-[48px] min-w-[48px] bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white rounded-2xl flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0"
+                    >
+                      <MessageSquare className="w-4 h-4 text-electricViolet" />
+                    </button>
+                  </div>
+                )
               ) : (
                 <button
                   type="button"
@@ -968,6 +998,15 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             profile={currentProfile}
             onClose={() => setIsEditModalOpen(false)}
             onSaved={(updated) => setCurrentProfile(updated)}
+          />
+        )}
+
+        {/* Modal de Sintonía Pre-Flight (Action-First) */}
+        {isRendezvousOpen && (
+          <RendezvousSheet
+            isOpen={isRendezvousOpen}
+            onClose={() => setIsRendezvousOpen(false)}
+            targetProfile={currentProfile}
           />
         )}
       </div>

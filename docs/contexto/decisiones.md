@@ -1630,5 +1630,24 @@ Historial cronológico estricto de las decisiones técnicas y de producto adopta
 - **Motivación**:
   Cumplir de forma precisa con el requerimiento del usuario de residir en Saavedra 620, Río Cuarto (Córdoba), garantizando que al abrir el modo prueba los perfiles mock, distancias, audios, hotspots y eventos nocturnos reflejen la geografía real e inmediata del usuario en un radio táctico de menos de 3.5 km.
 
+### [ADR-124] · [2026-10-04 14:35] Rediseño de Flujos Centrado en el Usuario (De-Grindrización de VESSEL: Radar de Sintonía, Tríada de Compatibilidad y Doble Consentimiento Action-First)
+- **Decisión**:
+  1. **Reemplazo de StatusToggle por IntentHubSelector (`src/components/matrix/IntentHubSelector.tsx`)**:
+     - Sustituir la conmutación binaria de presencia por un selector táctico con 4 modos operativos excluyentes: `now` (Encuentro Ya), `nightlife` (Noche y Fiestas con cartelera embebida), `kink` (Sintonía Fetiche y Roles) y `stealth` (Modo Sigilo).
+     - Incorporar gatillo de disponibilidad inmediata 'Listo YA' con temporizador regresivo (45 min) y resonancia sub-bass a 55Hz.
+  2. **Racimos de Intención en la Matriz (`src/components/matrix/ProfileGrid.tsx`)**:
+     - Agrupar perfiles en clusters intencionales ("Con Lugar Ahora", "Listos para Desplazarse", "Hotspots de Fiesta de Hoy", "Alta Sintonía Kink") eliminando la tiranía de la cuadrícula euclidiana monótona.
+  3. **Tríada de Compatibilidad en Tarjeta de Perfil (`src/components/matrix/ProfileCard.tsx`)**:
+     - Exponer de un vistazo: (a) Micro-ficha de hospedaje (Recibe Solo / Con Lugar / Puede Viajar), (b) Badges de Pre-Flight (PrEP al día, kinks mutuos coincidentes), (c) Contador de disponibilidad temporal.
+     - Añadir botón primario "Sintonizar" para acuerdo de Pre-Flight en 3 taps.
+  4. **Conexión Action-First en Ficha de Perfil (`src/components/profile/ProfileDetailModal.tsx`)**:
+     - Priorizar "Sintonizar con Pre-Flight ⚡" como CTA primario con audio a 60Hz y carga diferida de `RendezvousSheet`.
+  5. **Doble Consentimiento Obligatorio en Zumbidos (`src/components/pulses/PulseCard.tsx`)**:
+     - Tarjeta táctica de revisión previa de sintonía en zumbidos recibidos y botones de acción rápida ("Aceptar Sintonía ⚡" que desbloquea y abre chat Darkroom directamente, y "Declinar con Respeto").
+  6. **Fijación de Dinámicas Acordadas en Chat (`src/components/chat/DarkroomChatModal.tsx`)**:
+     - Banner fijado en el tope del chat (`data-testid="pinned-preflight-banner"`) que documenta ritmo, salud/barreras y protocolo de salida con botón de ajuste rápido.
+- **Motivación**:
+  Superar el modelo mental de catálogo de cuerpos y compras por dopamina visual heredado de 2009 (Grindr), transformando a VESSEL en una suite de encuentro intencional, seguro y sin fricción, adaptada a las necesidades de los 20 arquetipos de usuario.
+
 
 

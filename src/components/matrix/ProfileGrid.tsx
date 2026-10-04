@@ -55,6 +55,8 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     matrixTab,
     setMatrixTab,
     favoriteProfileIds: favIdsProp,
+    operatingIntent = "now",
+    intentClusters = [],
   } = useRadarMatrix();
   const favoriteProfileIds = favIdsProp || [];
   const { language, t, appMode, setAppMode, isUnlimited } = useSettings();
@@ -840,36 +842,155 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           onOpenNightlifeModal={openNightlifeModal}
         />
       ) : sortedProfiles.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5 p-2 sm:p-3">
-          {sortedProfiles.map((profile, index) => {
-            const isLockedByLimit = !isUnlimited && index >= FREE_TIER_LIMITS.maxFreeProfilesInMatrix;
-            const showPromoAfterThis = !isUnlimited && index === FREE_TIER_LIMITS.maxFreeProfilesInMatrix - 1;
-
-            return (
-              <React.Fragment key={profile.id}>
-                <div
-                  className="[content-visibility:auto] [contain-intrinsic-size:0_260px]"
-                >
-                  <ProfileCard
-                    profile={profile}
-                    onSelect={onSelectProfile}
-                    onOpenChat={onOpenChat}
-                    isPriority={index < 4}
-                    isLockedByGridLimit={isLockedByLimit}
-                  />
+        <div className="flex flex-col flex-1 p-2 sm:p-3 space-y-5">
+          {/* Billboard Táctico de Fiestas y Hotspots (solo en modo nightlife con eventos activos) */}
+          {operatingIntent === "nightlife" && nightlifeEvents.length > 0 && (
+            <div className="p-3 bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-obsidian-surface border border-pink-500/30 rounded-2xl space-y-2.5 backdrop-blur-md shadow-[0_0_25px_rgba(236,72,153,0.15)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base animate-pulse">🍸</span>
+                  <div>
+                    <h4 className="text-xs font-mono font-black text-white uppercase tracking-wider">
+                      {language === "es" ? "Cartelera Nocturna & Fiestas Activas" : "Active Nightlife & Parties"}
+                    </h4>
+                    <p className="text-[10px] text-pink-300/80 font-sans">
+                      {language === "es" ? "Eventos y clubes recomendados para esta noche" : "Recommended events and clubs tonight"}
+                    </p>
+                  </div>
                 </div>
-                {showPromoAfterThis && (
-                  <MatrixUnlimitedPromoCard
-                    key="unlimited-matrix-promo-divider"
-                    totalProfilesCount={sortedProfiles.length}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playSubBass(60);
+                    openNightlifeModal();
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                >
+                  <span>{language === "es" ? "Ver Agenda" : "Full Agenda"}</span>
+                  <span>→</span>
+                </button>
+              </div>
+
+              {/* Scroll horizontal de eventos destacados */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                {nightlifeEvents.slice(0, 4).map((evt) => (
+                  <div
+                    key={evt.id}
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      openNightlifeModal();
+                    }}
+                    className="flex-shrink-0 w-48 sm:w-56 p-2 rounded-xl bg-black/60 border border-white/10 hover:border-pink-500/50 transition-all cursor-pointer space-y-1 group"
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-mono">
+                      <span className="font-bold text-white group-hover:text-pink-300 transition-colors truncate max-w-[120px]">
+                        {evt.name}
+                      </span>
+                      {evt.hasDarkroom && (
+                        <span className="text-[9px] px-1 py-0.2 bg-purple-900/60 text-purple-300 rounded border border-purple-500/40">
+                          ⚡ Darkroom
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-neutral-400 truncate">
+                      📍 {evt.venueName} • {evt.neighborhood}
+                    </p>
+                    <div className="flex items-center justify-between text-[9px] font-mono text-neutral-500 pt-0.5">
+                      <span>🕒 {evt.timeRange}</span>
+                      <span className="text-emerald-400 font-bold">👥 {evt.activeAttendeesCount} presentes</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Racimos de Intención Operativa (De-grindrización del radar) */}
+          {intentClusters && intentClusters.length > 0 ? (
+            <div className="space-y-6">
+              {intentClusters.map((cluster) => (
+                <section key={cluster.id} className="space-y-2.5">
+                  <div className="flex items-center justify-between px-1 py-1 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{cluster.icon}</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs sm:text-sm font-mono font-black text-white uppercase tracking-wider">
+                            {cluster.title}
+                          </h3>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 font-bold border border-white/10">
+                            {cluster.profiles.length}
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-neutral-400 font-sans">
+                          {cluster.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+                    {cluster.profiles.map((profile, idx) => {
+                      const globalIndex = sortedProfiles.findIndex((p) => p.id === profile.id);
+                      const isLockedByLimit = !isUnlimited && globalIndex >= FREE_TIER_LIMITS.maxFreeProfilesInMatrix;
+                      const showPromoAfterThis = !isUnlimited && globalIndex === FREE_TIER_LIMITS.maxFreeProfilesInMatrix - 1;
+
+                      return (
+                        <React.Fragment key={profile.id}>
+                          <div className="[content-visibility:auto] [contain-intrinsic-size:0_260px]">
+                            <ProfileCard
+                              profile={profile}
+                              onSelect={onSelectProfile}
+                              onOpenChat={onOpenChat}
+                              isPriority={idx < 2}
+                              isLockedByGridLimit={isLockedByLimit}
+                            />
+                          </div>
+                          {showPromoAfterThis && (
+                            <MatrixUnlimitedPromoCard
+                              key={`promo-${profile.id}`}
+                              totalProfilesCount={sortedProfiles.length}
+                            />
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            /* Fallback: Cuadrícula directa tradicional (tests unitarios o filtros sin racimos) */
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+              {sortedProfiles.map((profile, index) => {
+                const isLockedByLimit = !isUnlimited && index >= FREE_TIER_LIMITS.maxFreeProfilesInMatrix;
+                const showPromoAfterThis = !isUnlimited && index === FREE_TIER_LIMITS.maxFreeProfilesInMatrix - 1;
+
+                return (
+                  <React.Fragment key={profile.id}>
+                    <div className="[content-visibility:auto] [contain-intrinsic-size:0_260px]">
+                      <ProfileCard
+                        profile={profile}
+                        onSelect={onSelectProfile}
+                        onOpenChat={onOpenChat}
+                        isPriority={index < 4}
+                        isLockedByGridLimit={isLockedByLimit}
+                      />
+                    </div>
+                    {showPromoAfterThis && (
+                      <MatrixUnlimitedPromoCard
+                        key="unlimited-matrix-promo-divider"
+                        totalProfilesCount={sortedProfiles.length}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          )}
 
           {sortedProfiles.length === 1 && sortedProfiles[0].isCurrentUser && hasActiveFilters && (
-            <div className="col-span-2 sm:col-span-3 md:col-span-4 p-5 rounded-2xl bg-electricViolet/10 border border-electricViolet/30 text-center space-y-3 my-2 flex flex-col items-center justify-center">
+            <div className="p-5 rounded-2xl bg-electricViolet/10 border border-electricViolet/30 text-center space-y-3 my-2 flex flex-col items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-electricViolet/20 border border-electricViolet/40 flex items-center justify-center text-electricViolet-glow">
                 <SlidersHorizontal className="w-5 h-5 stroke-[2]" />
               </div>

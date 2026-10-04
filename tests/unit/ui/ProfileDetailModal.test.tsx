@@ -236,4 +236,21 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
 
     expect(mockToggleFavorite).toHaveBeenCalledWith(mockProfile.id);
   });
+
+  it("despliega el flujo de Sintonizar con Pre-Flight ⚡ al hacer clic en el CTA primario", async () => {
+    const { audioEngine } = await import("@/lib/audio/SubBassAudioEngine");
+    render(
+      <ProfileDetailModal
+        profile={mockProfile}
+        onClose={mockOnClose}
+        onOpenChat={mockOnOpenChat}
+      />
+    );
+
+    const sintonizarBtns = screen.getAllByRole("button", { name: /Sintonizar con Pre-Flight/i });
+    expect(sintonizarBtns.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(sintonizarBtns[0]);
+
+    expect(audioEngine.playSubBass).toHaveBeenCalledWith(60);
+  });
 });

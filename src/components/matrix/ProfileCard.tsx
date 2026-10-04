@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { VesselProfile } from "@/types/vessel";
 import {
   useRadarMatrix,
@@ -8,12 +9,17 @@ import {
   useDiary,
   useSettings,
 } from "@/context/VesselContext";
-import { Lock, MessageCircle, Star } from "lucide-react";
+import { Lock, MessageCircle, Star, Zap } from "lucide-react";
 import Image from "next/image";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getRoleActionMeta, getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
+
+const RendezvousSheet = dynamic(
+  () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
+  { ssr: false }
+);
 
 interface ProfileCardProps {
   profile: VesselProfile;
@@ -36,13 +42,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     hasMutualPulse,
     isFavoriteProfile: isFavProp,
     toggleFavoriteProfile: toggleFavProp,
+    getMutualKinkMatches: getMatchesProp,
   } = useRadarMatrix();
   const isFavoriteProfile = isFavProp || (() => false);
   const toggleFavoriteProfile = toggleFavProp || (() => {});
+  const getMutualKinkMatches = getMatchesProp || (() => []);
   const { getBoundaryForProfile } = useChat();
   const { getProfileDossier } = useDiary();
   const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
   const [isPulsing, setIsPulsing] = React.useState(false);
+  const [isRendezvousOpen, setIsRendezvousOpen] = React.useState(false);
   const [imgError, setImgError] = React.useState(!profile.avatarUrl);
 
   React.useEffect(() => {
@@ -69,16 +78,80 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
 
   const verdictMeta = dossier?.rating ? DOSSIER_VERDICT_CONFIG[dossier.rating] : null;
 
-  const isImmediateHost =
-    Boolean(
-      profile.mobility?.toLowerCase().includes("casa") ||
-      profile.mobility === "Tengo depto / lugar" ||
-      profile.mobility === "Tengo sitio" ||
-      profile.mobility === "Tengo lugar y me muevo" ||
-      profile.mobility === "Tengo sitio/me desplazo" ||
-      profile.mobility?.toLowerCase().includes("lugar") ||
-      profile.mobility?.toLowerCase().includes("depto")
-    );
+  // Tríada de Compatibilidad 1: Ficha Táctica de Hospedaje
+  const hostBadge = React.useMemo(() => {
+    if (profile.hostCard?.hasPlace) {
+      if (profile.hostCard.livingArrangement === "solo") {
+        return {
+          label: language === "es" ? "Recibe Solo" : "Hosts Solo",
+          icon: "🏠",
+          shower: Boolean(profile.hostCard.amenities?.showerReady),
+          className: "bg-emerald-500/25 border-emerald-400/50 text-emerald-300",
+        };
+      }
+      return {
+        label: language === "es" ? "Con Lugar" : "Has Place",
+        icon: "🏠",
+        shower: Boolean(profile.hostCard.amenities?.showerReady),
+        className: "bg-amber-500/25 border-amber-400/40 text-amber-300",
+      };
+    }
+
+    const mobilityStr = (profile.mobility || "") + " " + (profile.hosting || "");
+    if (/viaj|muev|desplaz/i.test(mobilityStr)) {
+      return {
+        label: language === "es" ? "Puede Viajar" : "Can Travel",
+        icon: "🚗",
+        shower: false,
+        className: "bg-cyan-500/25 border-cyan-400/40 text-cyan-300",
+      };
+    }
+
+    if (/casa|depto|sitio|lugar/i.test(mobilityStr)) {
+      return {
+        label: language === "es" ? "Con Lugar" : "Has Place",
+        icon: "🏠",
+        shower: false,
+        className: "bg-amber-500/25 border-amber-400/40 text-amber-300",
+      };
+    }
+
+    return {
+      label: language === "es" ? "Busca Lugar" : "Needs Place",
+      icon: "📍",
+      shower: false,
+      className: "bg-white/10 border-white/15 text-neutral-400",
+    };
+  }, [profile.hostCard, profile.mobility, profile.hosting, language]);
+
+  // Tríada de Compatibilidad 2: Pre-Flight & Salud (PrEP / I=I / Cuidados)
+  const healthBadge = React.useMemo(() => {
+    if (profile.hivStatus === "Negativo en PrEP" || /prep/i.test(profile.hivStatus || "")) {
+      return { label: "PrEP", icon: "🛡️", className: "bg-cyan-950/70 border-cyan-500/40 text-cyan-300" };
+    }
+    if (profile.hivStatus === "Positivo Indetectable (I=I)" || /indetectable/i.test(profile.hivStatus || "")) {
+      return { label: "I=I", icon: "🩺", className: "bg-purple-950/70 border-purple-500/40 text-purple-300" };
+    }
+    if (profile.hivStatus === "VIH Negativo") {
+      return { label: "Negativo", icon: "✓", className: "bg-emerald-950/70 border-emerald-500/40 text-emerald-300" };
+    }
+    return null;
+  }, [profile.hivStatus]);
+
+  const mutualMatches = React.useMemo(() => {
+    return getMutualKinkMatches(profile.kinkMatrix);
+  }, [getMutualKinkMatches, profile.kinkMatrix]);
+
+  // Tríada de Compatibilidad 3: Disponibilidad Horaria Inmediata (Contador Listo YA)
+  const readinessMinutes = React.useMemo(() => {
+    if (!profile.onTheClock?.isActive) return null;
+    if (profile.onTheClock.expiresAt) {
+      const diff = Math.max(0, Math.floor((new Date(profile.onTheClock.expiresAt).getTime() - Date.now()) / (1000 * 60)));
+      return diff > 0 ? diff : 60;
+    }
+    return 60;
+  }, [profile.onTheClock]);
+
   const isAttenuated = boundary?.radarVisibility === "attenuated";
 
   const handleCardClick = () => {
@@ -204,13 +277,13 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           </div>
         </div>
       ) : (
-        /* Badge Superior Izquierdo: Listo YA (On-The-Clock) */
+        /* Badge Superior Izquierdo: Listo YA (On-The-Clock con Minutos Restantes) */
         profile.onTheClock?.isActive && (
           <div className="absolute top-2 left-2 z-10 pointer-events-none">
-            <div className="flex items-center gap-1 bg-purple-950/95 border border-electricViolet text-electricViolet-glow px-1.5 py-0.5 rounded-full text-[8px] font-mono font-black shadow-violet-glow uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping flex-shrink-0" />
-              <span className="hidden sm:inline">⚡ {language === "es" ? "LISTO YA" : "READY NOW"}</span>
-              <span className="sm:hidden font-black">⚡ {language === "es" ? "YA" : "NOW"}</span>
+            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-400 text-amber-300 px-1.5 py-0.5 rounded-full text-[8px] font-mono font-black shadow-[0_0_10px_rgba(251,191,36,0.3)] uppercase tracking-wider backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping flex-shrink-0" />
+              <span className="hidden sm:inline">⚡ {language === "es" ? (readinessMinutes ? `LISTO ${readinessMinutes}m` : "LISTO YA") : (readinessMinutes ? `READY ${readinessMinutes}m` : "READY NOW")}</span>
+              <span className="sm:hidden font-black">⚡ {readinessMinutes ? `${readinessMinutes}m` : (language === "es" ? "YA" : "NOW")}</span>
             </div>
           </div>
         )
@@ -286,16 +359,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               {profile.age}
             </span>
           )}
-          {/* Chip de Hospedaje Inmediato en Fila de Identidad */}
-          {isImmediateHost && (
-            <span
-              title={profile.hostCard?.amenities?.showerReady ? (language === "es" ? "Con lugar propio + Ducha lista" : "Has place + Shower ready") : (t.card?.immediateHost || "Con Lugar")}
-              className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-amber-500/25 border border-amber-400/40 text-[9px] font-bold text-amber-300 flex-shrink-0 shadow-xs"
-            >
-              <span>🏠</span>
-              {profile.hostCard?.amenities?.showerReady && <span className="text-[8px]">🚿</span>}
-            </span>
-          )}
+          {/* Micro-Ficha Táctica de Hospedaje */}
+          <span
+            data-testid={`host-badge-${profile.id}`}
+            title={hostBadge.shower ? (language === "es" ? `${hostBadge.label} + Ducha lista` : `${hostBadge.label} + Shower ready`) : hostBadge.label}
+            className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-bold flex-shrink-0 shadow-xs border ${hostBadge.className}`}
+          >
+            <span>{hostBadge.icon}</span>
+            <span className="text-[8.5px] font-mono">{hostBadge.label}</span>
+            {hostBadge.shower && <span className="text-[8px]">🚿</span>}
+          </span>
           {/* Ícono de Química / Veredicto Dossier */}
           {verdictMeta && (
             <span
@@ -316,18 +389,68 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           )}
         </div>
 
-        {/* Fila 2: Rol Táctico a la Izquierda + Botones de Acción 1-Tap a la Derecha */}
-        <div className="flex items-center justify-between gap-1 w-full pt-0.5">
-          {/* Rol en Violeta Eléctrico (100% Despejado, Espacio Dedicado) */}
-          <div className="flex items-center min-w-0 flex-1 pr-1.5 pointer-events-auto">
-            <span className="text-[11px] sm:text-xs text-electricViolet-glow font-black tracking-tight drop-shadow-sm truncate">
-              {roleDisplay}
+        {/* Fila 2: Rol Táctico + Micro-chips de Pre-Flight / Salud / Morbos */}
+        <div className="flex items-center gap-1 w-full min-w-0 pointer-events-auto overflow-hidden">
+          <span className="text-[11px] sm:text-xs text-electricViolet-glow font-black tracking-tight drop-shadow-sm truncate flex-shrink-0">
+            {roleDisplay}
+          </span>
+          {/* Health Badge */}
+          {healthBadge && (
+            <span
+              data-testid={`health-badge-${profile.id}`}
+              className={`px-1 py-0.2 rounded border text-[8px] font-mono font-bold flex-shrink-0 ${healthBadge.className}`}
+              title={healthBadge.label}
+            >
+              <span>{healthBadge.icon}</span>
+              <span className="ml-0.5">{healthBadge.label}</span>
             </span>
-          </div>
+          )}
+          {/* Mutual Kinks or Tags */}
+          {mutualMatches.length > 0 ? (
+            <span
+              data-testid={`kinks-badge-${profile.id}`}
+              className="px-1 py-0.2 rounded bg-pink-950/70 border border-pink-500/40 text-pink-300 text-[8px] font-mono font-bold flex-shrink-0 truncate max-w-[85px]"
+              title={language === "es" ? `${mutualMatches.length} morbos mutuos` : `${mutualMatches.length} mutual kinks`}
+            >
+              ✨ {mutualMatches.length} {language === "es" ? "morbos" : "mutual"}
+            </span>
+          ) : profile.kinks && profile.kinks.length > 0 ? (
+            <span
+              className="px-1 py-0.2 rounded bg-white/5 border border-white/10 text-neutral-400 text-[8px] font-mono truncate max-w-[75px]"
+              title={profile.kinks[0]}
+            >
+              #{profile.kinks[0]}
+            </span>
+          ) : null}
+        </div>
 
-          {/* Cluster de Acciones Tácticas Directas (Favorito 1-Tap + Chat Directo 1-Tap + Pulso de Rol 1-Tap) */}
-          {!profile.isCurrentUser && (
-            <div className="flex-shrink-0 flex items-center gap-1.5 pointer-events-auto relative z-20">
+        {/* Fila 3: Cluster de Acciones Tácticas (Sintonizar como Botón Primario + Favorito + Chat + Pulso) */}
+        {!profile.isCurrentUser && (
+          <div className="flex items-center justify-between gap-1 w-full pt-0.5 pointer-events-auto relative z-20">
+            {/* Botón Primario Sintonizar (Pre-Flight en 3 taps) */}
+            <button
+              type="button"
+              data-testid={`profile-sintonizar-btn-${profile.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isQuotaLocked) {
+                  audioEngine.playSubBass(60);
+                  openUnlimitedModal();
+                  return;
+                }
+                audioEngine.playSubBass(55);
+                setIsRendezvousOpen(true);
+              }}
+              className="flex-1 min-h-[30px] sm:min-h-[32px] px-2 py-0.5 rounded-lg bg-gradient-to-r from-electricViolet via-fuchsia-600 to-electricViolet hover:brightness-110 text-white font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-violet-soft active:scale-95 transition-all cursor-pointer border border-white/20"
+              title={language === "es" ? "Sintonizar y acordar en 3 taps" : "Tune in & agree in 3 taps"}
+              aria-label={`${language === "es" ? "Sintonizar con" : "Tune in with"} ${profile.codename}`}
+            >
+              <Zap className="w-3 h-3 fill-amber-300 text-amber-300 flex-shrink-0" />
+              <span className="truncate">{language === "es" ? "Sintonizar" : "Tune In"}</span>
+            </button>
+
+            {/* Acciones Secundarias */}
+            <div className="flex-shrink-0 flex items-center gap-1">
               {/* Botón Favorito (★) 1-Tap */}
               <button
                 type="button"
@@ -336,7 +459,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   e.stopPropagation();
                   toggleFavoriteProfile(profile.id);
                 }}
-                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer relative after:absolute after:-inset-1.5 after:content-[''] ${
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer relative after:absolute after:-inset-1.5 after:content-[''] ${
                   isFavoriteProfile(profile.id)
                     ? "border-amber-400 bg-amber-950/80 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] focus-visible:ring-amber-400"
                     : "border-white/20 bg-black/90 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black focus-visible:ring-amber-400"
@@ -346,7 +469,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 aria-pressed={isFavoriteProfile(profile.id)}
               >
                 <Star
-                  className={`w-3.5 h-3.5 stroke-[2.2] transition-transform ${
+                  className={`w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.2] transition-transform ${
                     isFavoriteProfile(profile.id) ? "fill-amber-400 text-amber-400 scale-110" : ""
                   }`}
                 />
@@ -361,7 +484,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                     audioEngine.playPulse();
                     onOpenChat(profile.id);
                   }}
-                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer relative after:absolute after:-inset-1.5 after:content-[''] ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer relative after:absolute after:-inset-1.5 after:content-[''] ${
                     isMutualPulseActive
                       ? "border-emerald-400/80 bg-emerald-950/90 text-emerald-300 hover:bg-emerald-900 shadow-[0_0_10px_rgba(52,211,153,0.5)] focus-visible:ring-emerald-400"
                       : "border-white/20 bg-black/90 text-white hover:border-electricViolet hover:text-electricViolet-glow hover:bg-black focus-visible:ring-electricViolet"
@@ -377,7 +500,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                       : (language === "es" ? `Abrir chat directo con ${profile.codename}` : `Open direct chat with ${profile.codename}`)
                   }
                 >
-                  <MessageCircle className={`w-3.5 h-3.5 stroke-[2.2] ${isMutualPulseActive ? "text-emerald-400" : ""}`} />
+                  <MessageCircle className={`w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.2] ${isMutualPulseActive ? "text-emerald-400" : ""}`} />
                 </button>
               ) : (
                 <button
@@ -387,15 +510,15 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                     audioEngine.playPulse();
                     openUnlimitedModal();
                   }}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-champagneGold/50 bg-black/90 text-champagneGold hover:border-champagneGold hover:bg-amber-950/60 hover:text-white flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagneGold cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-champagneGold/50 bg-black/90 text-champagneGold hover:border-champagneGold hover:bg-amber-950/60 hover:text-white flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagneGold cursor-pointer relative after:absolute after:-inset-1.5 after:content-['']"
                   title={t.card.distantChatLocked || "Chatear requiere VESSEL UNLIMITED o Zumbido Mutuo"}
                   aria-label={t.card.distantChatLocked || "Chatear requiere VESSEL UNLIMITED o Zumbido Mutuo"}
                 >
-                  <Lock className="w-3.5 h-3.5 text-champagneGold stroke-[2.4]" />
+                  <Lock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-champagneGold stroke-[2.4]" />
                 </button>
               )}
 
-              {/* Botón 2: Pulso Cinético de Rol (1-Tap Kinetic Reaction con Micro-Interacción + Cola Offline) */}
+              {/* Botón 2: Pulso Cinético de Rol */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -404,7 +527,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   transmitSignal(profile.id);
                   setTimeout(() => setIsPulsing(false), 650);
                 }}
-                className={`relative overflow-hidden w-8 h-8 sm:w-9 sm:h-9 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer after:absolute after:-inset-1.5 after:content-[''] ${
+                className={`relative overflow-hidden w-7 h-7 sm:w-8 sm:h-8 rounded-full border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer after:absolute after:-inset-1.5 after:content-[''] ${
                   signalCount > 0
                     ? `bg-electricViolet text-white border-electricViolet ${roleAction.glowClass} scale-105`
                     : "bg-black/90 text-white border-white/20 hover:border-electricViolet hover:scale-105 hover:bg-black"
@@ -416,7 +539,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   <span className="absolute inset-0 rounded-full bg-electricViolet-glow/70 animate-pulse-wave pointer-events-none" />
                 )}
                 <span
-                  className={`leading-none select-none text-[12px] sm:text-[13px] transition-transform duration-200 ${
+                  className={`leading-none select-none text-[11px] sm:text-[12px] transition-transform duration-200 ${
                     isPulsing ? "scale-125" : ""
                   }`}
                 >
@@ -432,9 +555,18 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 )}
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Sheet Táctico de Rendezvous / Pre-Flight en 3 Taps */}
+      {isRendezvousOpen && (
+        <RendezvousSheet
+          isOpen={isRendezvousOpen}
+          onClose={() => setIsRendezvousOpen(false)}
+          targetProfile={profile}
+        />
+      )}
     </article>
   );
 };

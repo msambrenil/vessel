@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useVessel } from "@/context/VesselContext";
 import { BrutalistHeader } from "@/components/brand/BrutalistHeader";
-import { StatusToggle } from "@/components/matrix/StatusToggle";
+import { IntentHubSelector } from "@/components/matrix/IntentHubSelector";
 import { BrutalistNav } from "@/components/navigation/BrutalistNav";
 import { ProfileGridSkeleton } from "@/components/matrix/ProfileGridSkeleton";
 import { PulsesListSkeleton } from "@/components/pulses/PulsesListSkeleton";
@@ -107,8 +107,8 @@ export default function VesselApp() {
         {/* Banner Táctico de Modo "En Camino" con Telemetría */}
         {enRouteState.isActive && <EnRouteBanner />}
 
-        {/* Selector de Estado Corporal (Open / Occupied / Dormant) - Exclusivo para vista de exploración */}
-        {activeView === "grid" && <StatusToggle />}
+        {/* Selector Táctico de Sintonía e Intención Inmediata (Hub Operativo De-Grindr) */}
+        {activeView === "grid" && <IntentHubSelector />}
 
         {/* Recordatorio Táctico de Próxima Cita Agendada (1-Tap Chat & Confirmación) */}
         {activeView === "grid" && <UpcomingEncounterBanner />}
