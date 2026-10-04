@@ -817,8 +817,18 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                       <span className="text-[10px] text-neutral-400 block uppercase font-medium">
                         {language === "es" ? "Salud Preventiva • VIH" : "Preventive Health • HIV"}
                       </span>
-                      <div className="text-xs font-bold text-white mt-0.5">
-                        {profile.hivStatus}
+                      <div className="text-xs font-bold text-white mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span>{profile.hivStatus}</span>
+                        {/indetectable|I=I/i.test(profile.hivStatus || "") && (
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-purple-950/70 border border-purple-500/40 text-purple-300 font-bold">
+                            {language === "es" ? "I=I • Cero riesgo de transmisión" : "U=U • Zero transmission risk"}
+                          </span>
+                        )}
+                        {/prep/i.test(profile.hivStatus || "") && (
+                          <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-cyan-950/70 border border-cyan-500/40 text-cyan-300 font-bold">
+                            {language === "es" ? "Protegido con PrEP" : "Protected with PrEP"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -275,7 +275,7 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       expect(mockOnSelect).not.toHaveBeenCalled();
     });
 
-    it("renderiza el badge de salud PrEP cuando el perfil lo declara", () => {
+    it("no renderiza el badge de salud en la card de la matrix para mantener la vista zen (queda reservado al perfil completo)", () => {
       const prepProfile = createMockProfile({
         hivStatus: "Negativo en PrEP",
       });
@@ -288,9 +288,8 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
         />
       );
 
-      const healthBadge = screen.getByTestId(`health-badge-${prepProfile.id}`);
-      expect(healthBadge).toBeInTheDocument();
-      expect(healthBadge).toHaveTextContent("PrEP");
+      const healthBadge = screen.queryByTestId(`health-badge-${prepProfile.id}`);
+      expect(healthBadge).toBeNull();
     });
 
     it("renderiza el contador de minutos restantes en el badge superior cuando Listo YA está activo", () => {

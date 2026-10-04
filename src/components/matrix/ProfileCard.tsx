@@ -136,34 +136,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     };
   }, [profile.hostCard, profile.mobility, profile.hosting, language]);
 
-  // Tríada de Compatibilidad 2: Pre-Flight & Salud (PrEP / I=I / Cuidados)
-  const healthBadge = React.useMemo(() => {
-    if (profile.hivStatus === "Negativo en PrEP" || /prep/i.test(profile.hivStatus || "")) {
-      return {
-        label: "PrEP",
-        icon: "🛡️",
-        className: "bg-cyan-950/70 border-cyan-500/40 text-cyan-300",
-        tooltip: language === "es" ? "PrEP: Profilaxis Pre-Exposición (Protegido contra VIH)" : "PrEP: Pre-Exposure Prophylaxis (Protected against HIV)",
-      };
-    }
-    if (profile.hivStatus === "Positivo Indetectable (I=I)" || /indetectable/i.test(profile.hivStatus || "")) {
-      return {
-        label: "I=I",
-        icon: "🩺",
-        className: "bg-purple-950/70 border-purple-500/40 text-purple-300",
-        tooltip: language === "es" ? "I=I: Indetectable = Intransmisible (Cero riesgo de transmisión sexual de VIH)" : "U=U: Undetectable = Untransmittable (Zero risk of HIV transmission)",
-      };
-    }
-    if (profile.hivStatus === "VIH Negativo") {
-      return {
-        label: "Negativo",
-        icon: "✓",
-        className: "bg-emerald-950/70 border-emerald-500/40 text-emerald-300",
-        tooltip: language === "es" ? "VIH Negativo" : "HIV Negative",
-      };
-    }
-    return null;
-  }, [profile.hivStatus, language]);
+
 
   const mutualMatches = React.useMemo(() => {
     return getMutualKinkMatches(profile.kinkMatrix);
@@ -454,17 +427,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               {hostBadge.shower && <span className="text-[7.5px]">🚿</span>}
             </span>
           )}
-          {/* Health Badge */}
-          {healthBadge && (
-            <span
-              data-testid={`health-badge-${profile.id}`}
-              className={`px-1 py-0.2 rounded border text-[8px] font-mono font-bold flex-shrink-0 ${healthBadge.className}`}
-              title={healthBadge.tooltip || healthBadge.label}
-            >
-              <span>{healthBadge.icon}</span>
-              <span className="ml-0.5">{healthBadge.label}</span>
-            </span>
-          )}
+
           {/* Mutual Kinks or Tags */}
           {mutualMatches.length > 0 ? (
             <span
