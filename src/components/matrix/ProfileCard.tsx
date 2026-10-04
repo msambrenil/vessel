@@ -53,10 +53,18 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const [isPulsing, setIsPulsing] = React.useState(false);
   const [isRendezvousOpen, setIsRendezvousOpen] = React.useState(false);
   const [imgError, setImgError] = React.useState(!profile.avatarUrl);
+  const [showTransportLegend, setShowTransportLegend] = React.useState(false);
 
   React.useEffect(() => {
     setImgError(!profile.avatarUrl);
   }, [profile.avatarUrl]);
+
+  React.useEffect(() => {
+    if (showTransportLegend) {
+      const timer = setTimeout(() => setShowTransportLegend(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTransportLegend]);
 
   const isPaidMember =
     profile.userPlan === "unlimited" ||
@@ -100,7 +108,9 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     const mobilityStr = (profile.mobility || "") + " " + (profile.hosting || "");
     if (/viaj|muev|desplaz/i.test(mobilityStr)) {
       return {
-        label: language === "es" ? "Puede Viajar" : "Can Travel",
+        isCar: true,
+        label: "",
+        fullLabel: language === "es" ? "Tiene transporte" : "Has transport",
         icon: "🚗",
         shower: false,
         className: "bg-cyan-500/25 border-cyan-400/40 text-cyan-300",
@@ -109,6 +119,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
 
     if (/casa|depto|sitio|lugar/i.test(mobilityStr)) {
       return {
+        isCar: false,
         label: language === "es" ? "Con Lugar" : "Has Place",
         icon: "🏠",
         shower: false,
@@ -117,6 +128,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     }
 
     return {
+      isCar: false,
       label: language === "es" ? "Busca Lugar" : "Needs Place",
       icon: "📍",
       shower: false,
@@ -127,16 +139,31 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   // Tríada de Compatibilidad 2: Pre-Flight & Salud (PrEP / I=I / Cuidados)
   const healthBadge = React.useMemo(() => {
     if (profile.hivStatus === "Negativo en PrEP" || /prep/i.test(profile.hivStatus || "")) {
-      return { label: "PrEP", icon: "🛡️", className: "bg-cyan-950/70 border-cyan-500/40 text-cyan-300" };
+      return {
+        label: "PrEP",
+        icon: "🛡️",
+        className: "bg-cyan-950/70 border-cyan-500/40 text-cyan-300",
+        tooltip: language === "es" ? "PrEP: Profilaxis Pre-Exposición (Protegido contra VIH)" : "PrEP: Pre-Exposure Prophylaxis (Protected against HIV)",
+      };
     }
     if (profile.hivStatus === "Positivo Indetectable (I=I)" || /indetectable/i.test(profile.hivStatus || "")) {
-      return { label: "I=I", icon: "🩺", className: "bg-purple-950/70 border-purple-500/40 text-purple-300" };
+      return {
+        label: "I=I",
+        icon: "🩺",
+        className: "bg-purple-950/70 border-purple-500/40 text-purple-300",
+        tooltip: language === "es" ? "I=I: Indetectable = Intransmisible (Cero riesgo de transmisión sexual de VIH)" : "U=U: Undetectable = Untransmittable (Zero risk of HIV transmission)",
+      };
     }
     if (profile.hivStatus === "VIH Negativo") {
-      return { label: "Negativo", icon: "✓", className: "bg-emerald-950/70 border-emerald-500/40 text-emerald-300" };
+      return {
+        label: "Negativo",
+        icon: "✓",
+        className: "bg-emerald-950/70 border-emerald-500/40 text-emerald-300",
+        tooltip: language === "es" ? "VIH Negativo" : "HIV Negative",
+      };
     }
     return null;
-  }, [profile.hivStatus]);
+  }, [profile.hivStatus, language]);
 
   const mutualMatches = React.useMemo(() => {
     return getMutualKinkMatches(profile.kinkMatrix);
@@ -385,21 +412,54 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
             {roleDisplay}
           </span>
           {/* Micro-Ficha Táctica de Hospedaje */}
-          <span
-            data-testid={`host-badge-${profile.id}`}
-            title={hostBadge.shower ? (language === "es" ? `${hostBadge.label} + Ducha lista` : `${hostBadge.label} + Shower ready`) : hostBadge.label}
-            className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8.5px] font-bold flex-shrink-0 shadow-xs border ${hostBadge.className}`}
-          >
-            <span>{hostBadge.icon}</span>
-            <span className="text-[8px] font-mono">{hostBadge.label}</span>
-            {hostBadge.shower && <span className="text-[7.5px]">🚿</span>}
-          </span>
+          {hostBadge.isCar ? (
+            <div className="relative inline-flex items-center flex-shrink-0">
+              <button
+                type="button"
+                data-testid={`host-badge-${profile.id}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTransportLegend((prev) => !prev);
+                }}
+                title={language === "es" ? "Tiene transporte" : "Has transport"}
+                aria-label={language === "es" ? "Tiene transporte" : "Has transport"}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-bold shadow-xs border cursor-pointer active:scale-95 transition-all ${hostBadge.className}`}
+              >
+                <span className="text-xs leading-none">🚗</span>
+                {showTransportLegend && (
+                  <span className="text-[8px] font-mono whitespace-nowrap animate-in fade-in">
+                    {language === "es" ? "Tiene transporte" : "Has transport"}
+                  </span>
+                )}
+              </button>
+              {/* Tooltip flotante al presionar */}
+              {showTransportLegend && (
+                <div
+                  role="tooltip"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-md bg-black/95 border border-cyan-400/60 text-cyan-300 text-[9px] font-mono font-bold whitespace-nowrap shadow-xl pointer-events-none z-30 animate-in fade-in zoom-in-95"
+                >
+                  🚗 {language === "es" ? "Tiene transporte" : "Has transport"}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-black/95" />
+                </div>
+              )}
+            </div>
+          ) : (
+            <span
+              data-testid={`host-badge-${profile.id}`}
+              title={hostBadge.shower ? (language === "es" ? `${hostBadge.label} + Ducha lista` : `${hostBadge.label} + Shower ready`) : hostBadge.label}
+              className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8.5px] font-bold flex-shrink-0 shadow-xs border ${hostBadge.className}`}
+            >
+              <span>{hostBadge.icon}</span>
+              <span className="text-[8px] font-mono">{hostBadge.label}</span>
+              {hostBadge.shower && <span className="text-[7.5px]">🚿</span>}
+            </span>
+          )}
           {/* Health Badge */}
           {healthBadge && (
             <span
               data-testid={`health-badge-${profile.id}`}
               className={`px-1 py-0.2 rounded border text-[8px] font-mono font-bold flex-shrink-0 ${healthBadge.className}`}
-              title={healthBadge.label}
+              title={healthBadge.tooltip || healthBadge.label}
             >
               <span>{healthBadge.icon}</span>
               <span className="ml-0.5">{healthBadge.label}</span>

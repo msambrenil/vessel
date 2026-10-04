@@ -248,6 +248,33 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       expect(hostBadge).toHaveTextContent("🚿");
     });
 
+    it("en perfiles que pueden viajar, renderiza solo el ícono 🚗 y al presionar despliega 'Tiene transporte'", () => {
+      const travelProfile = createMockProfile({
+        mobility: "Voy a la tuya / Viajo 🚗",
+        hostCard: undefined,
+      });
+
+      render(
+        <ProfileCard
+          profile={travelProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+
+      const hostBadge = screen.getByTestId(`host-badge-${travelProfile.id}`);
+      expect(hostBadge).toBeInTheDocument();
+      expect(hostBadge).toHaveTextContent("🚗");
+      // Inicialmente no muestra texto extra para mantener la tarjeta zen
+      expect(hostBadge.textContent?.trim()).toBe("🚗");
+
+      // Al presionar el ícono del autito, despliega la leyenda "Tiene transporte"
+      fireEvent.click(hostBadge);
+      expect(screen.getAllByText(/Tiene transporte/i).length).toBeGreaterThanOrEqual(1);
+      // No debe abrir el perfil completo al tocar el autito
+      expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+
     it("renderiza el badge de salud PrEP cuando el perfil lo declara", () => {
       const prepProfile = createMockProfile({
         hivStatus: "Negativo en PrEP",
