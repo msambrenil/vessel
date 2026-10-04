@@ -712,7 +712,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                       className="w-full min-h-[46px] py-2.5 px-4 bg-electricViolet hover:bg-electricViolet-glow text-white text-xs font-mono font-black rounded-xl uppercase tracking-wider shadow-violet-soft flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
                     >
                       <Zap className="w-4 h-4 fill-current" />
-                      <span>Sintonizar con Pre-Flight ⚡</span>
+                      <span>{language === "es" ? "Coordinar Cita ⚡" : "Coordinate Date ⚡"}</span>
                     </button>
                   </div>
                 )}
@@ -895,13 +895,13 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   audioEngine.playSubBass(60);
                   setIsRendezvousOpen(true);
                 }}
-                aria-label={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Zumbido")}
+                aria-label={canChatDirectly ? (language === "es" ? "Coordinar Cita" : "Coordinate Date") : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Zumbido")}
                 className={`p-3 min-h-[48px] min-w-[48px] border rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0 ${
                   canChatDirectly
                     ? "bg-white/5 border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white"
                     : "bg-white/5 border-purple-500/30 text-electricViolet-glow hover:border-purple-400"
                 }`}
-                title={canChatDirectly ? "Sintonizar con Pre-Flight" : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Zumbido")}
+                title={canChatDirectly ? (language === "es" ? "Coordinar Cita" : "Coordinate Date") : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Zumbido")}
               >
                 {canChatDirectly ? (
                   <Navigation className="w-4 h-4 text-electricViolet" />
@@ -923,7 +923,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 <span className="hidden md:inline font-mono text-[11px]">{t.card.diaryBtn}</span>
               </button>
 
-              {/* Botón 4: Principal Sintonizar con Pre-Flight o Abrir Chat Darkroom / Desbloqueo Unlimited */}
+              {/* Botón 4: Principal Coordinar Cita o Abrir Chat Darkroom / Desbloqueo Unlimited */}
               {canChatDirectly ? (
                 isMutualPulseActive ? (
                   <button
@@ -946,11 +946,11 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                         audioEngine.playSubBass(60);
                         setIsRendezvousOpen(true);
                       }}
-                      aria-label="Sintonizar con Pre-Flight"
+                      aria-label={language === "es" ? "Coordinar Cita" : "Coordinate Date"}
                       className="flex-1 min-h-[48px] py-3 px-3.5 bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft text-xs font-black rounded-2xl flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
                     >
                       <Zap className="w-4 h-4 fill-current text-white flex-shrink-0" />
-                      <span className="truncate">Sintonizar con Pre-Flight ⚡</span>
+                      <span className="truncate">{language === "es" ? "Coordinar Cita ⚡" : "Coordinate Date ⚡"}</span>
                     </button>
                     <button
                       type="button"

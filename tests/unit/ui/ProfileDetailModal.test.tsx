@@ -237,7 +237,7 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
     expect(mockToggleFavorite).toHaveBeenCalledWith(mockProfile.id);
   });
 
-  it("despliega el flujo de Sintonizar con Pre-Flight ⚡ al hacer clic en el CTA primario", async () => {
+  it("despliega el flujo de Coordinar Cita ⚡ al hacer clic en el CTA primario", async () => {
     const { audioEngine } = await import("@/lib/audio/SubBassAudioEngine");
     render(
       <ProfileDetailModal
@@ -247,7 +247,7 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
       />
     );
 
-    const sintonizarBtns = screen.getAllByRole("button", { name: /Sintonizar con Pre-Flight/i });
+    const sintonizarBtns = screen.getAllByRole("button", { name: /Coordinar Cita|Sintonizar con Pre-Flight/i });
     expect(sintonizarBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(sintonizarBtns[0]);
 

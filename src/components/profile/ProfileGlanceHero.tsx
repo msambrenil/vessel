@@ -169,6 +169,20 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
                 showLabel
               />
             )}
+
+            {/* Encuentros Validados Visible Inmediatamente en la Foto */}
+            {profile.totalEncountersVerified > 0 && (
+              <div
+                className="inline-flex items-center gap-1.5 bg-mintNeon/20 border border-mintNeon/50 px-2.5 py-1 rounded-full text-xs text-mintNeon font-mono font-bold shadow-mint-glow backdrop-blur-md"
+                title={`${profile.totalEncountersVerified} Encuentros físicos reales validados por Doble Consentimiento`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>
+                  {profile.totalEncountersVerified}{" "}
+                  {language === "es" ? "Encuentros Validados" : "Verified"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Modo Niebla, Género y Pronombres */}
@@ -222,22 +236,6 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
           ))}
         </div>
       )}
-
-      {/* Encuentros Verificados Rápidos */}
-      <div className="px-4 md:px-0 flex items-center gap-2 flex-wrap text-xs font-mono">
-        {profile.totalEncountersVerified > 0 && (
-          <div
-            className="inline-flex items-center gap-1.5 bg-mintNeon/10 border border-mintNeon/30 px-2.5 py-1 rounded-full text-xs text-mintNeon font-bold shadow-mint-glow"
-            title={`${profile.totalEncountersVerified} Encuentros físicos reales validados por Doble Consentimiento`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>
-              {profile.totalEncountersVerified}{" "}
-              {language === "es" ? "Encuentros Validados" : "Verified"}
-            </span>
-          </div>
-        )}
-      </div>
     </div>
   );
 };

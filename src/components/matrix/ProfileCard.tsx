@@ -344,7 +344,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
 
       {/* Pie de Foto Impeccable: Jerarquía Táctica Desacoplada (Nombre 100% visible sin colisión) */}
       <div className="absolute bottom-2 inset-x-2 z-10 flex flex-col gap-1 pointer-events-none">
-        {/* Fila 1: Nombre, Edad, Host Chip, Química & Dúo — 100% DEL ANCHO DE LA TARJETA */}
+        {/* Fila 1: Nombre, Edad, Química & Dúo — 100% DEL ANCHO DE LA TARJETA */}
         <div className="flex items-center gap-1.5 w-full min-w-0 pointer-events-auto">
           <span
             title={dossier?.customAlias || profile.codename}
@@ -359,16 +359,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               {profile.age}
             </span>
           )}
-          {/* Micro-Ficha Táctica de Hospedaje */}
-          <span
-            data-testid={`host-badge-${profile.id}`}
-            title={hostBadge.shower ? (language === "es" ? `${hostBadge.label} + Ducha lista` : `${hostBadge.label} + Shower ready`) : hostBadge.label}
-            className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-bold flex-shrink-0 shadow-xs border ${hostBadge.className}`}
-          >
-            <span>{hostBadge.icon}</span>
-            <span className="text-[8.5px] font-mono">{hostBadge.label}</span>
-            {hostBadge.shower && <span className="text-[8px]">🚿</span>}
-          </span>
           {/* Ícono de Química / Veredicto Dossier */}
           {verdictMeta && (
             <span
@@ -389,10 +379,20 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           )}
         </div>
 
-        {/* Fila 2: Rol Táctico + Micro-chips de Pre-Flight / Salud / Morbos */}
+        {/* Fila 2: Rol Táctico + Hospedaje + Micro-chips de Salud / Morbos */}
         <div className="flex items-center gap-1 w-full min-w-0 pointer-events-auto overflow-hidden">
           <span className="text-[11px] sm:text-xs text-electricViolet-glow font-black tracking-tight drop-shadow-sm truncate flex-shrink-0">
             {roleDisplay}
+          </span>
+          {/* Micro-Ficha Táctica de Hospedaje */}
+          <span
+            data-testid={`host-badge-${profile.id}`}
+            title={hostBadge.shower ? (language === "es" ? `${hostBadge.label} + Ducha lista` : `${hostBadge.label} + Shower ready`) : hostBadge.label}
+            className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8.5px] font-bold flex-shrink-0 shadow-xs border ${hostBadge.className}`}
+          >
+            <span>{hostBadge.icon}</span>
+            <span className="text-[8px] font-mono">{hostBadge.label}</span>
+            {hostBadge.shower && <span className="text-[7.5px]">🚿</span>}
           </span>
           {/* Health Badge */}
           {healthBadge && (
@@ -442,11 +442,11 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 setIsRendezvousOpen(true);
               }}
               className="flex-1 min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 rounded-xl bg-gradient-to-r from-electricViolet via-fuchsia-600 to-electricViolet hover:brightness-110 text-white font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-violet-soft active:scale-95 transition-all cursor-pointer border border-white/20"
-              title={language === "es" ? "Sintonizar y acordar en 3 taps" : "Tune in & agree in 3 taps"}
-              aria-label={`${language === "es" ? "Sintonizar con" : "Tune in with"} ${profile.codename}`}
+              title={language === "es" ? "Coordinar encuentro y acuerdos" : "Coordinate date & terms"}
+              aria-label={`${language === "es" ? "Coordinar con" : "Coordinate with"} ${profile.codename}`}
             >
               <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300 flex-shrink-0" />
-              <span className="truncate">{language === "es" ? "Sintonizar" : "Tune In"}</span>
+              <span className="truncate">{language === "es" ? "Coordinar" : "Coordinate"}</span>
             </button>
 
             {/* Botón Favorito (★) 1-Tap (Ergonómico 34px) */}

@@ -1,8 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useVessel } from "@/context/VesselContext";
-import { VesselProfile, PreFlightTempo, PreFlightProtection, PreFlightVibe, DiaryLocationCategory } from "@/types/vessel";
+import {
+  VesselProfile,
+  PreFlightTempo,
+  PreFlightProtection,
+  PreFlightVibe,
+  DiaryLocationCategory,
+} from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   getLocalTodayIso,
@@ -52,6 +59,12 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
     language,
     t,
   } = useVessel();
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Paso activo del asistente (1: Sintonía, 2: Lugar & Dirección, 3: Blindaje SOS)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -200,7 +213,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
         const ticket = createEncounterTicket(
           {
-            senderId: myProfile.codename || "me",
+            senderId: myProfile?.codename || "me",
             partnerId: targetProfile.id,
             scheduledDate,
             scheduledTime,
@@ -228,61 +241,82 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Asistente de Encuentro Táctico"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none"
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex justify-center items-center p-0 sm:p-4 select-none animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] animate-in slide-in-from-bottom duration-200"
+        className="w-full max-w-lg md:max-w-3xl lg:max-w-4xl h-full md:h-[90vh] md:max-h-[860px] bg-obsidian-deep md:border md:border-white/10 md:rounded-3xl flex flex-col relative overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* =========================================================
-            HEADER DE LA SHEET & INDICADOR DE PASOS
+            HEADER APP-BAR (Estilo ProfileDetailModal)
             ========================================================= */}
-        <div className="p-4 border-b border-white/10 bg-obsidian-deep/90 backdrop-blur-md">
-          {/* Barra arrastre táctil móvil */}
-          <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-3 sm:hidden" />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow flex items-center justify-center text-base shadow-violet-soft flex-shrink-0">
-                ⚡
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-mono font-black tracking-wider uppercase text-white">
-                    ASISTENTE DE ENCUENTRO
-                  </h2>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-electricViolet/20 text-electricViolet-glow font-bold border border-electricViolet/40">
-                    PASO {currentStep} DE 3
-                  </span>
+        <header className="flex-shrink-0 z-30 bg-obsidian-deep/95 backdrop-blur-xl border-b border-white/10 px-4 md:px-6 py-3 flex items-center justify-between shadow-md">
+          {/* Identidad del Partner */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-white/15 bg-obsidian flex-shrink-0">
+              {targetProfile.avatarUrl ? (
+                <img
+                  src={targetProfile.avatarUrl}
+                  alt={targetProfile.codename}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center font-mono font-bold text-xs text-electricViolet-glow">
+                  {targetProfile.codename.slice(0, 2).toUpperCase()}
                 </div>
-                <p className="text-[11px] text-neutral-400 font-sans">
-                  Coordinar y blindar cita con <strong className="text-white">{targetProfile.codename}</strong>
-                </p>
-              </div>
+              )}
+              <span
+                className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-black ${
+                  targetProfile.bodyState === "open"
+                    ? "bg-mintNeon shadow-mint-glow"
+                    : targetProfile.bodyState === "occupied"
+                    ? "bg-bloodNeon shadow-blood-glow"
+                    : "bg-electricViolet"
+                }`}
+              />
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar asistente"
-              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-black tracking-wider uppercase text-white truncate">
+                  ASISTENTE DE ENCUENTRO
+                </span>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-electricViolet/20 text-electricViolet-glow font-bold border border-electricViolet/40 flex-shrink-0">
+                  PASO {currentStep} DE 3
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-400 font-sans truncate">
+                {language === "es" ? "Coordinar y blindar cita con " : "Coordinate & secure date with "}
+                <strong className="text-white font-semibold">{targetProfile.codename}</strong>
+                {targetProfile.age && <span className="ml-1 text-neutral-400 font-mono">({targetProfile.age})</span>}
+              </p>
+            </div>
           </div>
 
-          {/* Stepper horizontal táctil */}
-          <div className="grid grid-cols-3 gap-1.5 mt-3 pt-2 border-t border-white/5">
+          {/* Botón Cerrar */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Cerrar asistente"
+            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white transition-all border border-white/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+          >
+            <X className="w-5 h-5 stroke-[2.5]" />
+          </button>
+        </header>
+
+        {/* Stepper Horizontal Espacioso */}
+        <nav aria-label="Pasos de coordinación" className="px-4 md:px-6 py-2.5 bg-obsidian-surface/60 border-b border-white/5 flex-shrink-0">
+          <div className="grid grid-cols-3 gap-2">
             {[
-              { num: 1 as const, title: language === "es" ? "1. Sintonía" : "1. Tuning", icon: "📋" },
-              { num: 2 as const, title: language === "es" ? "2. Lugar / PIN" : "2. Place / PIN", icon: "📍" },
-              { num: 3 as const, title: language === "es" ? "3. Blindaje" : "3. Safety", icon: "🛡️" },
+              { num: 1 as const, title: language === "es" ? "1. Sintonía" : "1. Tuning", sub: language === "es" ? "Ritmo & Prácticas" : "Tempo & Kinks", icon: "📋" },
+              { num: 2 as const, title: language === "es" ? "2. Lugar / PIN" : "2. Place / PIN", sub: language === "es" ? "Lugar & Horario" : "Place & Time", icon: "📍" },
+              { num: 3 as const, title: language === "es" ? "3. Blindaje" : "3. Safety", sub: language === "es" ? "Guardián & ETA" : "Guardian & ETA", icon: "🛡️" },
             ].map((step) => {
               const isActive = currentStep === step.num;
               const isPassed = currentStep > step.num;
@@ -292,42 +326,67 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                   key={step.num}
                   type="button"
                   onClick={() => setCurrentStep(step.num)}
-                  className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  className={`py-2 px-3 rounded-xl text-left transition-all cursor-pointer border ${
                     isActive
-                      ? "bg-electricViolet text-white shadow-violet-soft font-black"
+                      ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
                       : isPassed
-                      ? "bg-white/10 text-emerald-300 font-semibold"
-                      : "bg-white/5 text-neutral-500 hover:text-neutral-300"
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-semibold hover:bg-emerald-500/20"
+                      : "bg-white/[0.03] border-white/5 text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.06]"
                   }`}
                 >
-                  <span>{isPassed ? "✓" : step.icon}</span>
-                  <span className="truncate">{step.title}</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs">{isPassed ? "✓" : step.icon}</span>
+                    <span className="text-[11px] font-mono font-bold truncate">{step.title}</span>
+                  </div>
+                  <span className={`text-[9px] block truncate font-sans hidden sm:block ${isActive ? "text-purple-100" : isPassed ? "text-emerald-400/80" : "text-neutral-500"}`}>
+                    {step.sub}
+                  </span>
                 </button>
               );
             })}
           </div>
-        </div>
+        </nav>
 
         {/* =========================================================
             CUERPO CON SCROLL DEL ASISTENTE
             ========================================================= */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 text-xs text-neutral-300">
           {/* -----------------------------------------------------
               PASO 1: SINTONÍA Y ACUERDO PREVIO
               ----------------------------------------------------- */}
           {currentStep === 1 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              {/* Ritmo */}
+            <div className="space-y-6 animate-in fade-in duration-150">
+              {/* Ritmo y Duración */}
               <div>
-                <label className="font-mono text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">
+                <label className="font-mono text-[11px] uppercase font-bold text-neutral-400 tracking-wider block mb-2.5">
                   Ritmo y Duración del Encuentro
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
-                    { key: "fast_carnal" as PreFlightTempo, label: t.rendezvous?.tempoFastCarnal || (language === "es" ? "Rápido y Carnal" : "Quick & Carnal"), sub: language === "es" ? "Sin sobremesa" : "Direct / No lingering", icon: "⚡" },
-                    { key: "chill" as PreFlightTempo, label: t.rendezvous?.tempoSensualChill || (language === "es" ? "Sensual & Tranqui" : "Sensual & Chill"), sub: language === "es" ? "Ducha y mimos" : "Shower & cuddle", icon: "🫂" },
-                    { key: "rough_dom" as PreFlightTempo, label: t.rendezvous?.tempoKinkDom || (language === "es" ? "Kink & Dominación" : "Kink & Domination"), sub: language === "es" ? "Fetiches y poder" : "Fetish & dynamics", icon: "⛓️" },
-                    { key: "sensual_slow" as PreFlightTempo, label: t.rendezvous?.tempoSleepover || (language === "es" ? "Pasar la Noche" : "Stay the Night"), sub: language === "es" ? "Si hay química" : "If chemistry is right", icon: "🌙" },
+                    {
+                      key: "fast_carnal" as PreFlightTempo,
+                      label: t.rendezvous?.tempoFastCarnal || (language === "es" ? "Rápido y Carnal" : "Quick & Carnal"),
+                      sub: language === "es" ? "Sin vueltas ni sobremesa" : "Direct / No lingering",
+                      icon: "⚡",
+                    },
+                    {
+                      key: "chill" as PreFlightTempo,
+                      label: t.rendezvous?.tempoSensualChill || (language === "es" ? "Sensual & Tranqui" : "Sensual & Chill"),
+                      sub: language === "es" ? "Ducha, charla y mimos" : "Shower, talk & cuddle",
+                      icon: "🫂",
+                    },
+                    {
+                      key: "rough_dom" as PreFlightTempo,
+                      label: t.rendezvous?.tempoKinkDom || (language === "es" ? "Kink & Dominación" : "Kink & Domination"),
+                      sub: language === "es" ? "Fetiches y dinámica" : "Fetish & dynamics",
+                      icon: "⛓️",
+                    },
+                    {
+                      key: "sensual_slow" as PreFlightTempo,
+                      label: t.rendezvous?.tempoSleepover || (language === "es" ? "Pasar la Noche" : "Stay the Night"),
+                      sub: language === "es" ? "Si hay química mutua" : "If chemistry is right",
+                      icon: "🌙",
+                    },
                   ].map((item) => {
                     const isSelected = tempo === item.key;
                     return (
@@ -335,19 +394,19 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         key={item.key}
                         type="button"
                         onClick={() => setTempo(item.key)}
-                        className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                           isSelected
-                            ? "bg-electricViolet/15 border-electricViolet text-white shadow-violet-soft font-bold"
-                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-neutral-200 hover:border-white/20"
+                            ? "bg-electricViolet/20 border-electricViolet text-white shadow-violet-soft font-bold ring-1 ring-electricViolet"
+                            : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/[0.08] hover:border-white/20"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">{item.icon}</span>
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold block truncate">{item.label}</span>
-                            <span className="text-[10px] text-neutral-400 block font-mono truncate">{item.sub}</span>
-                          </div>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl flex-shrink-0">{item.icon}</span>
+                          <span className="text-xs font-bold block truncate">{item.label}</span>
                         </div>
+                        <span className="text-[10px] text-neutral-400 font-mono block">
+                          {item.sub}
+                        </span>
                       </button>
                     );
                   })}
@@ -356,10 +415,10 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
               {/* Prácticas en Sintonía */}
               <div>
-                <label className="font-mono text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">
+                <label className="font-mono text-[11px] uppercase font-bold text-neutral-400 tracking-wider block mb-2.5">
                   Prácticas Deseadas (Toca para seleccionar)
                 </label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {[
                     { id: "oral_focus", label: "Solo Oral", icon: "👅" },
                     { id: "penetration", label: "Penetración", icon: "🍆" },
@@ -374,17 +433,21 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         key={dyn.id}
                         type="button"
                         onClick={() => toggleDynamic(dyn.id)}
-                        className={`p-2 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer min-h-[46px] ${
                           isSelected
-                            ? "bg-white/15 border-electricViolet/60 text-white font-bold"
-                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-neutral-200"
+                            ? "bg-electricViolet/25 border-electricViolet/80 text-white font-bold shadow-violet-soft ring-1 ring-electricViolet/40"
+                            : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/[0.08]"
                         }`}
                       >
-                        <span className="flex items-center gap-1.5 truncate">
-                          <span>{dyn.icon}</span>
+                        <span className="flex items-center gap-2 truncate">
+                          <span className="text-base">{dyn.icon}</span>
                           <span className="text-xs truncate">{dyn.label}</span>
                         </span>
-                        <span className={`font-mono text-xs font-bold ${isSelected ? "text-electricViolet-glow" : "text-neutral-600"}`}>
+                        <span
+                          className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${
+                            isSelected ? "bg-electricViolet text-white" : "text-neutral-500 bg-white/5"
+                          }`}
+                        >
                           {isSelected ? "✓" : "+"}
                         </span>
                       </button>
@@ -393,17 +456,33 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </div>
               </div>
 
-              {/* Salud y Barreras */}
+              {/* Salud Sexual y Barreras */}
               <div>
-                <label className="font-mono text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">
+                <label className="font-mono text-[11px] uppercase font-bold text-neutral-400 tracking-wider block mb-2.5">
                   Salud Sexual & Barreras
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                   {[
-                    { key: "bareback_prep" as PreFlightProtection, label: t.rendezvous?.protectionBarebackPrep || (language === "es" ? "A pelo + PrEP" : "Bareback + PrEP"), icon: "🛡️" },
-                    { key: "condom_only" as PreFlightProtection, label: language === "es" ? "Preservativo Obligatorio" : "Condoms Required", icon: "🎈" },
-                    { key: "doxy_pep_friendly" as PreFlightProtection, label: language === "es" ? "Doxy-PEP Amigable" : "Doxy-PEP Friendly", icon: "💊" },
-                    { key: "discuss_first" as PreFlightProtection, label: language === "es" ? "Charlar en persona" : "Discuss in person", icon: "💬" },
+                    {
+                      key: "bareback_prep" as PreFlightProtection,
+                      label: t.rendezvous?.protectionBarebackPrep || (language === "es" ? "A pelo + PrEP" : "Bareback + PrEP"),
+                      icon: "🛡️",
+                    },
+                    {
+                      key: "condom_only" as PreFlightProtection,
+                      label: language === "es" ? "Preservativo Obligatorio" : "Condoms Required",
+                      icon: "🎈",
+                    },
+                    {
+                      key: "doxy_pep_friendly" as PreFlightProtection,
+                      label: language === "es" ? "Doxy-PEP Amigable" : "Doxy-PEP Friendly",
+                      icon: "💊",
+                    },
+                    {
+                      key: "discuss_first" as PreFlightProtection,
+                      label: language === "es" ? "Charlar en persona" : "Discuss in person",
+                      icon: "💬",
+                    },
                   ].map((item) => {
                     const isSelected = protection === item.key;
                     return (
@@ -411,13 +490,13 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         key={item.key}
                         type="button"
                         onClick={() => setProtection(item.key)}
-                        className={`p-2 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all cursor-pointer min-h-[46px] ${
                           isSelected
-                            ? "bg-mintNeon/15 border-mintNeon/60 text-mintNeon font-bold shadow-mint-glow"
-                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-neutral-200"
+                            ? "bg-mintNeon/15 border-mintNeon/60 text-mintNeon font-bold shadow-mint-glow ring-1 ring-mintNeon/40"
+                            : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/[0.08]"
                         }`}
                       >
-                        <span className="text-sm">{item.icon}</span>
+                        <span className="text-base flex-shrink-0">{item.icon}</span>
                         <span className="text-xs truncate">{item.label}</span>
                       </button>
                     );
@@ -431,17 +510,38 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
               PASO 2: LOGÍSTICA & DIRECCIÓN (Lugar & Waypoint)
               ----------------------------------------------------- */}
           {currentStep === 2 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
+            <div className="space-y-6 animate-in fade-in duration-150">
+              {/* Opciones de Hospedaje */}
               <div>
-                <label className="font-mono text-[10px] uppercase font-bold text-neutral-400 tracking-wider block mb-2">
+                <label className="font-mono text-[11px] uppercase font-bold text-neutral-400 tracking-wider block mb-2.5">
                   ¿Quién Pone el Lugar o Punto de Encuentro?
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
-                    { key: "i_host" as const, label: language === "es" ? "Recibo en mi lugar" : "I can host", sub: language === "es" ? "Pongo depto" : "Have place", icon: "🏠" },
-                    { key: "they_host" as const, label: language === "es" ? "Voy a su lugar" : "They host", sub: language === "es" ? "Me desplazo" : "Can travel", icon: "🚗" },
-                    { key: "neutral_corner" as const, label: language === "es" ? "Esquina neutra" : "Public corner", sub: language === "es" ? "Punto público seguro" : "Safe public point", icon: "📍" },
-                    { key: "rendezvous_pin" as const, label: t.safety?.pinOfMeeting || (language === "es" ? "PIN de Encuentro Seguro" : "Meeting PIN"), sub: t.safety?.pinEphemeralDesc || (language === "es" ? "Código efímero de 4 dígitos" : "Ephemeral location"), icon: "⚡" },
+                    {
+                      key: "i_host" as const,
+                      label: language === "es" ? "Recibo en mi lugar" : "I can host",
+                      sub: language === "es" ? "Pongo depto / casa" : "Have place",
+                      icon: "🏠",
+                    },
+                    {
+                      key: "they_host" as const,
+                      label: language === "es" ? "Voy a su lugar" : "They host",
+                      sub: language === "es" ? "Me desplazo hacia allá" : "Can travel",
+                      icon: "🚗",
+                    },
+                    {
+                      key: "neutral_corner" as const,
+                      label: language === "es" ? "Esquina neutra" : "Public corner",
+                      sub: language === "es" ? "Punto público seguro previo" : "Safe public point",
+                      icon: "📍",
+                    },
+                    {
+                      key: "rendezvous_pin" as const,
+                      label: t.safety?.pinOfMeeting || (language === "es" ? "PIN de Encuentro Seguro" : "Meeting PIN"),
+                      sub: t.safety?.pinEphemeralDesc || (language === "es" ? "Código efímero <50m" : "Ephemeral location"),
+                      icon: "⚡",
+                    },
                   ].map((opt) => {
                     const isSelected = hostingMode === opt.key;
                     return (
@@ -449,27 +549,27 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         key={opt.key}
                         type="button"
                         onClick={() => setHostingMode(opt.key)}
-                        className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
                           isSelected
-                            ? "bg-electricViolet/15 border-electricViolet text-white shadow-violet-soft font-bold"
-                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-neutral-200"
+                            ? "bg-electricViolet/20 border-electricViolet text-white shadow-violet-soft font-bold ring-1 ring-electricViolet"
+                            : "bg-white/[0.04] border-white/10 text-neutral-300 hover:text-white hover:bg-white/[0.08]"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">{opt.icon}</span>
-                          <div className="min-w-0">
-                            <span className="text-xs font-bold block truncate">{opt.label}</span>
-                            <span className="text-[10px] text-neutral-400 font-mono block truncate">{opt.sub}</span>
-                          </div>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl flex-shrink-0">{opt.icon}</span>
+                          <span className="text-xs font-bold block truncate">{opt.label}</span>
                         </div>
+                        <span className="text-[10px] text-neutral-400 font-mono block">
+                          {opt.sub}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Fecha y Hora del Ticket de Encuentro con Presets de 1 Toque */}
-              <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5">
+              {/* Fecha y Hora del Encuentro con Presets Tácticos */}
+              <div className="p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-mono font-bold text-electricViolet-glow">
                     <Clock className="w-4 h-4" />
@@ -478,33 +578,33 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </div>
 
                 {/* Chips Rápidos de Horario Táctico */}
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => applyQuickTimePreset("now30")}
-                    className="py-1.5 px-2 rounded-xl bg-electricViolet/15 hover:bg-electricViolet/30 border border-electricViolet/40 text-electricViolet-glow text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                    className="py-2 px-3 rounded-xl bg-electricViolet/15 hover:bg-electricViolet/30 border border-electricViolet/40 text-electricViolet-glow text-xs font-mono font-bold transition-all cursor-pointer active:scale-95"
                   >
                     ⚡ {language === "es" ? "Ahora (+30m)" : "Now (+30m)"}
                   </button>
                   <button
                     type="button"
                     onClick={() => applyQuickTimePreset("tonight22")}
-                    className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                    className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-xs font-mono font-bold transition-all cursor-pointer active:scale-95"
                   >
                     🌙 22:00 hs
                   </button>
                   <button
                     type="button"
                     onClick={() => applyQuickTimePreset("late01")}
-                    className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-[10px] font-mono font-bold transition-all cursor-pointer active:scale-95"
+                    className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white text-xs font-mono font-bold transition-all cursor-pointer active:scale-95"
                   >
                     🔥 01:00 hs
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                    <label className="text-[11px] font-mono text-neutral-400 block mb-1">
                       {language === "es" ? "Fecha" : "Date"}
                     </label>
                     <input
@@ -512,18 +612,18 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                       min={getLocalTodayIso()}
                       value={scheduledDate}
                       onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono focus-visible:outline-none"
+                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2.5 text-xs text-white font-mono focus-visible:outline-none focus:ring-1 focus:ring-electricViolet"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                    <label className="text-[11px] font-mono text-neutral-400 block mb-1">
                       {language === "es" ? "Hora" : "Time"}
                     </label>
                     <input
                       type="time"
                       value={scheduledTime}
                       onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono focus-visible:outline-none"
+                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2.5 text-xs text-white font-mono focus-visible:outline-none focus:ring-1 focus:ring-electricViolet"
                     />
                   </div>
                 </div>
@@ -531,22 +631,28 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
               {/* Si recibo o es esquina neutra: Formulario de Waypoint en 2 fases */}
               {(hostingMode === "i_host" || hostingMode === "neutral_corner") && (
-                <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-mono font-bold text-electricViolet-glow">
                       <MapPin className="w-4 h-4" />
                       <span>{language === "es" ? "Dirección Segura en 2 Fases" : "Safe 2-Phase Waypoint"}</span>
                     </div>
                     {hostingMode === "i_host" && (myHostCard?.hasPlace || myHostCard?.notes) && (
-                      <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
+                      <span className="text-[9px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
                         ✓ {language === "es" ? "Ficha de Casa" : "Host Card"}
                       </span>
                     )}
                   </div>
 
+                  <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
+                    {language === "es"
+                      ? "Protección de Privacidad: Se comparte primero la esquina pública. Tu dirección exacta se libera únicamente cuando avisa que llegó a la zona."
+                      : "Privacy Protection: Public intersection is shared first. Your exact address is only released once partner confirms arrival."}
+                  </p>
+
                   {/* Fase 1: Esquina pública */}
                   <div>
-                    <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                    <label className="text-[11px] font-mono text-neutral-400 block mb-1.5 font-bold">
                       {language === "es" ? "Fase 1: Esquina o Intersección Pública (Visible al inicio)" : "Phase 1: Public Corner or Intersection (Visible initially)"}
                     </label>
                     <input
@@ -554,36 +660,36 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                       placeholder={language === "es" ? "Ej: Av. Santa Fe y Thames" : "E.g.: 5th Ave & 42nd St"}
                       value={cornerText}
                       onChange={(e) => setCornerText(e.target.value)}
-                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
+                      className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none focus:ring-1 focus:ring-electricViolet"
                     />
                   </div>
 
                   {/* Fase 2: Dirección y timbre (Solo para quien recibe) */}
                   {hostingMode === "i_host" && (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-white/5">
                       <div>
-                        <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                          {language === "es" ? "Fase 2: Dirección Exacta y Timbre (Se revela cuando avisa llegada)" : "Phase 2: Exact Address & Doorbell (Revealed upon arrival)"}
+                        <label className="text-[11px] font-mono text-neutral-400 block mb-1.5 font-bold">
+                          {language === "es" ? "Fase 2: Dirección Exacta y Depto" : "Phase 2: Exact Address & Apt"}
                         </label>
                         <input
                           type="text"
                           placeholder={language === "es" ? "Ej: Thames 1840, Piso 4 Depto B" : "E.g.: 123 Main St, Apt 4B"}
                           value={exactAddress}
                           onChange={(e) => setExactAddress(e.target.value)}
-                          className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
+                          className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none focus:ring-1 focus:ring-electricViolet"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-mono text-neutral-400 block mb-1">
-                          {language === "es" ? "Notas de Acceso (Opcional)" : "Access Notes (Optional)"}
+                        <label className="text-[11px] font-mono text-neutral-400 block mb-1.5 font-bold">
+                          {language === "es" ? "Notas de Acceso / Timbre" : "Access Notes / Buzzer"}
                         </label>
                         <input
                           type="text"
                           placeholder={language === "es" ? "Ej: Portero no anda, tocar timbre y esperar" : "E.g.: Buzzer broken, ring twice and wait"}
                           value={doorNotes}
                           onChange={(e) => setDoorNotes(e.target.value)}
-                          className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3 py-2 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
+                          className="w-full bg-obsidian border border-white/15 focus:border-electricViolet rounded-xl px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none focus:ring-1 focus:ring-electricViolet"
                         />
                       </div>
                     </div>
@@ -593,12 +699,12 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
               {/* Si es Rendezvous PIN */}
               {hostingMode === "rendezvous_pin" && (
-                <div className="p-3.5 rounded-2xl bg-purple-950/30 border border-purple-500/40 text-neutral-300 text-xs font-mono space-y-1.5">
+                <div className="p-4 md:p-5 rounded-2xl bg-purple-950/30 border border-purple-500/40 text-neutral-300 text-xs font-mono space-y-2">
                   <div className="flex items-center gap-2 text-purple-300 font-bold">
                     <Navigation className="w-4 h-4 text-purple-400" />
                     <span>{t.safety?.pinEphemeral || (language === "es" ? "PIN de Encuentro Seguro (<50m)" : "Ephemeral PIN with Geofencing")}</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
                     {language === "es"
                       ? "Se generará un código seguro de 4 dígitos. Ambos deben estar a menos de 50 metros para validar el encuentro físico sin guardar direcciones permanentes."
                       : "A 4-digit cryptographic PIN will be generated. Both must be within 50 meters to validate the physical encounter without storing permanent addresses."}
@@ -608,12 +714,12 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
               {/* Si hostea el otro */}
               {hostingMode === "they_host" && (
-                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-neutral-300 text-xs font-mono space-y-1.5">
+                <div className="p-4 md:p-5 rounded-2xl bg-white/5 border border-white/10 text-neutral-300 text-xs font-mono space-y-2">
                   <div className="flex items-center gap-2 text-white font-bold">
                     <Car className="w-4 h-4 text-electricViolet-glow" />
                     <span>{language === "es" ? "Te Desplazas hacia su Lugar" : "You travel to their place"}</span>
                   </div>
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
                     {language === "es"
                       ? `Le pedirás a ${targetProfile.codename} que te envíe su esquina o dirección por el chat seguro.`
                       : `You will ask ${targetProfile.codename} to send their corner or address in the secure chat.`}
@@ -627,9 +733,9 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
               PASO 3: BLINDAJE & SEGURIDAD (Guardián SOS & ETA)
               ----------------------------------------------------- */}
           {currentStep === 3 && (
-            <div className="space-y-4 animate-in fade-in duration-150">
+            <div className="space-y-6 animate-in fade-in duration-150">
               {/* Guardián Silencioso */}
-              <div className="p-3.5 rounded-2xl bg-bloodNeon/10 border border-bloodNeon/40 space-y-3">
+              <div className="p-4 md:p-5 rounded-2xl bg-bloodNeon/10 border border-bloodNeon/40 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-bloodNeon font-mono text-xs font-bold">
                     <Shield className="w-4 h-4" />
@@ -639,14 +745,14 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                     {t.system?.localOnly || (language === "es" ? "SOLO EN TU CELU 🔒" : "LOCAL ONLY 🔒")}
                   </span>
                 </div>
-                <p className="text-[11px] text-neutral-300 font-mono">
+                <p className="text-[11px] text-neutral-300 font-sans leading-relaxed">
                   {language === "es"
-                    ? "Si el tiempo expira sin que introduzcas tu PIN de seguridad, se activará la alerta de auxilio silenciosa hacia tu contacto."
-                    : "If timer expires without entering your safety PIN, a silent distress alert will trigger to your emergency contact."}
+                    ? "Si el tiempo del encuentro expira sin que introduzcas tu PIN de seguridad, se activará la alerta de auxilio silenciosa hacia tu contacto con tu última ubicación acordada."
+                    : "If timer expires without entering your safety PIN, a silent distress alert will trigger to your emergency contact with your last agreed location."}
                 </p>
 
                 {/* Opciones de temporizador */}
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-4 gap-2">
                   {[
                     { mins: 0, label: language === "es" ? "Sin SOS" : "No SOS" },
                     { mins: 45, label: "45 min" },
@@ -659,10 +765,10 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         key={item.mins}
                         type="button"
                         onClick={() => setGuardianDuration(item.mins)}
-                        className={`py-2 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                        className={`py-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-bloodNeon text-white shadow-blood-glow font-black"
-                            : "bg-black/40 text-neutral-400 border border-white/10 hover:text-white"
+                            ? "bg-bloodNeon text-white shadow-blood-glow font-black ring-1 ring-white/30"
+                            : "bg-black/50 text-neutral-400 border border-white/10 hover:text-white hover:bg-black/80"
                         }`}
                       >
                         {item.label}
@@ -673,9 +779,9 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
 
                 {/* Campos de contacto si activa el guardián */}
                 {guardianDuration > 0 && (
-                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-bloodNeon/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-bloodNeon/20">
                     <div>
-                      <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                      <label className="text-[11px] font-mono text-neutral-400 block mb-1">
                         {language === "es" ? "Nombre de Confianza" : "Trusted Contact Name"}
                       </label>
                       <input
@@ -683,11 +789,11 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         placeholder={language === "es" ? "Ej: Hermano / Amigo" : "E.g.: Sibling / Friend"}
                         value={emergencyName}
                         onChange={(e) => setEmergencyName(e.target.value)}
-                        className="w-full bg-black/60 border border-bloodNeon/40 focus:border-bloodNeon rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus-visible:outline-none"
+                        className="w-full bg-black/60 border border-bloodNeon/40 focus:border-bloodNeon rounded-xl px-3 py-2 text-xs text-white font-mono focus-visible:outline-none focus:ring-1 focus:ring-bloodNeon"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-mono text-neutral-400 block mb-1">
+                      <label className="text-[11px] font-mono text-neutral-400 block mb-1">
                         {language === "es" ? "Teléfono WhatsApp / SMS" : "WhatsApp / SMS Phone"}
                       </label>
                       <input
@@ -695,7 +801,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                         placeholder={language === "es" ? "+54 9 11 ..." : "+1 ..."}
                         value={emergencyPhone}
                         onChange={(e) => setEmergencyPhone(e.target.value)}
-                        className="w-full bg-black/60 border border-bloodNeon/40 focus:border-bloodNeon rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus-visible:outline-none"
+                        className="w-full bg-black/60 border border-bloodNeon/40 focus:border-bloodNeon rounded-xl px-3 py-2 text-xs text-white font-mono focus-visible:outline-none focus:ring-1 focus:ring-bloodNeon"
                       />
                     </div>
                   </div>
@@ -703,7 +809,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
               </div>
 
               {/* Voy en Camino (ETA) */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+              <div className="p-4 md:p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
                     <Car className="w-4 h-4 text-electricViolet-glow" />
@@ -712,7 +818,7 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsEnRouteActive(!isEnRouteActive)}
-                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
                       isEnRouteActive
                         ? "bg-electricViolet text-white shadow-violet-soft font-black"
                         : "bg-white/10 text-neutral-400 hover:text-white"
@@ -723,20 +829,20 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
                 </div>
 
                 {isEnRouteActive && (
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-3">
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-3 flex-wrap">
                     <span className="text-[11px] font-mono text-neutral-400">
                       {language === "es" ? "Tiempo de viaje estimado:" : "Estimated travel time:"}
                     </span>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {[15, 25, 40].map((m) => (
                         <button
                           key={m}
                           type="button"
                           onClick={() => setEstimatedMinutes(m)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold cursor-pointer ${
+                          className={`px-3 py-1 rounded-xl text-xs font-mono font-bold cursor-pointer transition-all ${
                             estimatedMinutes === m
-                              ? "bg-electricViolet/20 border border-electricViolet text-electricViolet-glow"
-                              : "bg-white/5 border border-white/10 text-neutral-400"
+                              ? "bg-electricViolet/25 border border-electricViolet text-electricViolet-glow"
+                              : "bg-white/5 border border-white/10 text-neutral-400 hover:text-white"
                           }`}
                         >
                           {m}m
@@ -751,44 +857,58 @@ export const RendezvousSheet: React.FC<RendezvousSheetProps> = ({
         </div>
 
         {/* =========================================================
-            BOTONERA INFERIOR (NAVEGACIÓN DE PASOS / CONFIRMACIÓN)
+            BOTONERA INFERIOR (Sticky Footer Bar)
             ========================================================= */}
-        <div className="p-4 border-t border-white/10 bg-obsidian-deep/95 backdrop-blur-md flex items-center justify-between gap-2">
+        <footer className="flex-shrink-0 bg-obsidian-deep/95 backdrop-blur-xl border-t border-white/10 p-4 md:px-6 flex items-center justify-between gap-3 shadow-[0_-8px_30px_rgba(0,0,0,0.9)]">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={() => setCurrentStep((prev) => (prev - 1) as any)}
-              className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-mono text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              className="min-h-[46px] px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 font-mono text-xs font-bold flex items-center gap-2 cursor-pointer active:scale-95 transition-all"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
               <span>{language === "es" ? "Atrás" : "Back"}</span>
             </button>
           ) : (
-            <div />
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-h-[46px] px-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-400 hover:text-white font-mono text-xs font-bold cursor-pointer active:scale-95 transition-all"
+            >
+              {language === "es" ? "Cancelar" : "Cancel"}
+            </button>
           )}
 
           {currentStep < 3 ? (
             <button
               type="button"
               onClick={() => setCurrentStep((prev) => (prev + 1) as any)}
-              className="min-h-[44px] px-6 py-2.5 rounded-2xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-violet-soft cursor-pointer active:scale-95 transition-all ml-auto"
+              className="min-h-[46px] px-7 rounded-2xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-violet-soft cursor-pointer active:scale-95 transition-all ml-auto"
             >
               <span>{language === "es" ? "Continuar" : "Continue"}</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           ) : (
             <button
               type="button"
               disabled={isSubmitting}
               onClick={handleConfirmAll}
-              className="min-h-[48px] px-6 py-2.5 rounded-2xl bg-gradient-to-r from-electricViolet via-purple-600 to-electricViolet text-white font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.6)] cursor-pointer active:scale-95 transition-all flex-1 ml-auto disabled:opacity-50"
+              className="min-h-[48px] px-8 rounded-2xl bg-gradient-to-r from-electricViolet via-purple-600 to-electricViolet text-white font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.6)] cursor-pointer active:scale-95 transition-all flex-1 ml-auto disabled:opacity-50"
             >
               <Zap className="w-4 h-4 stroke-[2.5]" />
-              <span>{isSubmitting ? (language === "es" ? "Blindando..." : "Securing...") : (language === "es" ? "Confirmar y Blindar Encuentro 🔥" : "Confirm & Secure Encounter 🔥")}</span>
+              <span>
+                {isSubmitting
+                  ? (language === "es" ? "Blindando..." : "Securing...")
+                  : (language === "es" ? "Confirmar y Blindar Encuentro 🔥" : "Confirm & Secure Encounter 🔥")}
+              </span>
             </button>
           )}
-        </div>
+        </footer>
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };

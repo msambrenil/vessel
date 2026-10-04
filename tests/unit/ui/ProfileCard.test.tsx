@@ -287,7 +287,7 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       expect(screen.getByText(/LISTO \d+m/)).toBeInTheDocument();
     });
 
-    it("renderiza el botón primario Sintonizar y permite disparar el acuerdo de Pre-Flight", () => {
+    it("renderiza el botón primario Coordinar y permite disparar el acuerdo de Pre-Flight", () => {
       const targetProfile = createMockProfile();
 
       render(
@@ -300,10 +300,10 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
 
       const sintonizarBtn = screen.getByTestId(`profile-sintonizar-btn-${targetProfile.id}`);
       expect(sintonizarBtn).toBeInTheDocument();
-      expect(sintonizarBtn).toHaveTextContent("Sintonizar");
+      expect(sintonizarBtn).toHaveTextContent(/Coordinar|Sintonizar/);
 
       fireEvent.click(sintonizarBtn);
-      // Al hacer click en Sintonizar, no se abre el detalle del perfil (stopPropagation)
+      // Al hacer click en Coordinar, no se abre el detalle del perfil (stopPropagation)
       expect(mockOnSelect).not.toHaveBeenCalled();
     });
   });
