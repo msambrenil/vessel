@@ -221,7 +221,6 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
     if (!inputMessage.trim() || activeBoundary?.chatStatus === "readonly" || activeBoundary?.chatStatus === "disconnected") return;
 
     setIsSendingMessage(true);
-    audioEngine.playPulse();
     sendChatMessage(profileId, inputMessage.trim(), isBurnMode);
     setInputMessage("");
     setTimeout(() => {
@@ -231,7 +230,6 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
 
   const handleQuickReply = (text: string) => {
     if (activeBoundary?.chatStatus === "readonly" || activeBoundary?.chatStatus === "disconnected") return;
-    audioEngine.playPulse();
     sendChatMessage(profileId, text, isBurnMode);
     setIsBurnMode(false);
   };

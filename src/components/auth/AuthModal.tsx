@@ -298,6 +298,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         role: selectedRole,
         phone: phone.trim(),
         email: (email || authUser?.email || "").trim(),
+        avatarUrl: authUser?.photoURL || myProfile.avatarUrl || "",
         seekingRoles,
         isProfileSetupComplete: true,
       });
@@ -451,6 +452,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             role: selectedRole,
             phone: phone.trim(),
             email: email.trim(),
+            avatarUrl: myProfile.avatarUrl || "",
             seekingRoles,
             isProfileSetupComplete: true,
           });

@@ -54,6 +54,26 @@ describe("Filter Persistence & Self-Card (Alternative A) Invariants", () => {
       const reloaded = loadFromStorage<FilterState>(STORAGE_KEYS.FILTERS, DEFAULT_FILTERS, "real");
       expect(reloaded).toEqual(DEFAULT_FILTERS);
     });
+
+    it("debe compartir la clave de filtros entre modo real y test para no perder filtros al recargar", () => {
+      const customFilters: FilterState = {
+        ...DEFAULT_FILTERS,
+        roles: ["Versatile"],
+        maxDistanceKm: 25,
+      };
+
+      // Guardar en real
+      saveToStorage(STORAGE_KEYS.FILTERS, customFilters, "real");
+
+      // Cargar en test o sin especificar modo (como ocurre en recarga o cambio de sesión)
+      const loadedInTest = loadFromStorage<FilterState>(STORAGE_KEYS.FILTERS, DEFAULT_FILTERS, "test");
+      const loadedGlobal = loadFromStorage<FilterState>(STORAGE_KEYS.FILTERS, DEFAULT_FILTERS);
+
+      expect(loadedInTest.roles).toEqual(["Versatile"]);
+      expect(loadedInTest.maxDistanceKm).toBe(25);
+      expect(loadedGlobal.roles).toEqual(["Versatile"]);
+      expect(loadedGlobal.maxDistanceKm).toBe(25);
+    });
   });
 
   describe("Self-Card (Alternative A) in Matrix Clusters", () => {

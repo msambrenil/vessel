@@ -52,12 +52,20 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
   const [isPulsing, setIsPulsing] = React.useState(false);
   const [isRendezvousOpen, setIsRendezvousOpen] = React.useState(false);
-  const [imgError, setImgError] = React.useState(!profile.avatarUrl);
+  const resolvedAvatarUrl = React.useMemo(() => {
+    if (!profile.avatarUrl) return "";
+    if (profile.avatarUrl.includes("googleusercontent.com") && profile.avatarUrl.includes("=s96-c")) {
+      return profile.avatarUrl.replace("=s96-c", "=s400-c");
+    }
+    return profile.avatarUrl;
+  }, [profile.avatarUrl]);
+
+  const [imgError, setImgError] = React.useState(!resolvedAvatarUrl);
   const [showTransportLegend, setShowTransportLegend] = React.useState(false);
 
   React.useEffect(() => {
-    setImgError(!profile.avatarUrl);
-  }, [profile.avatarUrl]);
+    setImgError(!resolvedAvatarUrl);
+  }, [resolvedAvatarUrl]);
 
   React.useEffect(() => {
     if (showTransportLegend) {
@@ -213,14 +221,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       )}
 
       {/* Foto de Perfil Full Bleed con Fallback Seguro */}
-      {!imgError ? (
+      {!imgError && resolvedAvatarUrl ? (
         <div className="relative w-full h-full overflow-hidden">
           <Image
-            src={profile.avatarUrl}
+            src={resolvedAvatarUrl}
             alt={profile.codename}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             unoptimized
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
             onError={() => setImgError(true)}
             className={`w-full h-full object-cover transition-transform duration-500 ${
               profile.isFogMode
@@ -257,9 +267,19 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           )}
         </div>
       ) : (
-        <div className="w-full h-full bg-obsidian-card flex flex-col items-center justify-center text-neutral-600 font-mono text-xs">
-          <span className="text-2xl mb-1 text-electricViolet-glow">⚡</span>
-          <span>{profile.codename.slice(0, 2).toUpperCase()}</span>
+        <div className="w-full h-full bg-gradient-to-b from-[#13111C] via-[#0D0B12] to-[#07060A] flex flex-col items-center justify-center relative overflow-hidden select-none border border-white/5">
+          {/* Trama táctica geométrica de fondo */}
+          <div className="absolute inset-0 bg-[radial-gradient(#8A2BE2_1px,transparent_1px)] [background-size:16px_16px] opacity-15 pointer-events-none" />
+          <div className="relative z-10 flex flex-col items-center justify-center p-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-electricViolet/15 border border-electricViolet/40 flex items-center justify-center shadow-[0_0_20px_rgba(138,43,226,0.25)] mb-2 backdrop-blur-xs">
+              <span className="text-xl font-mono font-black text-electricViolet-glow">
+                {(profile.codename || "V").slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-neutral-400 bg-black/60 px-2 py-0.5 rounded-full border border-white/10">
+              {profile.verification?.hasFacialPrivacy ? "FACIAL PRIVACY" : "DISCRECIÓN TOTAL"}
+            </span>
+          </div>
         </div>
       )}
 

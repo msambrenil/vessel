@@ -76,6 +76,8 @@ export const getScopedStorageKey = (key: string, mode?: AppMode): string => {
   const m = mode || getActiveAppMode();
   // Claves globales compartidas entre modos
   if (
+    key === STORAGE_KEYS.FILTERS ||
+    key === "vessel_matrix_filters_v1" ||
     key === "vessel_app_settings_v1" ||
     key === APP_MODE_STORAGE_KEY ||
     key === "test_inexistent_key" ||

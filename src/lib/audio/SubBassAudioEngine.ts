@@ -10,6 +10,8 @@ class SubBassAudioEngine {
   private unlockListeners: ((unlocked: boolean) => void)[] = [];
   private hasAttachedGestureListeners: boolean = false;
   private hasAttachedVisibilityListener: boolean = false;
+  private chatAudioBuffer: AudioBuffer | null = null;
+  private isChatAudioLoading: boolean = false;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -114,6 +116,7 @@ class SubBassAudioEngine {
             detail: { sampleRate: this.ctx.sampleRate },
           })
         );
+        this.preloadChatMessageSound().catch(() => {});
       }
       return true;
     }
@@ -401,6 +404,60 @@ class SubBassAudioEngine {
   // Pulso general de interfaz o mensaje
   public playPulse() {
     this.playRadarPing();
+  }
+
+  /**
+   * Precarga y decodifica el sonido MP3 de chat en el AudioContext para reproducción a latencia cero
+   */
+  public async preloadChatMessageSound(): Promise<void> {
+    if (typeof window === "undefined" || this.chatAudioBuffer || this.isChatAudioLoading) return;
+    this.isChatAudioLoading = true;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+      const res = await fetch("/sounds/chat-message.mp3");
+      if (!res.ok) return;
+      const arrayBuffer = await res.arrayBuffer();
+      this.chatAudioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+    } catch {
+      // Ignorar si aún no hay interacción de usuario o falla de decodificación
+    } finally {
+      this.isChatAudioLoading = false;
+    }
+  }
+
+  /**
+   * Reproduce el sonido de mensaje de chat (envío y recepción) usando el archivo MP3 del usuario.
+   * Utiliza Web Audio API con AudioBuffer a latencia cero y fallback resiliente a HTML5 Audio.
+   */
+  public playChatMessageSound() {
+    this.triggerTacticalPulse();
+    if (this.isMuted) return;
+    if (typeof window === "undefined") return;
+
+    this.initContext();
+
+    if (this.ctx && this.chatAudioBuffer && this.ctx.state === "running") {
+      try {
+        const source = this.ctx.createBufferSource();
+        source.buffer = this.chatAudioBuffer;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.75, this.ctx.currentTime);
+        source.connect(gain);
+        gain.connect(this.ctx.destination);
+        source.start(0);
+        return;
+      } catch {}
+    }
+
+    try {
+      const audio = new Audio("/sounds/chat-message.mp3");
+      audio.volume = 0.75;
+      audio.play().catch(() => {});
+      if (!this.chatAudioBuffer) {
+        this.preloadChatMessageSound();
+      }
+    } catch {}
   }
 
   /**

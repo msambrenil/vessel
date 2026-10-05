@@ -103,7 +103,10 @@ export const syncMyProfileToCloud = async (
         role: profile.role,
         heightCm: profile.heightCm,
         weightKg: profile.weightKg,
-        avatarUrl: profile.avatarUrl,
+        avatarUrl:
+          profile.avatarUrl && profile.avatarUrl.includes("googleusercontent.com") && profile.avatarUrl.includes("=s96-c")
+            ? profile.avatarUrl.replace("=s96-c", "=s400-c")
+            : profile.avatarUrl,
         isStylizedAvatar: profile.isStylizedAvatar ?? false,
         isFogMode: profile.isFogMode ?? false,
         verification: profile.verification,

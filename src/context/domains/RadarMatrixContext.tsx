@@ -309,7 +309,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   });
 
   const [filters, setFiltersState] = useState<FilterState>(() => {
-    const saved = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null, getActiveAppMode());
+    const saved = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
     if (!saved) return DEFAULT_FILTERS;
     return {
       ...DEFAULT_FILTERS,
@@ -321,11 +321,11 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     (action) => {
       setFiltersState((prev) => {
         const next = typeof action === "function" ? action(prev) : action;
-        saveToStorage(STORAGE_KEYS.FILTERS, next, appMode);
+        saveToStorage(STORAGE_KEYS.FILTERS, next);
         return next;
       });
     },
-    [appMode]
+    []
   );
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveNavView>("grid");
@@ -438,11 +438,9 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     const localFavorites = loadFromStorage<string[]>(STORAGE_KEYS.FAVORITES, [], appMode);
     setFavoriteProfileIds(localFavorites || []);
 
-    const localFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null, appMode);
-    if (localFilters) {
-      setFiltersState({ ...DEFAULT_FILTERS, ...localFilters });
-    } else {
-      setFiltersState(DEFAULT_FILTERS);
+    const localFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
+    if (localFilters && Object.keys(localFilters).length > 0) {
+      setFiltersState((prev) => ({ ...DEFAULT_FILTERS, ...prev, ...localFilters }));
     }
   }, [appMode, getSanitizedMockProfiles]);
 
@@ -474,7 +472,14 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         setFavoriteProfileIds([]);
       }
 
-      if (cloudData.profile?.seekingRoles && Array.isArray(cloudData.profile.seekingRoles)) {
+      // Solo aplicar seekingRoles desde la nube si el usuario no tiene filtros guardados activamente en localStorage
+      const existingFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
+      if (
+        (!existingFilters || !existingFilters.roles || existingFilters.roles.length === 0) &&
+        cloudData.profile?.seekingRoles &&
+        Array.isArray(cloudData.profile.seekingRoles) &&
+        cloudData.profile.seekingRoles.length > 0
+      ) {
         setFilters((prev) => ({
           ...prev,
           roles: cloudData.profile!.seekingRoles!,

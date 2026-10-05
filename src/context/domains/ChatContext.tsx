@@ -188,7 +188,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           });
 
           if (hasNewIncoming) {
-            audioEngine.playNudgeReceived();
+            audioEngine.playChatMessageSound();
           }
 
           const mergedList = Array.from(mergedMap.values());
@@ -266,7 +266,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         ).catch((err) => console.warn("Sync cloud message error:", err));
       }
 
-      audioEngine.playPulse();
+      audioEngine.playChatMessageSound();
     },
     [authUser, getChatChannelId]
   );
@@ -310,7 +310,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         ).catch((err) => console.warn("Sync cloud message error:", err));
       }
 
-      audioEngine.playPulse();
+      audioEngine.playChatMessageSound();
     },
     [authUser, getChatChannelId]
   );
@@ -489,7 +489,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         ).catch((err) => console.warn("Sync cloud media message error:", err));
       }
 
-      audioEngine.playPulse();
+      audioEngine.playChatMessageSound();
     },
     [authUser, getChatChannelId]
   );
