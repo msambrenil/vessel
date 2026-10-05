@@ -307,7 +307,26 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       };
     });
   });
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+
+  const [filters, setFiltersState] = useState<FilterState>(() => {
+    const saved = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null, getActiveAppMode());
+    if (!saved) return DEFAULT_FILTERS;
+    return {
+      ...DEFAULT_FILTERS,
+      ...saved,
+    };
+  });
+
+  const setFilters: React.Dispatch<React.SetStateAction<FilterState>> = useCallback(
+    (action) => {
+      setFiltersState((prev) => {
+        const next = typeof action === "function" ? action(prev) : action;
+        saveToStorage(STORAGE_KEYS.FILTERS, next, appMode);
+        return next;
+      });
+    },
+    [appMode]
+  );
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveNavView>("grid");
   const [selectedProfile, setSelectedProfile] = useState<VesselProfile | null>(null);
@@ -418,6 +437,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
     const localFavorites = loadFromStorage<string[]>(STORAGE_KEYS.FAVORITES, [], appMode);
     setFavoriteProfileIds(localFavorites || []);
+
+    const localFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null, appMode);
+    if (localFilters) {
+      setFiltersState({ ...DEFAULT_FILTERS, ...localFilters });
+    } else {
+      setFiltersState(DEFAULT_FILTERS);
+    }
   }, [appMode, getSanitizedMockProfiles]);
 
   // Sincronización reactiva desde Firestore cuando el usuario inicia sesión o cambia de cuenta
@@ -638,7 +664,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
   const resetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
-  }, []);
+  }, [setFilters]);
 
   const transmitSignal = useCallback(
     (profileId: string) => {
@@ -1132,12 +1158,10 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     const hasValidRealSelfCard =
       appMode === "test" ||
       Boolean(
-        authUser &&
-          !authUser.isAnonymous &&
-          !authUser.email?.endsWith("@vessel.dev") &&
-          myProfile.codename &&
-          myProfile.codename.trim().toUpperCase() !== "VESSEL_USER" &&
-          !myProfile.avatarUrl?.includes("images.unsplash.com")
+        (authUser && !authUser.isAnonymous && !authUser.email?.endsWith("@vessel.dev")) ||
+        myProfile.isProfileCustomized ||
+        (myProfile.codename && myProfile.codename.trim().toUpperCase() !== "VESSEL_USER") ||
+        (myProfile.avatarUrl && !myProfile.avatarUrl.includes("images.unsplash.com"))
       );
 
     const sortedFiltered = [...otherFilteredProfiles].sort((a, b) => {
@@ -1157,6 +1181,9 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
   const intentClusters = useMemo((): IntentClusterGroup[] => {
     const list = filteredProfiles;
+    const myCard = list.find((p) => p.isCurrentUser);
+    let rawClusters: IntentClusterGroup[] = [];
+
     if (operatingIntent === "now") {
       // 1. Con lugar disponible ahora (Hosts inmediatos)
       const hostProfiles = list.filter(
@@ -1193,7 +1220,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         (p) => !p.isCurrentUser && !hostIds.has(p.id) && !readyIds.has(p.id) && !mobileIds.has(p.id)
       );
 
-      const nowClusters: IntentClusterGroup[] = [
+      rawClusters = [
         {
           id: "cluster-now-host",
           intent: "now",
@@ -1231,10 +1258,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           profiles: nearbyProfiles,
         },
       ];
-      return nowClusters.filter((c) => c.profiles.length > 0);
-    }
-
-    if (operatingIntent === "nightlife") {
+    } else if (operatingIntent === "nightlife") {
       const partyProfiles = list.filter(
         (p) =>
           !p.isCurrentUser &&
@@ -1254,7 +1278,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
       const otherNight = list.filter((p) => !p.isCurrentUser && !partyIds.has(p.id) && !afterIds.has(p.id));
 
-      const nightlifeClusters: IntentClusterGroup[] = [
+      rawClusters = [
         {
           id: "cluster-night-venues",
           intent: "nightlife",
@@ -1283,10 +1307,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           profiles: otherNight,
         },
       ];
-      return nightlifeClusters.filter((c) => c.profiles.length > 0);
-    }
-
-    if (operatingIntent === "kink") {
+    } else if (operatingIntent === "kink") {
       const intenseProfiles = list.filter((p) => !p.isCurrentUser && p.intensity >= 3);
       const intenseIds = new Set(intenseProfiles.map((p) => p.id));
 
@@ -1311,7 +1332,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         (p) => !p.isCurrentUser && !intenseIds.has(p.id) && !roleIds.has(p.id) && !otherKinkIds.has(p.id)
       );
 
-      const kinkClusters: IntentClusterGroup[] = [
+      rawClusters = [
         {
           id: "cluster-kink-intense",
           intent: "kink",
@@ -1349,52 +1370,59 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           profiles: rest,
         },
       ];
-      return kinkClusters.filter((c) => c.profiles.length > 0);
+    } else {
+      // stealth (Modo Sigilo)
+      const fogProfiles = list.filter((p) => !p.isCurrentUser && (p.isFogMode || p.isStylizedAvatar));
+      const fogIds = new Set(fogProfiles.map((p) => p.id));
+
+      const antiGhostVerified = list.filter(
+        (p) => !p.isCurrentUser && !fogIds.has(p.id) && p.isAntiGhost && (p.respectScore || 0) >= 80
+      );
+      const antiGhostIds = new Set(antiGhostVerified.map((p) => p.id));
+
+      const discreetProfiles = list.filter(
+        (p) => !p.isCurrentUser && !fogIds.has(p.id) && !antiGhostIds.has(p.id)
+      );
+
+      rawClusters = [
+        {
+          id: "cluster-stealth-fog",
+          intent: "stealth",
+          title: language === "es" ? "Modo Niebla Activo (Privacidad Facial)" : "Fog Mode Active (Facial Privacy)",
+          subtitle: language === "es" ? "Identidad visual protegida por criptografía" : "Visual identity protected by cipher",
+          icon: "🌫️",
+          accentColor: "border-cyan-400 text-cyan-300",
+          profiles: fogProfiles,
+        },
+        {
+          id: "cluster-stealth-antighost",
+          intent: "stealth",
+          title: language === "es" ? "Cero Rastro / Cero Plantones Verificado" : "Zero Trace / Verified Anti-Ghost",
+          subtitle: language === "es" ? "Karma de respeto intachable y confidencial" : "High respect karma and discretion",
+          icon: "🛡️",
+          accentColor: "border-emerald-400 text-emerald-400",
+          profiles: antiGhostVerified,
+        },
+        {
+          id: "cluster-stealth-discreet",
+          intent: "stealth",
+          title: language === "es" ? "Perfiles Reservados" : "Discreet Profiles",
+          subtitle: language === "es" ? "Navegación protegida sin exposición" : "Protected navigation without exposure",
+          icon: "🔒",
+          accentColor: "border-zinc-500 text-zinc-400",
+          profiles: discreetProfiles,
+        },
+      ];
     }
 
-    // stealth (Modo Sigilo)
-    const fogProfiles = list.filter((p) => !p.isCurrentUser && (p.isFogMode || p.isStylizedAvatar));
-    const fogIds = new Set(fogProfiles.map((p) => p.id));
-
-    const antiGhostVerified = list.filter(
-      (p) => !p.isCurrentUser && !fogIds.has(p.id) && p.isAntiGhost && (p.respectScore || 0) >= 80
-    );
-    const antiGhostIds = new Set(antiGhostVerified.map((p) => p.id));
-
-    const discreetProfiles = list.filter(
-      (p) => !p.isCurrentUser && !fogIds.has(p.id) && !antiGhostIds.has(p.id)
-    );
-
-    const stealthClusters: IntentClusterGroup[] = [
-      {
-        id: "cluster-stealth-fog",
-        intent: "stealth",
-        title: language === "es" ? "Modo Niebla Activo (Privacidad Facial)" : "Fog Mode Active (Facial Privacy)",
-        subtitle: language === "es" ? "Identidad visual protegida por criptografía" : "Visual identity protected by cipher",
-        icon: "🌫️",
-        accentColor: "border-cyan-400 text-cyan-300",
-        profiles: fogProfiles,
-      },
-      {
-        id: "cluster-stealth-antighost",
-        intent: "stealth",
-        title: language === "es" ? "Cero Rastro / Cero Plantones Verificado" : "Zero Trace / Verified Anti-Ghost",
-        subtitle: language === "es" ? "Karma de respeto intachable y confidencial" : "High respect karma and discretion",
-        icon: "🛡️",
-        accentColor: "border-emerald-400 text-emerald-400",
-        profiles: antiGhostVerified,
-      },
-      {
-        id: "cluster-stealth-discreet",
-        intent: "stealth",
-        title: language === "es" ? "Perfiles Reservados" : "Discreet Profiles",
-        subtitle: language === "es" ? "Navegación protegida sin exposición" : "Protected navigation without exposure",
-        icon: "🔒",
-        accentColor: "border-zinc-500 text-zinc-400",
-        profiles: discreetProfiles,
-      },
-    ];
-    return stealthClusters.filter((c) => c.profiles.length > 0);
+    const activeClusters = rawClusters.filter((c) => c.profiles.length > 0);
+    if (myCard && activeClusters.length > 0) {
+      activeClusters[0] = {
+        ...activeClusters[0],
+        profiles: [myCard, ...activeClusters[0].profiles.filter((p) => !p.isCurrentUser)],
+      };
+    }
+    return activeClusters;
   }, [filteredProfiles, operatingIntent, language]);
 
   const value = useMemo<RadarMatrixContextType>(

@@ -311,4 +311,5 @@ export const STORAGE_KEYS = {
   SUBSCRIPTION_RECEIPTS: "vessel_subscription_receipts_v1",
   FAVORITES: "vessel_favorite_profiles_v1",
   OPERATING_INTENT: "vessel_operating_intent_v1",
+  FILTERS: "vessel_matrix_filters_v1",
 };
