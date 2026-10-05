@@ -43,11 +43,6 @@ const LivenessVerificationModal = dynamic(
 // ==========================================
 // 3. Seguridad, Camuflaje & Modo Sigilo
 // ==========================================
-const CalculatorCoverScreen = dynamic(
-  () => import("@/components/safety/CalculatorCoverScreen").then((m) => m.CalculatorCoverScreen),
-  { ssr: false }
-);
-
 const SafetyBeaconModal = dynamic(
   () => import("@/components/safety/SafetyBeaconModal").then((m) => m.SafetyBeaconModal),
   { ssr: false }
@@ -197,7 +192,6 @@ export const ModalHost: React.FC = memo(function ModalHost() {
       {isLivenessModalOpen && <LivenessVerificationModal />}
 
       {/* 3. Seguridad & Camuflaje */}
-      {isCoverScreenActive && <CalculatorCoverScreen />}
       {isSafetyBeaconModalOpen && <SafetyBeaconModal />}
       {isDuressPinSettingsOpen && <DuressPinSettingsModal />}
       {isHarmReductionModalOpen && <HarmReductionModal />}

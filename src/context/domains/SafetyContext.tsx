@@ -29,8 +29,8 @@ const INITIAL_SAFETY_BEACON: SafetyBeaconState = {
 
 const INITIAL_APP_DISGUISE: AppDisguiseConfig = {
   mode: "notes",
-  flipToCoverEnabled: true,
-  tripleTapHeaderEnabled: true,
+  flipToCoverEnabled: false,
+  tripleTapHeaderEnabled: false,
 };
 
 const INITIAL_HARM_REDUCTION: HarmReductionSession = {
@@ -134,15 +134,9 @@ export const SafetyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearInterval(checkInterval);
   }, [safetyBeacon.isActive, safetyBeacon.expiresAt, safetyBeacon.isAlarmTriggered]);
 
-  // Listener aislado de giro (Flip-to-Cover) y tecla de pánico (Escape)
+  // Listener opcional de tecla de pánico (Escape) exclusivo para escritorio cuando está habilitado
   useEffect(() => {
     if (!appDisguise.flipToCoverEnabled) return;
-
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta !== null && (Math.abs(e.beta) > 160 || (e.gamma !== null && Math.abs(e.gamma) > 80))) {
-        setIsCoverScreenActive(true);
-      }
-    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -151,13 +145,11 @@ export const SafetyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     if (typeof window !== "undefined") {
-      window.addEventListener("deviceorientation", handleOrientation);
       window.addEventListener("keydown", handleKeyDown);
     }
 
     return () => {
       if (typeof window !== "undefined") {
-        window.removeEventListener("deviceorientation", handleOrientation);
         window.removeEventListener("keydown", handleKeyDown);
       }
     };

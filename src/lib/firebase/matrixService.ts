@@ -30,34 +30,48 @@ export const isGhostOrMockProfile = (p: Partial<VesselProfile> | undefined | nul
   if (
     id.startsWith("vessel-") ||
     id.startsWith("mock_") ||
+    id.startsWith("mock-") ||
+    id.startsWith("test-") ||
+    id.startsWith("usr-mock-") ||
+    id.startsWith("usr-") ||
     id === "local-user" ||
     id === "unauthenticated" ||
-    id === "me"
+    id === "me" ||
+    MOCK_PROFILES.some((m) => m.id === id)
   ) {
     return true;
   }
 
-  // Perfil por defecto sin configurar o presets de prueba rápida
+  // Presets de prueba rápida o placeholders genéricos sin configurar
   if (
-    code === "VESSEL_USER" ||
     code === "VESSEL_TOP" ||
     code === "VESSEL_VERS" ||
-    code === "VESSEL_BOT"
+    code === "VESSEL_BOT" ||
+    code === "VESSEL_USER" ||
+    code === "VESSEL" ||
+    code.startsWith("MOCK") ||
+    code.startsWith("TEST_")
   ) {
     return true;
   }
 
-  // Cualquier perfil con foto de stock de Unsplash pertenece a los mocks/demos
-  if (typeof p.avatarUrl === "string" && p.avatarUrl.includes("images.unsplash.com")) {
+  // Cualquier perfil con foto de stock de Unsplash perteneciente al catálogo de mocks
+  if (
+    typeof p.avatarUrl === "string" &&
+    p.avatarUrl.includes("images.unsplash.com") &&
+    MOCK_PROFILES.some((m) => m.id === id || m.avatarUrl === p.avatarUrl)
+  ) {
     return true;
   }
 
-  // Coordenadas fantasmas (Null Island 0,0 o el antiguo fallback de Berlín 52.52, 13.405 que daba >12121 km)
-  const lat = p.coordinates?.lat;
-  const lng = p.coordinates?.lng;
-  if (typeof lat !== "number" || typeof lng !== "number") return true;
-  if (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01) return true;
-  if (Math.abs(lat - 52.52) < 0.05 && Math.abs(lng - 13.405) < 0.05) return true;
+  // Coordenadas fantasma de test (Berlín 52.52 / 13.405 o Null Island 0, 0)
+  if (
+    p.coordinates &&
+    ((Math.abs(p.coordinates.lat - 52.52) < 0.05 && Math.abs(p.coordinates.lng - 13.405) < 0.05) ||
+      (p.coordinates.lat === 0 && p.coordinates.lng === 0))
+  ) {
+    return true;
+  }
 
   return false;
 };

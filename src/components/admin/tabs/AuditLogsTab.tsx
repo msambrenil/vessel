@@ -55,6 +55,12 @@ export const AuditLogsTab: React.FC<AuditLogsTabProps> = ({ logs }) => {
 
   const getActionBadge = (action: AuditActionType) => {
     switch (action) {
+      case "USER_DELETED":
+        return (
+          <span className="px-2 py-0.5 rounded bg-red-600/25 text-red-300 border border-red-500/50 font-bold text-[10px]">
+            USUARIO ELIMINADO
+          </span>
+        );
       case "USER_BANNED":
         return (
           <span className="px-2 py-0.5 rounded bg-bloodNeon/20 text-bloodNeon border border-bloodNeon/40 font-bold text-[10px]">

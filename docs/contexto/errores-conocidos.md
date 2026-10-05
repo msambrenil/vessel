@@ -219,3 +219,49 @@ Registro de problemas comunes de usabilidad, contraste, foco en teclado y ajuste
     ```
   - Purgar la caché previa de desarrollo: `rm -rf .next`.
   - Bajo Webpack, Next.js 16 compila de forma determinista `@tailwindcss/postcss` y todos los tokens `@theme` de Tailwind v4, sirviendo la aplicación con código HTTP 200 OK.
+
+---
+
+## 20. Reseteo de Filtros en Recarga por Falso Positivo de Cambio de Cuenta y Desaparición de Usuarios Offline en Consola Admin
+
+- **Gotcha 1 (Filtros reseteados al recargar la app)**:
+  - **Causa Raíz**: En `AuthContext.tsx`, `lastAuthUidRef.current` arrancaba en `"unauthenticated"`. Cuando Firebase Auth resolvía la sesión activa del usuario (`user.uid`), se ejecutaba `lastAuthUidRef.current !== uid`, interpretando falsamente el inicio de sesión ordinario como un "cambio de cuenta de usuario". Esto despachaba el evento `vessel:user-switched`, que llamaba a `setFilters(DEFAULT_FILTERS)` y borraba la persistencia local de filtros en cada recarga de página.
+  - **Solución**: Condicionar el despacho de `vessel:user-switched` exclusivamente cuando `previousUid !== "unauthenticated"` y ambos UIDs sean no nulos y distintos (`previousUid !== uid`). Además, en `RadarMatrixContext.tsx`, se endureció la hidratación para fusionar `{ ...DEFAULT_FILTERS, ...localFilters }`.
+
+- **Gotcha 2 (Usuarios de ayer desapareciendo en `/admin`)**:
+  - **Causa Raíz**: La consola de administración en `src/app/admin/page.tsx` obtenía los perfiles únicamente del array reactivo de `RadarMatrixContext` (`filteredProfiles` / `profiles`), el cual implementa un filtro de presencia efímera de 30 minutos (`PRESENCE_TTL_MS = 30 * 60 * 1000`) para la grilla pública. Por tanto, los usuarios reales que se desconectaban ayer caducaban de la Matriz y eran eliminados del listado administrativo.
+  - **Solución**: Creación de `fetchRealUsersFromCloud()` y `subscribeToRealUsersForAdmin()` en `adminService.ts`, que consultan y escuchan directamente la colección `vessel_profiles` en Firestore sin límites de expiración por presencia efímera.
+
+- **Gotcha 3 (Pantalla negra / notas de camuflaje al ingresar nuevos usuarios)**:
+  - **Causa Raíz**: `SafetyContext.tsx` tenía `flipToCoverEnabled: true` por defecto y un listener de `deviceorientation` que disparaba `setIsCoverScreenActive(true)` con leves giros del teléfono móvil, montando `CalculatorCoverScreen` sobre la vista del usuario nuevo.
+  - **Solución**: Desactivación por defecto de `flipToCoverEnabled` y `tripleTapHeaderEnabled` en `INITIAL_APP_DISGUISE`, remoción del listener `deviceorientation` y retiro definitivo de `CalculatorCoverScreen` de `ModalHost.tsx`.
+
+- **Gotcha 4 (Filtro 'Pasivo' volviendo a activarse tras deseleccionarlo y recargar la página)**:
+  - **Causa Raíz**: En `DynamicFilterDrawer.tsx`, al deseleccionar el rol "Pasivo" (para ver todos los roles / abierto a todos), el array de roles pasa a ser `roles: []`. Al recargar la página, `loadFromStorage` cargaba correctamente `{ roles: [] }`. Sin embargo, en el handler `handleCloudHydrated` de `RadarMatrixContext.tsx`, la guarda verificaba: `const hasCustomRoles = existingFilters?.roles && Array.isArray(existingFilters.roles) && existingFilters.roles.length > 0;`. Al ser `roles: []`, `length > 0` evaluaba a `false`. El código asumía erróneamente que el usuario "nunca había configurado roles", y procedía a sobreescribir `filters.roles` con `cloudData.profile.seekingRoles` (el cual conservaba `["Bottom"]` del registro o perfil guardado en Firestore), persistiendo forzadamente `["Bottom"]` nuevamente en `localStorage` tras cada recarga. Además, `setFilters` no sincronizaba `seekingRoles` a Firestore cuando el usuario cambiaba sus filtros desde el cajón.
+  - **Solución**:
+    1. En `RadarMatrixContext.tsx`, sustituir la comprobación por `const hasConfiguredFilters = existingFilters !== null && existingFilters.roles !== undefined;`. Si el usuario ya guardó filtros en el dispositivo (incluso con `roles: []`), jamás se sobreescribe con los datos de la nube. Solo dispositivos vírgenes sin filtros previos (`existingFilters === null`) heredan `seekingRoles` como semilla inicial.
+    2. En `setFilters`, cuando el usuario altera sus roles en el cliente, sincronizar automáticamente `seekingRoles: next.roles` con su perfil en Firestore (`updateMyProfile({ seekingRoles: next.roles })`), manteniendo alineada la nube con la preferencia explícita del usuario.
+    3. Validación con nuevas pruebas unitarias en `filterPersistenceAndSelfCard.test.ts` con cobertura de `roles: []` y lógica de hidratación.
+
+---
+
+## 21. Desaparición Temporal y Reaparición Inmediata de Usuarios Eliminados en `/admin`
+
+- **Síntoma / Diagnóstico**: Al presionar el botón de eliminar usuario (`Trash2`) en la consola administrativa `/admin`, el usuario desaparece de la tabla por un instante y luego vuelve a reaparecer.
+- **Causa Raíz Doble**:
+  1. **Reglas de Seguridad en Producción Firestore desincronizadas**: Las reglas desplegadas en el proyecto Firebase (`verssel-3438d`) declaraban `match /vessel_profiles/{profileId} { allow write: if isOwner(profileId); }`, sin regla para administradores. Al llamar a `deleteDoc(profileRef)` desde el cliente, Firestore rechazaba la mutación con `Missing or insufficient permissions`. El bloque `try...catch` en `deleteUserByAdmin` silenciaba el error y retornaba `true`, dejando el documento intacto en Firestore.
+  2. **Condición de Carrera en el Estado del Cliente (`refreshData` vs `liveRealProfiles`)**:
+     - En `src/app/admin/page.tsx`, `handleDeleteUser` ejecutaba `setUsers(prev => prev.filter(...))` e inmediatamente invocaba `refreshData()`.
+     - `refreshData()` calculaba `rawUsers = getManagedProfiles(appMode, liveRealProfiles)`.
+     - `liveRealProfiles` tomaba los perfiles de `VesselContext` (`profiles` / `filteredProfiles`), cuyo estado React en segundo plano aún conservaba al usuario.
+     - `getManagedProfiles` iteraba sobre `liveRealProfiles`, volvía a inyectar al usuario eliminado en el mapa de perfiles, lo re-guardaba en `localStorage` (`vessel_custom_profiles_real`) y lo devolvía en `loadedUsers`.
+     - Al invocar `setUsers(loadedUsers)`, el usuario volvía a montarse en pantalla en milisegundos.
+- **Solución Definitiva**:
+  1. **Actualización & Despliegue de `firestore.rules`**: Se incluyó `allow write: if isOwner(profileId) || isAdmin();` y se flexibilizó el token de correos de staff para permitir eliminación a operadores autorizados, desplegando en caliente con `firebase_deploy` en Firebase.
+  2. **Registro de Eliminados (Tombstones Persistentes)**: Se creó `STORAGE_KEYS.DELETED_USER_IDS` (`vessel_deleted_user_ids_v1`) y los métodos `recordDeletedUserId()`, `getDeletedUserIds()` e `isDeletedUserId()`.
+  3. **Blindaje de la Tubería Completa**:
+     - `handleDeleteUser` registra el ID en tombstones y purga el estado local antes de despachar el borrado remoto.
+     - `liveRealProfiles`, `getManagedProfiles`, `fetchRealUsersFromCloud`, `subscribeToRealUsersForAdmin` y los listeners de la Matriz (`RadarMatrixContext.tsx`) filtran activamente con `!isDeletedUserId(...)`.
+     - `deleteUserByAdmin` elimina en cascada `vessel_profiles/{id}`, `vessel_users/{id}`, `vessel_unique_identities/user_{id}`, libera el codename y registra la auditoría `USER_DELETED`.
+
+

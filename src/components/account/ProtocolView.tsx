@@ -160,7 +160,7 @@ export const ProtocolView: React.FC = () => {
   const activeBoundariesCount = Object.keys(connectionBoundaries).length;
 
   return (
-    <div className="flex flex-col flex-1 p-3 sm:p-4 pb-28 sm:pb-32 space-y-3.5 select-none bg-obsidian-deep">
+    <div className="flex flex-col flex-1 p-3 sm:p-4 pb-48 sm:pb-56 space-y-3.5 select-none bg-obsidian-deep">
       {/* CABECERA HERO SUPERIOR DE PROTOCOLO CON ESTADO DE PERSISTENCIA */}
       <SectionHeroHeader
         title={t.account?.myProfileTitle || (language === "es" ? "MI PERFIL" : "MY PROFILE")}

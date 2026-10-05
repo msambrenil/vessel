@@ -19,6 +19,7 @@ import {
   X,
   Sparkles,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 
 interface UserManagementTabProps {
@@ -37,6 +38,7 @@ interface UserManagementTabProps {
   onToggleFogMode: (userId: string, forceFog: boolean) => void;
   onChangePlan: (userId: string, tier: "free" | "unlimited", reason: string) => void;
   onClearDuress: (userId: string) => void;
+  onDeleteUser?: (userId: string) => Promise<void> | void;
 }
 
 type FilterOption = "all" | "verified" | "unverified" | "fog" | "unlimited" | "sanctioned";
@@ -53,12 +55,16 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
   onToggleFogMode,
   onChangePlan,
   onClearDuress,
+  onDeleteUser,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterOption>("all");
   const [drawerTab, setDrawerTab] = useState<DrawerSubTab>("identity");
   const [actionReason, setActionReason] = useState("");
   const [sanctionFeedback, setSanctionFeedback] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<ManagedUserProfile | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Motivos preconfigurados rioplatenses para agilizar la moderación
   const reasonPresets = [
@@ -233,11 +239,17 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="relative w-9 h-9 rounded-full overflow-hidden bg-zinc-800 border border-white/20 flex-shrink-0">
-                            <img
-                              src={user.avatarUrl}
-                              alt={user.codename}
-                              className={`w-full h-full object-cover ${isFog ? "blur-[2.5px]" : ""}`}
-                            />
+                            {user.avatarUrl ? (
+                              <img
+                                src={user.avatarUrl}
+                                alt={user.codename}
+                                className={`w-full h-full object-cover ${isFog ? "blur-[2.5px]" : ""}`}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-electricViolet/20 text-electricViolet-glow font-bold text-xs font-mono">
+                                {(user.codename || "U").slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
                             {isFog && (
                               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                 <CloudFog className="w-3.5 h-3.5 text-white" />
@@ -324,16 +336,32 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
 
                       {/* Acciones */}
                       <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectUser(user);
-                          }}
-                          className="px-3 py-2 min-h-[44px] rounded-xl bg-white/5 hover:bg-electricViolet/20 text-electricViolet-glow hover:text-white border border-electricViolet/30 font-bold text-xs transition-colors cursor-pointer touch-manipulation"
-                        >
-                          Inspeccionar
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectUser(user);
+                            }}
+                            className="px-3 py-2 min-h-[44px] rounded-xl bg-white/5 hover:bg-electricViolet/20 text-electricViolet-glow hover:text-white border border-electricViolet/30 font-bold text-xs transition-colors cursor-pointer touch-manipulation"
+                          >
+                            Inspeccionar
+                          </button>
+                          {onDeleteUser && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setUserToDelete(user);
+                              }}
+                              className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl bg-bloodNeon/10 hover:bg-bloodNeon/25 text-neutral-400 hover:text-bloodNeon border border-white/5 hover:border-bloodNeon/40 transition-colors cursor-pointer touch-manipulation flex items-center justify-center"
+                              title={`Eliminar a @${user.codename}`}
+                              aria-label={`Eliminar a ${user.codename}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -343,6 +371,57 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
           </table>
         </div>
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN PERMANENTE */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-obsidian-surface border border-bloodNeon/50 rounded-2xl p-6 max-w-md w-full space-y-4 shadow-[0_0_30px_rgba(255,0,55,0.25)]">
+            <div className="flex items-center gap-2.5 text-bloodNeon font-mono font-bold text-sm">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+              <span>ELIMINACIÓN PERMANENTE DE USUARIO</span>
+            </div>
+            <p className="text-xs text-neutral-200 font-mono leading-relaxed">
+              ¿Estás seguro de que querés eliminar definitivamente la cuenta de <strong className="text-white">@{userToDelete.codename}</strong>?
+            </p>
+            <div className="bg-black/40 rounded-xl p-3 border border-white/5 font-mono text-[11px] space-y-1 text-neutral-400">
+              <div><strong className="text-neutral-300">ID:</strong> {userToDelete.id}</div>
+              <div><strong className="text-neutral-300">Rol:</strong> {userToDelete.role} · {userToDelete.age} años</div>
+              <div><strong className="text-neutral-300">Karma:</strong> {userToDelete.respectScore || 85}%</div>
+            </div>
+            <p className="text-[11px] text-bloodNeon font-mono">
+              ⚠️ Esta acción eliminará el perfil de Firestore y de la memoria del sistema de forma irrevocable.
+            </p>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (!onDeleteUser) return;
+                  setIsDeleting(true);
+                  try {
+                    await onDeleteUser(userToDelete.id);
+                    setUserToDelete(null);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                className="py-2.5 min-h-[44px] rounded-xl bg-bloodNeon hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer touch-manipulation disabled:opacity-50"
+              >
+                {isDeleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                <span>{isDeleting ? "Eliminando..." : "Sí, Eliminar"}</span>
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setUserToDelete(null)}
+                className="py-2.5 min-h-[44px] rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer touch-manipulation"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DRAWER LATERAL DE INSPECCIÓN 360° REDISEÑADO EN 3 SOLAPAS */}
       {selectedUser && (
@@ -357,13 +436,19 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-obsidian-deep">
               <div className="flex items-center gap-3">
                 <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-800 border border-white/20 flex-shrink-0">
-                  <img
-                    src={selectedUser.avatarUrl}
-                    alt={selectedUser.codename}
-                    className={`w-full h-full object-cover ${
-                      selectedUser.isFogMode || selectedUser.forcedFogMode ? "blur-[3px]" : ""
-                    }`}
-                  />
+                  {selectedUser.avatarUrl ? (
+                    <img
+                      src={selectedUser.avatarUrl}
+                      alt={selectedUser.codename}
+                      className={`w-full h-full object-cover ${
+                        selectedUser.isFogMode || selectedUser.forcedFogMode ? "blur-[3px]" : ""
+                      }`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-electricViolet/20 text-electricViolet-glow font-bold text-sm font-mono">
+                      {(selectedUser.codename || "U").slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -431,7 +516,7 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
             </div>
 
             {/* CONTENIDO DE CADA SOLAPA */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-5 font-mono text-xs">
+            <div className="flex-1 overflow-y-auto p-5 space-y-5 font-mono text-xs pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
               {/* Feedback Toast dentro del Drawer */}
               {sanctionFeedback && (
                 <div className="p-3 rounded-xl bg-electricViolet/20 border border-electricViolet text-white font-bold animate-in fade-in">
@@ -671,6 +756,64 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
                       >
                         Levantar sanción / Reactivar cuenta
                       </button>
+                    )}
+
+                    {/* ZONA DE PELIGRO // ELIMINACIÓN PERMANENTE */}
+                    {onDeleteUser && (
+                      <div className="pt-4 mt-6 border-t border-bloodNeon/30 space-y-3">
+                        <div className="flex items-center gap-2 text-bloodNeon text-xs font-bold font-mono">
+                          <Trash2 className="w-4 h-4" />
+                          <span>ZONA DE PELIGRO // ELIMINAR CUENTA</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-400 font-mono">
+                          Elimina al usuario permanentemente de la base de datos de producción y del sistema. Esta acción no se puede deshacer.
+                        </p>
+
+                        {isConfirmingDelete ? (
+                          <div className="p-3.5 rounded-xl bg-bloodNeon/20 border border-bloodNeon space-y-3 animate-in fade-in">
+                            <div className="text-xs font-bold text-white font-mono">
+                              ¿Confirmás eliminar definitivamente a <span className="text-bloodNeon">@{selectedUser.codename}</span>?
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <button
+                                type="button"
+                                disabled={isDeleting}
+                                onClick={async () => {
+                                  setIsDeleting(true);
+                                  try {
+                                    await onDeleteUser(selectedUser.id);
+                                    setIsConfirmingDelete(false);
+                                    onSelectUser(null);
+                                  } finally {
+                                    setIsDeleting(false);
+                                  }
+                                }}
+                                className="py-2.5 min-h-[44px] rounded-xl bg-bloodNeon hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer touch-manipulation disabled:opacity-50"
+                              >
+                                {isDeleting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                <span>{isDeleting ? "Eliminando..." : "Sí, Eliminar"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isDeleting}
+                                onClick={() => setIsConfirmingDelete(false)}
+                                className="py-2.5 min-h-[44px] rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer touch-manipulation"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setIsConfirmingDelete(true)}
+                            className="w-full py-2.5 min-h-[44px] rounded-xl bg-bloodNeon/15 hover:bg-bloodNeon/25 text-bloodNeon border border-bloodNeon/40 hover:border-bloodNeon/60 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer touch-manipulation"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Eliminar Usuario Definitivamente</span>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

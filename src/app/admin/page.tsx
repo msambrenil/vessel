@@ -23,6 +23,8 @@ import {
   getGlobalQuotaSettings,
   saveGlobalQuotaSettings,
   getManagedProfiles,
+  fetchRealUsersFromCloud,
+  subscribeToRealUsersForAdmin,
   applyUserModeration,
   adjustUserKarma,
   verifyUserProfile,
@@ -30,6 +32,11 @@ import {
   changeUserPlan,
   clearUserDuressAlert,
   calculateDashboardMetrics,
+  isTestOrMockProfileId,
+  isTestOrMockProfile,
+  deleteUserByAdmin,
+  recordDeletedUserId,
+  isDeletedUserId,
 } from "@/lib/admin/adminService";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminNav, AdminTabId } from "@/components/admin/AdminNav";
@@ -80,12 +87,12 @@ export default function AdminConsolePage() {
     if (appMode !== "real") return [];
     const map = new Map<string, (typeof profiles)[number]>();
     for (const p of filteredProfiles) {
-      if (p && p.id && p.codename && p.codename !== "VESSEL_USER") {
+      if (p && p.id && !isTestOrMockProfile(p) && !isDeletedUserId(p.id, appMode)) {
         map.set(p.id, p);
       }
     }
     for (const p of profiles) {
-      if (p && p.id && p.codename && p.codename !== "VESSEL_USER") {
+      if (p && p.id && !isTestOrMockProfile(p) && !isDeletedUserId(p.id, appMode)) {
         map.set(p.id, p);
       }
     }
@@ -96,7 +103,11 @@ export default function AdminConsolePage() {
   const refreshData = useCallback(() => {
     const loadedStaff = getStaffMembers(appMode, authUser);
     const activeStaff = getActiveStaffSession(appMode, authUser);
-    const loadedUsers = getManagedProfiles(appMode, liveRealProfiles);
+    const rawUsers = getManagedProfiles(appMode, liveRealProfiles);
+    const loadedUsers =
+      appMode === "real"
+        ? rawUsers.filter((u) => !isTestOrMockProfile(u))
+        : rawUsers;
     const loadedReports = getModerationReports(appMode);
     const loadedLogs = getAdminAuditLogs(appMode);
     const loadedQuotas = getGlobalQuotaSettings();
@@ -126,6 +137,25 @@ export default function AdminConsolePage() {
       });
     }
   }, [appMode, authUser]);
+
+  // Sincronización en tiempo real de todos los usuarios registrados en Firestore (nunca desaparecen)
+  useEffect(() => {
+    if (appMode === "real") {
+      fetchRealUsersFromCloud().then((cloudUsers) => {
+        if (cloudUsers && cloudUsers.length > 0) {
+          setUsers(cloudUsers.filter((u) => !isTestOrMockProfileId(u.id)));
+        }
+      });
+      const unsubUsers = subscribeToRealUsersForAdmin((cloudUsers) => {
+        if (cloudUsers && cloudUsers.length > 0) {
+          setUsers(cloudUsers.filter((u) => !isTestOrMockProfileId(u.id)));
+        }
+      });
+      return () => {
+        unsubUsers();
+      };
+    }
+  }, [appMode]);
 
   // Manejo de cambio de operador activo (RBAC)
   const handleSwitchStaff = (staffId: string) => {
@@ -213,6 +243,18 @@ export default function AdminConsolePage() {
     if (selectedUser?.id === userId) {
       setSelectedUser((prev) => (prev ? { ...prev, hasSafetyAlert: false } : null));
     }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!currentStaff) return;
+    recordDeletedUserId(userId, appMode);
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    if (selectedUser?.id === userId) {
+      setSelectedUser(null);
+    }
+    audioEngine.playSubBass(45);
+    await deleteUserByAdmin(userId, currentStaff, appMode, users);
+    refreshData();
   };
 
   // Resolución de reportes
@@ -494,6 +536,7 @@ export default function AdminConsolePage() {
             onToggleFogMode={handleToggleFogMode}
             onChangePlan={handleChangePlan}
             onClearDuress={handleClearDuress}
+            onDeleteUser={handleDeleteUser}
           />
         )}
 

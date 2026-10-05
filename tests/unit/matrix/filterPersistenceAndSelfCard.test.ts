@@ -74,6 +74,49 @@ describe("Filter Persistence & Self-Card (Alternative A) Invariants", () => {
       expect(loadedGlobal.roles).toEqual(["Versatile"]);
       expect(loadedGlobal.maxDistanceKm).toBe(25);
     });
+
+    it("debe preservar roles vacíos (ej. deseleccionar Pasivo / Abierto a todos) sin resetear a seekingRoles", () => {
+      // 1. Guardar filtros con roles: [] (usuario deseleccionó Pasivo)
+      const emptyRolesFilters: FilterState = {
+        ...DEFAULT_FILTERS,
+        roles: [],
+      };
+      saveToStorage(STORAGE_KEYS.FILTERS, emptyRolesFilters, "real");
+
+      const loaded = loadFromStorage<FilterState>(STORAGE_KEYS.FILTERS, DEFAULT_FILTERS, "real");
+      expect(loaded.roles).toEqual([]);
+
+      // 2. Simular lógica de hidratación en la nube de RadarMatrixContext:
+      // Si el storage tiene roles configurados (incluso siendo []), NO debe sobrescribirse con seekingRoles de Firestore
+      const existingFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
+      const hasConfiguredFilters = existingFilters !== null && existingFilters.roles !== undefined;
+
+      const cloudSeekingRoles = ["Bottom"]; // Pasivo en perfil
+      let filtersToApply = loaded;
+      if (!hasConfiguredFilters && cloudSeekingRoles.length > 0) {
+        filtersToApply = { ...filtersToApply, roles: cloudSeekingRoles as any };
+      }
+
+      // Verificamos que hasConfiguredFilters sea true y filtersToApply mantenga roles: []
+      expect(hasConfiguredFilters).toBe(true);
+      expect(filtersToApply.roles).toEqual([]);
+    });
+
+    it("debe inicializar seekingRoles desde la nube únicamente si no existen filtros previos en el cliente", () => {
+      // Dispositivo nuevo: storage vacío (null)
+      const existingFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
+      const hasConfiguredFilters = existingFilters !== null && existingFilters.roles !== undefined;
+
+      expect(hasConfiguredFilters).toBe(false);
+
+      const cloudSeekingRoles = ["Bottom"];
+      let filtersToApply = DEFAULT_FILTERS;
+      if (!hasConfiguredFilters && cloudSeekingRoles.length > 0) {
+        filtersToApply = { ...filtersToApply, roles: cloudSeekingRoles as any };
+      }
+
+      expect(filtersToApply.roles).toEqual(["Bottom"]);
+    });
   });
 
   describe("Self-Card (Alternative A) in Matrix Clusters", () => {

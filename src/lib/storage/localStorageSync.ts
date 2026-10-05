@@ -79,6 +79,7 @@ export const getScopedStorageKey = (key: string, mode?: AppMode): string => {
     key === STORAGE_KEYS.FILTERS ||
     key === "vessel_matrix_filters_v1" ||
     key === "vessel_app_settings_v1" ||
+    key === "vessel_deleted_user_ids_v1" ||
     key === APP_MODE_STORAGE_KEY ||
     key === "test_inexistent_key" ||
     key === "test_profile_key" ||
@@ -314,4 +315,5 @@ export const STORAGE_KEYS = {
   FAVORITES: "vessel_favorite_profiles_v1",
   OPERATING_INTENT: "vessel_operating_intent_v1",
   FILTERS: "vessel_matrix_filters_v1",
+  DELETED_USER_IDS: "vessel_deleted_user_ids_v1",
 };

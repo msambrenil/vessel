@@ -33,9 +33,6 @@ vi.mock("@/components/radar/GeoBatteryModal", () => ({
   GeoBatteryModal: () => <div data-testid="geo-battery-modal">GeoBatteryModal Content</div>,
 }));
 
-vi.mock("@/components/safety/CalculatorCoverScreen", () => ({
-  CalculatorCoverScreen: () => <div data-testid="calculator-cover-screen">CalculatorCover</div>,
-}));
 
 let mockVesselState: Record<string, any> = {};
 
@@ -126,13 +123,12 @@ describe("ModalHost — Orquestador Desacoplado de Modales (Fase 4)", () => {
     expect(modal).toBeInTheDocument();
   });
 
-  it("debe renderizar CalculatorCoverScreen cuando isCoverScreenActive es true", async () => {
+  it("no debe renderizar CalculatorCoverScreen ya que fue removido de ModalHost", () => {
     mockVesselState.isCoverScreenActive = true;
 
-    render(<ModalHost />);
+    const { queryByTestId } = render(<ModalHost />);
 
-    const modal = await screen.findByTestId("calculator-cover-screen");
-    expect(modal).toBeInTheDocument();
+    expect(queryByTestId("calculator-cover-screen")).toBeNull();
   });
 
   it("debe renderizar ProfileDetailModal encima (después en DOM) de DarkroomChatModal cuando ambos están activos para permitir ver el perfil desde el chat", async () => {

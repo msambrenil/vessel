@@ -183,7 +183,7 @@ export const BrutalistHeader: React.FC = () => {
       : rawCodename;
 
   return (
-    <header className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md border-b border-white/10 px-3 sm:px-4 py-1.5 select-none shadow-sm">
+    <header className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md border-b border-white/10 px-2.5 sm:px-4 py-1.5 pt-[max(env(safe-area-inset-top,0px),0.375rem)] select-none shadow-sm">
       <div className="flex items-center justify-between gap-2 max-w-4xl mx-auto">
         {/* =========================================================
             ZONA IZQUIERDA: Marca & Identidad del Sistema

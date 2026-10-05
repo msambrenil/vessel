@@ -347,8 +347,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
       const defaultNonAuthUid = appMode === "real" ? "unauthenticated" : "local-user";
       const uid = user ? user.uid : defaultNonAuthUid;
 
-      // Si cambió de cuenta o se cerró sesión, purgar caché local para evitar contaminación entre cuentas
-      if (lastAuthUidRef.current && lastAuthUidRef.current !== uid) {
+      // Si cambió de una cuenta de usuario real autenticada a OTRA cuenta de usuario distinta,
+      // purgar caché local para evitar contaminación entre cuentas.
+      const isSwitchBetweenDifferentUsers =
+        lastAuthUidRef.current &&
+        lastAuthUidRef.current !== defaultNonAuthUid &&
+        lastAuthUidRef.current !== uid;
+
+      if (isSwitchBetweenDifferentUsers) {
         removeFromStorage(STORAGE_KEYS.PROFILE, appMode);
         removeFromStorage(STORAGE_KEYS.PROFILE);
         removeFromStorage(STORAGE_KEYS.KINK_MATRIX, appMode);

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   VesselProfile,
+  RoleType,
   FilterState,
   ActiveNavView,
   ReceivedPulse,
@@ -43,6 +44,7 @@ import { enqueueOfflineMutation } from "@/lib/sync/offlineMutationQueue";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
 import { checkGenderInterestMatch } from "@/data/genderCatalog";
 import { MOCK_PROFILES } from "@/data/mockProfiles";
+import { isDeletedUserId } from "@/lib/admin/adminService";
 import { useAuth } from "./AuthContext";
 import { useLogistics } from "./LogisticsContext";
 import { useSettings } from "./SettingsContext";
@@ -327,6 +329,26 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     },
     []
   );
+
+  const prevRolesRef = useRef<RoleType[] | undefined>(undefined);
+
+  // Sincronizar roles de filtros con seekingRoles del perfil en Firestore
+  // Se ejecuta en un useEffect para evitar mutar AuthProvider durante la fase de render de RadarMatrixProvider
+  useEffect(() => {
+    if (
+      updateMyProfile &&
+      currentUserUid &&
+      currentUserUid !== "local-user" &&
+      currentUserUid !== "unauthenticated"
+    ) {
+      if (prevRolesRef.current !== undefined) {
+        if (JSON.stringify(prevRolesRef.current) !== JSON.stringify(filters.roles)) {
+          updateMyProfile({ seekingRoles: filters.roles });
+        }
+      }
+      prevRolesRef.current = filters.roles;
+    }
+  }, [filters.roles, updateMyProfile, currentUserUid]);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveNavView>("grid");
   const [selectedProfile, setSelectedProfile] = useState<VesselProfile | null>(null);
@@ -440,7 +462,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
     const localFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
     if (localFilters && Object.keys(localFilters).length > 0) {
-      setFiltersState((prev) => ({ ...DEFAULT_FILTERS, ...prev, ...localFilters }));
+      setFiltersState({ ...DEFAULT_FILTERS, ...localFilters });
     }
   }, [appMode, getSanitizedMockProfiles]);
 
@@ -472,18 +494,23 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         setFavoriteProfileIds([]);
       }
 
-      // Solo aplicar seekingRoles desde la nube si el usuario no tiene filtros guardados activamente en localStorage
+      // Solo aplicar seekingRoles desde la nube si el usuario JAMÁS ha configurado filtros en este cliente (existingFilters es null o no define roles)
       const existingFilters = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
+      const hasConfiguredFilters = existingFilters !== null && existingFilters.roles !== undefined;
       if (
-        (!existingFilters || !existingFilters.roles || existingFilters.roles.length === 0) &&
+        !hasConfiguredFilters &&
         cloudData.profile?.seekingRoles &&
         Array.isArray(cloudData.profile.seekingRoles) &&
         cloudData.profile.seekingRoles.length > 0
       ) {
-        setFilters((prev) => ({
-          ...prev,
-          roles: cloudData.profile!.seekingRoles!,
-        }));
+        setFilters((prev) => {
+          const next = {
+            ...prev,
+            roles: cloudData.profile!.seekingRoles!,
+          };
+          saveToStorage(STORAGE_KEYS.FILTERS, next);
+          return next;
+        });
       }
     };
 
@@ -491,7 +518,12 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       const defaultKinks = appMode === "real" ? {} : INITIAL_MY_KINK_MATRIX;
       setMyKinkMatrix(defaultKinks);
       setFavoriteProfileIds([]);
-      setFilters(DEFAULT_FILTERS);
+      const saved = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
+      if (saved && Object.keys(saved).length > 0) {
+        setFiltersState({ ...DEFAULT_FILTERS, ...saved });
+      } else {
+        setFiltersState(DEFAULT_FILTERS);
+      }
     };
 
     const handleOfflineQueueFlushed = () => {
@@ -534,17 +566,18 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           cp.id !== currentUserUid &&
           cp.id !== "me" &&
           cp.id !== "unauthenticated" &&
+          !isDeletedUserId(cp.id, "real") &&
           isProfileActiveInMatrix(cp, now)
       );
       setProfiles(sortAndEnrichProfilesByProximity(activeOthers, myCoordinates));
     }, "real");
 
-    // Barrido periódico cada 30s para expulsar de la Matrix perfiles cuyo TTL de 30 minutos haya expirado
+    // Barrido periódico cada 30s para expulsar de la Matrix perfiles cuyo TTL de 30 minutos haya expirado o hayan sido eliminados
     const ttlSweepInterval = setInterval(() => {
       const now = Date.now();
       setProfiles((prev) =>
         sortAndEnrichProfilesByProximity(
-          prev.filter((cp) => isProfileActiveInMatrix(cp, now)),
+          prev.filter((cp) => !isDeletedUserId(cp.id, "real") && isProfileActiveInMatrix(cp, now)),
           myCoordinates
         )
       );

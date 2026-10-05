@@ -21,7 +21,7 @@ import {
 } from "@/lib/storage/localStorageSync";
 import { VesselProfile } from "@/types/vessel";
 import { isGhostOrMockProfile } from "@/lib/firebase/matrixService";
-import { collection, doc, setDoc, getDocs } from "firebase/firestore";
+import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot, Unsubscribe } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/firestoreSanitizer";
 
@@ -392,37 +392,118 @@ export const saveGlobalQuotaSettings = (
  * GESTIÓN DE USUARIOS (MANAGED PROFILES)
  * ------------------------------------------------------------- */
 
+/**
+ * Determina si un ID de perfil pertenece a un usuario ficticio, mock o de prueba.
+ * En Modo Real, NINGUNO de estos perfiles debe aparecer en la consola del administrador.
+ */
+export const isTestOrMockProfileId = (id?: string | null): boolean => {
+  if (!id) return true;
+  const cleanId = id.trim();
+  if (
+    cleanId === "local-user" ||
+    cleanId === "unauthenticated" ||
+    cleanId === "me" ||
+    cleanId.startsWith("mock_") ||
+    cleanId.startsWith("mock-") ||
+    cleanId.startsWith("test-") ||
+    cleanId.startsWith("usr-mock-") ||
+    cleanId.startsWith("usr-") ||
+    cleanId.startsWith("vessel-")
+  ) {
+    return true;
+  }
+  return MOCK_PROFILES.some((m) => m.id === cleanId);
+};
+
+/**
+ * Determina si un perfil pertenece a un usuario ficticio, mock o de prueba,
+ * evaluando rigurosamente su ID, codename, fotos de stock y coordenadas geográficas.
+ * En Modo Real, NINGUNO de estos perfiles debe aparecer en la consola del administrador.
+ */
+export const isTestOrMockProfile = (
+  p?: Partial<VesselProfile | ManagedUserProfile> | null
+): boolean => {
+  if (!p) return true;
+  if (isTestOrMockProfileId(p.id)) return true;
+  const code = (p.codename || "").trim().toUpperCase();
+  if (
+    code === "VESSEL_USER" ||
+    code === "VESSEL_TOP" ||
+    code === "VESSEL_VERS" ||
+    code === "VESSEL_BOT" ||
+    code === "VESSEL" ||
+    code.startsWith("MOCK") ||
+    code.startsWith("TEST_")
+  ) {
+    return true;
+  }
+  return isGhostOrMockProfile(p);
+};
+
+/**
+ * Registro de IDs de usuarios eliminados definitivamente por administradores (Tombstones).
+ * Previene que perfiles cacheados en localStorage o en memoria revivan usuarios eliminados.
+ */
+export const getDeletedUserIds = (mode: AppMode = getActiveAppMode()): string[] => {
+  return loadFromStorage<string[]>(STORAGE_KEYS.DELETED_USER_IDS, [], mode) || [];
+};
+
+export const recordDeletedUserId = (userId: string, mode: AppMode = getActiveAppMode()): void => {
+  if (!userId) return;
+  const current = getDeletedUserIds(mode);
+  if (!current.includes(userId)) {
+    const updated = [...current, userId];
+    saveToStorage(STORAGE_KEYS.DELETED_USER_IDS, updated, mode);
+  }
+};
+
+export const isDeletedUserId = (userId?: string | null, mode: AppMode = getActiveAppMode()): boolean => {
+  if (!userId) return false;
+  const list = getDeletedUserIds(mode);
+  return list.includes(userId);
+};
+
 export const getManagedProfiles = (
   mode: "test" | "real" = getActiveAppMode(),
   liveRealProfiles: VesselProfile[] = []
 ): ManagedUserProfile[] => {
+  const deletedIds = new Set(getDeletedUserIds(mode));
+
   if (mode === "real") {
     const savedRealOverrides = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, [], "real");
-    const overrideMap = new Map<string, ManagedUserProfile>();
+    const userMap = new Map<string, ManagedUserProfile>();
+
+    // 1. Cargar todos los usuarios reales persistidos en almacenamiento local (filtrando mocks residuales y eliminados)
     for (const item of savedRealOverrides || []) {
-      if (!isGhostOrMockProfile(item)) {
-        overrideMap.set(item.id, item);
+      if (item && item.id && !isTestOrMockProfile(item) && !deletedIds.has(item.id)) {
+        userMap.set(item.id, item);
       }
     }
 
-    const realManaged: ManagedUserProfile[] = [];
+    // 2. Fusionar con perfiles reales en vivo sin descartar a los desconectados (filtrando eliminados)
     for (const p of liveRealProfiles) {
-      if (isGhostOrMockProfile(p)) continue;
-      const override = overrideMap.get(p.id);
-      realManaged.push({
+      if (!p || !p.id || isTestOrMockProfile(p) || deletedIds.has(p.id)) {
+        continue;
+      }
+      const existing = userMap.get(p.id);
+      userMap.set(p.id, {
         ...p,
-        ...override,
-        moderationStatus: override?.moderationStatus || "active",
-        moderationNotes: override?.moderationNotes || [],
-        forcedFogMode: override?.forcedFogMode ?? p.isFogMode ?? false,
+        ...existing,
+        moderationStatus: existing?.moderationStatus || "active",
+        moderationNotes: existing?.moderationNotes || [],
+        forcedFogMode: existing?.forcedFogMode ?? p.isFogMode ?? false,
       });
     }
-    return realManaged;
+
+    const cleanReal = Array.from(userMap.values()).filter((u) => !isTestOrMockProfile(u) && !deletedIds.has(u.id));
+    // Auto-sanitizar el storage local en caso de que hayan quedado mocks cacheados o usuarios eliminados
+    saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, cleanReal, "real");
+    return cleanReal;
   }
 
   const custom = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, [], "test");
   if (!custom || custom.length === 0) {
-    return MOCK_PROFILES.map((p) => ({
+    return MOCK_PROFILES.filter((p) => !deletedIds.has(p.id)).map((p) => ({
       ...p,
       moderationStatus: "active",
       moderationNotes: [],
@@ -430,10 +511,10 @@ export const getManagedProfiles = (
     }));
   }
 
-  const merged: ManagedUserProfile[] = [...custom];
+  const merged: ManagedUserProfile[] = custom.filter((p) => !deletedIds.has(p.id));
 
   for (const m of MOCK_PROFILES) {
-    if (!merged.some((p) => p.id === m.id)) {
+    if (!deletedIds.has(m.id) && !merged.some((p) => p.id === m.id)) {
       merged.push({
         ...m,
         moderationStatus: "active",
@@ -446,15 +527,133 @@ export const getManagedProfiles = (
   return merged;
 };
 
+/**
+ * Carga todos los usuarios reales persistentes registrados en Firestore (sin expiración por TTL)
+ */
+export const fetchRealUsersFromCloud = async (): Promise<ManagedUserProfile[]> => {
+  if (typeof window === "undefined" || !db) return [];
+  try {
+    const deletedIds = new Set(getDeletedUserIds("real"));
+    const profilesCol = collection(db, "vessel_profiles");
+    const snap = await getDocs(profilesCol);
+    if (!snap.empty) {
+      const savedRealOverrides = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, [], "real");
+      const overrideMap = new Map<string, ManagedUserProfile>();
+      for (const item of savedRealOverrides || []) {
+        if (item && item.id && !isTestOrMockProfile(item) && !deletedIds.has(item.id)) overrideMap.set(item.id, item);
+      }
+
+      const users: ManagedUserProfile[] = [];
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data() as VesselProfile;
+        const id = data.id || docSnap.id;
+        // Ignorar estrictamente perfiles mock/dev de pruebas locales y usuarios eliminados
+        if (isTestOrMockProfile(data) || isTestOrMockProfileId(id) || deletedIds.has(id)) {
+          return;
+        }
+        const override = overrideMap.get(id);
+        users.push({
+          ...data,
+          id,
+          codename: data.codename || override?.codename || "USUARIO",
+          role: data.role || override?.role || "Versátil",
+          bodyState: data.bodyState || override?.bodyState || "open",
+          distanceMeters: data.distanceMeters ?? override?.distanceMeters ?? 0,
+          intensity: data.intensity ?? override?.intensity ?? 2,
+          kinks: data.kinks || override?.kinks || [],
+          coordinates: data.coordinates || override?.coordinates || { lat: -34.588, lng: -58.43 },
+          ...override,
+          moderationStatus: override?.moderationStatus || "active",
+          moderationNotes: override?.moderationNotes || [],
+          forcedFogMode: override?.forcedFogMode ?? data.isFogMode ?? false,
+        });
+      });
+
+      for (const [id, override] of overrideMap.entries()) {
+        if (!isTestOrMockProfile(override) && !deletedIds.has(id) && !users.some((u) => u.id === id)) {
+          users.push(override);
+        }
+      }
+
+      const cleanUsers = users.filter((u) => !isTestOrMockProfile(u) && !deletedIds.has(u.id));
+      saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, cleanUsers, "real");
+      return cleanUsers;
+    }
+  } catch (err) {
+    console.warn("[VESSEL Admin] Error al obtener usuarios reales desde Firestore:", err);
+  }
+  return [];
+};
+
+/**
+ * Escucha en tiempo real todos los usuarios registrados en Firestore para el panel de administración
+ */
+export const subscribeToRealUsersForAdmin = (
+  onUpdate: (users: ManagedUserProfile[]) => void
+): Unsubscribe => {
+  if (typeof window === "undefined" || !db) return () => {};
+  const profilesCol = collection(db, "vessel_profiles");
+  return onSnapshot(
+    profilesCol,
+    (snapshot) => {
+      const deletedIds = new Set(getDeletedUserIds("real"));
+      const savedRealOverrides = loadFromStorage<ManagedUserProfile[]>(STORAGE_KEYS.CUSTOM_PROFILES, [], "real");
+      const overrideMap = new Map<string, ManagedUserProfile>();
+      for (const item of savedRealOverrides || []) {
+        if (item && item.id && !isTestOrMockProfile(item) && !deletedIds.has(item.id)) overrideMap.set(item.id, item);
+      }
+
+      const users: ManagedUserProfile[] = [];
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data() as VesselProfile;
+        const id = data.id || docSnap.id;
+        if (isTestOrMockProfile(data) || isTestOrMockProfileId(id) || deletedIds.has(id)) {
+          return;
+        }
+        const override = overrideMap.get(id);
+        users.push({
+          ...data,
+          id,
+          codename: data.codename || override?.codename || "USUARIO",
+          role: data.role || override?.role || "Versátil",
+          bodyState: data.bodyState || override?.bodyState || "open",
+          distanceMeters: data.distanceMeters ?? override?.distanceMeters ?? 0,
+          intensity: data.intensity ?? override?.intensity ?? 2,
+          kinks: data.kinks || override?.kinks || [],
+          coordinates: data.coordinates || override?.coordinates || { lat: -34.588, lng: -58.43 },
+          ...override,
+          moderationStatus: override?.moderationStatus || "active",
+          moderationNotes: override?.moderationNotes || [],
+          forcedFogMode: override?.forcedFogMode ?? data.isFogMode ?? false,
+        });
+      });
+
+      for (const [id, override] of overrideMap.entries()) {
+        if (!isTestOrMockProfile(override) && !deletedIds.has(id) && !users.some((u) => u.id === id)) {
+          users.push(override);
+        }
+      }
+
+      const cleanUsers = users.filter((u) => !isTestOrMockProfile(u) && !deletedIds.has(u.id));
+      saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, cleanUsers, "real");
+      onUpdate(cleanUsers);
+    },
+    (err) => {
+      console.warn("[VESSEL Admin] Error en suscripción a usuarios reales de Firestore:", err);
+    }
+  );
+};
+
 export const saveManagedProfiles = (
   profiles: ManagedUserProfile[],
   mode: AppMode = getActiveAppMode()
 ): void => {
-  saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, profiles, mode);
+  const cleanProfiles = mode === "real" ? profiles.filter((p) => !isTestOrMockProfile(p)) : profiles;
+  saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, cleanProfiles, mode);
 
   if (mode === "real" && typeof window !== "undefined") {
-    for (const profile of profiles) {
-      if (profile.id.startsWith("usr-mock-")) continue;
+    for (const profile of cleanProfiles) {
+      if (isTestOrMockProfile(profile)) continue;
       try {
         const profileRef = doc(db, "vessel_profiles", profile.id);
         setDoc(
@@ -724,6 +923,85 @@ export const clearUserDuressAlert = (
   });
 
   return updated;
+};
+
+/**
+ * Elimina definitivamente a un usuario de la plataforma:
+ * - Lo remueve de la memoria local persistente
+ * - En modo real, elimina sus documentos en Firestore (vessel_profiles, vessel_users, vessel_blacklist)
+ * - Registra la acción en la pista de auditoría administrativa
+ */
+export const deleteUserByAdmin = async (
+  userId: string,
+  operator: StaffMember,
+  mode: AppMode = getActiveAppMode(),
+  currentProfiles?: ManagedUserProfile[]
+): Promise<boolean> => {
+  if (!userId) return false;
+
+  // 1. Registrar inmediatamente el UID en el registro persistente de eliminados (tombstone)
+  recordDeletedUserId(userId, mode);
+  // Por precaución, registrar también en el modo hermano para evitar cruce de caché
+  recordDeletedUserId(userId, mode === "real" ? "test" : "real");
+
+  // 2. Limpiar de perfiles locales en almacenamiento persistente
+  const profiles = currentProfiles ? [...currentProfiles] : getManagedProfiles(mode);
+  const target = profiles.find((p) => p.id === userId);
+  const filtered = profiles.filter((p) => p.id !== userId);
+  saveToStorage(STORAGE_KEYS.CUSTOM_PROFILES, filtered, mode);
+
+  // 3. En modo real, eliminar en cascada todos sus documentos en Firestore
+  if (mode === "real" && typeof window !== "undefined" && db && ("app" in db || "type" in db)) {
+    try {
+      const profileRef = doc(db, "vessel_profiles", userId);
+      await deleteDoc(profileRef);
+    } catch (err) {
+      console.warn("[VESSEL Admin] Error al eliminar documento vessel_profiles:", err);
+    }
+
+    try {
+      const userRef = doc(db, "vessel_users", userId);
+      await deleteDoc(userRef);
+    } catch (err) {
+      console.warn("[VESSEL Admin] Error al eliminar documento vessel_users:", err);
+    }
+
+    try {
+      const uniqueIdentityRef = doc(db, "vessel_unique_identities", `user_${userId}`);
+      await deleteDoc(uniqueIdentityRef);
+    } catch (err) {
+      console.warn("[VESSEL Admin] Error al eliminar vessel_unique_identities:", err);
+    }
+
+    if (target?.codename) {
+      try {
+        const normalized = target.codename.trim().toLowerCase();
+        const codenameRef = doc(db, "vessel_unique_identities", `codename_${normalized}`);
+        await deleteDoc(codenameRef);
+      } catch (err) {
+        console.warn("[VESSEL Admin] Error al liberar codename en identidades únicas:", err);
+      }
+    }
+
+    try {
+      const blacklistRef = doc(db, "vessel_blacklist", userId);
+      await deleteDoc(blacklistRef);
+    } catch {
+      // Ignorar si no existía en blacklist
+    }
+  }
+
+  logAdminAction({
+    operatorId: operator.id,
+    operatorName: operator.name,
+    operatorRole: operator.role,
+    action: "USER_DELETED",
+    targetUserId: userId,
+    targetUserCodename: target?.codename || "DESCONOCIDO",
+    details: `Usuario ${userId} (${target?.codename || "Sin alias"}) eliminado permanentemente de la plataforma por ${operator.name}`,
+  });
+
+  return true;
 };
 
 /* -------------------------------------------------------------

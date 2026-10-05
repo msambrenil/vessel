@@ -75,6 +75,14 @@ self.addEventListener("fetch", (event) => {
         }
 
         return fetch(request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 404) {
+            self.clients.matchAll({ type: "window" }).then((clients) => {
+              clients.forEach((client) => {
+                client.postMessage({ type: "VESSEL_CHUNK_RELOAD_REQUIRED" });
+              });
+            });
+            return networkResponse;
+          }
           if (!networkResponse || networkResponse.status !== 200) {
             return networkResponse;
           }
@@ -84,6 +92,13 @@ self.addEventListener("fetch", (event) => {
         });
       })
     );
+  }
+});
+
+// Escucha de mensajes desde la app (activación inmediata de nueva versión y descarte de espera)
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
 });
 
