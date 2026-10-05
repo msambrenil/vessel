@@ -268,7 +268,7 @@ export const DiaryEntryCard: React.FC<DiaryEntryCardProps> = ({
             audioEngine.playSubBass(65);
           }
         }}
-        className="relative w-full h-60 sm:w-48 md:w-56 sm:h-auto sm:min-h-[240px] flex-shrink-0 cursor-pointer group overflow-hidden bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+        className="relative w-full h-36 sm:w-44 md:w-48 sm:h-auto sm:min-h-[180px] flex-shrink-0 cursor-pointer group overflow-hidden bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
         title={
           language === "es"
             ? `Ver Ficha Íntima y fotos de ${entry.person.codename}`

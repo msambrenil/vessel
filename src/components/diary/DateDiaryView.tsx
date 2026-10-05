@@ -6,9 +6,11 @@ import { DiaryEntry } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { SectionHeroHeader } from "@/components/ui";
 import { DiaryScheduleSection } from "./DiaryScheduleSection";
+import { DiaryLoversVaultSection, LoverVaultItem } from "./DiaryLoversVaultSection";
 import { DiaryHealthSection } from "./DiaryHealthSection";
 import { DiaryInsights } from "./DiaryInsights";
 import { VaultEncryptedImage } from "@/lib/security/encryptedPhotoService";
+import { getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import {
   Calendar,
   HeartPulse,
@@ -16,6 +18,7 @@ import {
   UserCheck,
   Plus,
   X,
+  Flame,
 } from "lucide-react";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 
@@ -48,8 +51,8 @@ export const DateDiaryView: React.FC = () => {
   const favoriteProfileIds = favIdsProp || [];
   const isFavoriteProfile = isFavProp || (() => false);
 
-  // Solapa activa: Agenda & Citas (diary), Salud & Cuidados (health), Métricas (insights)
-  const [activeTab, setActiveTab] = useState<"diary" | "health" | "insights">("diary");
+  // Solapas por Intención (Alternativa 1): Próximas (diary), Mis Chongos (lovers), Salud (health), Métricas (insights)
+  const [activeTab, setActiveTab] = useState<"diary" | "lovers" | "health" | "insights">("diary");
   const [inspectExternalContact, setInspectExternalContact] = useState<DiaryEntry["person"] | null>(null);
 
   useEffect(() => {
@@ -75,6 +78,72 @@ export const DateDiaryView: React.FC = () => {
     const sum = ratings.reduce((acc, curr) => acc + curr, 0);
     return Number((sum / ratings.length).toFixed(1));
   }, [myReceivedTestimonials]);
+
+  // Listado unificado de amantes para la Libreta Íntima (Alternativa 1)
+  const loversList: LoverVaultItem[] = useMemo(() => {
+    const map: Record<string, LoverVaultItem> = {};
+
+    diaryEntries.forEach((entry) => {
+      const pid = entry.person.profileId || `ext-${entry.person.codename.toLowerCase()}`;
+      const dossier = profileDossiers?.[pid];
+      const existing = map[pid];
+      const count = (existing?.encounterCount || 0) + (!entry.isUpcoming ? 1 : 0);
+      const photos =
+        dossier?.sharedPhotos?.length ||
+        entry.person.sharedPhotos?.length ||
+        entry.attachedPhotos?.length ||
+        0;
+      const badges = Array.from(
+        new Set([...(existing?.badges || []), ...(dossier?.badges || []), ...(entry.person.badges || [])])
+      );
+      const chem = entry.satisfaction?.chemistryLevel || existing?.chemistryLevel || 5;
+      const repeat = entry.satisfaction?.wouldRepeat === "yes" || existing?.wouldRepeat || false;
+
+      map[pid] = {
+        profileId: pid,
+        codename: entry.person.codename,
+        avatarUrl:
+          dossier?.sharedPhotos?.[0] ||
+          entry.person.avatarUrl ||
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+        role: entry.person.role || existing?.role || "Versatile",
+        encounterCount: count,
+        lastDate: !existing || entry.date > existing.lastDate ? entry.date : existing.lastDate,
+        chemistryLevel: chem,
+        wouldRepeat: repeat,
+        photosCount: photos,
+        badges,
+      };
+    });
+
+    if (profileDossiers) {
+      Object.entries(profileDossiers).forEach(([pid, dossier]) => {
+        if (!map[pid]) {
+          const matchedProfile = profiles.find((p) => p.id === pid);
+          map[pid] = {
+            profileId: pid,
+            codename: matchedProfile?.codename || pid,
+            avatarUrl:
+              dossier.sharedPhotos?.[0] ||
+              matchedProfile?.avatarUrl ||
+              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+            role: matchedProfile?.role || "Versatile",
+            encounterCount: 1,
+            lastDate: getLocalTodayIso(),
+            chemistryLevel: 5,
+            wouldRepeat: true,
+            photosCount: dossier.sharedPhotos?.length || 0,
+            badges: dossier.badges || [],
+          };
+        }
+      });
+    }
+
+    return Object.values(map).sort((a, b) => {
+      if (b.chemistryLevel !== a.chemistryLevel) return b.chemistryLevel - a.chemistryLevel;
+      return b.lastDate.localeCompare(a.lastDate);
+    });
+  }, [diaryEntries, profileDossiers, profiles]);
 
   // Manejo de Quiero la Revancha (Chat directo para perfiles Matrix o Agendar para Contactos Externos)
   const handleSendRevancha = (lover: { profileId: string; codename: string }) => {
@@ -103,6 +172,7 @@ export const DateDiaryView: React.FC = () => {
         actions={
           <button
             type="button"
+            data-testid="diary-schedule-btn"
             onClick={() => {
               openCreateDiaryModal();
               audioEngine.playPulse();
@@ -117,14 +187,14 @@ export const DateDiaryView: React.FC = () => {
         }
       />
 
-      {/* 2. SELECTOR SEGMENTADO SUPERIOR (3 SOLAPAS UNIFICADAS) */}
+      {/* 2. SELECTOR SEGMENTADO SUPERIOR (4 SOLAPAS POR INTENCIÓN - ALTERNATIVA 1) */}
       <div className="bg-obsidian-surface/90 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md shadow-card-elevation">
         <div
           role="tablist"
           aria-label={language === "es" ? "Secciones de la Agenda de Encuentros" : "Date Diary Sections"}
-          className="grid grid-cols-3 gap-1.5"
+          className="grid grid-cols-4 gap-1 sm:gap-1.5"
         >
-          {/* Solapa 1: Agenda & Citas (Unificada) */}
+          {/* Solapa 1: Próximas & Citas */}
           <button
             type="button"
             role="tab"
@@ -134,18 +204,18 @@ export const DateDiaryView: React.FC = () => {
               setActiveTab("diary");
               audioEngine.playPulse();
             }}
-            className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+            className={`py-2 px-1.5 min-h-[44px] rounded-xl text-[11px] sm:text-xs font-mono font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
               activeTab === "diary"
                 ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             }`}
           >
-            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             <span className="truncate">
-              {language === "es" ? "Agenda & Citas" : "Dates & Lovers"}
+              {language === "es" ? "Citas" : "Dates"}
             </span>
             <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+              className={`text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                 activeTab === "diary"
                   ? "bg-white/20 text-white font-extrabold"
                   : "bg-white/10 text-neutral-300"
@@ -155,7 +225,38 @@ export const DateDiaryView: React.FC = () => {
             </span>
           </button>
 
-          {/* Solapa 2: Salud & Cuidados */}
+          {/* Solapa 2: Mis Chongos (Libreta Íntima) */}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "lovers"}
+            data-testid="diary-tab-lovers"
+            onClick={() => {
+              setActiveTab("lovers");
+              audioEngine.playPulse();
+            }}
+            className={`py-2 px-1.5 min-h-[44px] rounded-xl text-[11px] sm:text-xs font-mono font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
+              activeTab === "lovers"
+                ? "bg-amber-500 text-black shadow-[0_0_15px_rgba(245,158,11,0.3)] font-extrabold"
+                : "text-neutral-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Flame className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${activeTab === "lovers" ? "text-black fill-black" : "text-amber-400"}`} />
+            <span className="truncate">
+              {language === "es" ? "Chongos" : "Lovers"}
+            </span>
+            <span
+              className={`text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                activeTab === "lovers"
+                  ? "bg-black/20 text-black font-extrabold"
+                  : "bg-white/10 text-neutral-300"
+              }`}
+            >
+              {loversList.length}
+            </span>
+          </button>
+
+          {/* Solapa 3: Salud & Cuidados */}
           <button
             type="button"
             role="tab"
@@ -166,20 +267,20 @@ export const DateDiaryView: React.FC = () => {
               audioEngine.playPulse();
             }}
             aria-label={t.diary.tabHealth || (language === "es" ? "Salud & Cuidados" : "Health & Care")}
-            className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-95 ${
+            className={`py-2 px-1.5 min-h-[44px] rounded-xl text-[11px] sm:text-xs font-mono font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-95 ${
               activeTab === "health"
                 ? "bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] font-extrabold"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             }`}
           >
-            <HeartPulse className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-            <span className="truncate">{t.diary.tabHealth || (language === "es" ? "Salud & Cuidados" : "Health & Care")}</span>
+            <HeartPulse className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 text-emerald-400" />
+            <span className="truncate">{language === "es" ? "Salud" : "Health"}</span>
             {doxyPepTrackers.length > 0 && (
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             )}
           </button>
 
-          {/* Solapa 3: Métricas */}
+          {/* Solapa 4: Métricas */}
           <button
             type="button"
             role="tab"
@@ -189,14 +290,14 @@ export const DateDiaryView: React.FC = () => {
               setActiveTab("insights");
               audioEngine.playPulse();
             }}
-            className={`py-2.5 px-2 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+            className={`py-2 px-1.5 min-h-[44px] rounded-xl text-[11px] sm:text-xs font-mono font-bold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
               activeTab === "insights"
                 ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                 : "text-neutral-400 hover:text-white hover:bg-white/5"
             }`}
           >
-            <BarChart3 className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{t.diary.tabInsights || (language === "es" ? "Métricas" : "Insights")}</span>
+            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="truncate">{language === "es" ? "Métricas" : "Insights"}</span>
           </button>
         </div>
       </div>
@@ -233,6 +334,17 @@ export const DateDiaryView: React.FC = () => {
           onNavigateToInsights={() => setActiveTab("insights")}
           averageRating={averageReceivedRating}
           respectScore={myProfile.respectScore || 100}
+          language={language}
+          t={t}
+        />
+      ) : activeTab === "lovers" ? (
+        <DiaryLoversVaultSection
+          lovers={loversList}
+          diaryEntries={diaryEntries}
+          profileDossiers={profileDossiers}
+          onRestoreBackup={restoreDiaryBackup}
+          onOpenDossier={(pid) => openLoverDossierModal(pid)}
+          onSendRevancha={handleSendRevancha}
           language={language}
           t={t}
         />

@@ -7,14 +7,14 @@ describe("Operating Intent Modes and Intent Clusters", () => {
     expect(TRANSLATIONS.es.intents).toBeDefined();
     expect(TRANSLATIONS.en.intents).toBeDefined();
 
-    expect(TRANSLATIONS.es.intents.now).toBe("Ahora");
-    expect(TRANSLATIONS.es.intents.nightlife).toBe("Noche");
-    expect(TRANSLATIONS.es.intents.kink).toBe("Kink & Morbos");
-    expect(TRANSLATIONS.es.intents.stealth).toBe("Modo Discreto");
+    expect(TRANSLATIONS.es.intents.now).toBe("Pinta ya");
+    expect(TRANSLATIONS.es.intents.nightlife).toBe("Boliches y Lugares");
+    expect(TRANSLATIONS.es.intents.kink).toBe("Morbos y Fetiches");
+    expect(TRANSLATIONS.es.intents.stealth).toBe("Discreto");
 
     expect(TRANSLATIONS.en.intents.now).toBe("Now (Ready)");
-    expect(TRANSLATIONS.en.intents.nightlife).toBe("Nightlife & Parties");
-    expect(TRANSLATIONS.en.intents.kink).toBe("Kink & Dynamics");
+    expect(TRANSLATIONS.en.intents.nightlife).toBe("Clubs & Places");
+    expect(TRANSLATIONS.en.intents.kink).toBe("Kinks & Fetishes");
     expect(TRANSLATIONS.en.intents.stealth).toBe("Stealth Mode");
   });
 
@@ -22,7 +22,7 @@ describe("Operating Intent Modes and Intent Clusters", () => {
     const sampleCluster: IntentClusterGroup = {
       id: "cluster-now-host",
       intent: "now" as OperatingIntentMode,
-      title: "Con Lugar Inmediato (Hosts Activos)",
+      title: "Con Lugar Inmediato",
       subtitle: "Listos para recibir con privacidad",
       icon: "🏠",
       accentColor: "border-electricViolet text-electricViolet",

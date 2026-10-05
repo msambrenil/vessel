@@ -180,8 +180,19 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 select-none animate-in fade-in">
-      <div className="w-full max-w-md bg-obsidian-surface border border-white/10 rounded-2xl p-5 space-y-4 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.boundaries.modalTitle}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 shadow-2xl relative max-h-[88vh] sm:max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto -mt-2 mb-1 sm:hidden flex-shrink-0" />
         {/* Cabecera del Modal */}
         <div className="flex items-center justify-between border-b border-white/5 pb-3">
           <div className="flex items-center gap-2.5">

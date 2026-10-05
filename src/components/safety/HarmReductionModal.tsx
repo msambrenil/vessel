@@ -70,11 +70,20 @@ export const HarmReductionModal: React.FC = () => {
     : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Asistente de Sesión"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
+      onClick={closeHarmReductionModal}
+    >
       <div
-        className="relative w-full max-w-lg bg-[#0c0c0c] border border-emerald-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-lg bg-[#0c0c0c] border-t sm:border border-emerald-500/50 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Header Táctico */}
         <div className="p-4 border-b border-emerald-500/30 bg-emerald-950/30 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -96,7 +105,8 @@ export const HarmReductionModal: React.FC = () => {
           <button
             type="button"
             onClick={closeHarmReductionModal}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-mono transition-all"
+            aria-label="Cerrar asistente de reducción de daños"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-mono transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
           >
             ✕
           </button>

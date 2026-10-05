@@ -57,6 +57,8 @@ import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { ChatMediaAttachment, ExitProtocol } from "@/types/vessel";
 import { PreFlightCard } from "./PreFlightCard";
 import { RendezvousSheet } from "./RendezvousSheet";
+import { EncounterContextBar } from "./EncounterContextBar";
+import { ChatProfileDrawer } from "./ChatProfileDrawer";
 
 interface DarkroomChatModalProps {
   profileId: string;
@@ -120,6 +122,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const [isTacticalMenuOpen, setIsTacticalMenuOpen] = useState(false);
   const [isRendezvousSheetOpen, setIsRendezvousSheetOpen] = useState(false);
   const [quickBarMode, setQuickBarMode] = useState<"quick" | "antiGhost">("quick");
+  const [isDossierDrawerOpen, setIsDossierDrawerOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [confirmingCancelPin, setConfirmingCancelPin] = useState(false);
 
@@ -268,17 +271,16 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
+      role="region"
       aria-label={language === "es" ? `Chat seguro con ${profile.codename}` : `Secure chat with ${profile.codename}`}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex justify-center items-center p-0 md:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      className="fixed inset-0 z-40 bg-obsidian-deep flex flex-col w-full h-[100dvh] overflow-hidden select-none animate-in fade-in duration-200 [overscroll-behavior:contain]"
     >
-      <div className="w-full max-w-lg md:max-w-4xl lg:max-w-5xl bg-obsidian-deep h-full md:h-[92vh] md:max-h-[920px] flex flex-row relative border-x md:border border-white/10 md:rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.95)] overflow-hidden [overscroll-behavior:contain]">
+      <div className="w-full max-w-4xl mx-auto bg-obsidian-deep h-full flex flex-col relative md:border-x border-white/10 shadow-2xl overflow-hidden [overscroll-behavior:contain]">
         {/* COLUMNA PRINCIPAL DE MENSAJES Y FLUJO DE CHAT */}
         <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
           {/* CABECERA TÁCTICA CON JERARQUÍA ELEGANTE Y ACCIONES PRIORIZADAS */}
           <div className={`p-2 sm:p-2.5 border-b border-white/10 bg-[#09090B] flex items-center justify-between sticky top-0 ${isTacticalMenuOpen ? "z-[90]" : "z-20"} gap-2 select-none shadow-md`}>
-            {/* IDENTIDAD DEL USUARIO (AVATAR + 2 LÍNEAS LIMPIAS CON ACCESO AL PERFIL) */}
+            {/* IDENTIDAD DEL USUARIO (AVATAR + 2 LÍNEAS LIMPIAS CON ACCESO A FICHA) */}
             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
               <button
                 type="button"
@@ -286,20 +288,23 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   audioEngine.playPulse();
                   onClose();
                 }}
-                aria-label={t.chat.backToList}
-                className="p-2 -ml-1 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer active:scale-95 transition-all flex-shrink-0"
+                aria-label={t.chat.backToList || (language === "es" ? "Volver a mensajes" : "Back to chats")}
+                className="p-2 -ml-1 min-w-[44px] min-h-[44px] flex items-center gap-1 rounded-full hover:bg-white/10 text-neutral-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer active:scale-95 transition-all flex-shrink-0"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                <span className="font-mono text-xs font-bold uppercase tracking-wider hidden sm:inline">
+                  {language === "es" ? "Chats" : "Back"}
+                </span>
               </button>
 
-              {/* AVATAR CON ANILLO DE ESTADO Y TAP PARA VER PERFIL */}
+              {/* AVATAR CON ANILLO DE ESTADO Y TAP PARA ABRIR FICHA */}
               <div
                 onClick={() => {
                   audioEngine.playPulse();
-                  setSelectedProfile(profile);
+                  setIsDossierDrawerOpen(true);
                 }}
                 className="relative flex-shrink-0 cursor-pointer group"
-                title={`Ver perfil de ${profile.codename}`}
+                title={language === "es" ? `Ver ficha de ${profile.codename}` : `View bio of ${profile.codename}`}
               >
                 <div
                   className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 flex-shrink-0 bg-obsidian-card shadow-sm transition-transform group-hover:scale-105 ${
@@ -332,10 +337,10 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               <div
                 onClick={() => {
                   audioEngine.playPulse();
-                  setSelectedProfile(profile);
+                  setIsDossierDrawerOpen(true);
                 }}
                 className="min-w-0 flex-1 flex flex-col justify-center cursor-pointer group"
-                title={`Ver perfil de ${profile.codename}`}
+                title={language === "es" ? `Ver ficha de ${profile.codename}` : `View bio of ${profile.codename}`}
               >
                 {/* LÍNEA 1: Identidad Principal, Edad y Verificación */}
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -359,7 +364,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   {/* Badge Anti-Ghost compacto */}
                   {profile.isAntiGhost && (
                     <span
-                      title={`Protocolo Anti-Ghost • ${profile.respectScore || 98}% Respeto`}
+                      title={language === "es" ? `Protocolo Cero Plantones • ${profile.respectScore || 98}% Respeto` : `Anti-Ghost Protocol • ${profile.respectScore || 98}% Respect`}
                       className="inline-flex items-center flex-shrink-0 text-emerald-400"
                     >
                       <Ghost className="w-3 h-3 stroke-[2.4]" />
@@ -376,10 +381,14 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   <span className="font-mono text-neutral-300 flex-shrink-0">
                     {profile.discretizedDistance?.displayLabel || formatDist(profile.distanceMeters)}
                   </span>
-                  <span className="text-white/20 flex-shrink-0">•</span>
-                  <span className="text-neutral-300 truncate">
-                    {profile.hosting}
-                  </span>
+                  {profile.hosting && (
+                    <>
+                      <span className="text-white/20 flex-shrink-0">•</span>
+                      <span className="text-neutral-300 truncate">
+                        {profile.hosting}
+                      </span>
+                    </>
+                  )}
                   {profile.onTheClock?.isActive && (
                     <>
                       <span className="text-white/20 flex-shrink-0">•</span>
@@ -393,51 +402,90 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               </div>
             </div>
 
-          {/* CINTA DE ACCIONES TÁCTICAS (Primaria PIN + Menú Flotante 44x44px) */}
-          <div className="flex items-center gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
-            {/* Botón Unificado Coordinar Cita (RendezvousSheet) */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                setIsRendezvousSheetOpen(true);
-              }}
-              aria-label="Coordinar cita segura"
-              className={`px-3.5 py-2 min-h-[44px] flex items-center gap-1.5 rounded-full transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm font-mono text-xs font-bold ${
-                activeRendezvous?.profileId === profile.id
-                  ? "bg-bloodNeon/20 border border-bloodNeon/60 text-bloodNeon shadow-[0_0_12px_rgba(230,25,55,0.35)] animate-pulse"
-                  : "bg-electricViolet text-white hover:bg-electricViolet/90"
-              }`}
-              title="Asistente Integral de Encuentros (Sintonía + Lugar + Guardián SOS)"
-            >
-              <span className="text-sm leading-none">⚡</span>
-              <span>{activeRendezvous?.profileId === profile.id ? (language === "es" ? "PIN Activo" : "Active PIN") : (language === "es" ? "Cita" : "Date")}</span>
-            </button>
+            {/* CINTA DE ACCIONES RÁPIDAS (RETENCIÓN + FICHA + COORDINAR + MENÚ) */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
+              {/* 1. Pill Discreto de Retención / Modo Efímero */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTogglingRetention(true);
+                  audioEngine.playVaultUnlock();
+                  toggleChatRetention(profile.id);
+                  setTimeout(() => setIsTogglingRetention(false), 450);
+                }}
+                className={`px-2 py-1 min-h-[36px] rounded-xl text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border active:scale-95 ${
+                  currentRetention === "persistent"
+                    ? "bg-mintNeon/10 border-mintNeon/40 text-mintNeon hover:bg-mintNeon/20"
+                    : "bg-electricViolet/10 border-electricViolet/40 text-electricViolet-glow hover:bg-electricViolet/20"
+                }`}
+                title={currentRetention === "persistent" ? (language === "es" ? "Historial guardado en el celu (tocá para efímero)" : "History saved") : (language === "es" ? "Chat efímero (se borra al salir)" : "Ephemeral mode")}
+              >
+                {currentRetention === "persistent" ? (
+                  <Save className={`w-3.5 h-3.5 ${isTogglingRetention ? "animate-spin" : ""}`} />
+                ) : (
+                  <Lock className={`w-3.5 h-3.5 ${isTogglingRetention ? "animate-spin" : ""}`} />
+                )}
+                <span className="hidden sm:inline">{currentRetention === "persistent" ? (language === "es" ? "Guardado" : "Saved") : (language === "es" ? "Efímero" : "Burn")}</span>
+              </button>
 
-            {/* 2. Botón Menú Táctico Más Acciones [ ⋯ ] */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                setIsTacticalMenuOpen(!isTacticalMenuOpen);
-              }}
-              aria-label="Más herramientas tácticas"
-              aria-expanded={isTacticalMenuOpen}
-              className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 relative ${
-                isTacticalMenuOpen
-                  ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                  : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
-              }`}
-              title={language === "es" ? "Herramientas tácticas (Cita, Guardián SOS, En Camino, Límites)" : "Tactical tools (Date, Guardian, En route, Boundaries)"}
-            >
-              <MoreVertical className="w-4 h-4" />
-              {safetyBeacon?.isActive && (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-bloodNeon rounded-full border border-black animate-ping" />
-              )}
-            </button>
+              {/* 2. Botón Ficha del Chongo */}
+              <button
+                type="button"
+                onClick={() => {
+                  audioEngine.playPulse();
+                  setIsDossierDrawerOpen(true);
+                }}
+                aria-label={language === "es" ? "Ver ficha y datos" : "View bio"}
+                className="px-2.5 py-1 min-h-[36px] rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-neutral-200 hover:text-white font-mono text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                title={language === "es" ? "Ficha del chongo (perfil, notas y respeto)" : "Profile dossier"}
+              >
+                <span>👤</span>
+                <span className="hidden xs:inline">{language === "es" ? "Ficha" : "Bio"}</span>
+              </button>
 
-            {/* MODAL TÁCTICO CENTRADO / BOTTOM-SAFE (CERO RECORTE CON BARRA DE MENSAJES) */}
-            {isTacticalMenuOpen && (
+              {/* 3. Botón Unificado Coordinar Cita */}
+              <button
+                type="button"
+                onClick={() => {
+                  audioEngine.playPulse();
+                  setIsRendezvousSheetOpen(true);
+                }}
+                aria-label="Coordinar cita segura"
+                className={`px-3 py-1 min-h-[36px] flex items-center gap-1.5 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm font-mono text-xs font-bold ${
+                  activeRendezvous?.profileId === profile.id
+                    ? "bg-bloodNeon/20 border border-bloodNeon/60 text-bloodNeon shadow-[0_0_12px_rgba(230,25,55,0.35)] animate-pulse"
+                    : "bg-electricViolet text-white hover:bg-electricViolet/90 shadow-violet-soft"
+                }`}
+                title="Asistente Integral de Encuentros (Sintonía + Lugar + Guardián SOS)"
+              >
+                <span className="text-xs leading-none">⚡</span>
+                <span>{activeRendezvous?.profileId === profile.id ? (language === "es" ? "PIN Activo" : "Active PIN") : (language === "es" ? "Coordinar" : "Meetup")}</span>
+              </button>
+
+              {/* 4. Botón Menú Táctico Más Acciones [ ⋯ ] */}
+              <button
+                type="button"
+                onClick={() => {
+                  audioEngine.playPulse();
+                  setIsTacticalMenuOpen(!isTacticalMenuOpen);
+                }}
+                aria-label="Más herramientas tácticas"
+                aria-expanded={isTacticalMenuOpen}
+                className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 relative ${
+                  isTacticalMenuOpen
+                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
+                    : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
+                }`}
+                title={language === "es" ? "Más opciones" : "More options"}
+              >
+                <MoreVertical className="w-4 h-4" />
+                {safetyBeacon?.isActive && (
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-bloodNeon rounded-full border border-black animate-ping" />
+                )}
+              </button>
+
+              {/* MODAL TÁCTICO CENTRADO / BOTTOM-SAFE (CERO RECORTE CON BARRA DE MENSAJES) */}
+              {isTacticalMenuOpen && (
               <div
                 className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
                 onClick={(e) => {
@@ -848,6 +896,16 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
           </div>
         </div>
 
+        {/* BARRA CONTEXTUAL DINÁMICA DE ENCUENTRO (FASE 2 Y FASE 3) */}
+        <EncounterContextBar
+          profile={profile}
+          onOpenRendezvousSheet={() => setIsRendezvousSheetOpen(true)}
+          onOpenEnRoute={() => openEnRouteModal(profile)}
+          onOpenSafetyBeacon={() => openSafetyBeaconModal()}
+          onCancelRendezvousPin={activeRendezvous?.profileId === profile.id ? () => cancelRendezvousPin(profile.id) : undefined}
+          onOpenDossier={() => setIsDossierDrawerOpen(true)}
+        />
+
         {/* TOAST DE RECOMPENSA DE RESPETO */}
         {showRespectToast && (
           <div className="absolute top-16 left-3 right-3 z-30 bg-mintNeon text-obsidian-deep px-4 py-3 rounded-2xl shadow-mint-glow flex items-center justify-between animate-in slide-in-from-top duration-300 border border-mintNeon">
@@ -872,7 +930,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-300 font-black text-xs uppercase tracking-wide">
                 <Ghost className="w-4 h-4 stroke-[2.5]" />
-                <span>Salida Amable & Sexy • Modo Anti-Ghost</span>
+                <span>{language === "es" ? "Salida Amable & Sincera • Cero Plantones" : "Kind & Polite Exit • Anti-Ghost Mode"}</span>
               </div>
               <button
                 type="button"
@@ -912,105 +970,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
           </div>
         )}
 
-        {/* BANNER DE PUNTO DE ENCUENTRO ACTIVO CON CONFIRMACIÓN INLINE (CERO WINDOW.CONFIRM) */}
-        {activeRendezvous?.profileId === profile.id && (
-          <div className="bg-bloodNeon/15 border-b border-bloodNeon/50 p-3.5 space-y-2.5 animate-in slide-in-from-top-2 z-10 backdrop-blur-md">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-bloodNeon font-black text-xs uppercase tracking-wide">
-                <Navigation className="w-4 h-4 animate-pulse" />
-                <span>{language === "es" ? "Punto de Encuentro Activo" : "Active Meeting Point"}</span>
-                <span className="w-2 h-2 rounded-full bg-bloodNeon animate-ping" />
-              </div>
-              {confirmingCancelPin ? (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      cancelRendezvousPin(profile.id);
-                      setConfirmingCancelPin(false);
-                    }}
-                    className="px-2.5 py-1 bg-bloodNeon hover:bg-red-600 text-white rounded-lg text-[10px] font-mono font-black uppercase cursor-pointer"
-                  >
-                    {language === "es" ? "Sí, Anular" : "Yes, Cancel"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmingCancelPin(false)}
-                    className="px-2 py-1 bg-white/10 hover:bg-white/20 text-neutral-300 rounded-lg text-[10px] font-mono font-bold uppercase cursor-pointer"
-                  >
-                    {language === "es" ? "No" : "Keep"}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmingCancelPin(true)}
-                  className="px-3 py-1 bg-bloodNeon hover:bg-bloodNeon/80 text-white rounded-xl text-[11px] font-mono font-bold uppercase transition-all shadow-blood-glow flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  <span>{language === "es" ? "Anular Encuentro" : "Cancel PIN"}</span>
-                </button>
-              )}
-            </div>
 
-            <div className="bg-black/60 p-2.5 rounded-xl border border-bloodNeon/30 text-xs font-mono flex items-center justify-between">
-              <span className="text-neutral-200 truncate pr-2">
-                📍 {activeRendezvous.instructions}
-              </span>
-              <span className="text-white font-mono font-bold flex-shrink-0">
-                ~{activeRendezvous.distanceMeters} m
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* BARRA REFINADA: CANAL CIFRADO EFÍMERO / PERSISTENTE CON MICRO-INTERACCIÓN */}
-        <div className="px-3.5 py-1.5 border-b border-white/10 bg-[#0B0B0E] backdrop-blur-md z-10 flex-shrink-0 flex items-center justify-between gap-2 select-none">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className={`p-1 rounded-lg border ${
-              currentRetention === "persistent"
-                ? "bg-mintNeon/10 border-mintNeon/30 text-mintNeon"
-                : "bg-electricViolet/10 border-electricViolet/30 text-electricViolet-glow"
-            }`}>
-              {currentRetention === "persistent" ? (
-                <Save className={`w-3.5 h-3.5 ${isTogglingRetention ? "animate-lock-rotate" : ""}`} />
-              ) : (
-                <Lock className={`w-3.5 h-3.5 ${isTogglingRetention ? "animate-lock-rotate" : ""}`} />
-              )}
-            </div>
-            <div className="text-[11px] font-mono truncate">
-              <span className={currentRetention === "persistent" ? "text-mintNeon font-bold" : "text-white font-bold"}>
-                {currentRetention === "persistent" ? t.chat.persistentChannel : t.chat.ephemeralChannel}
-              </span>
-              <span className="text-neutral-400 text-[10px] hidden sm:inline ml-1.5">
-                · {currentRetention === "persistent" ? t.chat.persistentNotice : t.chat.ephemeralNotice}
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setIsTogglingRetention(true);
-              audioEngine.playVaultUnlock();
-              toggleChatRetention(profile.id);
-              setTimeout(() => setIsTogglingRetention(false), 450);
-            }}
-            className={`px-2.5 py-1 rounded-xl text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 flex-shrink-0 border shadow-sm ${
-              currentRetention === "persistent"
-                ? "bg-mintNeon/15 border-mintNeon/40 text-mintNeon hover:bg-mintNeon/25 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
-                : "bg-electricViolet/15 border-electricViolet/40 text-electricViolet-glow hover:bg-electricViolet/25 shadow-[0_0_10px_rgba(139,92,246,0.2)]"
-            }`}
-          >
-            {isTogglingRetention ? (
-              <span className="inline-flex items-center gap-1">
-                <span className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                <span>MODO...</span>
-              </span>
-            ) : (
-              <span>{currentRetention === "persistent" ? "EFÍMERO" : "GUARDAR"}</span>
-            )}
-          </button>
-        </div>
 
         {/* BANNER DE DINÁMICAS Y SINTONÍA ACORDADA FIJADA (PRE-FLIGHT PINNED) */}
         {pinnedPreFlight && (
@@ -1625,39 +1585,29 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                         </div>
 
                         {isRevoked ? (
-                          /* Tarjeta de Estado Revocado */
-                          <div className="p-3.5 rounded-xl bg-black/60 border border-bloodNeon/30 flex flex-col items-center justify-center text-center space-y-2.5">
-                            <div className="p-2 rounded-xl bg-bloodNeon/15 text-bloodNeon border border-bloodNeon/30">
-                              <Lock className="w-5 h-5" />
-                            </div>
-                            <div className="space-y-0.5">
-                              <span className="text-[11px] font-mono font-bold text-neutral-200 block uppercase tracking-wider">
+                          /* Pastilla compacta de Estado Revocado */
+                          <div className="flex items-center justify-between gap-2 p-2 px-3 rounded-xl bg-purple-950/30 border border-purple-500/30 text-xs my-0.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Lock className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
+                              <span className="text-[11px] font-mono text-neutral-300 truncate">
                                 {isMe
-                                  ? (t.chat.albumRevokedSenderNotice || "Dejaste de compartir este álbum en este chat")
-                                  : (t.chat.albumRevokedReceiverNotice || "Acceso Revocado por el Remitente")}
-                              </span>
-                              <span className="text-[9px] font-mono text-neutral-500 block">
-                                {isMe
-                                  ? "El destinatario ya no puede ver las fotos ni videos."
-                                  : "Esta galería ya no está disponible para su visualización."}
+                                  ? (t.chat.albumRevokedSenderNotice || "Dejaste de compartir tu álbum acá")
+                                  : (t.chat.albumRevokedReceiverNotice || "El usuario pausó este álbum")}
                               </span>
                             </div>
-
-                            {/* Acción para re-compartir si es el dueño */}
                             {isMe ? (
                               <button
                                 type="button"
                                 onClick={() => unrevokeAlbumAccessInChat(profile.id, albumId, msg.id)}
-                                className="px-3 py-1.5 rounded-lg bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-violet-soft"
+                                className="text-[10px] font-mono font-bold text-electricViolet-glow hover:text-white flex items-center gap-1 transition-colors cursor-pointer flex-shrink-0"
                               >
                                 <RefreshCw className="w-3 h-3" />
-                                <span>{t.chat.reshareAlbumInChat || "Volver a compartir"}</span>
+                                <span>{t.chat.reshareAlbumInChat || "Compartir de nuevo"}</span>
                               </button>
                             ) : (
-                              <div className="w-full py-1.5 px-3 rounded-lg bg-white/5 border border-white/10 text-neutral-500 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-not-allowed">
-                                <Lock className="w-3 h-3" />
-                                <span>{t.chat.accessRevoked || "Acceso no disponible"}</span>
-                              </div>
+                              <span className="text-[10px] font-mono text-neutral-500 flex-shrink-0">
+                                {t.chat.accessRevoked || "Pausado"}
+                              </span>
                             )}
                           </div>
                         ) : (
@@ -1885,10 +1835,10 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                     setQuickBarMode("antiGhost");
                   }}
                   className="px-2.5 py-1 rounded-full bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/40 hover:border-emerald-400 text-emerald-300 text-[10px] font-mono font-bold whitespace-nowrap transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer active:scale-95 shadow-sm"
-                  title="Cambiar a Salidas Respetuosas Anti-Ghost (+5 Karma)"
+                  title={language === "es" ? "Cambiar a Salidas Respetuosas Cero Plantones (+5 Karma)" : "Switch to Anti-Ghost Exits (+5 Karma)"}
                 >
                   <Ghost className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-                  <span>NO-GHOST (+5)</span>
+                  <span>{language === "es" ? "CERO-PLANTONES (+5)" : "NO-GHOST (+5)"}</span>
                 </button>
 
                 <span className="w-[1px] h-3.5 bg-white/15 flex-shrink-0" />
@@ -2138,185 +2088,15 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
         )}
         </div>
 
-        {/* =========================================================
-            PANEL TÁCTICO COMPLEMENTARIO (SOLO DESKTOP lg: / xl:)
-            ========================================================= */}
-        <aside className="hidden lg:flex flex-col w-72 xl:w-80 border-l border-white/10 bg-obsidian-surface/70 backdrop-blur-md h-full overflow-y-auto shrink-0 select-none p-4 space-y-4">
-          {/* Header del Panel */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-electricViolet animate-pulse shadow-violet-soft" />
-              <span className="font-mono text-[11px] font-black uppercase tracking-wider text-white">
-                {language === "es" ? "Ficha Táctica" : "Tactical Dossier"}
-              </span>
-            </div>
-            <span className="text-[9px] font-mono font-bold text-electricViolet-glow bg-electricViolet/15 border border-electricViolet/30 px-2 py-0.5 rounded-full">
-              {t.system?.live || "EN VIVO"}
-            </span>
-          </div>
-
-          {/* Foto Principal y Clic para Ver Perfil */}
-          <div
-            onClick={() => {
-              audioEngine.playPulse();
-              setSelectedProfile(profile);
-            }}
-            className="relative rounded-2xl overflow-hidden aspect-[4/5] border-2 border-white/10 hover:border-electricViolet transition-all cursor-pointer group shadow-card-elevation"
-            title="Hacé clic para ver el perfil completo y fotos"
-          >
-            <img
-              src={profile.avatarUrl}
-              alt={profile.codename}
-              className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
-                profile.isFogMode ? "filter blur-[4px] scale-105" : ""
-              }`}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
-
-            <div className="absolute bottom-3 inset-x-3 text-left">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-base font-black text-white leading-tight">
-                  {dossier?.customAlias || profile.codename}
-                </span>
-                {profile.showAge && (
-                  <span className="text-xs font-mono text-neutral-300">
-                    · {profile.age}
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] font-mono text-electricViolet-glow font-bold pt-0.5">
-                {getRoleDisplayLabel(profile.role, language)} · {formatDist(profile.distanceMeters)}
-              </div>
-            </div>
-
-            <div className="absolute top-2.5 right-2.5 p-1.5 rounded-xl bg-black/70 backdrop-blur-md text-white border border-white/10 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-              🔍
-            </div>
-          </div>
-
-          {/* Badges de Confianza y Respeto */}
-          <div className="bg-black/40 rounded-2xl p-3 border border-white/10 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-xs font-bold text-white block">
-                {language === "es" ? "Puntaje de Respeto" : "Respect Score"} ({profile.respectScore || 98})
-              </span>
-              <span className="font-mono font-bold text-mintNeon">
-                {profile.respectScore || 98}%
-              </span>
-            </div>
-            <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-mintNeon h-full rounded-full transition-all"
-                style={{ width: `${profile.respectScore || 98}%` }}
-              />
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              {profile.verification?.isVerified && (
-                <VerificationBadge verification={profile.verification} size="xs" showLabel />
-              )}
-              {profile.isAntiGhost && (
-                <AntiGhostBadge
-                  respectScore={profile.respectScore}
-                  responseRateMinutes={profile.responseRateMinutes}
-                  size="xs"
-                  showLabel
-                />
-              )}
-              {dossier?.rating && DOSSIER_VERDICT_CONFIG[dossier.rating] && (
-                <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-md flex items-center gap-1 border shadow-xs ${DOSSIER_VERDICT_CONFIG[dossier.rating].badgeColor}`}>
-                  <span>{DOSSIER_VERDICT_CONFIG[dossier.rating].icon}</span>
-                  <span>{DOSSIER_VERDICT_CONFIG[dossier.rating].shortTag[language]}</span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Suite de Acciones Rápidas 1-Tap (Desktop Sidebar) */}
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider block px-1">
-              {language === "es" ? "Para Vernos y Cuidarte" : "Meetup & Safety"}
-            </span>
-
-            {/* Armar Encuentro Paso a Paso */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                setIsRendezvousSheetOpen(true);
-              }}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-electricViolet/10 hover:bg-electricViolet/20 border border-electricViolet/30 text-white text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <span>⚡</span>
-                <span className="text-[11px]">{language === "es" ? "Armar Encuentro Paso a Paso" : "Plan Meetup Step by Step"}</span>
-              </div>
-              <span className="text-[9px] text-electricViolet-glow">{language === "es" ? "Todo en 1" : "All-in-1"}</span>
-            </button>
-
-            {/* Avisar que Ya Salí (Tiempo Estimado) */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                openEnRouteModal(profile);
-              }}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <span>🚀</span>
-                <span className="text-[11px]">{language === "es" ? "Avisar que Ya Salí" : "I'm On My Way"}</span>
-              </div>
-              <span className="text-[9px] text-neutral-400">{language === "es" ? "En camino" : "En route"}</span>
-            </button>
-
-            {/* Alerta SOS por si Algo Sale Mal */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                openSafetyBeaconModal();
-              }}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 border border-red-500/30 text-red-300 text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <span>🆘</span>
-                <span className="text-[11px]">{language === "es" ? "Alerta SOS para tu Cita" : "Safety SOS Timer"}</span>
-              </div>
-              <span className="text-[9px] text-bloodNeon">{language === "es" ? "Reloj SOS" : "SOS Timer"}</span>
-            </button>
-
-            {/* Guardar Nota Privada */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                openCreateDiaryModal(profile.id);
-              }}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-200 text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <span>📓</span>
-                <span className="text-[11px]">{language === "es" ? "Guardar Nota Privada" : "Save Private Note"}</span>
-              </div>
-              <span className="text-[9px] text-neutral-400">{language === "es" ? "Solo vos" : "Private"}</span>
-            </button>
-
-            {/* Ver Perfil y Fotos */}
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playPulse();
-                setSelectedProfile(profile);
-              }}
-              className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white text-[11px] font-mono font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 mt-2"
-            >
-              <span>{language === "es" ? "Ver Perfil y Fotos" : "View Full Profile"}</span>
-              <span>→</span>
-            </button>
-          </div>
-        </aside>
       </div>
+
+      {/* DRAWER FLOTANTE DE FICHA TÁCTICA / PERFIL (ACCESIBLE EN MOBILE Y DESKTOP) */}
+      <ChatProfileDrawer
+        isOpen={isDossierDrawerOpen}
+        onClose={() => setIsDossierDrawerOpen(false)}
+        profile={profile}
+        onOpenRendezvousSheet={() => setIsRendezvousSheetOpen(true)}
+      />
 
       {/* ASISTENTE UNIFICADO DE ENCUENTROS (FASE 2) */}
       <RendezvousSheet

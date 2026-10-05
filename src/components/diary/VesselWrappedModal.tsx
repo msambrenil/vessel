@@ -53,9 +53,15 @@ export const VesselWrappedModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="wrapped-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-lg animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-lg animate-fade-in select-none [overscroll-behavior:contain]"
+      onClick={closeWrappedModal}
     >
-      <div className="relative w-full max-w-lg bg-obsidian border border-white/15 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div
+        className="relative w-full max-w-lg bg-obsidian border-t sm:border border-white/15 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* CABECERA */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/40">
           <div className="flex items-center gap-2">
@@ -111,10 +117,10 @@ export const VesselWrappedModal: React.FC = () => {
                 audioEngine.playPulse();
                 closeWrappedModal();
               }}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
               aria-label={language === "es" ? "Cerrar retrospectiva" : "Close retrospective"}
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

@@ -92,20 +92,20 @@ export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({
         <div>
           <h2 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <UserCog className="w-5 h-5 text-electricViolet-glow" />
-            Gestión del Equipo Operativo & Permisos (RBAC)
+            Equipo & Roles Operativos (RBAC)
           </h2>
           <p className="text-neutral-400 mt-0.5">
-            Administración de cuentas de personal, niveles de autorización y control de acceso.
+            Administración del personal táctico, niveles de autorización y control de acceso.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-electricViolet text-white font-bold hover:bg-electricViolet-glow transition-colors cursor-pointer shadow-violet-soft"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-electricViolet text-white font-bold hover:bg-electricViolet-glow transition-colors cursor-pointer shadow-violet-soft touch-manipulation"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Alta de Empleado</span>
+          <span>Alta de Operador</span>
         </button>
       </div>
 
@@ -116,7 +116,7 @@ export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({
             <Key className="w-4 h-4" />
             SUPERADMIN (ROOT)
           </div>
-          <p className="text-[11px] text-neutral-300 leading-relaxed">
+          <p className="text-[11px] text-neutral-300 leading-relaxed font-sans">
             Acceso absoluto e irrestricto. Configuración de cuotas maestras, métricas financieras, altas/bajas de personal y auditoría general.
           </p>
         </div>
@@ -124,9 +124,9 @@ export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({
         <div className="p-4 rounded-xl bg-white/5 border border-blue-500/30 space-y-2">
           <div className="text-xs font-bold text-blue-400 flex items-center gap-2">
             <Shield className="w-4 h-4" />
-            MODERATOR (TRUST & SAFETY)
+            MODERACIÓN & SEGURIDAD (TRUST & SAFETY)
           </div>
-          <p className="text-[11px] text-neutral-300 leading-relaxed">
+          <p className="text-[11px] text-neutral-300 leading-relaxed font-sans">
             Verificación biométrica de identidades, resolución de reportes, sanciones disciplinarias, ajuste de Respect Karma y forzado de Modo Niebla.
           </p>
         </div>
@@ -134,9 +134,9 @@ export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({
         <div className="p-4 rounded-xl bg-white/5 border border-emerald-500/30 space-y-2">
           <div className="text-xs font-bold text-emerald-400 flex items-center gap-2">
             <ShieldCheck className="w-4 h-4" />
-            SUPPORT (CARE & OPS)
+            SOPORTE & CARE (SUPPORT)
           </div>
-          <p className="text-[11px] text-neutral-300 leading-relaxed">
+          <p className="text-[11px] text-neutral-300 leading-relaxed font-sans">
             Atención al usuario, consulta de perfiles 360°, resolución de problemas con cuentas y concesión de membresías VESSEL UNLIMITED de cortesía.
           </p>
         </div>

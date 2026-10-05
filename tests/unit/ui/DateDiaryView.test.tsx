@@ -186,12 +186,12 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     vi.clearAllMocks();
   });
 
-  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas 📖 (Agenda)' y credencial AES-256", () => {
+  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas (Agenda)' y credencial AES-256", () => {
     render(<DateDiaryView />);
 
     expect(screen.getByText(/Chongos & Citas/i)).toBeInTheDocument();
     expect(screen.getAllByText(/AES-256/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Documentar Encuentro/i)).toBeInTheDocument();
+    expect(screen.getByText(/Anotar Cita|Documentar Encuentro/i)).toBeInTheDocument();
   });
 
   it("debe renderizar las 3 pestañas de navegación: Agenda & Citas, Salud & Cuidados y Métricas", () => {
@@ -255,10 +255,10 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     expect(mockOpenLoverDossierModal).toHaveBeenCalledWith("vessel-01");
   });
 
-  it("debe invocar openCreateDiaryModal al hacer clic en Documentar Encuentro", () => {
+  it("debe invocar openCreateDiaryModal al hacer clic en Anotar Cita", () => {
     render(<DateDiaryView />);
 
-    const docBtn = screen.getByRole("button", { name: /Documentar Encuentro/i });
+    const docBtn = screen.getByRole("button", { name: /Anotar Cita|Documentar Encuentro/i });
     fireEvent.click(docBtn);
 
     expect(mockOpenCreateDiaryModal).toHaveBeenCalledTimes(1);

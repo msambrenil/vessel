@@ -72,15 +72,15 @@ export const PulseCard: React.FC<PulseCardProps> = ({
     const icon = isFast ? "⏱️" : isCuddle ? "🫂" : "🌙";
     const label = isFast
       ? language === "es"
-        ? "PUNTUAL: Sin sobremesa"
-        : "FAST ENCOUNTER"
+        ? "Express (sin vueltas)"
+        : "Fast Encounter"
       : isCuddle
       ? language === "es"
-        ? "MIMOS: Ducha y charla"
-        : "SHOWER & CUDDLE"
+        ? "Tranqui (con charla)"
+        : "Shower & Cuddle"
       : language === "es"
-      ? "PASAR LA NOCHE: Si hay química"
-      : "SLEEPOVER";
+      ? "Quedarse a dormir"
+      : "Sleepover";
 
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/40 border border-purple-500/40 text-purple-200 font-mono text-[10px] font-black uppercase tracking-wider">
@@ -168,8 +168,8 @@ export const PulseCard: React.FC<PulseCardProps> = ({
               </div>
             </div>
 
-            {/* Acción de descarte individual con target 44x44px */}
-            {pulseId && onDismissPulse && (
+            {/* Acción de descarte individual con target 44x44px (solo para modos mutual o sent) */}
+            {pulseId && onDismissPulse && (mode !== "received" || isMutual) && (
               <button
                 type="button"
                 onClick={() => {
@@ -185,39 +185,41 @@ export const PulseCard: React.FC<PulseCardProps> = ({
             )}
           </div>
 
-          {/* Chips de Rol, Logística y Reencuentro */}
-          <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            <span className="text-[10px] px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 font-mono text-neutral-200">
-              {getRoleDisplayLabel(profile.role, language)}
-            </span>
-
-            {isImmediateHost && (
-              <span className="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 font-mono font-bold flex items-center gap-1">
-                <Home className="w-3 h-3" />
-                <span>{t.pulses?.hasPlaceBadge || "Tiene lugar"}</span>
+          {/* Chips de Rol y Logística (Solo cuando es mutual o sent, para evitar redundancia con la ficha táctica) */}
+          {(mode !== "received" || isMutual) && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-[10px] px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 font-mono text-neutral-200">
+                {getRoleDisplayLabel(profile.role, language)}
               </span>
-            )}
 
-            {profile.onTheClock?.isActive && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-950/80 border border-electricViolet text-electricViolet-glow font-mono text-[9.5px] font-black uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
-                <span>⚡ YA ({profile.onTheClock.durationMinutes || 45}m)</span>
-              </span>
-            )}
+              {isImmediateHost && (
+                <span className="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 font-mono font-bold flex items-center gap-1">
+                  <Home className="w-3 h-3" />
+                  <span>{t.pulses?.hasPlaceBadge || "Pone lugar 🏠"}</span>
+                </span>
+              )}
 
-            {isReencounter && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/50 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
-                <Sparkles className="w-3 h-3" />
-                <span>{reencounterNote || t.pulses?.reencounterBadge}</span>
-              </span>
-            )}
+              {profile.onTheClock?.isActive && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-950/80 border border-electricViolet text-electricViolet-glow font-mono text-[9.5px] font-black uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
+                  <span>⚡ YA ({profile.onTheClock.durationMinutes || 45}m)</span>
+                </span>
+              )}
 
-            {renderExitProtocolPill(profile.exitProtocol)}
-          </div>
+              {isReencounter && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/50 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
+                  <Sparkles className="w-3 h-3" />
+                  <span>{reencounterNote || t.pulses?.reencounterBadge}</span>
+                </span>
+              )}
+
+              {renderExitProtocolPill(profile.exitProtocol)}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Tarjeta Táctica de Revisión de Sintonía (Pre-Flight & Doble Consentimiento) */}
+      {/* Tarjeta Táctica de Compatibilidad (Único bloque central para Zumbidos Recibidos) */}
       {mode === "received" && !isMutual && (
         <div
           data-testid="pulse-sintonia-review"
@@ -226,7 +228,7 @@ export const PulseCard: React.FC<PulseCardProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono font-black uppercase text-electricViolet-glow tracking-wider flex items-center gap-1.5">
               <span>⚡</span>
-              <span>{t.intents?.title || (language === "es" ? "Propuesta de Sintonía" : "Intent Proposal")}</span>
+              <span>{t.intents?.title || (language === "es" ? "Propuesta de Encuentro" : "Meeting Proposal")}</span>
             </span>
             <span className="text-[9.5px] font-mono text-neutral-400">
               {language === "es" ? "Doble Consentimiento Requerido" : "Double Consent Required"}
@@ -268,18 +270,35 @@ export const PulseCard: React.FC<PulseCardProps> = ({
             {profile.exitProtocol && (
               <div className="p-2 rounded-lg bg-black/40 border border-white/5 space-y-0.5">
                 <span className="text-neutral-400 block text-[9px] uppercase tracking-wider">
-                  {language === "es" ? "Salida" : "Exit"}
+                  {language === "es" ? "Ritmo" : "Pacing"}
                 </span>
                 <span className="text-purple-300 font-bold block truncate">
                   {profile.exitProtocol === "fast_encounter"
-                    ? (language === "es" ? "⏱️ Sin Sobremesa" : "⏱️ Fast Exit")
+                    ? (language === "es" ? "⏱️ Express (sin vueltas)" : "⏱️ Fast Exit")
                     : profile.exitProtocol === "chill_cuddle"
-                    ? (language === "es" ? "🫂 Ducha & Charla" : "🫂 Cuddle/Shower")
-                    : (language === "es" ? "🌙 Pasar la Noche" : "🌙 Sleepover")}
+                    ? (language === "es" ? "🫂 Tranqui (con charla)" : "🫂 Cuddle/Shower")
+                    : (language === "es" ? "🌙 Quedarse a dormir" : "🌙 Sleepover")}
                 </span>
               </div>
             )}
           </div>
+
+          {(profile.onTheClock?.isActive || isReencounter) && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/5">
+              {profile.onTheClock?.isActive && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-950/80 border border-electricViolet text-electricViolet-glow font-mono text-[9.5px] font-black uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
+                  <span>⚡ YA ({profile.onTheClock.durationMinutes || 45}m)</span>
+                </span>
+              )}
+              {isReencounter && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-950/50 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold">
+                  <Sparkles className="w-3 h-3" />
+                  <span>{reencounterNote || t.pulses?.reencounterBadge}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -308,11 +327,11 @@ export const PulseCard: React.FC<PulseCardProps> = ({
                 onDismissPulse(pulseId);
               }
             }}
-            aria-label={t.intents?.declinePolite || "Declinar con Respeto"}
+            aria-label={t.intents?.declinePolite || "Paso, gracias"}
             className="min-h-[44px] px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 transition-all text-xs font-mono font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
           >
             <X className="w-4 h-4 text-neutral-400" />
-            <span className="truncate">{t.intents?.declinePolite || (language === "es" ? "Declinar con Respeto" : "Decline with Care")}</span>
+            <span className="truncate">{t.intents?.declinePolite || "Paso, gracias"}</span>
           </button>
         ) : (
           /* Si es Enviado no mutuo: Ver Ficha Completa */
@@ -337,11 +356,11 @@ export const PulseCard: React.FC<PulseCardProps> = ({
               onReturnPulse(profile.id);
               onOpenChat(profile.id);
             }}
-            aria-label={t.intents?.acceptTone || "Aceptar Sintonía"}
+            aria-label={t.intents?.acceptTone || "Aceptar Zumbido ⚡"}
             className="min-h-[44px] px-3 py-2.5 rounded-xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:brightness-110 shadow-violet-soft border border-electricViolet/60 transition-all text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             <Zap className="w-4 h-4 fill-current stroke-[2.5]" />
-            <span className="truncate">{t.intents?.acceptTone ? `${t.intents.acceptTone} ⚡` : (language === "es" ? "Aceptar Sintonía ⚡" : "Accept Intent ⚡")}</span>
+            <span className="truncate">{t.intents?.acceptTone ? `${t.intents.acceptTone}` : "Aceptar Zumbido ⚡"}</span>
           </button>
         ) : (
           <button

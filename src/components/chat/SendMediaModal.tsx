@@ -263,12 +263,15 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="send-media-modal-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-2xl animate-fade-in p-0 sm:p-4 select-none"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-2xl animate-fade-in p-0 sm:p-4 select-none [overscroll-behavior:contain]"
+      onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-obsidian-surface border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-card-elevation flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-slide-up relative"
+        className="w-full max-w-lg bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-card-elevation flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-slide-up relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* CABECERA TÁCTICA */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-obsidian-deep/95 backdrop-blur-md">
           <div className="flex items-center gap-3">

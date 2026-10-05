@@ -71,11 +71,20 @@ export const ItsExposureModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={language === "es" ? "Alerta Clínica Anónima" : "Anonymous Health Alert"}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
+      onClick={closeItsExposureModal}
+    >
       <div
-        className="relative w-full max-w-lg bg-[#0c0c0c] border border-red-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-lg bg-[#0c0c0c] border-t sm:border border-red-500/50 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Header Táctico */}
         <div className="p-4 border-b border-red-500/30 bg-red-950/30 flex items-center justify-between">
           <div className="flex items-center gap-2.5">

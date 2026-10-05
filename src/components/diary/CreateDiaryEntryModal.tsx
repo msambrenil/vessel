@@ -7,7 +7,6 @@ import {
   DiaryEncounterType,
   DiaryWouldRepeat,
   RoleType,
-  YoSoyType,
 } from "@/types/vessel";
 import {
   X,
@@ -16,87 +15,84 @@ import {
   MapPin,
   Star,
   Flame,
-  Shield,
   ShieldCheck,
   RotateCcw,
   Tag,
   Lock,
-  HeartHandshake,
   CheckCircle2,
   ChevronRight,
   ChevronLeft,
   User,
-  Plus,
   AlertCircle,
   Bell,
-  Sparkles,
   Camera,
   Upload,
   Trash2,
   Loader2,
+  Search,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { ALL_ROLE_TYPES, getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { getLocalTodayIso, getLocalDaysOffsetIso } from "@/lib/calendar/dateLocale";
-import { uploadAndEncryptVaultPhoto, VaultEncryptedImage } from "@/lib/security/encryptedPhotoService";
+import { uploadAndEncryptVaultPhoto } from "@/lib/security/encryptedPhotoService";
 
 interface CreateDiaryEntryModalProps {
   onClose: () => void;
 }
 
 const LOCATION_CATEGORIES: { id: DiaryLocationCategory; label: string; icon: string }[] = [
-  { id: "my_place", label: "Mi Sitio / Mi Bóveda", icon: "🏠" },
-  { id: "their_place", label: "Su Sitio / Su Lugar", icon: "🔑" },
-  { id: "club_darkroom", label: "Club / Sala Oscura", icon: "⚡" },
+  { id: "my_place", label: "Mi Casa / Mi Lugar", icon: "🏠" },
+  { id: "their_place", label: "Su Casa / Su Lugar", icon: "🔑" },
   { id: "bar_lounge", label: "Bar / Tragos / Café", icon: "🍸" },
-  { id: "hotel", label: "Hotel / Alojamiento", icon: "🏨" },
+  { id: "club_darkroom", label: "Boliche / Darkroom", icon: "⚡" },
+  { id: "hotel", label: "Telo / Hotel", icon: "🏨" },
   { id: "outdoor_cruising", label: "Al Aire Libre", icon: "🌲" },
   { id: "other", label: "Otro Espacio", icon: "📍" },
 ];
 
-const ENCOUNTER_TYPES: { id: DiaryEncounterType; label: string; desc: string }[] = [
-  { id: "intense_carnal", label: "Carnal de Alta Intensidad", desc: "Encuentro físico directo y pasional" },
-  { id: "darkroom_session", label: "Sesión en Cuarto Oscuro", desc: "Atmósfera oscura y dinámica libre" },
-  { id: "kink_leather", label: "Cuero y Fetiches", desc: "Juego de rol, arnés o fetiches acordados" },
-  { id: "first_date", label: "Primera Cita", desc: "Conocimiento previo y primera química" },
-  { id: "regular_playmate", label: "Compañero Recurrente", desc: "Encuentro con conocido o amigo" },
-  { id: "casual", label: "Casual o Espontáneo", desc: "Momento improvisado" },
-  { id: "chill_talk", label: "Relajado y Buena Charla", desc: "Conexión pausada y tranquila" },
+const ENCOUNTER_TYPES: { id: DiaryEncounterType; label: string; desc: string; icon: string }[] = [
+  { id: "intense_carnal", label: "Carnal & Fuego", desc: "Encuentro físico directo y pasional", icon: "🔥" },
+  { id: "chill_talk", label: "Chill & Charla", desc: "Conexión pausada, tragos y risas", icon: "☕" },
+  { id: "first_date", label: "Primera Cita", desc: "Conocimiento previo y primera química", icon: "✨" },
+  { id: "regular_playmate", label: "Chongo Fijo", desc: "Encuentro con conocido o habitual", icon: "🔄" },
+  { id: "kink_leather", label: "Cuero & Fetiches", desc: "Juego de rol, arnés o fetiches", icon: "⛓️" },
+  { id: "darkroom_session", label: "Sala Oscura / Fiesta", desc: "Atmósfera libre y adrenalina", icon: "⚡" },
+  { id: "casual", label: "Casual / Espontáneo", desc: "Plan improvisado al paso", icon: "💫" },
 ];
 
 const QUICK_TAGS = [
   "Química Brutal",
   "Puntual",
-  "Respeto a Límites",
-  "Protección Acordada",
+  "Respeto a Códigos",
   "Lugar Impecable",
-  "Música Top",
+  "Buena Música",
   "Muy Directo",
-  "Conversación Genial",
-  "Intensidad 4",
-  "Repetir Pronto",
+  "Charla Genial",
+  "Para Repetir",
   "Atmósfera Íntima",
 ];
 
 const EXTERNAL_AVATAR_PRESETS = [
   {
     id: "preset-techno",
-    label: "Máscara Cyber",
+    label: "Cyber Mask",
     url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
   },
   {
     id: "preset-minimal",
-    label: "Silueta en Sombras",
+    label: "Silueta",
     url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
   },
   {
     id: "preset-urban",
-    label: "Perfil Urbano",
+    label: "Urbano",
     url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
   },
   {
     id: "preset-classic",
-    label: "Blanco y Negro Táctico",
+    label: "B&W",
     url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
   },
 ];
@@ -132,14 +128,19 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
   const favoriteProfileIds = favIdsProp || [];
   const isFavoriteProfile = isFavProp || (() => false);
 
-  // Paso actual (1: Perfil, 2: Calendario & Lugar, 3: Satisfacción & Métricas, 4: Notas & Salud)
-  // Si viene pre-vinculado desde un Zumbido Mutuo o Chat, salta directo al Paso 2 (Fecha, Hora y Lugar)
-  const [currentStep, setCurrentStep] = useState<number>(
-    diaryModalPreselectedProfileId && !editingDiaryEntry ? 2 : 1
+  // Modo de Intención: Cita Futura (Agendar) vs Encuentro Pasado (Pasar en limpio)
+  const [isUpcoming, setIsUpcoming] = useState<boolean>(
+    editingDiaryEntry ? editingDiaryEntry.isUpcoming : true
   );
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
 
-  // Modo de perfil: 'vessel_profile' o 'custom'
+  // Wizard adaptativo de 2 pasos máximos
+  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+
+  // Filtro y búsqueda de perfiles
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState<boolean>(false);
+  const [searchProfileQuery, setSearchProfileQuery] = useState<string>("");
+
+  // Modo de contacto: perfil VESSEL o contacto externo
   const [profileMode, setProfileMode] = useState<"vessel_profile" | "custom">(
     editingDiaryEntry?.person.isExternalProfile ? "custom" : "vessel_profile"
   );
@@ -156,13 +157,16 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     editingDiaryEntry?.person.age ? String(editingDiaryEntry.person.age) : ""
   );
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string>(
-    editingDiaryEntry?.person.isExternalProfile ? (editingDiaryEntry.person.avatarUrl || "") : ""
+    editingDiaryEntry?.person.isExternalProfile ? editingDiaryEntry.person.avatarUrl || "" : ""
   );
+
+  // Foto cifrada
   const [isProcessingPhoto, setIsProcessingPhoto] = useState<boolean>(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Fotos de chat adjuntas
   const [selectedArchivedPhotos, setSelectedArchivedPhotos] = useState<string[]>(
     editingDiaryEntry?.attachedPhotos || []
   );
@@ -183,11 +187,12 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     return Array.from(new Set(photos));
   }, [chatMessages, selectedProfileId]);
 
+  // Notas privadas sobre la persona
   const [personPrivateNotes, setPersonPrivateNotes] = useState<string>(
     editingDiaryEntry?.person.privateNotes || ""
   );
 
-  // Fecha, Hora y Tipo (Hora local Argentina UTC-3 segura + redondeo a bloque de 30m e inferencia de lugar)
+  // Fecha y Hora
   const todayStr = getLocalTodayIso();
   const preselectedProfileObj = profiles.find((p) => p.id === diaryModalPreselectedProfileId);
   const theirHasPlace = Boolean(
@@ -207,9 +212,6 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
   const [time, setTime] = useState<string>(
     editingDiaryEntry?.time || getNextRoundedHalfHourTime(30)
   );
-  const [isUpcoming, setIsUpcoming] = useState<boolean>(
-    editingDiaryEntry ? editingDiaryEntry.isUpcoming : Boolean(diaryModalPreselectedProfileId)
-  );
   const [locationCategory, setLocationCategory] = useState<DiaryLocationCategory>(
     editingDiaryEntry?.location.category || inferredDefaultLocation
   );
@@ -225,7 +227,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     editingDiaryEntry?.encounterType || "intense_carnal"
   );
 
-  // Satisfacción y Métricas (escala unificada 1 a 5)
+  // Satisfacción y Métricas (escala 1 a 5)
   const [expectationsRating, setExpectationsRating] = useState<number>(
     editingDiaryEntry?.satisfaction?.expectationsRating || 5
   );
@@ -239,7 +241,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     editingDiaryEntry?.satisfaction?.wouldRepeat || "yes"
   );
 
-  // Notas, Tags y Salud
+  // Notas privadas, tags y acordeón secundario
   const [privateNotes, setPrivateNotes] = useState<string>(
     editingDiaryEntry?.privateNotes || ""
   );
@@ -247,10 +249,12 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     editingDiaryEntry?.tags || ["Química Brutal", "Puntual"]
   );
   const [customTagInput, setCustomTagInput] = useState<string>("");
+  const [isVaultAccordionOpen, setIsVaultAccordionOpen] = useState<boolean>(
+    Boolean(editingDiaryEntry?.privateNotes || editingDiaryEntry?.attachedPhotos?.length)
+  );
 
-  // Recordatorio de Salud (por defecto 90 días después en hora local)
+  // Salud Preventiva (90 días)
   const defaultDueDateStr = getLocalDaysOffsetIso(90);
-
   const [healthReminderEnabled, setHealthReminderEnabled] = useState<boolean>(
     editingDiaryEntry?.healthRoutineReminder?.enabled ?? true
   );
@@ -260,7 +264,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
 
   const [isSaving, setIsSaving] = useState(false);
 
-  // Si hay perfil preseleccionado o entrada en edición al abrir
+  // Inicialización de perfiles
   useEffect(() => {
     if (diaryModalPreselectedProfileId) {
       setSelectedProfileId(diaryModalPreselectedProfileId);
@@ -279,7 +283,28 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     }
   }, [diaryModalPreselectedProfileId, editingDiaryEntry]);
 
-  // Manejador de subida de imagen cifrada AES-GCM 256 bits al servidor de la app
+  // Lista de perfiles filtrados
+  const filteredProfiles = useMemo(() => {
+    return profiles
+      .filter((p) => {
+        if (showOnlyFavorites && !isFavoriteProfile(p.id)) return false;
+        if (!searchProfileQuery.trim()) return true;
+        const q = searchProfileQuery.toLowerCase().trim();
+        return (
+          p.codename.toLowerCase().includes(q) ||
+          p.role?.toLowerCase().includes(q) ||
+          p.yoSoy?.toLowerCase().includes(q)
+        );
+      })
+      .sort((a, b) => {
+        const aFav = isFavoriteProfile(a.id) ? 1 : 0;
+        const bFav = isFavoriteProfile(b.id) ? 1 : 0;
+        if (aFav !== bFav) return bFav - aFav;
+        return a.codename.localeCompare(b.codename);
+      });
+  }, [profiles, showOnlyFavorites, searchProfileQuery, isFavoriteProfile]);
+
+  // Subida de imagen cifrada AES-256
   const handlePhotoUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setPhotoError("Por favor seleccioná un archivo de imagen válido (JPG, PNG o WEBP).");
@@ -355,6 +380,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
 
   const handleSave = () => {
     setIsSaving(true);
+    audioEngine.playSubBass(55, 0.25);
 
     const linkedVesselProfile =
       profileMode === "vessel_profile"
@@ -372,11 +398,16 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
         ? linkedVesselProfile.avatarUrl
         : customAvatarUrl.trim() ||
           "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-      age: linkedVesselProfile ? linkedVesselProfile.age : (parsedAge && !isNaN(parsedAge) ? parsedAge : undefined),
+      age: linkedVesselProfile
+        ? linkedVesselProfile.age
+        : parsedAge && !isNaN(parsedAge)
+        ? parsedAge
+        : undefined,
       role: linkedVesselProfile ? linkedVesselProfile.role : customRole,
       yoSoy: linkedVesselProfile ? linkedVesselProfile.yoSoy : undefined,
       privateNotes: personPrivateNotes.trim() || undefined,
       isExternalProfile: profileMode === "custom",
+      sharedPhotos: selectedArchivedPhotos,
     };
 
     const location = {
@@ -398,10 +429,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
       : undefined;
 
     const entryData = {
-      person: {
-        ...person,
-        sharedPhotos: selectedArchivedPhotos,
-      },
+      person,
       date,
       time,
       isUpcoming,
@@ -432,203 +460,707 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     setTimeout(() => {
       setIsSaving(false);
       onClose();
-    }, 400);
+    }, 350);
   };
 
   const getExpectationLabel = (val: number) => {
     switch (val) {
       case 1:
-        return "Muy por debajo";
+        return t.diary?.modalRatingBad || "Ni ahí / Para el olvido";
       case 2:
-        return "Por debajo de lo esperado";
+        return t.diary?.modalRatingPoor || "Más o menos";
       case 3:
-        return "Cumplió lo esperado";
+        return t.diary?.modalRatingGood || "Cumplió lo esperado";
       case 4:
-        return "Muy buena experiencia";
+        return t.diary?.modalRatingVeryGood || "Muy buena experiencia";
       case 5:
-        return "Superó todas las expectativas 🔥";
+        return t.diary?.modalRatingSuper || "Superó todo 🔥";
       default:
         return "";
     }
   };
 
+  const selectedPersonSummary = useMemo(() => {
+    if (profileMode === "vessel_profile") {
+      const p = profiles.find((pr) => pr.id === selectedProfileId);
+      return p ? { name: p.codename, avatar: p.avatarUrl } : null;
+    }
+    return {
+      name: customCodename.trim() || "Contacto de afuera",
+      avatar: customAvatarUrl || null,
+    };
+  }, [profileMode, selectedProfileId, profiles, customCodename, customAvatarUrl]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex justify-center items-center p-2 sm:p-4 select-none animate-in fade-in">
-      <div className="w-full max-w-lg bg-obsidian-surface border border-white/10 rounded-3xl flex flex-col max-h-[92vh] overflow-hidden shadow-card-elevation relative">
-        {/* Cabecera del Modal */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-obsidian-deep/80 backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-electricViolet-glow">
-              <Calendar className="w-4 h-4" />
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Cita Agendada"
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex justify-center items-end sm:items-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[88vh] sm:max-h-[92vh] overflow-hidden shadow-card-elevation relative animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
+        {/* Cabecera Táctica del Modal */}
+        <div className="p-3.5 sm:p-4 border-b border-white/10 bg-obsidian-deep/90 backdrop-blur-md space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-electricViolet-glow shadow-violet-soft">
+                {isUpcoming ? <Calendar className="w-4 h-4" /> : <Flame className="w-4 h-4" />}
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white tracking-wide">
+                  {editingDiaryEntry
+                    ? isUpcoming
+                      ? t.diary?.modalEditScheduleTitle || "Editar Cita Agendada"
+                      : t.diary?.modalEditLogTitle || "Editar Cita Pasada"
+                    : isUpcoming
+                    ? t.diary?.modalScheduleTitle || "Agendar Salida"
+                    : t.diary?.modalLogTitle || "Pasar Cita en Limpio"}
+                </h2>
+                <p className="text-[11px] text-neutral-400 font-mono">
+                  {currentStep === 1
+                    ? `${t.diary?.modalStep1Of2 || "Paso 1 de 2"} • ${
+                        isUpcoming
+                          ? t.diary?.modalStepWho || "¿Con quién?"
+                          : t.diary?.modalStepWhoWhere || "¿Quién y Dónde fue?"
+                      }`
+                    : `${t.diary?.modalStep2Of2 || "Paso 2 de 2"} • ${
+                        isUpcoming
+                          ? t.diary?.modalStepLogistics || "¿Cuándo y Dónde?"
+                          : t.diary?.modalStepChemistry || "La Ficha & Química"
+                      }`}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-white tracking-wide uppercase">
-                {editingDiaryEntry ? "Editar Entrada de Diario" : "Documentar Encuentro en el Diario"}
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                Paso {currentStep} de {isUpcoming ? 2 : 4} •{" "}
-                {currentStep === 1
-                  ? "Persona & Perfil"
-                  : currentStep === 2
-                  ? (isUpcoming ? "Fecha, Lugar & Preparación" : "Fecha, Hora & Lugar")
-                  : currentStep === 3
-                  ? "Química & Satisfacción"
-                  : "Notas Confidenciales & Salud"}
-              </p>
-            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar modal"
+              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal de diario"
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+          {/* Switch de Intención Superior (Agendar vs Pasar en Limpio) */}
+          {!editingDiaryEntry && (
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-black/50 rounded-2xl border border-white/5">
+              <button
+                type="button"
+                data-testid="diary-modal-tab-schedule"
+                onClick={() => {
+                  if (!isUpcoming) {
+                    setIsUpcoming(true);
+                    audioEngine.playPulse();
+                  }
+                }}
+                aria-pressed={isUpcoming}
+                className={`py-2 px-3 min-h-[40px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                  isUpcoming
+                    ? "bg-electricViolet text-white shadow-violet-soft font-extrabold border border-electricViolet/50"
+                    : "text-neutral-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <span>{t.diary?.modalModeScheduleTab || "📅 Agendar Salida"}</span>
+              </button>
 
-        {/* Indicador de Pasos (Progreso adaptativo) */}
-        <div className={`grid ${isUpcoming ? "grid-cols-2" : "grid-cols-4"} gap-1.5 p-3 bg-black/40 border-b border-white/5`}>
-          {(isUpcoming ? [1, 2] : [1, 2, 3, 4]).map((step) => (
+              <button
+                type="button"
+                data-testid="diary-modal-tab-log"
+                onClick={() => {
+                  if (isUpcoming) {
+                    setIsUpcoming(false);
+                    audioEngine.playPulse();
+                  }
+                }}
+                aria-pressed={!isUpcoming}
+                className={`py-2 px-3 min-h-[40px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                  !isUpcoming
+                    ? "bg-electricViolet text-white shadow-violet-soft font-extrabold border border-electricViolet/50"
+                    : "text-neutral-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <span>{t.diary?.modalModeLogTab || "⚡ Pasar en Limpio"}</span>
+              </button>
+            </div>
+          )}
+
+          {/* Barra de progreso de 2 pasos */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
             <button
-              key={step}
               type="button"
-              onClick={() => setCurrentStep(step)}
-              aria-label={`Ir al paso ${step}`}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                currentStep >= step ? "bg-electricViolet shadow-violet-soft" : "bg-white/10"
+              onClick={() => setCurrentStep(1)}
+              aria-label="Ir al paso 1"
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                currentStep >= 1 ? "bg-electricViolet shadow-violet-soft" : "bg-white/10"
               }`}
             />
-          ))}
+            <button
+              type="button"
+              onClick={() => setCurrentStep(2)}
+              aria-label="Ir al paso 2"
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                currentStep === 2 ? "bg-electricViolet shadow-violet-soft" : "bg-white/10"
+              }`}
+            />
+          </div>
         </div>
 
-        {/* Contenido Modular con Scroll */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {/* ==========================================
-              PASO 1: MODALIDAD & PERFIL DE LA PERSONA
-              ========================================== */}
-          {currentStep === 1 && (
-            <div className="space-y-4 animate-in fade-in">
-              {/* Selector Principal: Encuentro Concretado vs Cita Futura (Agendada) */}
-              <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/10">
-                <label className="text-xs font-bold text-electricViolet-glow uppercase tracking-wider block mb-2 font-mono">
-                  1. Modalidad del Registro
-                </label>
-                <div className="grid grid-cols-2 gap-2">
+        {/* ========================================================
+            CUERPO DEL MODAL (SCROLLABLE, FLUJO ADAPTATIVO 2 PASOS)
+            ======================================================== */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* =======================================================
+              RUTA 1: CITA FUTURA (isUpcoming = true)
+              ======================================================= */}
+          {isUpcoming ? (
+            currentStep === 1 ? (
+              /* PASO 1 CITA FUTURA: ¿CON QUIÉN SALÍS? */
+              <div className="space-y-4 animate-in fade-in">
+                {/* Selector Chongo de la App vs Alguien de afuera */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-obsidian-card rounded-2xl border border-white/5">
                   <button
                     type="button"
-                    onClick={() => setIsUpcoming(false)}
-                    aria-pressed={!isUpcoming}
-                    className={`py-2.5 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                      !isUpcoming
-                        ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
-                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
-                    }`}
-                  >
-                    ✓ Encuentro Concretado
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsUpcoming(true)}
-                    aria-pressed={isUpcoming}
-                    className={`py-2.5 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                      isUpcoming
-                        ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
-                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
-                    }`}
-                  >
-                    📅 Cita Futura (Agendar)
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5">
-                <label className="text-xs font-bold text-electricViolet-glow uppercase tracking-wider block mb-2 font-mono">
-                  2. Tipo de Vinculación
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setProfileMode("vessel_profile")}
+                    onClick={() => {
+                      setProfileMode("vessel_profile");
+                      audioEngine.playPulse();
+                    }}
                     aria-pressed={profileMode === "vessel_profile"}
-                    className={`py-2.5 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                    className={`py-2 px-3 min-h-[42px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
                       profileMode === "vessel_profile"
-                        ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
-                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
+                        ? "bg-electricViolet/20 border-electricViolet text-white font-extrabold shadow-violet-soft"
+                        : "border-transparent text-neutral-400 hover:text-white"
                     }`}
                   >
-                    Perfil VESSEL (Matriz)
+                    {t.diary?.modalWhoTabVessel || "Chongo de la App"}
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setProfileMode("custom")}
+                    onClick={() => {
+                      setProfileMode("custom");
+                      audioEngine.playPulse();
+                    }}
                     aria-pressed={profileMode === "custom"}
-                    className={`py-2.5 px-3 min-h-[44px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                    className={`py-2 px-3 min-h-[42px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
                       profileMode === "custom"
-                        ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
-                        : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
+                        ? "bg-electricViolet/20 border-electricViolet text-white font-extrabold shadow-violet-soft"
+                        : "border-transparent text-neutral-400 hover:text-white"
                     }`}
                   >
-                    Contacto Externo
+                    {t.diary?.modalWhoTabExternal || "Alguien de afuera"}
                   </button>
                 </div>
+
+                {/* Contenido: Si es Chongo de VESSEL */}
+                {profileMode === "vessel_profile" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="text"
+                          value={searchProfileQuery}
+                          onChange={(e) => setSearchProfileQuery(e.target.value)}
+                          placeholder={t.diary?.modalSearchPlaceholder || "Buscar por nombre, apodo..."}
+                          className="w-full pl-8 pr-3 py-2 rounded-xl bg-obsidian-card border border-white/10 text-white text-xs placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
+                        />
+                      </div>
+
+                      {/* Toggle Solo Favoritos */}
+                      <button
+                        type="button"
+                        data-testid="diary-modal-toggle-only-favorites"
+                        onClick={() => setShowOnlyFavorites((prev) => !prev)}
+                        aria-pressed={showOnlyFavorites}
+                        className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                          showOnlyFavorites
+                            ? "bg-amber-500/25 border-amber-400 text-amber-300 font-black shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-amber-300"
+                        }`}
+                      >
+                        <Star className={`w-3.5 h-3.5 ${showOnlyFavorites ? "fill-amber-400 text-amber-400" : "text-amber-400/70"}`} />
+                        <span>{t.diary?.filterFavoritesOnly || "Favoritos"}</span>
+                        {favoriteProfileIds.length > 0 && (
+                          <span className="text-[10px] px-1 rounded-full bg-white/10 text-neutral-300">
+                            {favoriteProfileIds.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Lista táctil de perfiles */}
+                    <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
+                      {filteredProfiles.length === 0 ? (
+                        <div className="text-center py-8 text-neutral-500 text-xs font-mono">
+                          No encontramos contactos con ese nombre.
+                        </div>
+                      ) : (
+                        filteredProfiles.map((p) => {
+                          const isSelected = selectedProfileId === p.id;
+                          const isFav = isFavoriteProfile(p.id);
+                          return (
+                            <div
+                              key={p.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                setSelectedProfileId(p.id);
+                                audioEngine.playPulse();
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setSelectedProfileId(p.id);
+                                }
+                              }}
+                              aria-label={`Seleccionar a ${p.codename}`}
+                              className={`p-3 min-h-[52px] rounded-2xl border flex items-center justify-between cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                                isSelected
+                                  ? "bg-electricViolet/20 border-electricViolet text-white shadow-violet-soft font-bold"
+                                  : isFav
+                                  ? "bg-amber-950/20 border-amber-500/30 text-neutral-200 hover:border-amber-400/50"
+                                  : "bg-obsidian-card border-white/5 text-neutral-300 hover:border-white/20"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative flex-shrink-0">
+                                  <img
+                                    src={p.avatarUrl}
+                                    alt={p.codename}
+                                    className="w-10 h-10 rounded-xl object-cover border border-white/10"
+                                  />
+                                  {isFav && (
+                                    <Star className="w-3.5 h-3.5 absolute -top-1 -right-1 fill-amber-400 text-amber-400 drop-shadow" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                                    <span>{p.codename}</span>
+                                    {p.age && <span className="text-[10px] font-mono text-neutral-400 font-normal">({p.age})</span>}
+                                  </div>
+                                  <div className="text-[11px] text-neutral-400 font-mono">
+                                    {p.role ? getRoleDisplayLabel(p.role as RoleType, language, t) : "Versátil"}
+                                    {p.mobility && ` • ${p.mobility}`}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {isSelected && (
+                                <CheckCircle2 className="w-5 h-5 text-mintNeon flex-shrink-0 stroke-[2.5]" />
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Formulario de Contacto Externo */
+                  <div className="space-y-3 bg-obsidian-card p-3.5 rounded-2xl border border-white/5">
+                    <div>
+                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                        {t.diary?.modalExternalNameLabel || "Nombre o apodo del contacto"}
+                      </label>
+                      <input
+                        type="text"
+                        value={customCodename}
+                        onChange={(e) => setCustomCodename(e.target.value)}
+                        placeholder={t.diary?.modalExternalNamePlaceholder || "Ej: Lucas del gym, Facu after..."}
+                        className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                          {t.diary?.modalExternalRoleLabel || "Rol en la cama"}
+                        </label>
+                        <select
+                          value={customRole}
+                          onChange={(e) => setCustomRole(e.target.value as RoleType)}
+                          className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer"
+                        >
+                          {ALL_ROLE_TYPES.map((r) => (
+                            <option key={r} value={r}>
+                              {getRoleDisplayLabel(r, language, t)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                          {t.diary?.modalExternalAgeLabel || "Edad (opcional)"}
+                        </label>
+                        <input
+                          type="number"
+                          min={18}
+                          max={99}
+                          value={customAge}
+                          onChange={(e) => setCustomAge(e.target.value)}
+                          placeholder="Ej: 28"
+                          className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Presets rápidos de avatar para contacto de afuera */}
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-neutral-500 block mb-1.5 font-bold">
+                        Avatar de referencia:
+                      </span>
+                      <div className="grid grid-cols-4 gap-2">
+                        {EXTERNAL_AVATAR_PRESETS.map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              setCustomAvatarUrl(preset.url);
+                              audioEngine.playPulse();
+                            }}
+                            className={`p-1.5 rounded-xl border flex flex-col items-center gap-1 cursor-pointer transition-all ${
+                              customAvatarUrl === preset.url
+                                ? "border-electricViolet bg-electricViolet/20"
+                                : "border-white/5 bg-black/40 hover:border-white/20"
+                            }`}
+                          >
+                            <img
+                              src={preset.url}
+                              alt={preset.label}
+                              className="w-9 h-9 rounded-lg object-cover"
+                            />
+                            <span className="text-[9px] font-mono text-neutral-400 truncate max-w-full">
+                              {preset.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notas privadas de la persona (solo para tus ojos) */}
+                <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5">
+                  <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5 mb-1.5">
+                    <Lock className="w-3.5 h-3.5 text-mintNeon" />
+                    <span>{t.diary?.modalCustomNotesLabel || "Notas privadas sobre la persona (solo para vos)"}</span>
+                  </label>
+                  <textarea
+                    value={personPrivateNotes}
+                    onChange={(e) => setPersonPrivateNotes(e.target.value)}
+                    rows={2}
+                    placeholder={t.diary?.modalCustomNotesPlaceholder || "Preferencias, gustos, cosas a tener en cuenta..."}
+                    className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-neutral-200 text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet resize-none"
+                  />
+                </div>
               </div>
-
-              {profileMode === "vessel_profile" ? (
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-electricViolet-glow" />
-                      Seleccioná el perfil encontrado
-                    </label>
-
-                    {/* Toggle Rápido de Solo Favoritos */}
+            ) : (
+              /* PASO 2 CITA FUTURA: ¿CUÁNDO Y DÓNDE? */
+              <div className="space-y-4 animate-in fade-in">
+                {/* Badge Resumen de Quién */}
+                {selectedPersonSummary && (
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-electricViolet/10 border border-electricViolet/30">
+                    <div className="flex items-center gap-2.5">
+                      {selectedPersonSummary.avatar ? (
+                        <img
+                          src={selectedPersonSummary.avatar}
+                          alt={selectedPersonSummary.name}
+                          className="w-8 h-8 rounded-xl object-cover border border-electricViolet/40"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-xl bg-electricViolet/20 flex items-center justify-center text-electricViolet-glow">
+                          <User className="w-4 h-4" />
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-[10px] font-mono text-neutral-400 block uppercase">Cita con</span>
+                        <span className="text-xs font-bold text-white">{selectedPersonSummary.name}</span>
+                      </div>
+                    </div>
                     <button
                       type="button"
-                      data-testid="diary-modal-toggle-only-favorites"
-                      onClick={() => setShowOnlyFavorites((prev) => !prev)}
-                      aria-pressed={showOnlyFavorites}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold flex items-center gap-1.5 transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
-                        showOnlyFavorites
-                          ? "bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.3)] font-black"
-                          : "bg-white/5 border-white/10 text-neutral-400 hover:text-amber-300 hover:bg-white/10"
+                      onClick={() => setCurrentStep(1)}
+                      className="text-[11px] text-electricViolet-glow font-mono font-bold hover:underline cursor-pointer"
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                )}
+
+                {/* Selector Cuándo: Fecha y Hora */}
+                <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-electricViolet-glow" />
+                      <span>{t.diary?.modalWhenLabel || "¿Cuándo es la salida?"}</span>
+                    </label>
+                    <span className="text-[11px] font-mono font-bold text-electricViolet-glow">
+                      {date === todayStr ? "Hoy" : date} • {time}hs
+                    </span>
+                  </div>
+
+                  {/* Chips rápidos de fecha */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDate(todayStr)}
+                      className={`py-2 px-2.5 min-h-[38px] rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        date === todayStr
+                          ? "bg-electricViolet text-white border-electricViolet font-black shadow-violet-soft"
+                          : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
                       }`}
                     >
-                      <Star
-                        className={`w-3 h-3 ${
-                          showOnlyFavorites ? "fill-amber-400 text-amber-400" : "text-amber-400/70"
-                        }`}
-                      />
-                      <span>{t.diary?.filterFavoritesOnly || "Solo Favoritos"}</span>
-                      {favoriteProfileIds.length > 0 && (
-                        <span className={`text-[9px] px-1 rounded-full font-mono ${
-                          showOnlyFavorites ? "bg-amber-400 text-black font-black" : "bg-white/10 text-neutral-400"
-                        }`}>
-                          {favoriteProfileIds.length}
-                        </span>
-                      )}
+                      {t.diary?.modalDateToday || "Hoy"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDate(getLocalDaysOffsetIso(1))}
+                      className={`py-2 px-2.5 min-h-[38px] rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        date === getLocalDaysOffsetIso(1)
+                          ? "bg-electricViolet text-white border-electricViolet font-black shadow-violet-soft"
+                          : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      {t.diary?.modalDateTomorrow || "Mañana"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDate(getLocalDaysOffsetIso(2))}
+                      className={`py-2 px-2.5 min-h-[38px] rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                        date === getLocalDaysOffsetIso(2)
+                          ? "bg-electricViolet text-white border-electricViolet font-black shadow-violet-soft"
+                          : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      {t.diary?.modalDateIn2Days || "En 2 días"}
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
-                    {profiles
-                      .filter((p) => !showOnlyFavorites || isFavoriteProfile(p.id))
-                      .sort((a, b) => {
-                        const aFav = isFavoriteProfile(a.id) ? 1 : 0;
-                        const bFav = isFavoriteProfile(b.id) ? 1 : 0;
-                        if (aFav !== bFav) return bFav - aFav;
-                        return a.codename.localeCompare(b.codename);
-                      })
-                      .map((p) => {
+                  {/* Inputs manuales compactos */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
+                    />
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
+                    />
+                  </div>
+
+                  {/* Chips de hora rápida */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    {[
+                      { label: "+30m", val: getNextRoundedHalfHourTime(30) },
+                      { label: "+1h", val: getNextRoundedHalfHourTime(60) },
+                      { label: "22:00", val: "22:00" },
+                      { label: "01:00", val: "01:00" },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          setTime(item.val);
+                          audioEngine.playPulse();
+                        }}
+                        className={`flex-1 py-1 rounded-lg text-[11px] font-mono font-bold transition-colors cursor-pointer border ${
+                          time === item.val
+                            ? "bg-electricViolet/30 text-white border-electricViolet"
+                            : "bg-white/5 text-neutral-400 border-white/5 hover:text-white"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selector Dónde: Lugar */}
+                <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-3">
+                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-electricViolet-glow" />
+                    <span>{t.diary?.modalWhereLabel || "¿Dónde se ven?"}</span>
+                  </label>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {LOCATION_CATEGORIES.map((loc) => {
+                      const isSelected = locationCategory === loc.id;
+                      return (
+                        <button
+                          key={loc.id}
+                          type="button"
+                          onClick={() => {
+                            setLocationCategory(loc.id);
+                            if (!locationName || locationName === LOCATION_CATEGORIES.find((c) => c.id === locationCategory)?.label) {
+                              setLocationName(loc.label);
+                            }
+                            audioEngine.playPulse();
+                          }}
+                          className={`p-2 min-h-[44px] rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
+                              : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
+                          }`}
+                        >
+                          <span className="text-base">{loc.icon}</span>
+                          <span className="truncate">{loc.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={locationName}
+                    onChange={(e) => setLocationName(e.target.value)}
+                    placeholder={t.diary?.modalWhereLocationNamePlaceholder || "Nombre del lugar, dirección o referencia..."}
+                    className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
+                  />
+                </div>
+
+                {/* Tipo de Salida & Notas de Preparación */}
+                <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-3">
+                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-electricViolet-glow" />
+                    <span>{t.diary?.modalEncounterTypeLabel || "Tipo de salida"}</span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {ENCOUNTER_TYPES.slice(0, 4).map((type) => {
+                      const isSelected = encounterType === type.id;
+                      return (
+                        <button
+                          key={type.id}
+                          type="button"
+                          onClick={() => {
+                            setEncounterType(type.id);
+                            audioEngine.playPulse();
+                          }}
+                          className={`p-2 min-h-[42px] rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-electricViolet/20 text-white border-electricViolet shadow-violet-soft font-extrabold"
+                              : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
+                          }`}
+                        >
+                          <span>{type.icon}</span>
+                          <span className="truncate">{type.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-neutral-400 block mb-1">
+                      {t.diary?.modalUpcomingNotesLabel || "Notas de preparación (timbre, cosas a llevar, acuerdos):"}
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={privateNotes}
+                      onChange={(e) => setPrivateNotes(e.target.value)}
+                      placeholder={t.diary?.modalUpcomingNotesPlaceholder || "Timbre, cosas que llevar (forros, toalla), indicaciones..."}
+                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet resize-none font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          ) : (
+            /* =======================================================
+               RUTA 2: ENCUENTRO PASADO (isUpcoming = false)
+               ======================================================= */
+            currentStep === 1 ? (
+              /* PASO 1 ENCUENTRO PASADO: ¿QUIÉN Y DÓNDE FUE? */
+              <div className="space-y-4 animate-in fade-in">
+                {/* Selector Chongo de la App vs Alguien de afuera */}
+                <div className="grid grid-cols-2 gap-2 p-1 bg-obsidian-card rounded-2xl border border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMode("vessel_profile");
+                      audioEngine.playPulse();
+                    }}
+                    aria-pressed={profileMode === "vessel_profile"}
+                    className={`py-2 px-3 min-h-[42px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                      profileMode === "vessel_profile"
+                        ? "bg-electricViolet/20 border-electricViolet text-white font-extrabold shadow-violet-soft"
+                        : "border-transparent text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    {t.diary?.modalWhoTabVessel || "Chongo de la App"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMode("custom");
+                      audioEngine.playPulse();
+                    }}
+                    aria-pressed={profileMode === "custom"}
+                    className={`py-2 px-3 min-h-[42px] rounded-xl text-xs font-bold transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                      profileMode === "custom"
+                        ? "bg-electricViolet/20 border-electricViolet text-white font-extrabold shadow-violet-soft"
+                        : "border-transparent text-neutral-400 hover:text-white"
+                    }`}
+                  >
+                    {t.diary?.modalWhoTabExternal || "Alguien de afuera"}
+                  </button>
+                </div>
+
+                {/* Si es Perfil VESSEL */}
+                {profileMode === "vessel_profile" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                        <input
+                          type="text"
+                          value={searchProfileQuery}
+                          onChange={(e) => setSearchProfileQuery(e.target.value)}
+                          placeholder={t.diary?.modalSearchPlaceholder || "Buscar por nombre, apodo..."}
+                          className="w-full pl-8 pr-3 py-2 rounded-xl bg-obsidian-card border border-white/10 text-white text-xs placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        data-testid="diary-modal-toggle-only-favorites"
+                        onClick={() => setShowOnlyFavorites((prev) => !prev)}
+                        aria-pressed={showOnlyFavorites}
+                        className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                          showOnlyFavorites
+                            ? "bg-amber-500/25 border-amber-400 text-amber-300 font-black shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-amber-300"
+                        }`}
+                      >
+                        <Star className={`w-3.5 h-3.5 ${showOnlyFavorites ? "fill-amber-400 text-amber-400" : "text-amber-400/70"}`} />
+                        <span>{t.diary?.filterFavoritesOnly || "Favoritos"}</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-1">
+                      {filteredProfiles.map((p) => {
                         const isSelected = selectedProfileId === p.id;
-                        const isFav = isFavoriteProfile(p.id);
                         return (
                           <div
                             key={p.id}
                             role="button"
                             tabIndex={0}
-                            onClick={() => setSelectedProfileId(p.id)}
+                            onClick={() => {
+                              setSelectedProfileId(p.id);
+                              audioEngine.playPulse();
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
@@ -636,816 +1168,370 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                               }
                             }}
                             aria-label={`Seleccionar a ${p.codename}`}
-                            className={`p-3 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                            className={`p-2.5 min-h-[48px] rounded-2xl border flex items-center justify-between cursor-pointer transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
                               isSelected
-                                ? "bg-electricViolet/15 border-electricViolet text-white shadow-violet-soft font-bold"
-                                : isFav
-                                ? "bg-amber-950/20 border-amber-500/30 text-neutral-200 hover:border-amber-400/50"
+                                ? "bg-electricViolet/20 border-electricViolet text-white shadow-violet-soft font-bold"
                                 : "bg-obsidian-card border-white/5 text-neutral-300 hover:border-white/20"
                             }`}
                           >
-                            <div className="relative flex-shrink-0">
-                              <img
-                                src={p.avatarUrl}
-                                alt={p.codename}
-                                className="w-12 h-12 rounded-xl object-cover border border-white/10"
-                              />
-                              {isFav && (
-                                <span
-                                  title="Perfil Favorito"
-                                  className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-amber-500 border border-amber-300 flex items-center justify-center text-black text-[10px] shadow-sm font-black"
-                                >
-                                  ★
-                                </span>
-                              )}
+                            <div className="flex items-center gap-2.5">
+                              <img src={p.avatarUrl} alt={p.codename} className="w-9 h-9 rounded-xl object-cover" />
+                              <div className="text-xs font-bold text-white">{p.codename}</div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-xs text-white truncate">
-                                  {p.codename}
-                                </span>
-                                {isFav && (
-                                  <span className="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded-md">
-                                    {t.card?.favoriteBadge || "⭐ Favorito"}
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-neutral-400">
-                                  {p.age} años
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-electricViolet-glow truncate">
-                                {getRoleDisplayLabel(p.role, language)} • {p.yoSoy}
-                              </p>
-                              <p className="text-[10px] text-neutral-500 truncate">
-                                {p.hosting}
-                              </p>
-                            </div>
-                            {isSelected && (
-                              <CheckCircle2 className="w-5 h-5 text-mintNeon flex-shrink-0 stroke-[2.5]" />
-                            )}
+                            {isSelected && <CheckCircle2 className="w-5 h-5 text-mintNeon stroke-[2.5]" />}
                           </div>
                         );
                       })}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4 bg-obsidian-card p-4 rounded-2xl border border-white/5">
-                  {/* Zona de Carga / Visualización de Foto Cifrada en Servidor */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                        <Camera className="w-3.5 h-3.5 text-electricViolet-glow" />
-                        Foto o Fisonomía del Contacto
-                        <span className="text-[10px] text-neutral-500 font-normal">
-                          (Cifrada en Servidor)
-                        </span>
-                      </label>
-                      {customAvatarUrl && (
-                        <button
-                          type="button"
-                          onClick={handleRemovePhoto}
-                          className="text-[11px] font-mono text-bloodNeon hover:text-red-400 flex items-center gap-1 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Quitar foto
-                        </button>
-                      )}
                     </div>
-
-                    {/* Input de archivo oculto para disparar cámara / galería */}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          handlePhotoUpload(e.target.files[0]);
-                        }
-                      }}
-                    />
-
-                    {customAvatarUrl ? (
-                      <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-black/40 border border-electricViolet/30">
-                        <div className="relative group shrink-0">
-                          <VaultEncryptedImage
-                            src={customAvatarUrl}
-                            alt={customCodename || "Contacto Externo"}
-                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-electricViolet shadow-violet-soft"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            aria-label="Cambiar foto del contacto"
-                            className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex flex-col items-center justify-center text-white text-[10px] font-mono gap-1 cursor-pointer"
-                          >
-                            <Camera className="w-4 h-4" />
-                            Cambiar
-                          </button>
-                        </div>
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-mintNeon font-mono">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Foto Cifrada en Servidor ☁️🔒
-                          </div>
-                          <p className="text-[11px] text-neutral-400 leading-tight">
-                            Cifrada en tu dispositivo con AES-GCM 256 bits y respaldada en el servidor de la app.
-                          </p>
-                          <div className="flex items-center gap-2 pt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95"
-                            >
-                              <Camera className="w-3 h-3 text-electricViolet-glow" />
-                              Reemplazar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleRemovePhoto}
-                              className="px-2.5 py-1.5 rounded-xl bg-bloodNeon/10 hover:bg-bloodNeon/20 border border-bloodNeon/20 text-bloodNeon text-[11px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-colors active:scale-95"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              Eliminar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => fileInputRef.current?.click()}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            fileInputRef.current?.click();
-                          }
-                        }}
-                        className={`relative p-4 sm:p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                          isDraggingOver
-                            ? "border-electricViolet bg-electricViolet/15 scale-[0.99]"
-                            : "border-white/15 hover:border-electricViolet/60 bg-black/30 hover:bg-white/5"
-                        }`}
-                      >
-                        {isProcessingPhoto ? (
-                          <div className="flex flex-col items-center gap-2 py-3">
-                            <Loader2 className="w-7 h-7 animate-spin text-electricViolet-glow" />
-                            <span className="text-xs font-mono text-neutral-300">
-                              Cifrando (AES-256) y guardando en servidor...
-                            </span>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="w-12 h-12 rounded-2xl bg-electricViolet/15 border border-electricViolet/30 text-electricViolet-glow flex items-center justify-center group-hover:scale-110 transition-transform">
-                              <Upload className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-white tracking-wide">
-                                Subir Foto o Fisonomía del Contacto
-                              </p>
-                              <p className="text-[11px] text-neutral-400 mt-0.5">
-                                Tocá acá para abrir cámara/galería o arrastrá un archivo
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] font-mono text-neutral-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
-                              <ShieldCheck className="w-3.5 h-3.5 text-mintNeon" />
-                              Cifrado AES-GCM 256 bits en Servidor ☁️🔒
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Presets de avatar tácticos opcionales */}
-                    {!customAvatarUrl && !isProcessingPhoto && (
-                      <div className="pt-1">
-                        <span className="text-[10px] font-mono uppercase text-neutral-500 block mb-1.5 font-bold">
-                          O seleccioná un avatar táctico de referencia:
-                        </span>
-                        <div className="grid grid-cols-4 gap-2">
-                          {EXTERNAL_AVATAR_PRESETS.map((preset) => (
-                            <button
-                              key={preset.id}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCustomAvatarUrl(preset.url);
-                                audioEngine.playPulse();
-                              }}
-                              className="group p-1.5 rounded-xl bg-black/40 border border-white/5 hover:border-electricViolet/60 transition-all flex flex-col items-center gap-1 cursor-pointer hover:scale-105 active:scale-95"
-                            >
-                              <img
-                                src={preset.url}
-                                alt={preset.label}
-                                className="w-11 h-11 rounded-xl object-cover border border-white/10 group-hover:border-electricViolet transition-colors"
-                              />
-                              <span className="text-[9px] font-mono text-neutral-400 group-hover:text-white truncate max-w-full">
-                                {preset.label}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {photoError && (
-                      <div className="p-2.5 rounded-xl bg-bloodNeon/15 border border-bloodNeon/30 text-bloodNeon text-xs flex items-center gap-2 font-mono">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span>{photoError}</span>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Campos de Nombre / Identificación */}
-                  <div>
+                ) : (
+                  /* Formulario Externo */
+                  <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5 space-y-2">
                     <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                      Nombre / Codename del Contacto
+                      {t.diary?.modalExternalNameLabel || "Nombre o apodo del contacto"}
                     </label>
                     <input
                       type="text"
                       value={customCodename}
                       onChange={(e) => setCustomCodename(e.target.value)}
-                      placeholder="Ej: MARCO_TECHNO, ALEX_GYM..."
-                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50"
+                      placeholder={t.diary?.modalExternalNamePlaceholder || "Ej: Lucas del gym, Facu after..."}
+                      className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
                     />
                   </div>
+                )}
 
-                  {/* Edad y Rol Preferido en Grid */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        Edad (Años)
-                        <span className="text-[10px] text-neutral-500 font-normal ml-1">
-                          (Opcional)
-                        </span>
-                      </label>
-                      <input
-                        type="number"
-                        min={18}
-                        max={99}
-                        value={customAge}
-                        onChange={(e) => setCustomAge(e.target.value)}
-                        placeholder="Ej: 29"
-                        className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        Rol Preferido
-                      </label>
-                      <select
-                        value={customRole}
-                        onChange={(e) => setCustomRole(e.target.value as RoleType)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 cursor-pointer"
-                      >
-                        {ALL_ROLE_TYPES.map((r) => (
-                          <option key={r} value={r}>
-                            {getRoleDisplayLabel(r, language, t)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notas privadas sobre la persona */}
-              <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5">
-                <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5 mb-1.5">
-                  <Lock className="w-3.5 h-3.5 text-mintNeon" />
-                  Notas Privadas del Perfil (Solo visibles para vos)
-                </label>
-                <textarea
-                  value={personPrivateNotes}
-                  onChange={(e) => setPersonPrivateNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Detalles fisionómicos, preferencias específicas, límites comentados en persona..."
-                  className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-neutral-200 text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 resize-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ==========================================
-              PASO 2: SMART CALENDAR (FECHA, HORA, LUGAR & DINÁMICA)
-              ========================================== */}
-          {currentStep === 2 && (
-            <div className="space-y-4 animate-in fade-in">
-              {/* Fecha y Hora + Preview 24h Localizado + Chips de Hora Rápida */}
-              <div className="space-y-2.5">
-                {/* Badge de Previsualización 24h Inequívoca */}
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-electricViolet/10 border border-electricViolet/30 text-xs font-mono">
-                  <span className="text-neutral-300 font-bold">
-                    {isUpcoming
-                      ? (language === "es" ? "📅 Cita Programada:" : "📅 Scheduled Date:")
-                      : (language === "es" ? "✓ Fecha del Encuentro:" : "✓ Encounter Date:")}
-                  </span>
-                  <span className="text-electricViolet-glow font-black">
-                    {(() => {
-                      try {
-                        const [y, m, d] = date.split("-").map(Number);
-                        const [hh, mm] = (time || "22:00").split(":").map(Number);
-                        const dt = new Date(y, (m || 1) - 1, d || 1, hh || 0, mm || 0);
-                        return new Intl.DateTimeFormat(language === "es" ? "es-AR" : "en-US", {
-                          weekday: "short",
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        }).format(dt);
-                      } catch {
-                        return `${date} · ${time} hs`;
-                      }
-                    })()}{" "}
-                    hs
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5">
-                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5 mb-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-electricViolet-glow" />
-                      {language === "es" ? "Fecha" : "Date"}
+                {/* Fecha y Lugar del Encuentro Pasado */}
+                <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-electricViolet-glow" />
+                      <span>¿Cuándo fue el encuentro?</span>
                     </label>
                     <input
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full px-2.5 py-2 min-h-[44px] rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50"
+                      className="px-2.5 py-1.5 rounded-lg bg-obsidian border border-white/10 text-white text-xs font-mono"
                     />
                   </div>
 
-                  <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5">
-                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5 mb-1.5">
-                      <Clock className="w-3.5 h-3.5 text-electricViolet-glow" />
-                      {language === "es" ? "Hora (24 hs)" : "Time (24h)"}
-                    </label>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="w-full px-2.5 py-2 min-h-[44px] rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50"
-                    />
-                  </div>
-                </div>
-
-                {/* Chips Tácticos de Hora y Día Rápido (44px) */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDate(getLocalTodayIso());
-                      setTime(getNextRoundedHalfHourTime(30));
-                      audioEngine.playPulse();
-                    }}
-                    className="min-h-[44px] px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono font-bold text-neutral-300 hover:text-white cursor-pointer transition-all active:scale-95"
-                  >
-                    ⚡ +30 min
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDate(getLocalTodayIso());
-                      setTime(getNextRoundedHalfHourTime(60));
-                      audioEngine.playPulse();
-                    }}
-                    className="min-h-[44px] px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono font-bold text-neutral-300 hover:text-white cursor-pointer transition-all active:scale-95"
-                  >
-                    🕐 +1 h
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTime("22:00");
-                      audioEngine.playPulse();
-                    }}
-                    className="min-h-[44px] px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono font-bold text-neutral-300 hover:text-white cursor-pointer transition-all active:scale-95"
-                  >
-                    🌙 22:00 hs
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTime("01:00");
-                      audioEngine.playPulse();
-                    }}
-                    className="min-h-[44px] px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono font-bold text-neutral-300 hover:text-white cursor-pointer transition-all active:scale-95"
-                  >
-                    🔥 01:00 hs
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDate(getLocalDaysOffsetIso(1));
-                      audioEngine.playPulse();
-                    }}
-                    className="min-h-[44px] px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-mono font-bold text-neutral-300 hover:text-white cursor-pointer transition-all active:scale-95"
-                  >
-                    📅 {language === "es" ? "Mañana" : "Tomorrow"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Categoría del Lugar */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-electricViolet-glow" />
-                  Categoría de Ubicación
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {LOCATION_CATEGORIES.map((loc) => {
-                    const isSelected = locationCategory === loc.id;
-                    return (
-                      <button
-                        key={loc.id}
-                        type="button"
-                        onClick={() => setLocationCategory(loc.id)}
-                        aria-pressed={isSelected}
-                        className={`p-2.5 min-h-[44px] rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                          isSelected
-                            ? "bg-electricViolet/15 border-electricViolet text-white font-bold shadow-violet-soft"
-                            : "bg-obsidian-card border-white/5 text-neutral-400 hover:text-white hover:border-white/15"
-                        }`}
-                      >
-                        <span className="text-sm">{loc.icon}</span>
-                        <span className="text-[11px] truncate">{loc.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Nombre / Detalle del Venue */}
-              <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5">
-                <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                  Nombre del Lugar / Venue (Opcional)
-                </label>
-                <input
-                  type="text"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Ej: Depto en Palermo, Sala Oscura CABA, Suite Hotel Recoleta..."
-                  className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50"
-                />
-              </div>
-
-              {/* Tipo de Dinámica / Encuentro */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-electricViolet-glow" />
-                  Tipo de Encuentro
-                </label>
-                <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto pr-1">
-                  {ENCOUNTER_TYPES.map((type) => {
-                    const isSelected = encounterType === type.id;
-                    return (
-                      <button
-                        key={type.id}
-                        type="button"
-                        onClick={() => setEncounterType(type.id)}
-                        aria-pressed={isSelected}
-                        className={`p-2.5 min-h-[44px] rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                          isSelected
-                            ? "bg-electricViolet/15 border-electricViolet text-white font-bold shadow-violet-soft"
-                            : "bg-obsidian-card border-white/5 text-neutral-400 hover:text-white hover:border-white/15"
-                        }`}
-                      >
-                        <div>
-                          <div className="text-xs font-bold text-white">{type.label}</div>
-                          <div className="text-[10px] text-neutral-400">{type.desc}</div>
-                        </div>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-mintNeon flex-shrink-0 stroke-[2.5]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Notas de Preparación (solo para Cita Futura) */}
-              {isUpcoming && (
-                <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-2">
-                  <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-mintNeon" />
-                    Notas Confidenciales de Preparación (Opcional)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={privateNotes}
-                    onChange={(e) => setPrivateNotes(e.target.value)}
-                    placeholder="Detalles sobre acuerdos, timbre, cosas que llevar o instrucciones de llegada..."
-                    className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 resize-none font-mono"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ==========================================
-              PASO 3: SATISFACCIÓN & QUÍMICA CORPORAL (SOLO CONCRETADAS)
-              ========================================== */}
-          {!isUpcoming && currentStep === 3 && (
-            <div className="space-y-4 animate-in fade-in">
-                <>
-                  {/* Nivel de Satisfacción de Expectativas */}
-                  <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                        Nivel de Satisfacción vs Expectativas
-                      </label>
-                      <span className="text-xs font-mono font-bold text-white">
-                        {expectationsRating} / 5
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between gap-1.5 pt-1">
-                      {[1, 2, 3, 4, 5].map((val) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {LOCATION_CATEGORIES.slice(0, 6).map((loc) => {
+                      const isSelected = locationCategory === loc.id;
+                      return (
                         <button
-                          key={val}
+                          key={loc.id}
                           type="button"
-                          onClick={() => setExpectationsRating(val)}
-                          aria-label={`Calificar con ${val} estrellas`}
-                          className={`flex-1 py-3 min-h-[44px] rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                            expectationsRating >= val
-                              ? "bg-amber-400/20 border-amber-400 text-amber-300 font-bold shadow-sm"
-                              : "bg-obsidian border-white/10 text-neutral-500 hover:text-neutral-300"
-                          }`}
-                        >
-                          <Star
-                            className={`w-4 h-4 ${
-                              expectationsRating >= val ? "fill-amber-400 text-amber-400" : ""
-                            }`}
-                          />
-                          <span className="text-[10px] mt-1 font-bold">{val}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="text-[11px] font-medium text-center text-neutral-300 pt-1">
-                      {getExpectationLabel(expectationsRating)}
-                    </div>
-                  </div>
-
-                  {/* Slider de Química Corporal */}
-                  <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                        <Flame className="w-3.5 h-3.5 text-amber-400" />
-                        Química Corporal & Tensión Física
-                      </label>
-                      <span className="text-xs font-mono font-bold text-amber-400">
-                        {chemistryLevel} / 5
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={5}
-                      step={1}
-                      value={chemistryLevel}
-                      onChange={(e) => setChemistryLevel(parseInt(e.target.value))}
-                      className="w-full accent-amber-400 cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Respeto a Límites y Seguridad */}
-                  <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        Respeto a Límites & Seguridad Acordada
-                      </label>
-                      <span className="text-xs font-mono font-bold text-emerald-400">
-                        {boundariesRespect} / 5
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={5}
-                      step={1}
-                      value={boundariesRespect}
-                      onChange={(e) => setBoundariesRespect(parseInt(e.target.value))}
-                      className="w-full accent-emerald-400 cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Decisión de Repetición */}
-                  <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-2">
-                    <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                      <RotateCcw className="w-3.5 h-3.5 text-electricViolet-glow" />
-                      ¿Repetirías este encuentro?
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      {[
-                        { id: "yes", label: "🔥 Sí, definitivamente", activeClass: "bg-electricViolet text-white border-electricViolet font-bold shadow-violet-soft" },
-                        { id: "maybe", label: "🤔 Tal vez / Depende", activeClass: "bg-white/20 text-white border-white/30 font-bold" },
-                        { id: "only_darkroom", label: "⚡ Solo en Sala Oscura", activeClass: "bg-amber-500/30 text-amber-300 border-amber-400 font-bold" },
-                        { id: "never", label: "⛔ No repetiría", activeClass: "bg-neutral-800 text-neutral-300 border-neutral-700 font-bold" },
-                      ].map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setWouldRepeat(item.id as DiaryWouldRepeat)}
-                          aria-pressed={wouldRepeat === item.id}
-                          className={`p-2.5 min-h-[44px] rounded-xl border text-xs transition-all text-left truncate cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                            wouldRepeat === item.id
-                              ? `${item.activeClass} shadow-md`
+                          onClick={() => {
+                            setLocationCategory(loc.id);
+                            setLocationName(loc.label);
+                            audioEngine.playPulse();
+                          }}
+                          className={`p-2 min-h-[40px] rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-extrabold"
                               : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
                           }`}
                         >
-                          {item.label}
+                          <span>{loc.icon}</span>
+                          <span className="truncate">{loc.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* PASO 2 ENCUENTRO PASADO: LA FICHA ÍNTIMA & QUÍMICA */
+              <div className="space-y-4 animate-in fade-in">
+                {/* 1. ¿CÓMO ESTUVO LA CITA? (ESTRELLAS GRANDES) */}
+                <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <span>{t.diary?.modalRatingLabel || "¿Cómo estuvo la cita?"}</span>
+                    </label>
+                    <span className="text-xs font-mono font-bold text-white">{expectationsRating} / 5</span>
+                  </div>
+
+                  <div className="flex justify-between gap-1.5 pt-1">
+                    {[1, 2, 3, 4, 5].map((val) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => {
+                          setExpectationsRating(val);
+                          audioEngine.playPulse();
+                        }}
+                        aria-label={`Calificar con ${val} estrellas`}
+                        className={`flex-1 py-3 min-h-[46px] rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
+                          expectationsRating >= val
+                            ? "bg-amber-400/20 border-amber-400 text-amber-300 font-bold shadow-sm"
+                            : "bg-obsidian border-white/10 text-neutral-500 hover:text-neutral-300"
+                        }`}
+                      >
+                        <Star className={`w-4 h-4 ${expectationsRating >= val ? "fill-amber-400 text-amber-400" : ""}`} />
+                        <span className="text-[10px] mt-0.5 font-mono font-bold">{val}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-[11px] font-medium text-center text-neutral-300 pt-0.5">
+                    {getExpectationLabel(expectationsRating)}
+                  </div>
+                </div>
+
+                {/* 2. QUÍMICA Y RESPETO EN GRILLA */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Nivel de Química */}
+                  <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Química</span>
+                      </label>
+                      <span className="text-xs font-mono font-bold text-amber-400">{chemistryLevel} / 5</span>
+                    </div>
+                    <div className="flex justify-between gap-1">
+                      {[1, 2, 3, 4, 5].map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => {
+                            setChemistryLevel(v);
+                            audioEngine.playPulse();
+                          }}
+                          className={`flex-1 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
+                            chemistryLevel >= v
+                              ? "bg-amber-500/20 border-amber-400 text-amber-300"
+                              : "bg-obsidian border-white/5 text-neutral-500"
+                          }`}
+                        >
+                          🔥
                         </button>
                       ))}
                     </div>
                   </div>
-                </>
-            </div>
-          )}
 
-          {/* ==========================================
-              PASO 4: NOTAS CONFIDENCIALES & SALUD (SOLO CONCRETADAS)
-              ========================================== */}
-          {!isUpcoming && currentStep === 4 && (
-            <div className="space-y-4 animate-in fade-in">
-              {/* Agenda de Impresiones Privadas */}
-              <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-mintNeon" />
-                    Agenda Personal & Impresiones Privadas
-                  </label>
-                  <span className="text-[10px] text-neutral-500 font-mono">100% Cifrado Local</span>
+                  {/* Respeto a Códigos */}
+                  <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-mintNeon" />
+                        <span>Códigos</span>
+                      </label>
+                      <span className="text-xs font-mono font-bold text-mintNeon">{boundariesRespect} / 5</span>
+                    </div>
+                    <div className="flex justify-between gap-1">
+                      {[1, 2, 3, 4, 5].map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => {
+                            setBoundariesRespect(v);
+                            audioEngine.playPulse();
+                          }}
+                          className={`flex-1 py-1.5 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
+                            boundariesRespect >= v
+                              ? "bg-mintNeon/20 border-mintNeon text-mintNeon"
+                              : "bg-obsidian border-white/5 text-neutral-500"
+                          }`}
+                        >
+                          🛡️
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <textarea
-                  value={privateNotes}
-                  onChange={(e) => setPrivateNotes(e.target.value)}
-                  rows={4}
-                  placeholder="Escribe libremente tus impresiones íntimas, anécdotas del encuentro, cosas que te encantaron, límites descubiertos o detalles para recordar..."
-                  className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-neutral-200 text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 leading-relaxed resize-none"
-                />
-              </div>
 
-              {/* Tags de Contexto */}
-              <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-2.5">
-                <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-electricViolet-glow" />
-                  Etiquetas de la Cita
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {QUICK_TAGS.map((tag) => {
-                    const isSelected = selectedTags.includes(tag);
-                    return (
+                {/* 3. ¿DA PARA REVANCHA? */}
+                <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-2">
+                  <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                    <RotateCcw className="w-3.5 h-3.5 text-electricViolet-glow" />
+                    <span>{t.diary?.modalRepeatLabel || "¿Da para revancha?"}</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: "yes", label: t.diary?.modalRepeatYes || "🔥 Sí, de una", activeClass: "bg-electricViolet text-white border-electricViolet font-extrabold shadow-violet-soft" },
+                      { id: "maybe", label: t.diary?.modalRepeatMaybe || "🤔 Veremos", activeClass: "bg-white/20 text-white border-white/30 font-bold" },
+                      { id: "only_darkroom", label: t.diary?.modalRepeatDarkroom || "⚡ Solo en fiesta", activeClass: "bg-amber-500/30 text-amber-300 border-amber-400 font-bold" },
+                      { id: "never", label: t.diary?.modalRepeatNever || "⛔ Paso / Ni ahí", activeClass: "bg-neutral-800 text-neutral-300 border-neutral-700 font-bold" },
+                    ].map((item) => (
                       <button
-                        key={tag}
+                        key={item.id}
                         type="button"
-                        onClick={() => toggleTag(tag)}
-                        aria-pressed={isSelected}
-                        className={`px-3 py-1.5 min-h-[36px] rounded-full text-xs font-medium border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                          isSelected
-                            ? "bg-electricViolet/20 border-electricViolet text-electricViolet-glow font-bold shadow-violet-soft"
-                            : "bg-obsidian border-white/10 text-neutral-400 hover:text-neutral-200"
+                        onClick={() => {
+                          setWouldRepeat(item.id as DiaryWouldRepeat);
+                          audioEngine.playPulse();
+                        }}
+                        aria-pressed={wouldRepeat === item.id}
+                        className={`p-2.5 min-h-[44px] rounded-xl border text-xs transition-all text-left truncate cursor-pointer ${
+                          wouldRepeat === item.id
+                            ? item.activeClass
+                            : "bg-obsidian border-white/5 text-neutral-400 hover:text-white"
                         }`}
                       >
-                        #{tag}
+                        {item.label}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
 
-                <form onSubmit={handleAddCustomTag} className="flex gap-2 pt-1">
-                  <input
-                    type="text"
-                    value={customTagInput}
-                    onChange={(e) => setCustomTagInput(e.target.value)}
-                    placeholder="Añadir etiqueta propia..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50"
-                  />
+                {/* 4. BLOQUE DESPLEGABLE OPCIONAL: BÓVEDA PRIVADA & CUIDADOS */}
+                <div className="bg-obsidian-card rounded-2xl border border-white/5 overflow-hidden">
                   <button
-                    type="submit"
-                    className="px-4 py-2 min-h-[38px] bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+                    type="button"
+                    onClick={() => setIsVaultAccordionOpen((prev) => !prev)}
+                    className="w-full p-3.5 flex items-center justify-between text-left hover:bg-white/5 transition-colors cursor-pointer"
                   >
-                    + Tag
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-mintNeon" />
+                      <div>
+                        <div className="text-xs font-bold text-white">
+                          {t.diary?.modalCollapsibleVault || "Bóveda Privada, Recuerdos & Cuidados"}
+                        </div>
+                        <div className="text-[10px] text-neutral-400">
+                          {t.diary?.modalCollapsibleVaultSub || "Notas íntimas cifradas, fotos del chat y recordatorio PrEP"}
+                        </div>
+                      </div>
+                    </div>
+                    {isVaultAccordionOpen ? (
+                      <ChevronUp className="w-4 h-4 text-neutral-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-neutral-400" />
+                    )}
                   </button>
-                </form>
-              </div>
 
-              {/* Bóveda Visual del Amante: Fotos del Chat & Encuentro */}
-              <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-electricViolet-glow" />
-                    <div>
-                      <div className="text-xs font-bold text-white">
-                        Fotos del Encuentro (Para la Agenda Íntima)
+                  {isVaultAccordionOpen && (
+                    <div className="p-3.5 pt-0 space-y-3.5 border-t border-white/5">
+                      {/* Notas Íntimas Cifradas */}
+                      <div className="pt-2">
+                        <label className="text-[11px] font-semibold text-neutral-300 block mb-1">
+                          Notas íntimas confidenciales (solo para tus ojos):
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={privateNotes}
+                          onChange={(e) => setPrivateNotes(e.target.value)}
+                          placeholder={t.diary?.modalPrivateNotesPlaceholder || "Escribí libremente lo que quieras recordar de este encuentro..."}
+                          className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-neutral-200 text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet resize-none"
+                        />
                       </div>
-                      <div className="text-[10px] text-neutral-400">
-                        {chatPhotos.length > 0
-                          ? `Detectamos ${chatPhotos.length} foto(s) enviada(s) en el chat`
-                          : "Archivá fotos para la Agenda Íntima de esta persona"}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono text-electricViolet-glow font-bold">
-                    {selectedArchivedPhotos.length} seleccionadas
-                  </span>
-                </div>
 
-                {chatPhotos.length > 0 && (
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-[11px] font-mono text-neutral-300 block">
-                      Tocar para archivar en su Ficha de la Agenda Íntima:
-                    </span>
-                    <div className="grid grid-cols-4 gap-2">
-                      {chatPhotos.map((url, idx) => {
-                        const isChecked = selectedArchivedPhotos.includes(url);
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              audioEngine.playPulse();
-                              setSelectedArchivedPhotos((prev) =>
-                                isChecked ? prev.filter((u) => u !== url) : [...prev, url]
-                              );
-                            }}
-                            className={`relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
-                              isChecked
-                                ? "border-electricViolet ring-2 ring-electricViolet/50 scale-[1.02]"
-                                : "border-white/10 opacity-60 hover:opacity-100"
-                            }`}
-                          >
-                            <img src={url} alt={`Foto chat ${idx}`} className="w-full h-full object-cover" />
-                            {isChecked && (
-                              <div className="absolute top-1 right-1 p-0.5 rounded-full bg-electricViolet text-white shadow-sm">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                              </div>
-                            )}
+                      {/* Etiquetas de Contexto */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5 mb-1.5">
+                          <Tag className="w-3.5 h-3.5 text-electricViolet-glow" />
+                          <span>{t.diary?.modalTagsLabel || "Etiquetas & Morbos"}</span>
+                        </label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {QUICK_TAGS.map((tag) => {
+                            const isSelected = selectedTags.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => toggleTag(tag)}
+                                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[11px] font-medium border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? "bg-electricViolet/20 border-electricViolet text-electricViolet-glow font-bold"
+                                    : "bg-obsidian border-white/10 text-neutral-400 hover:text-neutral-200"
+                                }`}
+                              >
+                                #{tag}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Fotos del Chat si hay */}
+                      {chatPhotos.length > 0 && (
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5 text-electricViolet-glow" />
+                              <span>{t.diary?.modalChatPhotosLabel || "Fotos del Chat (Tocar para archivar)"}</span>
+                            </label>
+                            <span className="text-[10px] font-mono text-electricViolet-glow">
+                              {selectedArchivedPhotos.length} guardadas
+                            </span>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+                          <div className="grid grid-cols-4 gap-2">
+                            {chatPhotos.map((url, idx) => {
+                              const isChecked = selectedArchivedPhotos.includes(url);
+                              return (
+                                <div
+                                  key={idx}
+                                  onClick={() => {
+                                    audioEngine.playPulse();
+                                    setSelectedArchivedPhotos((prev) =>
+                                      isChecked ? prev.filter((u) => u !== url) : [...prev, url]
+                                    );
+                                  }}
+                                  className={`relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all ${
+                                    isChecked
+                                      ? "border-electricViolet ring-2 ring-electricViolet/50 scale-[1.02]"
+                                      : "border-white/10 opacity-60 hover:opacity-100"
+                                  }`}
+                                >
+                                  <img src={url} alt={`Foto chat ${idx}`} className="w-full h-full object-cover" />
+                                  {isChecked && (
+                                    <div className="absolute top-1 right-1 p-0.5 rounded-full bg-electricViolet text-white shadow-sm">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
-              {/* Recordatorio de Rutina de Salud Preventiva */}
-              <div className="bg-obsidian-card p-3.5 rounded-2xl border border-white/5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-mintNeon" />
-                    <div>
-                      <div className="text-xs font-bold text-white">
-                        Recordatorio de Salud // Prevención
-                      </div>
-                      <div className="text-[10px] text-neutral-400">
-                        Alerta a los 90 días para control clínico / rutina PrEP
+                      {/* Alarma Preventiva PrEP */}
+                      <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-mintNeon" />
+                          <div>
+                            <div className="text-xs font-bold text-white">
+                              {t.diary?.modalHealthReminderTitle || "Alarma Preventiva de Salud (PrEP)"}
+                            </div>
+                            <div className="text-[10px] text-neutral-400">
+                              {t.diary?.modalHealthReminderSub || "Recordatorio a los 90 días para control de rutina"}
+                            </div>
+                          </div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={healthReminderEnabled}
+                          onChange={(e) => setHealthReminderEnabled(e.target.checked)}
+                          className="w-4 h-4 accent-mintNeon cursor-pointer"
+                        />
                       </div>
                     </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={healthReminderEnabled}
-                    onChange={(e) => setHealthReminderEnabled(e.target.checked)}
-                    aria-label="Activar recordatorio de chequeo de salud preventivo"
-                    className="w-5 h-5 accent-mintNeon cursor-pointer"
-                  />
+                  )}
                 </div>
-
-                {healthReminderEnabled && (
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                    <span className="text-[11px] text-neutral-400">Fecha de control sugerida:</span>
-                    <input
-                      type="date"
-                      value={healthDueDate}
-                      onChange={(e) => setHealthDueDate(e.target.value)}
-                      className="px-2.5 py-1.5 rounded-lg bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50"
-                    />
-                  </div>
-                )}
               </div>
-            </div>
+            )
           )}
         </div>
 
-        {/* Barra de Navegación Inferior del Modal */}
-        <div className="p-4 border-t border-white/10 bg-obsidian-deep/90 backdrop-blur-md flex items-center justify-between gap-3">
-          {currentStep > 1 ? (
+        {/* ========================================================
+            BARRA DE NAVEGACIÓN INFERIOR (Paso 1 -> Paso 2 -> Guardar)
+            ======================================================== */}
+        <div className="p-3.5 sm:p-4 border-t border-white/10 bg-obsidian-deep/95 backdrop-blur-md flex items-center justify-between gap-3">
+          {currentStep === 2 ? (
             <button
               type="button"
+              data-testid="diary-modal-back-btn"
               onClick={() => {
-                setCurrentStep(currentStep - 1);
+                setCurrentStep(1);
                 audioEngine.playPulse();
               }}
               className="px-4 py-2.5 min-h-[44px] rounded-2xl border border-white/10 bg-white/5 text-white hover:bg-white/10 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" />
-              Anterior
+              <span>{t.diary?.modalBtnBack || "Volver"}</span>
             </button>
           ) : (
             <button
@@ -1453,66 +1539,41 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
               onClick={onClose}
               className="px-4 py-2.5 min-h-[44px] rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-white text-xs font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
             >
-              Cancelar
+              {t.diary?.modalBtnCancel || "Cancelar"}
             </button>
           )}
 
-          {isUpcoming ? (
-            currentStep === 1 ? (
-              <div className="flex items-center gap-2 ml-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCurrentStep(2);
-                    audioEngine.playPulse();
-                  }}
-                  className="px-3.5 py-2.5 min-h-[44px] rounded-2xl border border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
-                >
-                  <span>{language === "es" ? "Hora/Lugar" : "Time/Place"}</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={isSaving}
-                  onClick={handleSave}
-                  className="px-4 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:opacity-95 text-xs font-mono font-bold flex items-center gap-1.5 shadow-violet-soft transition-all disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{isSaving ? "Guardando..." : "⚡ Agendar Ahora"}</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={handleSave}
-                className="px-6 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:opacity-95 text-xs font-mono font-bold flex items-center gap-2 shadow-violet-soft transition-all ml-auto disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {isSaving ? "Guardando..." : editingDiaryEntry ? "Guardar Cambios" : "Agendar Encuentro"}
-              </button>
-            )
-          ) : currentStep < 4 ? (
+          {currentStep === 1 ? (
             <button
               type="button"
+              data-testid="diary-modal-next-btn"
               onClick={() => {
-                setCurrentStep(currentStep + 1);
+                setCurrentStep(2);
                 audioEngine.playPulse();
               }}
               className="px-5 py-2.5 min-h-[44px] rounded-2xl bg-electricViolet text-white hover:bg-electricViolet-glow text-xs font-mono font-bold flex items-center gap-1.5 shadow-violet-soft transition-all ml-auto cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
             >
-              Siguiente
+              <span>{t.diary?.modalBtnNext || "Continuar"}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               type="button"
+              data-testid="diary-modal-submit-btn"
               disabled={isSaving}
               onClick={handleSave}
-              className="px-6 py-2.5 min-h-[44px] rounded-2xl bg-electricViolet text-white hover:bg-electricViolet-glow text-xs font-mono font-bold flex items-center gap-2 shadow-violet-soft transition-all ml-auto disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+              className="px-6 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:opacity-95 text-xs font-mono font-bold flex items-center gap-2 shadow-violet-soft transition-all ml-auto disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
             >
               <CheckCircle2 className="w-4 h-4" />
-              {isSaving ? "Guardando..." : editingDiaryEntry ? "Guardar Cambios" : "Guardar en Agenda"}
+              <span>
+                {isSaving
+                  ? t.diary?.modalBtnSaving || "Guardando..."
+                  : editingDiaryEntry
+                  ? t.diary?.modalBtnSaveChanges || "Guardar Cambios"
+                  : isUpcoming
+                  ? t.diary?.modalBtnScheduleNow || "📅 Agendar Salida"
+                  : t.diary?.modalBtnSaveLog || "✓ Guardar en la Libreta"}
+              </span>
             </button>
           )}
         </div>

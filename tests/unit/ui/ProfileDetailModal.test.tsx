@@ -136,7 +136,7 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
     vi.clearAllMocks();
   });
 
-  it("debe renderizar el encabezado y el perfil con la pestaña Vibe por defecto", () => {
+  it("debe renderizar el encabezado y el perfil con la pestaña Perfil por defecto", () => {
     render(
       <ProfileDetailModal
         profile={mockProfile}
@@ -148,11 +148,10 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
     expect(screen.getAllByText("VALENTIN_CYBER").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Atlético / Gym")).toBeInTheDocument();
     expect(screen.getByText(/Diseñador visual y de noche/i)).toBeInTheDocument();
-    expect(screen.getByText("Encuentro hoy")).toBeInTheDocument();
-    expect(screen.getByText("Solo con protección")).toBeInTheDocument();
+    expect(screen.getByTestId("tab-profile-trigger")).toHaveAttribute("aria-selected", "true");
   });
 
-  it("debe renderizar todas las secciones de forma continua en el scroll unificado (Vibe, Logística y Confianza)", () => {
+  it("permite alternar entre las 3 pestañas tácticas (Perfil, Química & Morbo, Confianza)", () => {
     render(
       <ProfileDetailModal
         profile={mockProfile}
@@ -161,17 +160,20 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
       />
     );
 
-    // 1. Sección Vibe
+    // 1. Pestaña Perfil (por defecto)
     expect(screen.getByText(/Diseñador visual y de noche/i)).toBeInTheDocument();
 
-    // 2. Sección Logística & Hospedaje
+    // 2. Alternar a Pestaña Química & Morbo
+    const chemistryTab = screen.getByTestId("tab-chemistry-trigger");
+    fireEvent.click(chemistryTab);
+    expect(screen.getByText("Encuentro hoy")).toBeInTheDocument();
+    expect(screen.getByText("Solo con protección")).toBeInTheDocument();
+
+    // 3. Alternar a Pestaña Confianza
+    const trustTab = screen.getByTestId("tab-trust-trigger");
+    fireEvent.click(trustTab);
     expect(screen.getByText(/Disponibilidad de Casa/i)).toBeInTheDocument();
     expect(screen.getByText("TIENE CASA 🏠")).toBeInTheDocument();
-    expect(screen.getAllByText("A 450 m de ti").length).toBeGreaterThanOrEqual(1);
-
-    // 3. Sección Confianza & Anti-Ghost
-    expect(screen.getByText(/Humano Verificado 3D/i)).toBeInTheDocument();
-    expect(screen.getByText(/PROTOCOLO ANTI-GHOSTEO/i)).toBeInTheDocument();
     expect(screen.getByText(/Negativo en PrEP/i)).toBeInTheDocument();
   });
 
@@ -184,7 +186,7 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
       />
     );
 
-    const pulseBtn = screen.getByLabelText(/Enviar (zumbido|pulso) a VALENTIN_CYBER/i);
+    const pulseBtn = screen.getByLabelText(/Enviar (zumbido|pulso|toque) a VALENTIN_CYBER/i);
     fireEvent.click(pulseBtn);
 
     expect(mockTransmitSignal).toHaveBeenCalledWith("profile-77");

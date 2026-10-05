@@ -53,37 +53,49 @@ export const NightlifeEventsModal: React.FC = () => {
   return (
     <>
       {isNightlifeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none">
-          <div className="w-full max-w-2xl bg-obsidian border border-white/15 rounded-2xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
-          {/* Header */}
-          <div className="p-4 border-b border-white/10 bg-obsidian-surface flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center">
-                <PartyPopper className="w-4 h-4 text-electricViolet-glow" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                    VESSEL Nightlife // Fiestas & Boliches
-                  </h2>
-                  <span className="px-1.5 py-0.2 rounded bg-electricViolet/20 text-electricViolet-glow font-mono text-[10px] font-bold border border-electricViolet/30">
-                    BSAS
-                  </span>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="VESSEL Nightlife"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none [overscroll-behavior:contain]"
+          onClick={closeNightlifeModal}
+        >
+          <div
+            className="w-full max-w-2xl bg-obsidian border-t sm:border border-white/15 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[92vh] overflow-hidden animate-in slide-in-from-bottom duration-200 sm:animate-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile Tactical Drag Handle */}
+            <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+            {/* Header */}
+            <div className="p-4 border-b border-white/10 bg-obsidian-surface flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center">
+                  <PartyPopper className="w-4 h-4 text-electricViolet-glow" />
                 </div>
-                <p className="text-[11px] text-neutral-400">
-                  Cartelera nocturna, radar de pista y cruces presenciales
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
+                      VESSEL Nightlife // Fiestas & Boliches
+                    </h2>
+                    <span className="px-1.5 py-0.2 rounded bg-electricViolet/20 text-electricViolet-glow font-mono text-[10px] font-bold border border-electricViolet/30">
+                      BSAS
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400">
+                    Cartelera nocturna, radar de pista y cruces presenciales
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={closeNightlifeModal}
-              className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={closeNightlifeModal}
+                aria-label="Cerrar cartelera nocturna"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
           {/* Banner de Check-in Activo (si está en un local ahora mismo) */}
           {activeCheckin && (

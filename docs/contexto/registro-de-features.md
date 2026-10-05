@@ -25,12 +25,19 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
   - [x] Sincronización en memoria Engram y documentos de contexto.
 ```
 
----
+## 📊 Matriz Resumen de Entregas del Sistema (Inventario Completo: 145 Features)
 
-## 📊 Matriz Resumen de Entregas del Sistema (Inventario Completo: 134 Features)
-
-| ID | Fecha | Módulos | Tipo | Resumen del Alcance / Hito Técnico | Estado |
-|---|---|---|---|---|---|
+| **FEAT-145** | 2026-10-04 | Filtros Dinámicos, Radar, Matriz, UX/UI, i18n, Ergonomía | `Arquitectura Híbrida (A + C) de Filtros Dinámicos, Vernáculo Argentino Queer 2026 y Desasfixia Visual` | Rediseño y Desasfixia Integral del cajón de Filtros Dinámicos (`DynamicFilterDrawer.tsx`) combinando la estructuración en 3 bloques tácticos de la Opción A con la poda quirúrgica y síntesis ergonómica de la Opción C: (1) Bloque 1 (Onda & Ritmo, Action-First): Reemplazo de etiquetas genéricas por vocabulario gay/queer argentino 2026 en `ENERGY_VIBE_CATALOG` ('Al hueso', 'Tranqui', 'Pegar onda', 'Morbo / Kink', 'Mirón / Morbo visual', 'Caravana / Darkroom', 'Juegos & Rol'), y transformación radical de la incomprensible 'Intensidad Mínima' en selector intuitivo '¿Qué tan picante?' con 4 tempos táctiles (☕ Tranqui, ⚡ Al hueso, 🔥 Picante, ⛓️ Extremo) y micro-subtexto sensorial explicativo; (2) Bloque 2 (Quién & Dónde): Roles en pills ergonómicas (44px), consolidación de 4 switches verticales de 80px en una compacta 'Cápsula de Confianza & Logística' (grid 2x2 ergonómico: Tiene lugar ya, Cero plantones 90%+, Verificados 3D, Deseos mutuos) recuperando más de 200px de viewport, y chips de orientación/interés; (3) Bloque 3 (Acordeón Plegable Inteligente): Sección colapsable 'Afinar fetiches, sustancias y distancia' con badge dinámico de filtros activos que agrupa los 21 morbos del catálogo en 3 tribus carnales (Cuero & Gear, Dinámicas de Poder, Morbos & Prácticas), selector de atmósfera de consumo y slider de distancia; (4) Poda quirúrgica de redundancias: eliminación de disponibilidad/BodyState y botón de calibración GPS; (5) Suite unitaria dedicada `hybridFilterDrawer.test.ts` con 404 tests pasando al 100% en 64 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-144** | 2026-10-04 | Radar, Matriz, Lugares, Fiestas, IntentHub, PlacesGrid, UX/UI, Ergonomía | `Unificación Arquitectónica de Navegación Matriz vs Boliches y Lugares (Pinta ya, Morbos, Discreto + Portal Nocturno)` | Unificación de navegación de primer nivel en `IntentHubSelector.tsx` erradicando la barra redundante `Gente vs Boliches`: (1) Reordenamiento de sintonías a `[ ⚡ Pinta ya | 🔥 Morbos y Fetiches | 🛡️ Discreto ]` con divisor visual táctico y botón `[ 🍸 Boliches y Lugares ]` al final diferenciado con acento y gradiente fucsia/violeta; (2) Activación directa de la Matriz de perfiles al presionar sintonías humanas (`now`, `kink`, `stealth`) y conmutación reactiva a `PlacesGrid` al pulsar Boliches y Lugares; (3) Poda definitiva de la barra segmentada redundante `[ Gente | Boliches y Lugares ]` en `ProfileGrid.tsx`, liberando viewport vertical y eliminando duplicación cognitiva; (4) Cartelera Nocturna & Fiestas Activas exhibida de forma prominente antes de los puntos de encuentro en la misma ventana unificada, sin forzar apertura de modales; (5) 398 tests pasando al 100% en 63 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-143** | 2026-10-04 | Header, Matriz, Radar, IntentHub, Filtros, UX/UI, i18n, Ergonomía | `Header Integrado, Filtros en 2 Capas & Vernáculo Rioplatense Queer 2026 (Alternativa 1 — Desasfixia de la Matriz)` | Rediseño de Navegación, Header y Controles de la Matriz (Alternativa 1): (1) Recuperación masiva de viewport vertical (~42% de altura recortada en controles fijos, bajando de ~180px a ~102px) eliminando la asfixia visual y el sentimiento de 'clon de Grindr'; (2) Desacoplamiento de disponibilidad personal vs filtrado de matriz: migración del estado propio `[⚡ Estoy listo]` / `[⚡ LISTO]` con temporizador On The Clock directamente al `BrutalistHeader.tsx` junto al menú de perfil; (3) Compactación de `IntentHubSelector.tsx` a 1 sola fila segmentada de 36px con los 4 modos operativos (`[⚡ Pinta ya | 🌙 La Noche | 🔥 Morbos | 🛡️ Discreto]`), eliminando banner explicativo y botón duplicado 'ACTIVAR YA'; (4) Reestructuración y corrección de colisión de scroll en `ProfileGrid.tsx` (`sticky top-[98px]`): conmutador táctico `👥 Pibes` vs `📍 Spots & Jodas`, Fila 2 compacta unificando ordenamiento segmentado (`[📍 Cerca | ⚡ Activos | 🔥 Afinidad]`), separador vertical y 3 chips esenciales (`[⭐ Favoritos]`, `[🏠 Con lugar]`, `[🛡️ Verificados]`) con botón de reset `Limpiar`, delegando filtros granulares al cajón `DynamicFilterDrawer`; (5) Vernáculo rioplatense gay 2026 en `translations.ts` ('Con lugar' por 'Tiene Depto', 'Pibes' por 'Personas', 'Spots & Jodas' por 'Lugares & Fiestas', 'Verificados' por 'Solo Verificados'); (6) 398 tests pasando al 100% en 63 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-142** | 2026-10-04 | Admin, Dashboard, Usuarios, Moderación, Membresías, Catálogo, UX/UI, i18n | `Arquitectura de 4 Módulos Estratégicos & Ficha 360° en Consola de Administración (/admin)` | Modernización y Rediseño Integral de la Consola de Administración (VESSEL OPS // COMMAND): (1) Reestructuración de 9 pestañas planas en 4 Módulos Estratégicos en `AdminNav.tsx` (Negocio, Comunidad, Catálogo, Gobernanza) con targets ergonómicos de 44px; (2) Aislamiento estricto de herramientas de simulación de testing en `page.tsx` mediante panel colapsable `🛠️ Simulación & Dev Tools` reservado a entorno local; (3) Dashboard orientado a negocio en `DashboardOverviewTab.tsx` (MRR en USD, tasa de conversión a Unlimited, tracción en vivo y banner de Duress PIN con inspección directa); (4) Ficha 360° en `UserManagementTab.tsx` en 3 solapas (Identidad & Biometría, Comportamiento & Sanciones con chips de motivos obligatorios, Membresía & Seguridad); (5) Moderación ágil en `ModerationTab.tsx` e integración directa con perfiles; (6) Localización rioplatense 2026 ('Elegí un perfil', 'Perfil trucho / Catfish', 'Ghosteo reiterado', 'Fotos íntimas sin consentimiento', 'Límites del Plan Free'); (7) 397 tests pasando al 100% en 63 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-141** | 2026-10-04 | Base UI, Modales, Radar, Chat, Perfil, Nightlife, Diario, Ajustes, Auth, UX/UI, i18n, Ergonomía | `Arquitectura & Rediseño Táctico (Opción A — Fullscreen Views & Tactical Bottom Sheets)` | Estandarización Total de Ventanas Modales y Vernáculo Rioplatense Gay 2026: (1) Reingeniería de base en `BrutalistModal.tsx` convirtiéndolo por defecto en Tactical Bottom Sheet deslizable desde el fondo en mobile (`items-end sm:items-center`, `p-0 sm:p-4`, `rounded-t-3xl sm:rounded-2xl`, drag handle táctico centrado, animación `slide-in-from-bottom` e intercepción táctil sin fugas de scroll `overscroll-contain`); (2) Pantallas Completas Inmersivas (`Fullscreen Views`, `100dvh`, sin backdrops anidados ni GPU stutter) para módulos de inmersión profunda (`ProfileDetailModal` y `DarkroomChatModal`); (3) Estandarización de 100% de los modales restantes del sistema (`AppSettingsModal`, `AppModeModal`, `UnlimitedPaywallModal`, `GeoBatteryModal`, `TravelModeModal`, `EnRouteTrackerModal`, `DuoLinkModal`, `EditMockProfileModal`, `WriteTestimonialModal`, `VoiceVibeRecorderModal`, `DuressPinSettingsModal`, `HarmReductionModal`, `BoundaryManagerModal`, `SendMediaModal`, `NightlifeEventsModal`, `EventDetailModal`, `AfterHoursModal`, `MissedConnectionsModal`, `WingmanModal`, `ItsExposureModal`, `LoverDossierModal`, `CreateDiaryEntryModal`, `VesselWrappedModal`, `CoverPhotoSelectorModal`, `CreateAlbumModal`, `AlbumDetailModal`, `AuthModal`, `IdentityVerificationModal`, `LivenessVerificationModal`, `BetaFeedbackModal`, `BetaDiagnosticsModal`) con drag handles táctiles, zonas de toque ≥44px y cierre por tap en backdrop; (4) Modernización lingüística comunitaria en `translations.ts` ('Toques/Taps', 'Puntos Claros', 'Tiene Depto', 'Ficha de Casa', 'Darkrooms', '¿Qué pinta hoy?'); (5) 397 tests pasando al 100% en 63 suites de Vitest y 0 errores de compilación TypeScript (`npm run typecheck`). | **100%** ✅ |
+| **FEAT-140** | 2026-10-04 | Perfil & Cuenta, Identidad, Logística & Morbos, Seguridad & Blindaje, UX/UI, i18n, Ergonomía | `Arquitectura & Rediseño Táctico (Dual Mode: Tarjeta Viva WYSIWYG + Panel Táctico Modular)` | Arquitectura Dual en Mi Perfil (`ProtocolView.tsx`) y Vernáculo Queer Rioplatense 2026: (1) Modo Fácil por defecto (`EasyProfileCardView.tsx`) que materializa la Tarjeta Viva WYSIWYG interactiva con foto/avatar, switch directo de Modo Niebla en 1 toque, audio de perfil 5s, previsualización "Cómo me ven" y Pase QR, más chips táctiles de modificación rápida (Rol, Lugar/Movilidad y Qué pinta hoy) y 3 accesos tácticos al pie (Fotos & Bóvedas, Mi Lugar & Morbos, Blindaje & Seguridad); (2) Modo Avanzado conmutador ergonómico en cabecera (`[ ✨ Mi Tarjeta ]` vs `[ ⚙️ Modo Avanzado ]`) con persistencia en `localStorage`, Hero táctico de alta densidad y mazo de 4 solapas modulares sin solapamiento cognitivo: Mi Ficha (`BioTab`), Bóvedas (`AlbumsTab`), Logística & Morbos (`LogisticsTab.tsx` unificando ficha de hospedaje, radar de kinks mutuos ciegos, protocolo de salida acordado y atmósfera de consumo zero-knowledge) y Blindaje & Seguridad (`BoundariesTab` + `ReputationTab`); (3) Localización rioplatense gay 2026 en `translations.ts` sustituyendo términos rígidos por jerga natural ('Rol', 'Lugar y Movilidad', 'Qué pinta hoy', 'Cero Plantones & Respeto', 'Fotos & Bóvedas', 'Mi Lugar & Morbos', 'Blindaje & Seguridad'); (4) 397 tests pasando al 100% en 63 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-139** | 2026-10-04 | Agenda de Encuentros, Modal de Citas, Ficha Íntima, UX/UI, i18n, Ergonomía | `Arquitectura & Rediseño Táctico (Wizard Adaptativo Bifurcado en 2 Pasos)` | Rediseño Táctico de "Anotar en la Libreta" (`CreateDiaryEntryModal.tsx`) con Wizard Adaptativo Bifurcado en 2 Pasos y Vernáculo Queer Rioplatense 2026 (Alternativa A — Desasfixia Total): (1) Eliminación del formulario burocrático rígido de 4 pantallas y 20 controles clínicos que asfixiaba al usuario; (2) Implementación de switch de intención superior fluido (`📅 Agendar Salida` vs `⚡ Pasar en Limpio`), bifurcando la experiencia en exactamente 2 pasos según el objetivo del usuario; (3) Flujo Agendar Salida: Paso 1 (¿Con quién salís?: Chongo de la App con buscador táctico instantáneo y toggle Solo Favoritos ⭐ vs Alguien de afuera con nombre y presets de avatar) y Paso 2 (Logística Inmediata: chips rápidos de fecha Hoy/Mañana/+2d, chips de hora +30m/+1h/22:00/01:00, 7 lugares táctiles con íconos, tipo de salida y notas de acuerdos); (4) Flujo Pasar en Limpio: Paso 1 (Quién y Dónde fue con fecha y lugar en 1 pantalla) y Paso 2 (La Ficha Íntima en 1 toque: 5 estrellas táctiles 44px con feedback dinámico, fueguitos de química corporal 1-5 🔥, escudos de respeto a códigos 1-5 🛡️, selector de revancha y acordeón colapsable opcional "Bóveda Privada, Recuerdos & Cuidados" con notas cifradas, fotos de chat detectadas y alarma PrEP 90d); (5) Diccionario i18n enriquecido en `translations.ts` con lenguaje cálido y cómplice de la comunidad gay 2026; (6) 396 tests pasando al 100% en 63 suites de Vitest (nueva suite `CreateDiaryEntryModal.test.tsx` con 5 tests) y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-138** | 2026-10-04 | Agenda de Encuentros, Libreta Íntima, Salud & Cuidados, i18n, UX/UI, Ergonomía | `Arquitectura & Rediseño Táctico (4 Espacios por Intención)` | Arquitectura de 4 Espacios por Intención en la Agenda & Vernáculo Rioplatense Queer 2026 (Alternativa 1 — Desasfixia Anti-Cockpit): (1) Reestructuración de `DateDiaryView.tsx` en 4 solapas cristalinas navegables a 1 tap con targets ergonómicos de 44px: `Próximas & Citas` (`diary-tab-schedule`, foco en logística de hoy/mañana y acción inmediata), `Mis Chongos` (`diary-tab-lovers`, libreta privada con química comprobada, medallas y revancha 1-tap), `Salud & Cuidados` (`diary-tab-health`, botiquín Doxy-PEP 72h, calendario PrEP 90d y alerta de ITS) y `Métricas` (`diary-tab-insights`, retrospectiva Wrapped y KPIs de respeto); (2) Rediseño de `DiaryEntryCard.tsx`: reducción de la columna fotográfica móvil de 240px (`h-60`) a 144px (`h-36`), erradicando el bloqueo de pantalla vertical en mobile y priorizando la tríada logística (quién, cuándo, dónde) y barra anti-fantasma (+30m, +1h, mañana, cancelar con aviso); (3) Enlace dinámico de `loversList` derivado de citas y dossiers hacia `DiaryLoversVaultSection.tsx`; (4) Localización rioplatense gay 2026 en `translations.ts` ('Anotar Cita', 'Mis Chongos // Libreta Íntima', 'Ficha Íntima // El Chongo', 'Acuerdo de Salida', 'Nota Privada Cifrada', 'Cero fantasmas', '¿Cómo estuvo? En 1 toque'); (5) 391 tests pasando al 100% en 62 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-137** | 2026-10-04 | Chat Darkroom, Mensajes, Logística & Encuentros, UX/UI, i18n, Ergonomía | `Arquitectura & Rediseño Táctico (Smart Flow)` | Arquitectura Smart Flow en Mensajes & Ventana de Chat Inteligente (Desasfixia Anti-Cockpit y Vernáculo Queer 2026): (1) Localización Rioplatense Queer 2026 en `translations.ts` sustituyendo léxico burocrático por términos comunitarios auténticos ('Chat efímero', 'Ficha del chongo', 'Dale, coordinamos', '¿Tenés lugar?', 'Ponen lugar', '+5 Respeto'); (2) Rediseño de `DarkroomListView.tsx` eliminando el riel invasivo de perfiles sin chat, compactando tarjetas a 68px con 2 líneas limpias, micro-filtros segmentados 1-tap (`Todos`, `Ponen lugar 🏠`, `No leídos`) y Smart Bar reactiva de citas de hoy y PIN activo; (3) Módulos complementarios `EncounterContextBar.tsx` (barra contextual dinámica de 3 fases: charla, cita hoy y PIN/SOS) y `ChatProfileDrawer.tsx` (cajón deslizante táctico on-demand para mobile y desktop con fotos, respeto, nota privada y acciones rápidas); (4) Desasfixia radical de `DarkroomChatModal.tsx`: eliminación del `<aside>` estático de 320px que apretaba el chat en desktop, contenedor centrado `max-w-2xl lg:max-w-3xl`, cabecera ergonómica en 2 líneas, pill discreto de retención (`[ 🔒 Efímero ]` / `[ 💾 Guardado ]`), sustitución de tarjetas gigantes de álbum revocado (180px) por pastilla compacta de 26px; (5) 378 tests pasando al 100% en 59 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-136** | 2026-10-04 | Zumbidos, Pulsos, UX/UI, i18n, Ergonomía, Flujos | `Arquitectura & Rediseño Táctico (Bandeja Bifocal)` | Rediseño de Zumbidos con Arquitectura Bifocal ('Te tiraron onda' vs 'Onda Mutua 🔥'), Poda Radical de Redundancias y Vernáculo Rioplatense Queer 2026: (1) Reestructuración de la vista `PulsesView` en una arquitectura bifocal de 2 pestañas ergonómicas de 48px con badges reactivos ('Te tiraron onda' con badge animado de no leídos y 'Onda Mutua 🔥' con conteo esmeralda), reubicando la gestión de 'Zumbidos enviados' como acción secundaria en cabecera ('Tus envíos') con banner de retorno rápido sin cansar la vista; (2) Rediseño de `PulseCard` eliminando la duplicación cognitiva de chips superiores vs caja anidada, consolidando la Tríada Táctica en una sola ficha de compatibilidad con rol, logística ('Pone lugar 🏠' / 'Puede moverse 🚗'), salud preventiva ('PrEP Activa') y ritmo ('Express (sin vueltas) ⏱️', 'Tranqui (con charla) 🫂', 'Quedarse a dormir 🌙'); (3) Poda del control duplicado de descarte, centralizando en el botón ergonómico 'Paso, gracias' (44px) y 'Aceptar Zumbido ⚡' con sub-bass a 60Hz y apertura directa de chat con acuerdo fijado; (4) Actualización y paridad estricta en `translations.ts` ('Te tiraron onda', 'Onda Mutua 🔥', 'Tus envíos', 'Paso, gracias', 'Pone lugar 🏠'); (5) 378 tests pasando al 100% en 59 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
+| **FEAT-135** | 2026-10-04 | Perfil, Matriz, Radar, UX/UI, i18n, Ergonomía | `Arquitectura & Rediseño Táctico (Segmented Deck)` | Arquitectura de 3 Pestañas Tácticas (Segmented Deck) & Localización Vernácula Rioplatense 2026 en Detalle de Perfil (`ProfileDetailModal`): (1) Reemplazo de la lista vertical continua de 18 tarjetas apiladas por un mazo segmentado de 3 solapas tácticas navegables a un tap con respuesta acústica sub-bass a 70Hz y targets ergonómicos ≥44px: 'Perfil' (HUD corporal de rol, si recibe o se mueve, bio/qué onda, nota de voz, radar disponible YA e insignias compactas de verificación y anti-ghost sin tarjetas gigantes invasivas); 'Química & Morbo' (Morbos mutuos destacados con fuego e indicador ping, la onda que busca, intenciones, dinámica después de vernos 'Al hueso / Rápido - Sin vueltas', límites y fetiches); 'Confianza' (Ficha de casa y hospedaje, salud preventiva/VIH/PrEP con I=I, dossier privado con notas y red flags, referencias comunitarias y álbum privado cifrado); (2) Poda radical de redundancias (eliminación de banner intrusivo duplicado 'Asistente de citas 3 en 1' y consolidación de acuerdos); (3) Adaptación léxica de alta cercanía al dialecto gay argentino 2026 en `translations.ts` ('Bio / Qué onda', 'Referencias', 'Tiene lugar', 'La onda que busca', 'Sin vueltas', 'Pactar Encuentro Seguro ⚡'); (4) 378 tests pasando al 100% en 59 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
 | **FEAT-134** | 2026-10-04 | Radar, Matriz, Navegación, Zumbidos, Agenda, Chat Darkroom, Perfil, i18n, UX/UI | `Arquitectura & Rediseño Táctico Zen (Progressive Disclosure Radical)` | Rediseño Táctico Zen & Vernáculo Rioplatense Queer 2026: (1) Desasfixia cognitiva y visual del Radar aplicando Progressive Disclosure Radical en 3 niveles (Nivel 1: Tarjeta Zen en `ProfileCard` con 1 solo botón de acción primario 'Sintonizar' y botón de favoritos, eliminando la botonera saturada de 4 botones; Nivel 2: Dossier profundo en `ProfileDetailModal` como hogar exclusivo de la Tríada de Compatibilidad completa y acuerdos; Nivel 3: Chat Darkroom con banner fijado de pacto previo); (2) Cabecera Táctica Zen (`BrutalistHeader`) con Cápsula de Usuario ergonómica de 44px (`header-user-menu-btn`) y menú táctico desplegable (Audio Sub-bass, Pase QR, Verificación 3D, Unlimited, Sesión) y zona central libre en reposo; (3) Diccionario i18n Rioplatense Queer 2026 (`translations.ts`) y Navegación (`BrutalistNav`): adopción mandatoria de "Radar", "Zumbidos" (reemplazando Ondas), "Agenda" (reemplazando Bitácora), "0% Fantasmas", "Pone Lugar", "Modo Discreto", "Aceptar Zumbido ⚡" y "Paso, gracias"; (4) 377 tests pasando al 100% en 59 suites de Vitest y 0 errores de compilación TypeScript. | **100%** ✅ |
 | **FEAT-133** | 2026-10-04 | Radar, Matriz, Pulsos, Chat Darkroom, Perfil, UI/UX | `Arquitectura & Rediseño de Flujos Centrado en el Usuario` | De-Grindrización de VESSEL & Suite de Sintonía Action-First: (1) Reemplazo del StatusToggle por el Selector de Sintonía Operativa (`IntentHubSelector`) con 4 modos tácticos (`now`, `nightlife`, `kink`, `stealth`), botón de emergencia temporal On The Clock (45m) y resonancia sub-bass a 55Hz; (2) Reestructuración de `ProfileGrid` en Racimos de Sintonía con cartelera nocturna contextual integrada; (3) Evolución de `ProfileCard` incorporando la Tríada de Compatibilidad (Micro-ficha de hospedaje con lugar/movilidad, Badges Pre-Flight con PrEP y kinks coincidentes, contador de disponibilidad inmediata) y botón primario 'Sintonizar'; (4) Rediseño Action-First en `ProfileDetailModal` con CTA primario 'Sintonizar con Pre-Flight ⚡' con audio a 60Hz y montaje diferido de `RendezvousSheet`; (5) Doble Consentimiento en `PulseCard` con tarjeta de revisión táctica de sintonía y botones 'Aceptar Sintonía ⚡' y 'Declinar con Respeto'; (6) Cabecera de dinámicas acordadas fijadas en `DarkroomChatModal` (`data-testid="pinned-preflight-banner"`) con tempo, protección, protocolo de salida y botón de ajuste rápido; (7) 372 tests pasando al 100% en 58 suites de Vitest y 0 errores de TypeScript. | **100%** ✅ |
 | **FEAT-132** | 2026-10-04 | Geoespacial, Radar, Matriz, Hotspots, Fiesta, Mock | `Coherencia Geográfica & Geolocalización Táctica` | Geolocalización Nativa del Modo Prueba en Saavedra 620 (Río Cuarto, Córdoba) y Cobertura Mock Completa: (1) Reubicación exacta de las coordenadas por defecto del sistema (`myCoordinates`, `virtualCoords`) a `Saavedra 620, Macrocentro, Río Cuarto` (`lat: -33.1325, lng: -64.3470`, Geohash `6d45x8r`), con migración y purga automática de coordenadas cacheadas antiguas de Buenos Aires y Berlín en `localStorage`; (2) Reubicación y contextualización de los 7 perfiles base de prueba (`vessel-01` a `vessel-07`) en barrios reales de Río Cuarto (Saavedra/Macrocentro, Centro/Plaza Roca, Alberdi, Costanera, Banda Norte, Bimaco, Castelli) con bios, handles y audios adaptados; (3) Algoritmo de dispersión en `generateAdditionalProfiles()` calibrado a un radio de 80m–3.2km alrededor de Saavedra 620 para los 100 perfiles adicionales; (4) Actualización de `MOCK_HOTSPOTS` y `MOCK_NIGHTLIFE_EVENTS` a Río Cuarto (Club Táctico Centro, Sauna Imperio, Búnker Alberdi, Costanera Norte); (5) Inclusión de Río Cuarto en `TravelModeModal` y `BetaDiagnosticsModal` (GPS presets); (6) Suite unitaria `mockProfilesProximity.test.ts` pasando al 100% (353 tests en 54 suites). | **100%** ✅ |
@@ -51,7 +58,330 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
 | **FEAT-117** | 2026-09-22 | Diario & Salud, UX/UI, Arquitectura, Purificación Lingüística | `Refactor & Rediseño UX/UI Mayor (Auditoría Integral)` | Auditoría Integral y Rediseño Modular de la Agenda de Encuentros: (1) Fragmentación de monolito de 1.896 líneas en 4 solapas modulares táctiles: Citas (`DiaryScheduleSection`), Agenda Íntima (`DiaryLoversVaultSection`), Salud & Cuidados (`DiaryHealthSection`) y Métricas (`DiaryInsights`); (2) Erradicación absoluta de Spanglish e inconsistencias bilingües en toda la agenda, implementando los nombres aprobados "Agenda Íntima" (y "Agenda de Amantes") y botón oficial "Quiero la Revancha"; (3) Simplificación del wizard de creación (`CreateDiaryEntryModal`) bifurcando citas futuras (2 pasos directos sin evaluación prematura) de citas concretadas (4 pasos con feedback íntimo); (4) Creación del componente atómico `DiaryEntryCard` con targets táctiles ≥44px, fechas relativas ("Hoy", "Mañana") y notas confidenciales cifradas; (5) Eliminación de duplicaciones de salud en Métricas y carruseles redundantes de favoritos; (6) 289/289 tests en Vitest pasando y TypeScript con 0 errores. | **100%** ✅ |
 | **FEAT-116** | 2026-09-22 | Diario & Salud, Chat Darkroom, Seguridad & DRM, Logística & Encuentros | `Nueva Feature Disruptiva (Killer Feature)` | Evolución Disruptiva de la Agenda de Encuentros ("The Black Vault", "La Ficha de Cada Amante", "Ticket de Encuentro", "VESSEL Wrapped" y "Revancha Táctica"): (1) Tarjetas interactivas de "Ticket de Encuentro" en Darkroom Chat generadas desde `RendezvousSheet` con aceptación en 1 toque y protocolo anti-plantón H-2 (confirmación 2 horas antes), (2) Bóveda Visual del Amante ("La Ficha de Cada Amante") en `LoverDossierModal.tsx` con archivado directo desde el chat (`Archivar en Ficha`) o al crear cita (`CreateDiaryEntryModal`), protegida con DRM "Hold to Reveal" (10px blur, audio sub-bass 65Hz y blackout ante captura), (3) "The Black Vault" en `DateDiaryView.tsx` (Muro de Trofeos y Conquistas soberano Local-First / Zero-Cloud inmune a bloqueos o borrado de cuentas ajenas), (4) "Revancha Táctica" (carrusel de amantes 5★ para enviar pulso de repetición en 1 toque), (5) "VESSEL Wrapped" (`VesselWrappedModal.tsx`) con telemetría de placer, percentil de ciudad, compañero MVP, la noche más salvaje y mapa de calor de conquistas barriales, (6) Exportación camuflada a calendario (`.ics`) con título señuelo ("Reunión Táctica / Gimnasio") y alarma H-2, (7) 290/290 tests en verde (42 suites en Vitest) y TypeScript estricto con 0 errores. | **100%** ✅ |
 | **FEAT-115** | 2026-09-21 | Core, Agentes, Arquitectura, Calidad | `Infra / Agentes & Calidad de Código` | Integración Calibrada de la Skill y Filosofía Ponytail (Lazy Senior Dev) en VESSEL: Creación de `.agents/skills/ponytail/SKILL.md` adaptada con la escalera de decisiones (The Ladder: YAGNI, reuso interno de codebase, APIs nativas Web, cero librerías npm innecesarias, fixes de causa raíz con grep), articulada con cláusula de salvaguarda inquebrantable para Impeccable UI (estética brutalista, sub-bass 45-80Hz y diseño sensorial intocables); sincronización en `antigravity_global_rules.md` y `GEMINI.md`. | **100%** ✅ |
-| **FEAT-114** | 2026-09-21 | Desconexión, Radar, Salud, Testimonios, Audio, Seguridad | `Auditoría TIER 4 & Purificación Lingüística` | Auditoría Integral TIER 4: Contexto y Retención a Largo Plazo, Humanización de Desconexión, Expansión de Modo Viajero y Erradicación de Spanglish: (1) Reemplazo de archivo mal nombrado `AppDisguiseModal.tsx` por `AppDisguiseSection.tsx` (DEL-1), (2) Humanización de estados y protocolos en `BoundaryManagerModal.tsx` y `BoundariesTab.tsx` (DEL-2) sustituyendo tokens crudos (`POLITE_ARCHIVE`, `readonly`, `attenuated`) por "Cierre Respetuoso", "Solo Lectura", "Atenuado", "Señal atenuada sutil" y "+5 Respeto", (3) Expansión táctica de Modo Viajero en `TravelModeModal.tsx` incorporando polos turísticos y ciudades clave de Argentina (Córdoba, Rosario, Mendoza, Mar del Plata) y traducción de pie a "Modo Viajero", (4) Purificación en `DiaryHealthSection.tsx` ("Nuevo Recordatorio", "Contacto del Encuentro") y `DoxyPepTrackerCard.tsx` (eliminación de slashes), (5) Reemplazo de "Ocultar (+1 ID)" por "Guardar Privado" y saneamiento de slashes en `PendingTestimonialsManager.tsx`, (6) Traducción de Voice Vibe a "Audio de Presentación" en `VoiceVibePlayer.tsx` y "Escuchar Grabación" en `VoiceVibeRecorderModal.tsx`, (7) Actualización de `DuressPinSettingsModal.tsx` aclarando activación de señuelo (Calculadora o Notas), (8) 276/276 tests en verde (39 suites en Vitest) y TypeScript 100% estricto con 0 errores. | **100%** ✅ |
+
+### [FEAT-145] · [2026-10-04] Arquitectura Híbrida (A + C) de Filtros Dinámicos, Vernáculo Argentino Queer 2026 y Desasfixia Visual
+- **Tipo**: `Arquitectura & Rediseño Táctico (Desasfixia + Progressive Disclosure + Vernáculo Argentino 2026)`
+- **Módulo / Eje**: `Filtros Dinámicos`, `Radar`, `Matriz`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Rediseño y desasfixia integral del cajón de Filtros Dinámicos (`DynamicFilterDrawer.tsx`) implementando la Arquitectura Híbrida (A + C) aprobada por el usuario para erradicar el modelo de clon de Grindr y la sobrecarga cognitiva:
+  1. **Bloque 1 (Onda & Ritmo — Action-First, unificación rectora)**:
+     - *¿Qué onda buscás hoy?* en `ENERGY_VIBE_CATALOG`: Bloque único y rector de entrada carnal sin duplicaciones (`Al hueso ⚡`, `Tranqui ☕`, `Pegar onda ✨`, `Morbos / Fetiches ⛓️`, `Mirón / Morbo visual 👁️`, `Boliches y Lugares 🍸`, `Juegos & Rol 🎭`).
+     - Estandarización obligatoria en toda la app: 'Morbo / Kink' pasa a denominarse formalmente **'Morbos / Fetiches'** (en catálogo, diario íntimo y paywall).
+     - Homogeneización de 'Caravana / Darkroom' a **'Boliches y Lugares 🍸'** en paridad 1:1 con el acceso de la pantalla principal.
+     - Poda y erradicación del bloque repetitivo '¿Qué tan picante?' del frente del cajón, eliminando la colisión cognitiva de 'Tranqui' y 'Al hueso' duplicados.
+  2. **Bloque 2 (Quién & Dónde — Siempre visible, ergonómico)**:
+     - *Rol / Posición*: Wrap pills de 44px con las etiquetas comunitarias (`getRoleDisplayLabel`).
+     - *Cápsula de Confianza & Logística (Grid 2x2 ergonómico)*: Consolidación de 4 tarjetas verticales de 80px en una grilla compacta de 2x2 (`Tiene lugar ya 🏠`, `Cero plantones (90%+) 🛡️`, `Verificados 3D ✨`, `Deseos mutuos 🔥`) con indicadores de estado activos y targets táctiles de 58px, recuperando más de 200px de viewport vertical.
+     - *A quién querés ver*: Wrap pills de intereses de género e identidad.
+  3. **Bloque 3 (Acordeón Plegable Inteligente — Progressive Disclosure)**:
+     - Disparador colapsable con badge dinámico de filtros activos (`Afinar fetiches, sustancias y distancia`).
+     - *Catálogo de Morbos agrupado en 3 tribus*: Clasificación semántica de los 21 morbos en `⛓️ Cuero & Gear` (categoría gear), `⚡ Dinámicas de Poder` (categoría dynamic/intensity) y `🔥 Morbos & Prácticas` (categoría fetish/scene).
+     - *Intensidad Mínima del Perfil (Tempo)*: Reubicación del selector numérico 1 a 4 (`☕ Tranqui`, `⚡ Al hueso`, `🔥 Picante`, `⛓️ Extremo`) dentro del acordeón avanzado para usuarios que deseen calibración fina sin estorbar el flujo rápido inicial.
+     - *Atmósfera de Consumo*: Selector en 2 columnas con tokens de sustancias.
+     - *Radio de Distancia*: Slider táctil de 0.5km a 20km con etiquetas de distancia mínima/máxima.
+  4. **Poda Quirúrgica de Redundancias**:
+     - Eliminación de la sección redundante de `Disponibilidad / BodyState` (ahora cubierta de forma nativa por el selector principal `IntentHubSelector`).
+     - Eliminación del botón de calibración de GPS/Batería del cajón de filtros (preservado en ajustes y diagnósticos donde corresponde).
+  5. **Verificación & Suite de Pruebas**:
+     - Nueva suite unitaria `tests/unit/filters/hybridFilterDrawer.test.ts` con 6 pruebas exhaustivas.
+     - 404 tests pasando al 100% en 64 suites de Vitest y 0 errores en `npm run typecheck`.
+- **Componentes & Archivos Clave**:
+  - `src/components/filters/DynamicFilterDrawer.tsx`
+  - `src/data/energyCatalog.ts`
+  - `src/data/kinkCatalog.ts`
+  - `src/components/diary/CreateDiaryEntryModal.tsx`
+  - `src/components/subscription/UnlimitedPaywallModal.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `tests/unit/filters/hybridFilterDrawer.test.ts`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Alternativa 1 implementada: Bloque rector único '¿Qué onda buscás hoy?' y migración de intensidad a acordeón avanzado.
+  - [x] Homogeneización en toda la app de 'Morbo / Kink' a 'Morbos / Fetiches'.
+  - [x] Homogeneización de 'Caravana / Darkroom' a 'Boliches y Lugares 🍸'.
+  - [x] Targets táctiles mínimos de 44×44px en todos los botones y selectores (Impeccable UI).
+  - [x] Desasfixia y recuperación de más de 280px de viewport con la cápsula 2x2 y la poda de duplicaciones.
+  - [x] 404/404 tests unitarios pasando en Vitest (64 suites).
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+
+### [FEAT-144] · [2026-10-04] Unificación Arquitectónica de Navegación Matriz vs Boliches y Lugares (Pinta ya, Morbos, Discreto + Portal Nocturno)
+- **Tipo**: `Arquitectura & Rediseño Táctico (Unificación de Flujos + Desasfixia + Portal Nocturno)`
+- **Módulo / Eje**: `Radar`, `Matriz`, `Lugares`, `Fiestas`, `IntentHub`, `PlacesGrid`, `UX/UI`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Unificación de la navegación de primer nivel en `IntentHubSelector.tsx` y erradicación de la duplicación cognitiva originada por tener "Boliches y Lugares" tanto en sintonías como en el conmutador inferior:
+  1. **Reordenamiento y Jerarquía Operativa en `IntentHubSelector.tsx`**:
+     - Posicionamiento ordenado de las 3 sintonías de personas (`[ ⚡ Pinta ya | 🔥 Morbos y Fetiches | 🛡️ Discreto ]`).
+     - Separador táctico vertical (`w-px h-5 bg-white/20`) que delimita claramente los filtros de personas del portal físico y nocturno.
+     - Posicionamiento de `[ 🍸 Boliches y Lugares ]` al final, visualmente diferenciado con gradiente fucsia/violeta oscuro (`bg-pink-950/25 border-pink-500/30 text-pink-300`) y resplandor activo rosa neón (`shadow-[0_0_14px_rgba(236,72,153,0.35)] ring-1 ring-pink-400/50`).
+  2. **Navegación Unificada Directa (Action-First)**:
+     - Al presionar `Pinta ya`, `Morbos y Fetiches` o `Discreto`: activación de la Matriz de perfiles (`matrixTab = "people"`) con sus respectivos racimos y filtros de personas.
+     - Al presionar `Boliches y Lugares`: conmutación directa e instantánea a la vista de boliches y lugares (`matrixTab = "places"`).
+  3. **Poda de la Barra Segmentada Redundante en `ProfileGrid.tsx`**:
+     - Eliminación definitiva del switcher secundario `[ 👥 Gente (N) | 📍 Boliches y Lugares (N) ]` que generaba redundancia y quitaba 45px de pantalla vertical.
+     - Limpieza de dependencias e íconos no utilizados (`Users`, `MapPin`, `setMatrixTab`).
+  4. **Cartelera Nocturna & Fiestas Activas Integrada en la Misma Ventana (`PlacesGrid.tsx`)**:
+     - Despliegue prominente de la **Cartelera Nocturna & Fiestas Activas** antes del catálogo general de spots tácticos.
+     - Experiencia unificada en una sola ventana scrollable sin necesidad de abrir modales secundarios para consultar la agenda de fiestas activas hoy.
+- **Componentes & Archivos Clave**:
+  - `src/components/matrix/IntentHubSelector.tsx`
+  - `src/components/matrix/ProfileGrid.tsx`
+  - `src/components/matrix/PlacesGrid.tsx`
+  - `tests/unit/ui/IntentHubSelector.test.tsx`
+  - `tests/unit/ui/ProfileGrid.test.tsx`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` 0 errores).
+  - [x] Vitest suite completa con 398 tests pasando al 100% en 63 suites (`npm run test`).
+  - [x] Jerarquía visual Impeccable UI con diferenciación táctica de `Boliches y Lugares`.
+  - [x] Eliminación completa de la barra secundaria redundante en `ProfileGrid.tsx`.
+  - [x] Cartelera nocturna visible antes de todos los lugares en una sola ventana.
+
+### [FEAT-143] · [2026-10-04] Header Integrado, Filtros en 2 Capas & Vernáculo Rioplatense Queer 2026 (Alternativa 1 — Desasfixia de la Matriz)
+- **Tipo**: `Arquitectura & Rediseño Táctico (Header Integrado + Filtro en 2 Capas + Desasfixia)`
+- **Módulo / Eje**: `Header`, `Matriz`, `Radar`, `IntentHub`, `Filtros`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Rediseño y modernización integral de la cabecera, selector de intenciones y barra de control de la matriz para erradicar el modelo de 'clon de Grindr', desasfixiar la pantalla inicial y adoptar el dialecto gay rioplatense 2026:
+  1. **Desasfixia Visual y Recuperación Masiva de Espacio Vertical**: Reducción de ~180px a ~102px de controles sticky fijos (~42% de altura recortada), permitiendo que los perfiles y spots aparezcan inmediatamente en el primer pliegue de la pantalla (first fold) en mobile sin sentirse asfixiado por capas apiladas.
+  2. **Desacoplamiento de Disponibilidad Personal vs Filtrado de Matriz**:
+     - Migración del estado de disponibilidad personal On The Clock (`[⚡ Estoy listo]` / `[⚡ LISTO]`) directamente a la cabecera táctica (`BrutalistHeader.tsx`), junto a la cápsula de perfil de usuario.
+     - Píldora animada en ámbar neón con pulso auditivo sub-bass a 70Hz que indica disponibilidad inmediata sin ensuciar los filtros del feed.
+  3. **Compactación Segmentada de `IntentHubSelector.tsx`**:
+     - Rediseño a una barra segmentada de 1 sola fila ultra-compacta (36px) con 4 intenciones operativas (`[⚡ Pinta ya | 🌙 La Noche | 🔥 Morbos | 🛡️ Discreto]`).
+     - Eliminación del banner explicativo intrusivo de 60px y del botón duplicado 'ACTIVAR YA'.
+     - Borde reactivo con resplandor neón según el modo seleccionado.
+  4. **Reingeniería de Controles en `ProfileGrid.tsx` y Corrección de Scroll**:
+     - Corrección de colisión de coordenadas sticky (`top-[98px]`), evitando solapamientos entre header, selector de intenciones y cuadrícula.
+     - Fila 1 unificada con conmutador de dominios `👥 Gente` vs `📍 Boliches y Lugares`, buscador instantáneo, botón de modo viajero y acceso al cajón de filtros con badge de conteo.
+     - Fila 2 compacta que combina ordenamiento segmentado (`[📍 Cerca | ⚡ On-Line | 🔥 Afinidad]`), separador vertical discreto y los 3 chips tácticos más consultados (`[⭐ Favoritos]`, `[🏠 Con lugar]`, `[🛡️ Verificados]`) más botón de reset express `[Limpiar]`. Se reemplazó 'Activos' por 'On-Line' para eliminar toda ambigüedad con el rol sexual gay (activo/pasivo/versátil).
+     - Delegación limpia de filtros granulares (roles top/bottom/vers, sobriedad, intensidad alta, morbos mutuos) al cajón táctico `DynamicFilterDrawer`.
+  5. **Vernáculo Gay Rioplatense 2026 y Coherencia Semántica en `translations.ts`**:
+     - *"Morbos y Fetiches"* en reemplazo del anglicismo "Morbos & Kink".
+     - *"Gente"* en reemplazo de "Pibes" (término no masculinizado, amplio y natural en Argentina).
+     - *"Boliches y Lugares"* tanto para la pestaña de la grilla como para la sintonía nocturna, unificando la experiencia con total coherencia.
+     - *"On-Line"* para el ordenamiento de perfiles conectados y disponibles.
+  6. **Criterios de Aceptación & Verificación (DoD)**:
+     - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+     - [x] Cobertura de pruebas completa en Vitest: 398 tests pasando al 100% en 63 suites (incluyendo actualización de `operatingIntentClusters.test.ts`, `IntentHubSelector.test.tsx` y `BrutalistHeader.test.tsx`).
+     - [x] Cero dependencias npm externas añadidas (Criterio Ponytail).
+     - [x] Preservación de estética brutalista Dark Luxury y respuesta acústica Web Audio API.
+
+### [FEAT-142] · [2026-10-04] Arquitectura de 4 Módulos Estratégicos & Ficha 360° en Consola de Administración (/admin)
+- **Tipo**: `Arquitectura & Rediseño Táctico (4 Módulos de Negocio + Progressive Disclosure)`
+- **Módulo / Eje**: `Admin`, `Dashboard`, `Usuarios`, `Moderación`, `Membresías`, `Catálogo`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Modernización y reingeniería total de la consola ejecutiva de administración (`/admin` - VESSEL OPS // COMMAND):
+  1. **Sidebar Ejecutivo Permanente en Desktop & Drawer Móvil (`AdminNav.tsx`)**: Reemplazo de la barra horizontal superior saturada por una Barra Lateral Ejecutiva vertical fija (`w-72 sticky top-0 h-screen`) concebida para el dueño y directores de VESSEL. Incluye: (a) Header de marca con acceso directo al Radar de la app (`ABRIR APP RADAR`), (b) Tarjeta permanente de **Pulso Ejecutivo** (MRR estimado en USD, usuarios activos en tiempo real y banner de alarma Duress PIN), (c) Buscador dinámico de pestañas (`tabFilterQuery`) para saltar a cualquier módulo, (d) Reagrupación en 4 Módulos Estratégicos (Negocio, Comunidad, Catálogo y Gobernanza) con targets de 44px e insignias reactivas, (e) Ficha del operador conectado con RBAC, y (f) Drawer overlay deslizable para móviles con botón hamburger y cierre táctil.
+  2. **Cabecera Contextual & Breadcrumbs (`AdminHeader.tsx`)**: Reingeniería de la barra superior en desktop para mostrar la ruta y módulo activo (`MÓDULO // Sección Activa`), reloj HUD en tiempo real, indicador de estado de matriz y selector de operadores (Staff Switcher) con min 44px touch targets.
+  3. **Aislamiento de Testing y Desasfixia (`page.tsx`)**: Layout horizontal flex en desktop (`flex-row min-h-screen`) y reubicación de controles de prueba en un drawer colapsable discreto `🛠️ Simulación & Dev Tools` activo solo en localhost.
+  4. **Dashboard de Negocio (`DashboardOverviewTab.tsx`)**: Foco en MRR en USD ($14.99), tasa de conversión de pago, tracción en vivo y banner de Alerta Crítica (Duress PIN) con botón de inspección directa.
+  5. **Ficha 360° en 3 Solapas (`UserManagementTab.tsx`)**: Tabla simplificada y drawer lateral con solapas: (1) Identidad & Biometría (Foto vs Selfie 3D, validación 1-tap), (2) Comportamiento & Sanciones (Respect Karma, chips de motivos obligatorios, apercibimiento, suspensión y baneo), (3) Membresía & Seguridad (Concesión de Unlimited, Modo Niebla forzado y blanqueo de alertas).
+  6. **Moderación Fluida (`ModerationTab.tsx`)**: Motivos y filtros en rioplatense, enlace directo a la ficha del denunciado.
+  7. **Localización Vernácula Rioplatense 2026**: Adopción de términos naturales y contemporáneos ('Elegí un perfil', 'Perfil trucho / Catfish', 'Ghosteo reiterado', 'Fotos íntimas sin consentimiento', 'Límites del Plan Free').
+- **Componentes & Archivos Clave**:
+  - `src/components/admin/AdminNav.tsx`
+  - `src/components/admin/AdminHeader.tsx`
+  - `src/app/admin/page.tsx`
+  - `src/components/admin/tabs/DashboardOverviewTab.tsx`
+  - `src/components/admin/tabs/UserManagementTab.tsx`
+  - `src/components/admin/tabs/ModerationTab.tsx`
+  - `src/components/admin/tabs/MembershipsTab.tsx`
+  - `src/components/admin/tabs/HotspotsManagementTab.tsx`
+  - `src/components/admin/tabs/KinksManagementTab.tsx`
+  - `src/components/admin/tabs/BetaManagementTab.tsx`
+  - `src/components/admin/tabs/StaffManagementTab.tsx`
+  - `src/components/admin/tabs/AuditLogsTab.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de Vitest pasando al 100% (63 suites, 397 tests).
+  - [x] Targets táctiles mínimos de 44px en toda la consola.
+  - [x] Aislamiento de herramientas dev fuera de la vista de producción.
+  - [x] Registro en `registro-de-features.md` y memoria Engram sincronizada.
+
+### [FEAT-141] · [2026-10-04] Arquitectura de Pantalla y Hojas Tácticas (Desmantelamiento de Modal Hell & Vernáculo Rioplatense Gay 2026)
+- **Tipo**: `Arquitectura & Rediseño Táctico (Opción A — Fullscreen Views & Tactical Bottom Sheets)`
+- **Módulo / Eje**: `Base UI`, `Perfil & Cuenta`, `Chat Darkroom`, `Logística & Encuentros`, `Radar`, `Nightlife`, `Diario & Salud`, `Ajustes`, `Auth`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Desmantelamiento integral de la incepción de modales y sobrecarga cognitiva en VESSEL mediante la adopción y estandarización completa de la Opción A:
+  1. **Fullscreen Views Inmersivas**: Transformación de `ProfileDetailModal.tsx` y `DarkroomChatModal.tsx` en pantallas completas (`fixed inset-0 z-40 bg-obsidian-deep w-full h-[100dvh] overflow-hidden`) con contenedor ergonómico centrado en desktop (`max-w-5xl` y `max-w-4xl`), botón Atrás `ChevronLeft` con etiqueta explícita de retorno ("Radar" / "Chats", hit-target ≥44px), eliminando backdrops anidados que recalientan la GPU móvil y colisiones con el botón nativo de retroceso.
+  2. **Tactical Bottom Sheet Base (`BrutalistModal.tsx`)**: Reingeniería del componente modal raíz de la aplicación para transformar automáticamente cualquier modal heredado en un Bottom Sheet en celulares (`items-end sm:items-center`, `p-0 sm:p-4`, `rounded-t-3xl sm:rounded-2xl`, drag handle táctico `w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden`, animación `slide-in-from-bottom duration-200`, `[overscroll-behavior:contain]`), preservando su aspecto flotante brutalista centrado en desktop (`sm:`).
+  3. **Estandarización del 100% de Ventanas Modales y Diálogos Tácticos**:
+     - *Utilidades & Logística*: `HostCardModal.tsx`, `AppSettingsModal.tsx`, `AppModeModal.tsx`, `UnlimitedPaywallModal.tsx` (con purga de residuales "zumbidos" a "toques"), `GeoBatteryModal.tsx`, `TravelModeModal.tsx`, `EnRouteTrackerModal.tsx`.
+     - *Seguridad & Salud*: `DuressPinSettingsModal.tsx`, `HarmReductionModal.tsx`, `BoundaryManagerModal.tsx`, `SafetyBeaconModal.tsx`.
+     - *Identidad & Auth*: `AuthModal.tsx`, `IdentityVerificationModal.tsx`, `LivenessVerificationModal.tsx`, `GenderInterestOnboardingModal.tsx`.
+     - *Perfil & Pareja*: `DuoLinkModal.tsx`, `EditMockProfileModal.tsx`, `WriteTestimonialModal.tsx`, `VoiceVibeRecorderModal.tsx`.
+     - *Diario & Bitácora*: `CreateDiaryEntryModal.tsx`, `LoverDossierModal.tsx`, `ItsExposureModal.tsx`, `VesselWrappedModal.tsx`.
+     - *Álbumes & Bóvedas*: `CoverPhotoSelectorModal.tsx`, `CreateAlbumModal.tsx`, `AlbumDetailModal.tsx`.
+     - *Chat & Multimedia*: `SendMediaModal.tsx`, `ChatMediaViewerModal.tsx` (protección DRM activa).
+     - *Nightlife Suite*: `NightlifeEventsModal.tsx`, `EventDetailModal.tsx`, `AfterHoursModal.tsx`, `MissedConnectionsModal.tsx`, `WingmanModal.tsx`, `SpikedDrinkAlertModal.tsx`, `OpticalBeaconModal.tsx`.
+  4. **Purificación Vernácula Rioplatense Gay 2026**: Modernización de términos en `translations.ts` a la jerga argentina comunitaria actual:
+     - *"Zumbidos"* ➔ **"Toques" / "Taps"**
+     - *"Acuerdo Previo"* ➔ **"Puntos Claros"**
+     - *"Pone Lugar"* ➔ **"Tiene Depto"**
+     - *"Host Card"* ➔ **"Ficha de Casa"**
+     - *"Salas Oscuras"* ➔ **"Darkrooms"**
+     - *"Sintonía de Encuentro"* ➔ **"¿Qué pinta hoy?"**
+     - *"Sin penetración"* ➔ Preservado como estándar limpio sin anglicismos.
+  5. **Garantía de Calidad y Cero Regresiones**: 397 tests pasando al 100% en 63 suites de Vitest y 0 errores de compilación TypeScript (`npm run typecheck`).
+
+### [FEAT-139] · [2026-10-04] Rediseño Táctico de "Anotar en la Libreta" (`CreateDiaryEntryModal.tsx`) con Wizard Adaptativo Bifurcado en 2 Pasos y Vernáculo Queer Rioplatense 2026 (Alternativa A — Desasfixia Total)
+- **Tipo**: `Arquitectura & Rediseño Táctico (Wizard Adaptativo Bifurcado en 2 Pasos)`
+- **Módulo / Eje**: `Agenda de Encuentros`, `Modal de Citas`, `Ficha Íntima`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Rediseño radical y desasfixia del modal de creación y registro de citas (`CreateDiaryEntryModal.tsx`), erradicando el formulario rígido anterior de 4 pasos obligatorios y 20 controles interactivos que saturaba al usuario tratándolo como si completara una declaración jurada judicial. Se implementó la Alternativa A seleccionada por el usuario (Wizard Adaptativo Bifurcado en 2 Pasos Máximos según la Intención):
+  1. **Switch Superior de Intención (`isUpcoming`)**:
+     - Switch de 1 toque en la cabecera: `📅 Agendar Salida` vs `⚡ Pasar en Limpio`.
+     - Conserva fluidamente la información ya ingresada (persona, fecha, lugar) al conmutar entre modos.
+  2. **Ruta 1 — Cita Futura (`📅 Agendar Salida` en 2 Pasos Express / 12 segundos)**:
+     - **Paso 1: ¿Con quién salís?**: Selector limpio entre `Chongo de la App` (con buscador instantáneo, filtro `Solo Favoritos ⭐` con badge numérico y lista táctil de 52px con rol y avatar) y `Alguien de afuera` (nombre, presets rápidos de avatar táctico o subida de foto cifrada AES-256). Campo opcional de notas confidenciales de la persona.
+     - **Paso 2: ¿Cuándo y Dónde? (Logística)**: Tríada de fecha rápida (`Hoy`, `Mañana`, `En 2 días` + selector manual), chips de hora rápida (`+30m`, `+1h`, `22:00`, `01:00`), 7 categorías táctiles de lugar con íconos (`🏠 Mi Casa`, `🔑 Su Casa`, `🍸 Bar`, `⚡ Boliche`, `🏨 Telo`, etc.), tipo de salida y notas de preparación/acuerdos. Botón directo `📅 Agendar Salida`.
+  3. **Ruta 2 — Encuentro Pasado (`⚡ Pasar Cita en Limpio` en 2 Pasos con Progressive Disclosure)**:
+     - **Paso 1: ¿Quién y Dónde fue?**: Selección de contacto, fecha del encuentro y selector táctil de lugar en una sola pantalla ágil.
+     - **Paso 2: La Ficha Íntima & Química**:
+       - *Bloque Principal en 1 toque*: Calificación con 5 estrellas táctiles (46px) y feedback dinámico rioplatense (`Superó todo 🔥`, `Muy buena experiencia`, `Cumplió lo esperado`, `Más o menos`, `Ni ahí`), escala de química corporal 1-5 🔥, escala de respeto a códigos 1-5 🛡️, y selector de revancha en 4 botones ergonómicos (`🔥 Sí, de una`, `🤔 Veremos`, `⚡ Solo en fiesta`, `⛔ Paso / Ni ahí`).
+       - *Bloque Desplegable Opcional ("Bóveda Privada, Recuerdos & Cuidados")*: Acordeón colapsado por defecto que no estorba la rapidez de uso pero permite notas íntimas cifradas, etiquetas/morbos contextuales, archivado de fotos enviadas en el chat y alarma preventiva PrEP a los 90 días. Botón final `✓ Guardar en la Libreta`.
+  4. **Vernáculo Rioplatense Queer 2026 (`src/lib/i18n/translations.ts`)**:
+     - Más de 40 nuevas claves tipadas de i18n con lenguaje auténtico de la comunidad gay argentina en 2026: "Agendar Salida", "Pasar Cita en Limpio", "Chongo de la App", "Alguien de afuera", "¿Con quién?", "¿Cuándo y Dónde?", "¿Cómo estuvo la cita?", "¿Da para revancha?", "Química Corporal & Fuego", "Respeto a Códigos & Límites".
+  5. **Verificación & Suite de Pruebas Unitarias**:
+     - Nueva suite dedicada `tests/unit/diary/CreateDiaryEntryModal.test.tsx` con 5 pruebas exhaustivas verificando renderizado por defecto, conmutación de pestañas de intención, filtro de favoritos, navegación y guardado en ambos modos.
+     - Total: 396/396 tests pasando al 100% en 63 suites de Vitest y `typecheck` con 0 errores.
+- **Componentes & Archivos Clave**:
+  - `src/components/diary/CreateDiaryEntryModal.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `tests/unit/diary/CreateDiaryEntryModal.test.tsx`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Wizard adaptativo de 2 pasos máximos implementado y verificado.
+  - [x] Targets táctiles mínimos de 44×44px en todos los botones y selectores (Impeccable UI).
+  - [x] Reducción radical de carga cognitiva (Progressive Disclosure para notas, fotos y salud).
+  - [x] Paridad estricta y tipado completo en español rioplatense e inglés en `translations.ts`.
+  - [x] Cobertura unitaria completa en Vitest (396 tests pasando en 63 suites).
+  - [x] Cero errores en `npm run typecheck`.
+
+### [FEAT-138] · [2026-10-04] Arquitectura de 4 Espacios por Intención en la Agenda & Vernáculo Rioplatense Queer 2026 (Alternativa 1 — Desasfixia Anti-Cockpit)
+- **Tipo**: `Arquitectura & Rediseño Táctico (4 Espacios por Intención)`
+- **Módulo / Eje**: `Agenda de Encuentros`, `Libreta Íntima`, `Salud & Cuidados`, `i18n`, `UX/UI`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Rediseño integral de la vista de Agenda (`DateDiaryView.tsx`) en VESSEL implementando la Alternativa 1 (División de 4 Espacios por Intención del Usuario), erradicando la hiperdensidad visual que sobrecargaba al usuario con más de 14 botones por tarjeta y reemplazando términos burocráticos por lenguaje natural rioplatense gay/queer 2026:
+  1. **Navegación Táctica de 4 Solapas por Intención (`DateDiaryView.tsx`)**:
+     - `Próximas & Citas` (`diary-tab-schedule`): Foco exclusivo en la logística inmediata (encuentros de hoy, mañana y esta semana), con targets de 44px e indicador numérico de citas activas.
+     - `Mis Chongos` (`diary-tab-lovers`): Tu libreta privada y vault de amantes recurrentes, con química verificada, fotos del chat, medallas íntimas y botón "Quiero la Revancha ⚡" en 1 toque.
+     - `Salud & Cuidados` (`diary-tab-health`): Botiquín Doxy-PEP con temporizador de 72h, calendario PrEP de 90 días con recordatorio de laboratorio, y Alerta Anónima de ITS comunitaria.
+     - `Métricas & Karma` (`diary-tab-insights`): Retrospectiva Anual / Wrapped, 4 KPIs de respeto y valoraciones de onda y confianza.
+  2. **Desasfixia de la Tarjeta de Encuentro (`DiaryEntryCard.tsx`)**:
+     - Reducción del contenedor fotográfico móvil de 240px (`h-60`) a 144px (`h-36`), recuperando un 40% del viewport vertical para lectura cómoda con una sola mano.
+     - Jerarquización limpia de la tríada logística (quién, cuándo, dónde) y barra anti-fantasma en 1 toque (`+30 min`, `+1 h`, `Mañana`, `Avisar y Cancelar`).
+     - Micro-evaluación express para citas concluidas (`🔥 Tremenda química`, `👍 Buena onda`, `👎 Sin onda`).
+  3. **Generación Dinámica de la Libreta de Chongos (`loversList`)**:
+     - Cálculo reactivo de amantes únicos a partir de citas agendadas y dossiers de perfil, ordenados por química y recencia.
+     - Vinculación fluida con `DiaryLoversVaultSection.tsx`, permitiendo abrir fichas íntimas o emitir zumbidos de revancha al instante.
+  4. **Vernáculo Rioplatense Queer 2026 (`src/lib/i18n/translations.ts`)**:
+     - Adopción de expresiones naturales de la comunidad LGBT+ argentina: `Anotar Cita` (reemplaza 'Documentar Encuentro'), `Mis Chongos // Libreta Íntima`, `Ficha Íntima // El Chongo`, `Acuerdo de Salida` (reemplaza 'Protocolo de Salida'), `Nota Privada Cifrada`, `Trato digno y cero fantasmas`, y `¿Cómo estuvo? En 1 toque`.
+  5. **Cobertura de Pruebas & Calidad de Código**:
+     - 391 tests pasando al 100% en 62 suites de Vitest.
+     - 0 errores en `npm run typecheck` (`tsc --noEmit`).
+- **Componentes & Archivos Clave**:
+  - `src/lib/i18n/translations.ts`
+  - `src/components/diary/DateDiaryView.tsx`
+  - `src/components/diary/DiaryScheduleSection.tsx`
+  - `src/components/diary/DiaryEntryCard.tsx`
+  - `src/components/diary/DiaryLoversVaultSection.tsx`
+  - `tests/unit/ui/DateDiaryView.test.tsx`
+  - `tests/unit/diary/DiaryQuickReview.test.tsx`
+  - `tests/unit/diary/DiaryBackupUI.test.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` 0 errores).
+  - [x] 100% de tests unitarios y de integración pasando (391 tests en 62 suites).
+  - [x] Ergonomía visual táctil brutalista (targets >= 44x44px, modo oscuro estricto, WCAG AA/AAA).
+  - [x] Persistencia en memoria Engram y actualización del Feature Ledger.
+
+### [FEAT-137] · [2026-10-04] Arquitectura Smart Flow en Mensajes & Ventana de Chat Inteligente (Desasfixia Anti-Cockpit y Vernáculo Queer 2026)
+- **Tipo**: `Arquitectura & Rediseño Táctico (Smart Flow)`
+- **Módulo / Eje**: `Chat Darkroom`, `Mensajes`, `Logística & Encuentros`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Rediseño integral de la vista de mensajes y modal de chat en VESSEL bajo el modelo Smart Flow (Opción 2), erradicando la hiperdensidad asfixiante de tipo 'cabina de avión' y diferenciando a VESSEL de aplicaciones genéricas:
+  1. **Localización Vernácula Rioplatense Queer 2026 (`translations.ts`)**: Adopción de expresiones naturales de la cultura gay/queer argentina de 2026 ("Chat efímero", "Ficha del chongo", "Dale, coordinamos", "¿Tenés lugar?", "¿Sale una previa?", "+5 Respeto", "Ponen lugar"), garantizando máxima cercanía y comodidad.
+  2. **Bandeja de Entrada Limpia & Smart Bar (`DarkroomListView.tsx`)**: Eliminación del riel invasivo de perfiles sin chat que abarrotaba la pantalla. Tarjetas de chat compactas (~68px) en 2 líneas jerárquicas con micro-tags (`🏠 Pone lugar`, `⚡ PIN Activo`). Filtros 1-tap segmentados (`Todos`, `Ponen lugar 🏠`, `No leídos`) y Smart Bar superior que solo emerge ante citas inminentes de hoy o PIN de encuentro activo.
+  3. **Barra Contextual Dinámica (`EncounterContextBar.tsx`)**: Componente reactivo situado bajo la cabecera que se activa según el momento de la interacción (charla casual ➔ cita agendada hoy con hora/lugar ➔ PIN activo con distancia y botón SOS en 1 toque).
+  4. **Ficha Táctica Deslizable (`ChatProfileDrawer.tsx`)**: Reemplazo del sidebar estático de 320px que asfixiaba el chat en monitores desktop por un drawer on-demand accesible en mobile y desktop al tocar el avatar o el botón `[ 👤 Ficha ]`, integrando foto en alta definición, puntaje de respeto, nota privada, reporte e inicio de cita.
+  5. **Ventana de Chat Centrada & Despejada (`DarkroomChatModal.tsx`)**: Contenedor centrado y ergonómico (`max-w-2xl lg:max-w-3xl`) con foco en la lectura de mensajes. Cabecera táctica con píldora discreta de retención (`[ 🔒 Efímero ]` / `[ 💾 Guardado ]`). Sustitución del bloque de 180px de álbum revocado por una pastilla compacta de 26px (`🔒 Dejaste de compartir tu álbum acá · Compartir de nuevo`).
+- **Componentes & Archivos Clave**:
+  - `src/lib/i18n/translations.ts`
+  - `src/components/chat/DarkroomListView.tsx`
+  - `src/components/chat/EncounterContextBar.tsx` (Nuevo)
+  - `src/components/chat/ChatProfileDrawer.tsx` (Nuevo)
+  - `src/components/chat/DarkroomChatModal.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` 0 errores).
+  - [x] Suite completa de pruebas ejecutada con éxito (`npm run test`: 59 suites, 378 tests pasando).
+  - [x] Cero dependencias npm externas agregadas (Filosofía Ponytail).
+  - [x] Targets táctiles mínimos de 44×44px y estados visuales respetados (Impeccable UI).
+  - [x] Protección de arquetipos sensibles (discreción y optimización de datos).
+
+### [FEAT-136] · [2026-10-04] Arquitectura Bifocal de Zumbidos ('Te tiraron onda' vs 'Onda Mutua') & Vernáculo Rioplatense Queer 2026
+- **Tipo**: `Arquitectura & Rediseño Táctico (Bandeja Bifocal)`
+- **Módulo / Eje**: `Zumbidos`, `Pulsos`, `UX/UI`, `i18n`, `Ergonomía`, `Flujos`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Reingeniería profunda de la vista de Zumbidos (`PulsesView.tsx`) y tarjeta de interacción (`PulseCard.tsx`) basada en la Opción A para erradicar la asfixia por hiperdensidad de información y duplicación de tarjetas anidadas, transformándola en una experiencia ágil, respetuosa y Anti-Grindr:
+  1. **Arquitectura Bifocal en `PulsesView`**:
+     - Reducción de las 3 pestañas abarrotadas a un selector bifocal limpio de 2 solapas con touch targets generosos de 48px:
+       - **Pestaña 1: "Te tiraron onda" (`received`)**: Bandeja de entrada con badge de no leídos (`unreadPulsesCount`) animado con ping neon (`bloodNeon`), pensada para triaje inmediato de decisiones.
+       - **Pestaña 2: "Onda Mutua 🔥" (`mutual`)**: Lista de coincidencias donde ambos mostraron química, con badge esmeralda y accesos directos de 1 tap para `Agendar Encuentro` o `Abrir Conversación`.
+     - Reubicación de la gestión de **Zumbidos enviados** como una acción secundaria sutil en la cabecera superior ("Tus envíos (N)"), que despliega la lista de salida con un banner persistente y botón de regreso rápido ("← Volver a Recibidos") sin abarrotar la vista principal.
+  2. **Poda Radical de Redundancias en `PulseCard`**:
+     - Eliminación de la duplicación cognitiva: en la versión previa se renderizaban chips superiores de Rol, Hospedaje y Protocolo de Salida y, justo abajo, una caja anidada gris (`pulse-sintonia-review`) que repetía exactamente los mismos 4 campos. Ahora, para zumbidos recibidos pendientes, se renderiza **un único bloque táctico de compatibilidad** con la Tríada Táctica integrada (Rol, Logística, PrEP activa y Ritmo de salida) sin chips repetidos arriba.
+     - Eliminación del botón duplicado de descarte (cruz superior derecha), unificando el descarte en el botón inferior accesible `Paso, gracias` (44px) y la aceptación en `Aceptar Zumbido ⚡` con síntesis analógica sub-bass a 60Hz.
+  3. **Localización Vernácula Rioplatense Queer Contemporánea 2026 (`translations.ts`)**:
+     - `tabReceived`: "Te tiraron onda" (reemplazando "Recibidos").
+     - `tabMutual`: "Onda Mutua 🔥" (reemplazando "Mutuos 🔥").
+     - `sentCountBtn`: "Tus envíos" (reemplazando "Enviados" en tab principal).
+     - `declinePolite`: "Paso, gracias" (reemplazando "Declinar con Respeto").
+     - `hasPlaceBadge`: "Pone lugar 🏠" (reemplazando "Tiene lugar").
+     - `clearAll`: "Limpiar leídos" (reemplazando "Limpiar vistos").
+     - Protocolos de salida en tarjeta: "Express (sin vueltas) ⏱️", "Tranqui (con charla) 🫂", "Quedarse a dormir 🌙".
+     - Estados vacíos cálidos y humanos: "Bandeja tranquila por ahora" y "Sin ondas mutuas todavía".
+  4. **Paridad de Internacionalización & Testing**:
+     - Actualización gemela en `TRANSLATIONS.en` manteniendo 100% de paridad de claves y validación estricta de cadenas no vacías.
+     - 59 suites de Vitest y 378 tests pasando al 100%, con 0 errores de TypeScript (`npm run typecheck`).
+- **Componentes & Archivos Clave**:
+  - `src/components/pulses/PulsesView.tsx`
+  - `src/components/pulses/PulseCard.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de tests unitarios e integración pasando (`npm run test` con 378/378 tests en verde).
+  - [x] Eliminación de cajas anidadas duplicadas y botones redundantes de descarte.
+  - [x] Cumplimiento estricto del estándar Impeccable UI con targets táctiles ≥44px/48px.
+  - [x] Sincronización en memoria Engram y Feature Ledger.
+
+### [FEAT-135] · [2026-10-04] Arquitectura de 3 Pestañas Tácticas (Segmented Deck) & Vernáculo Rioplatense 2026 en Detalle de Perfil
+- **Tipo**: `Arquitectura & Rediseño UX/UI Mayor`
+- **Módulo / Eje**: `Perfil & Cuenta`, `Matriz`, `Radar`, `UX/UI`, `i18n`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Reingeniería profunda de la vista modal de detalle de perfil (`ProfileDetailModal.tsx`) para eliminar el embotellamiento cognitivo de 18 tarjetas apiladas en scroll vertical continuo, transformándolo en un mazo segmentado de 3 solapas tácticas navegables a un tap con respuesta sub-bass (70Hz) y targets táctiles ergonómicos (≥44px):
+  1. **Segmented Deck en 3 Solapas Tácticas**:
+     - **Pestaña 1: "Perfil" (Lo Esencial)**: HUD corporal compacto (Rol Corporal, si tiene lugar o se mueve, Yo Soy/identidad, Físico en cm/kg), biografía/qué onda (con redacción clasificada si está a más de 1.0 km), nota de voz del perfil (reproductor VoiceVibe o botón para grabar saludo propio), banner On-The-Clock ("Pinta YA / Disponible YA") e insignias compactas de autenticidad (Verificación 3D y Anti-Ghosteo con porcentaje de respeto y velocidad de respuesta) sin tarjetas invasivas redundantes.
+     - **Pestaña 2: "Química & Morbo"**: Bloque prioritario de *Morbos Mutuos 🔥* (coincidencia secreta de Kink Matrix con indicador ping animado), la onda que busca (catálogo de clima y energía deseada), intenciones claras, dinámica después de vernos ("Al hueso / Rápido - Sin vueltas", "Tranqui con mimos", "Quedarse a dormir") con botón interactivo para acordar límites, límites y respeto, catálogo de morbos y fetiches públicos y atmósfera de consumo/sustancias.
+     - **Pestaña 3: "Confianza"**: Ficha de casa y hospedaje con indicador de movilidad y distancia táctica Google S2 (~152m), salud preventiva e información de VIH (sello I=I, PrEP y fecha de último testeo), dossier privado confidencial (notas cifradas del usuario, alias personalizado, ranking/veredicto y banderas rojas), referencias comunitarias de encuentros reales y álbum privado cifrado (Private Vault para fotos y videos).
+  2. **Poda Radical de Redundancias**:
+     - Eliminación del banner duplicado invasivo "Asistente de Citas Seguro (3 en 1)" en el scroll, canalizando toda la acción principal en el Bottom Action Dock con el botón "Pactar Encuentro Seguro ⚡" y "Chat".
+     - Eliminación de tarjetas gigantes redundantes de Verificación y Anti-Ghosteo que duplicaban la información ya presente en la foto del Hero.
+  3. **Localización Vernácula Rioplatense Queer 2026 (`translations.ts`)**:
+     - `aboutMe`: "Bio / Qué onda" (reemplazando "Sobre mí").
+     - `testimonials`: "Referencias de Encuentros" (reemplazando "Comentarios del Encuentro").
+     - `immediateHost`: "Tiene lugar" (reemplazando "Pone Lugar").
+     - `energyLabel`: "La onda que busca" (reemplazando "Clima y Onda Deseada").
+     - Protocolo de salida: "Al hueso / Rápido (Sin vueltas)" para `fast_encounter`.
+     - Acción principal: "Pactar Encuentro Seguro ⚡".
+- **Componentes & Archivos Clave**:
+  - `src/components/profile/ProfileDetailModal.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `tests/unit/ui/ProfileDetailModal.test.tsx`
+  - `tests/unit/i18n/translations.test.ts`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` 0 errores).
+  - [x] Linter estricto verificado (`npm run lint` 0 errores).
+  - [x] 100% de la suite de pruebas unitarias y de integración pasando (59 suites, 378 tests en verde).
+  - [x] Decisión arquitectónica y mapeo en Engram memory.
 
 ### [FEAT-134] · [2026-10-04] Rediseño Táctico Zen (Progressive Disclosure Radical) & Vernáculo Rioplatense Queer 2026
 - **Tipo**: `Arquitectura & Rediseño UX/UI Mayor`

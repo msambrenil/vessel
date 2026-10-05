@@ -27,8 +27,6 @@ import {
   UserPlus,
   FlaskConical,
   Plane,
-  Users,
-  MapPin,
   Plus,
   Star,
 } from "lucide-react";
@@ -53,7 +51,6 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     setIsOnTheClockFilterActive,
     setActiveView,
     matrixTab,
-    setMatrixTab,
     favoriteProfileIds: favIdsProp,
     operatingIntent = "now",
     intentClusters = [],
@@ -312,43 +309,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
       {/* =========================================================
           BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS (Sticky Top con Frosted Glass)
           ========================================================= */}
-      <div className="p-2 sm:p-2.5 bg-obsidian-deep/95 border-b border-white/10 sticky top-[52px] sm:top-[56px] z-20 space-y-2 shadow-md backdrop-blur-md">
-        
-        {/* Selector Segmentado de Exploración Principal: Personas vs Lugares & Fiestas con Conteo Integrado */}
-        <div className="flex items-center p-0.5 bg-black/60 border border-white/10 rounded-xl">
-          <button
-            type="button"
-            data-testid="matrix-tab-people"
-            onClick={() => setMatrixTab("people")}
-            className={`flex-1 py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 font-mono text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
-              matrixTab === "people"
-                ? "bg-electricViolet text-white shadow-violet-glow font-black"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>
-              {t.filters?.peopleTab || (language === "es" ? "Personas" : "People")} ({sortedProfiles.length})
-            </span>
-          </button>
-
-          <button
-            type="button"
-            data-testid="matrix-tab-places"
-            onClick={() => setMatrixTab("places")}
-            className={`flex-1 py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 font-mono text-[11px] sm:text-xs font-bold transition-all cursor-pointer ${
-              matrixTab === "places"
-                ? "bg-electricViolet text-white shadow-violet-glow font-black"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>
-              {t.filters?.placesTab || (language === "es" ? "Lugares & Fiestas" : "Places & Nightlife")} ({tacticalHotspots.length + nightlifeEvents.length})
-            </span>
-          </button>
-        </div>
-
+      <div className="p-2 sm:p-2.5 bg-obsidian-deep/95 border-b border-white/10 sticky top-[98px] z-20 space-y-2 shadow-md backdrop-blur-md">
         {/* =========================================================
             HEADER CONTEXTUAL PARA PESTAÑA: PERSONAS (2 FILAS COMPACTAS)
             ========================================================= */}
@@ -471,9 +432,9 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                       ? "bg-electricViolet text-white font-black shadow-violet-soft"
                       : "text-neutral-400 hover:text-white"
                   }`}
-                  title={language === "es" ? "Ordenar por Listos YA y Disponibles ahora" : "Sort by Ready NOW and Available"}
+                  title={language === "es" ? "Ordenar por perfiles On-Line y disponibles" : "Sort by Online and available"}
                 >
-                  ⚡ {language === "es" ? "Activos" : "Live"}
+                  ⚡ {language === "es" ? "On-Line" : "Online"}
                 </button>
                 <button
                   type="button"
@@ -492,20 +453,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                 </button>
               </div>
 
-              {/* 1. Todos / Reset */}
-              <button
-                type="button"
-                onClick={handleResetAllFilters}
-                aria-pressed={!hasActiveFilters}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  !hasActiveFilters
-                    ? "bg-white/15 text-white border-white/30 shadow-sm"
-                    : "bg-white/5 text-neutral-400 border-white/5 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>✨</span>
-                <span>{t.filters?.quickAll || (language === "es" ? "Todos" : "All")}</span>
-              </button>
+              <div className="h-4 w-px bg-white/15 flex-shrink-0 mx-0.5" />
 
               {/* 1.5. Favoritos */}
               <button
@@ -534,37 +482,21 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                 )}
               </button>
 
-              {/* 2. Radar Listo YA (60 min) */}
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setIsOnTheClockFilterActive(!isOnTheClockFilterActive);
-                }}
-                aria-pressed={isOnTheClockFilterActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isOnTheClockFilterActive
-                    ? "bg-electricViolet text-white border-electricViolet-glow font-black shadow-violet-glow animate-pulse"
-                    : "bg-white/5 text-purple-300 border-purple-500/30 hover:bg-purple-900/30 hover:text-purple-200"
-                }`}
-              >
-                <Zap className="w-3 h-3 fill-current text-electricViolet-glow" />
-                <span>{t.filters?.quickBoost || (language === "es" ? "Listos YA" : "Ready Now")}</span>
-              </button>
 
-              {/* 3. Con Casa */}
+              {/* 3. Con lugar */}
               <button
                 type="button"
                 onClick={() => toggleQuickFilter("host")}
                 aria-pressed={isHostOnlyActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+                className={`px-2.5 py-1 min-h-[30px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-95 ${
                   isHostOnlyActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
+                    ? "bg-emerald-500/25 border-emerald-400 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.3)] font-black"
                     : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
                 }`}
+                title={language === "es" ? "Mostrar solo perfiles con lugar propio disponible ya" : "Show only profiles with place"}
               >
-                <Home className="w-3 h-3 text-emerald-400" />
-                <span>{t.filters?.quickHost || (language === "es" ? "Con Casa" : "Has Place")}</span>
+                <Home className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{language === "es" ? "Con lugar" : "Has place"}</span>
               </button>
 
               {/* 4. Verificados */}
@@ -572,105 +504,29 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                 type="button"
                 onClick={() => toggleQuickFilter("verified")}
                 aria-pressed={isVerifiedActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+                className={`px-2.5 py-1 min-h-[30px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 active:scale-95 ${
                   isVerifiedActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
+                    ? "bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] font-black"
+                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-cyan-300 hover:bg-white/10"
                 }`}
+                title={language === "es" ? "Solo perfiles verificados biométricamente 3D" : "Verified profiles only"}
               >
-                <ShieldCheck className="w-3 h-3 text-mintNeon" />
-                <span>{t.filters?.quickVerified || (language === "es" ? "Verificados" : "Verified")}</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{language === "es" ? "Verificados" : "Verified"}</span>
               </button>
 
-              {/* 5. Morbos Mutuos */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("mutualKinks")}
-                aria-pressed={isMutualKinksActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isMutualKinksActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>{language === "es" ? "Deseos Mutuos" : "Mutual Kinks"}</span>
-              </button>
-
-              {/* 6. Sobrio */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("sober")}
-                aria-pressed={isSoberActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isSoberActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>🌿</span>
-                <span>{language === "es" ? "Sobrio" : "Sober"}</span>
-              </button>
-
-              {/* 7. Intensidad Alta */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("intensity")}
-                aria-pressed={isHighIntensityActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isHighIntensityActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>🚀</span>
-                <span>{language === "es" ? "+Intenso" : "+Intensity"}</span>
-              </button>
-
-              {/* 8. Tops */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("top")}
-                aria-pressed={isTopActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isTopActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>🔝</span>
-                <span>{language === "es" ? "Activos" : "Tops"}</span>
-              </button>
-
-              {/* 9. Bottoms */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("bottom")}
-                aria-pressed={isBottomActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isBottomActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>🍑</span>
-                <span>{language === "es" ? "Pasivos" : "Bottoms"}</span>
-              </button>
-
-              {/* 10. Versátiles */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("vers")}
-                aria-pressed={isVersActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isVersActive
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <span>🔄</span>
-                <span>{language === "es" ? "Versátiles" : "Versatile"}</span>
-              </button>
+              {/* Reset / Limpiar rápido si hay filtros activos */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleResetAllFilters}
+                  className="px-2.5 py-1 min-h-[30px] rounded-full text-[10px] font-mono font-bold text-bloodNeon hover:text-white bg-bloodNeon/10 border border-bloodNeon/30 hover:bg-bloodNeon/20 flex items-center gap-1 transition-all flex-shrink-0 cursor-pointer active:scale-95"
+                  title={language === "es" ? "Restablecer todos los filtros" : "Reset all filters"}
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>{language === "es" ? "Limpiar" : "Clear"}</span>
+                </button>
+              )}
             </div>
           </>
         )}

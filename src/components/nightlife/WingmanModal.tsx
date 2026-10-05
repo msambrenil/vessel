@@ -42,8 +42,20 @@ export const WingmanModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none">
-      <div className="w-full max-w-md bg-obsidian border border-white/15 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Compañero de Salida"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none [overscroll-behavior:contain]"
+      onClick={closeWingmanModal}
+    >
+      <div
+        className="w-full max-w-md bg-obsidian border-t sm:border border-white/15 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Header */}
         <div className="p-4 border-b border-white/10 bg-obsidian-surface flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -63,9 +75,10 @@ export const WingmanModal: React.FC = () => {
           <button
             type="button"
             onClick={closeWingmanModal}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white transition-colors cursor-pointer"
+            aria-label="Cerrar compañero de salida"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-300 hover:text-white transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

@@ -260,7 +260,7 @@ export const UnlimitedPaywallModal: React.FC = () => {
     {
       icon: "🛰️",
       title: "Transmisión Satelital de Largo Alcance (>1 km)",
-      desc: "Chateá de inmediato con cualquier Vessel a más de 1 km sin tener que esperar que te devuelvan el zumbido, con fotos nítidas y fichas desclasificadas.",
+      desc: "Chateá de inmediato con cualquier Vessel a más de 1 km sin tener que esperar que te devuelvan el toque, con fotos nítidas y fichas desclasificadas.",
     },
     {
       icon: "✈️",
@@ -270,7 +270,7 @@ export const UnlimitedPaywallModal: React.FC = () => {
     {
       icon: "🗄️",
       title: "Multi-Bóvedas Temáticas Ilimitadas",
-      desc: "Creá carpetas privadas separadas para Sensual, Kink, Gym y Cara con llaves granulares.",
+      desc: "Creá carpetas privadas separadas para Sensual, Fetiches, Gym y Cara con llaves granulares.",
     },
     {
       icon: "👁️",
@@ -290,7 +290,7 @@ export const UnlimitedPaywallModal: React.FC = () => {
     {
       icon: "🔥",
       title: t.payment?.priorityPulse || "Prioridad en el Radar & Boost de Visibilidad",
-      desc: "Tus zumbidos y perfil aparecen primero en la matriz y el radar con distintivo dorado.",
+      desc: "Tus toques y perfil aparecen primero en la matriz y el radar con distintivo dorado.",
     },
   ];
 
@@ -298,12 +298,15 @@ export const UnlimitedPaywallModal: React.FC = () => {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in select-none"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in select-none [overscroll-behavior:contain]"
+      onClick={closeUnlimitedModal}
     >
       <div
-        className="relative w-full max-w-lg bg-[#0a0a0a] border border-electricViolet/40 rounded-3xl shadow-2xl shadow-purple-950/40 overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-lg bg-[#0a0a0a] border-t sm:border border-electricViolet/40 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-purple-950/40 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* Header con gradiente nocturno refinado */}
         <div className="p-5 border-b border-electricViolet/30 bg-gradient-to-r from-purple-950/50 via-neutral-900 to-purple-950/50 text-center relative">
           {step === "checkout" ? (

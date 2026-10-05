@@ -5,17 +5,14 @@ import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { IdentityVerificationCard } from "../IdentityVerificationCard";
 import { PendingTestimonialsManager } from "../PendingTestimonialsManager";
-import { ExitProtocolSelector } from "@/components/profile/ExitProtocolSelector";
-import { SubstanceAtmosphereSelector } from "@/components/profile/SubstanceAtmosphereSelector";
 import { AppDisguiseSection } from "@/components/safety/AppDisguiseSection";
-import { Ghost, Zap, HeartHandshake } from "lucide-react";
+import { Ghost, Zap, HeartHandshake, ShieldCheck } from "lucide-react";
 import { TacticalBadge, SectionHeroHeader } from "@/components/ui";
 
 export const ReputationTab: React.FC = () => {
   const {
     myProfile,
     toggleNoGhostMode,
-    openHostCardModal,
     openSafetyBeaconModal,
     openDuressPinSettings,
     t,
@@ -104,63 +101,36 @@ export const ReputationTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Tarjeta Maestra de la Suite Táctica (Logística, Seguridad & Discreción) */}
-      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-white/10 space-y-4 shadow-card-elevation backdrop-blur-md">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-electricViolet-glow">
-              <span className="text-lg">⚡</span>
-            </div>
-            <div>
-              <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                {language === "es" ? "Herramientas Tácticas de Encuentro" : "Tactical Encounter Suite"}
-              </h3>
-              <p className="text-[10px] text-neutral-400 font-mono">
-                {language === "es"
-                  ? "Logística, acuerdos de salida, seguridad física y discreción"
-                  : "Logistics, exit agreements, physical safety, and discretion"}
-              </p>
-            </div>
-          </div>
-          <TacticalBadge variant="violet" size="sm">
-            {language === "es" ? "HERRAMIENTAS LISTAS" : "SUITE ACTIVE"}
-          </TacticalBadge>
-        </div>
+      {/* Tarjeta de Seguridad Personal & Discreción */}
+      <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-purple-500/30 space-y-4 shadow-card-elevation backdrop-blur-md">
+        <SectionHeroHeader
+          title={language === "es" ? "SEGURIDAD PERSONAL & DISCRECIÓN" : "PERSONAL SAFETY & DISCRETION"}
+          tag={language === "es" ? "PROTECCIÓN ACTIVA" : "ACTIVE SHIELD"}
+          subtitle={
+            language === "es"
+              ? "Guardián silencioso, PIN señuelo de coacción y camuflaje de pantalla"
+              : "Silent guardian, decoy duress PIN, and screen disguise"
+          }
+          variant="violet"
+          icon={<ShieldCheck className="w-4 h-4 text-purple-400" />}
+        />
 
-        {/* Ficha de Hospedaje, Guardián Silencioso & PIN de Coacción */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => openHostCardModal()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-electricViolet/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.98]"
-          >
-            <div>
-              <span className="font-mono text-xs font-bold text-neutral-200 block">
-                {language === "es" ? "🏠 Ficha de Hospedaje" : "🏠 Host Logistics Card"}
-              </span>
-              <span className="text-[10px] text-neutral-500">
-                {language === "es" ? "Configurar depto, insumos y ducha" : "Configure place, supplies & shower"}
-              </span>
-            </div>
-            <span className="text-xs font-mono text-electricViolet-glow">
-              {language === "es" ? "Editar →" : "Edit →"}
-            </span>
-          </button>
-
+        {/* Guardián Silencioso & PIN de Coacción */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => openSafetyBeaconModal()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-red-500/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
+            className="p-3.5 min-h-[50px] bg-neutral-900 border border-neutral-800 hover:border-red-500/50 rounded-2xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
           >
             <div>
               <span className="font-mono text-xs font-bold text-neutral-200 block">
                 🛡️ {t.safety?.guardianLabel || "Guardián Silencioso"}
               </span>
               <span className="text-[10px] text-neutral-500">
-                {language === "es" ? "Apagado de seguridad & Contacto" : "Safety shutoff & Contact"}
+                {language === "es" ? "Apagado de seguridad & contacto SOS" : "Safety shutoff & SOS contact"}
               </span>
             </div>
-            <span className="text-xs font-mono text-red-400">
+            <span className="text-xs font-mono text-red-400 font-bold">
               {language === "es" ? "Abrir →" : "Open →"}
             </span>
           </button>
@@ -168,30 +138,20 @@ export const ReputationTab: React.FC = () => {
           <button
             type="button"
             onClick={() => openDuressPinSettings()}
-            className="p-3 min-h-[44px] bg-neutral-900 border border-neutral-800 hover:border-red-500/40 rounded-xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
+            className="p-3.5 min-h-[50px] bg-neutral-900 border border-neutral-800 hover:border-red-500/50 rounded-2xl text-left transition-all flex items-center justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-[0.98]"
           >
             <div>
               <span className="font-mono text-xs font-bold text-neutral-200 block">
-                {language === "es" ? "🔐 PIN de Coacción" : "🔐 Duress PIN"}
+                🔐 {language === "es" ? "PIN de Coacción" : "Duress PIN"}
               </span>
               <span className="text-[10px] text-neutral-500">
-                {language === "es" ? "Alerta silenciosa y señuelo" : "Silent alert & decoy vault"}
+                {language === "es" ? "Alerta silenciosa y bóveda señuelo" : "Silent alert & decoy vault"}
               </span>
             </div>
-            <span className="text-xs font-mono text-neutral-400">
+            <span className="text-xs font-mono text-neutral-400 font-bold">
               {language === "es" ? "Configurar →" : "Configure →"}
             </span>
           </button>
-        </div>
-
-        {/* Protocolo de Salida Selector */}
-        <div className="p-3.5 bg-neutral-950/70 border border-neutral-800/80 rounded-2xl">
-          <ExitProtocolSelector />
-        </div>
-
-        {/* Atmósfera de Consumo & Sustancias (Zero-Knowledge) */}
-        <div className="p-3.5 bg-neutral-950/70 border border-neutral-800/80 rounded-2xl">
-          <SubstanceAtmosphereSelector />
         </div>
 
         {/* Camuflaje de App & Bloc de Notas */}

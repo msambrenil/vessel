@@ -10,6 +10,8 @@ const mockOpenHarmReductionModal = vi.fn();
 const mockSetActiveView = vi.fn();
 const mockSetActiveChatProfileId = vi.fn();
 const mockUpdateAppSettings = vi.fn();
+const mockStartOnTheClock = vi.fn();
+const mockStopOnTheClock = vi.fn();
 
 const mockAudioEngine = vi.hoisted(() => ({
   playPulse: vi.fn(),
@@ -29,6 +31,17 @@ let mockUserPlan = "free";
 let mockSafetyBeacon: { isActive: boolean } | null = null;
 let mockActiveRendezvous: { profileId: string; profileCodename: string } | null = null;
 let mockHarmReductionSession: { isActive: boolean } | null = null;
+let mockOnTheClock: {
+  isActive: boolean;
+  durationMinutes: number;
+  startedAt: string | null;
+  expiresAt: string | null;
+} = {
+  isActive: false,
+  durationMinutes: 60,
+  startedAt: null,
+  expiresAt: null,
+};
 
 vi.mock("@/context/VesselContext", () => ({
   useVessel: () => ({
@@ -49,6 +62,10 @@ vi.mock("@/context/VesselContext", () => ({
     openHarmReductionModal: mockOpenHarmReductionModal,
     appSettings: { soundEnabled: true },
     updateAppSettings: mockUpdateAppSettings,
+    myOnTheClock: mockOnTheClock,
+    startOnTheClock: mockStartOnTheClock,
+    stopOnTheClock: mockStopOnTheClock,
+    language: "es",
     t: TRANSLATIONS.es,
   }),
 }));
@@ -61,6 +78,12 @@ describe("BrutalistHeader — Cabecera Táctica Zen (Fase 2)", () => {
     mockSafetyBeacon = null;
     mockActiveRendezvous = null;
     mockHarmReductionSession = null;
+    mockOnTheClock = {
+      isActive: false,
+      durationMinutes: 60,
+      startedAt: null,
+      expiresAt: null,
+    };
   });
 
   it("renderiza la marca VESSEL y la cápsula unificada de usuario de 44px", () => {
@@ -112,5 +135,30 @@ describe("BrutalistHeader — Cabecera Táctica Zen (Fase 2)", () => {
 
     expect(mockOpenUnlimitedModal).toHaveBeenCalled();
     expect(screen.queryByTestId("header-tactical-menu")).not.toBeInTheDocument();
+  });
+
+  it("permite activar el disparador Estoy listo (On The Clock) directamente desde el header", () => {
+    render(<BrutalistHeader />);
+
+    const readyBtn = screen.getByTitle("Activar disponibilidad inmediata (1 hora)");
+    fireEvent.click(readyBtn);
+
+    expect(mockStartOnTheClock).toHaveBeenCalledWith(60, "Disponible ahora");
+  });
+
+  it("permite desactivar LISTO desde el header cuando está activo", () => {
+    mockOnTheClock = {
+      isActive: true,
+      durationMinutes: 60,
+      startedAt: "2026-10-04T12:00:00Z",
+      expiresAt: "2026-10-04T13:00:00Z",
+    };
+
+    render(<BrutalistHeader />);
+
+    const readyBtn = screen.getByTitle(/Listo ahora activo/i);
+    fireEvent.click(readyBtn);
+
+    expect(mockStopOnTheClock).toHaveBeenCalled();
   });
 });

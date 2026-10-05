@@ -1197,7 +1197,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-now-host",
           intent: "now",
-          title: language === "es" ? "Con Lugar Inmediato (Hosts Activos)" : "Immediate Hosts Available",
+          title: language === "es" ? "Con Lugar Inmediato" : "Immediate Hosts Available",
           subtitle: language === "es" ? "Listos para recibir con privacidad" : "Ready to host with privacy",
           icon: "🏠",
           accentColor: "border-electricViolet text-electricViolet",
@@ -1206,7 +1206,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-now-ready",
           intent: "now",
-          title: language === "es" ? "Listos para Salir (On The Clock)" : "Ready to Go (Active Timer)",
+          title: language === "es" ? "Listos para Salir" : "Ready to Go",
           subtitle: language === "es" ? "Disponibilidad inmediata declarada" : "Immediate availability declared",
           icon: "⚡",
           accentColor: "border-amber-400 text-amber-400",
@@ -1258,7 +1258,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-night-venues",
           intent: "nightlife",
-          title: language === "es" ? "En Fiestas & Hotspots de Hoy" : "Tonight's Hotspots & Venues",
+          title: language === "es" ? "En Fiestas y Boliches de Hoy" : "Tonight's Venues & Parties",
           subtitle: language === "es" ? "Clubes, saunas y eventos activos" : "Active clubs, saunas, and venues",
           icon: "🍸",
           accentColor: "border-pink-500 text-pink-400",
@@ -1267,7 +1267,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-night-after",
           intent: "nightlife",
-          title: language === "es" ? "Buscando After / Continuar la Noche" : "Looking for After / Late Night",
+          title: language === "es" ? "Para Continuar la Noche" : "Looking for Late Night Encounters",
           subtitle: language === "es" ? "Sintonía abierta para la madrugada" : "Open for late night encounters",
           icon: "🔥",
           accentColor: "border-bloodNeon text-bloodNeon",
@@ -1315,7 +1315,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-kink-intense",
           intent: "kink",
-          title: language === "es" ? "Intensidad Carnal & Raw (Nivel 3 & 4)" : "Raw & Extreme Intensity (Tier 3 & 4)",
+          title: language === "es" ? "Intensidad Máxima (Nivel 3 y 4)" : "Extreme Intensity (Tier 3 & 4)",
           subtitle: language === "es" ? "Encuentros intensos sin inhibiciones" : "Intense raw carnal dynamics",
           icon: "⛓️",
           accentColor: "border-bloodNeon text-bloodNeon",
@@ -1324,7 +1324,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-kink-roles",
           intent: "kink",
-          title: language === "es" ? "Roles Definidos (Top / Bottom / BDSM)" : "Explicit Roles (Top / Bottom / BDSM)",
+          title: language === "es" ? "Roles Definidos (Activo / Pasivo / Versátil)" : "Explicit Roles (Top / Bottom / Versatile)",
           subtitle: language === "es" ? "Dinámicas de poder y posiciones claras" : "Power dynamics and clear roles",
           icon: "🛡️",
           accentColor: "border-electricViolet text-electricViolet",
@@ -1342,7 +1342,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-kink-rest",
           intent: "kink",
-          title: language === "es" ? "Exploración Kink General" : "General Kink Exploration",
+          title: language === "es" ? "Exploración de Morbos y Fetiches" : "General Kink Exploration",
           subtitle: language === "es" ? "Perfiles abiertos a dinámicas" : "Profiles open to explore",
           icon: "🌐",
           accentColor: "border-zinc-500 text-zinc-400",
@@ -1378,7 +1378,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       {
         id: "cluster-stealth-antighost",
         intent: "stealth",
-        title: language === "es" ? "Cero Rastro / Anti-Ghost Verificado" : "Zero Trace / Verified Anti-Ghost",
+        title: language === "es" ? "Cero Rastro / Cero Plantones Verificado" : "Zero Trace / Verified Anti-Ghost",
         subtitle: language === "es" ? "Karma de respeto intachable y confidencial" : "High respect karma and discretion",
         icon: "🛡️",
         accentColor: "border-emerald-400 text-emerald-400",

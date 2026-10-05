@@ -48,6 +48,7 @@ import { useVessel } from "@/context/VesselContext";
 import { createVipInviteCode } from "@/lib/firebase/inviteService";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getAllKinks } from "@/lib/kinks/kinkAdminService";
+import { ChevronDown, ChevronUp, Wrench, Sparkles } from "lucide-react";
 
 export default function AdminConsolePage() {
   const {
@@ -71,6 +72,8 @@ export default function AdminConsolePage() {
   const [quotaSettings, setQuotaSettings] = useState<GlobalQuotaSettings | null>(null);
   const [selectedUser, setSelectedUser] = useState<ManagedUserProfile | null>(null);
   const [isClientReady, setIsClientReady] = useState(false);
+  const [isDevToolsOpen, setIsDevToolsOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Perfiles reales activos (incluyendo al usuario propio real si inició sesión real)
   const liveRealProfiles = useMemo(() => {
@@ -282,73 +285,86 @@ export default function AdminConsolePage() {
 
   return (
     <AdminAuthGuard>
-      <div className="min-h-screen bg-obsidian text-white flex flex-col selection:bg-electricViolet selection:text-white">
-      {/* Cabecera Brutalista Táctica con Staff Switcher */}
-      <AdminHeader
-        currentStaff={currentStaff}
-        staffList={staffList}
-        onSwitchStaff={handleSwitchStaff}
-        activeDuressCount={usersWithDuress.length}
-        pendingReportsCount={pendingReportsCount}
-      />
+      <div className="min-h-screen bg-obsidian text-white flex flex-col lg:flex-row selection:bg-electricViolet selection:text-white">
+        {/* Barra Lateral Ejecutiva Fija (Desktop) & Drawer Desplegable (Móvil) */}
+        <AdminNav
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          staffRole={currentStaff.role}
+          pendingReportsCount={pendingReportsCount}
+          totalUsersCount={users.length}
+          unlimitedCount={unlimitedCount}
+          kinksCount={getAllKinks().length}
+          hotspotsCount={tacticalHotspots.length}
+          estimatedMrrUsd={metrics.estimatedMrrUsd}
+          activeUsersNow={metrics.activeUsersNow}
+          activeDuressCount={usersWithDuress.length}
+          currentStaff={currentStaff}
+          staffList={staffList}
+          onSwitchStaff={handleSwitchStaff}
+          isOpenMobile={isMobileNavOpen}
+          onCloseMobile={() => setIsMobileNavOpen(false)}
+        />
 
-      {/* Navegación por Pestañas con Control de Roles */}
-      <AdminNav
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        staffRole={currentStaff.role}
-        pendingReportsCount={pendingReportsCount}
-        totalUsersCount={users.length}
-        unlimitedCount={unlimitedCount}
-        kinksCount={getAllKinks().length}
-        hotspotsCount={tacticalHotspots.length}
-      />
+        {/* Área de Trabajo y Contenido Principal (Derecha en Escritorio) */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Cabecera Táctica con Breadcrumbs, Staff Switcher y HUD */}
+          <AdminHeader
+            currentStaff={currentStaff}
+            staffList={staffList}
+            onSwitchStaff={handleSwitchStaff}
+            activeDuressCount={usersWithDuress.length}
+            pendingReportsCount={pendingReportsCount}
+            activeTab={activeTab}
+            onOpenMobileNav={() => setIsMobileNavOpen(true)}
+          />
 
-      {/* Contenedor Principal de la Consola */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-20">
-        {/* BARRA MAESTRA DE ENTORNO: MODO REAL VS MODO PRUEBA + VIP BETA + GPS 30M */}
-        <div className="mb-6 rounded-xl border-2 border-electricViolet/40 bg-gradient-to-r from-[#12091d] via-[#0c0c0e] to-[#091512] p-4 shadow-[0_0_30px_rgba(124,58,237,0.18)]">
+          {/* Contenedor Principal de la Consola */}
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-20">
+        {/* BARRA MAESTRA DE ENTORNO: CONTROLES DE NEGOCIO + HERRAMIENTAS DE TESTEO COLAPSABLES */}
+        <div className="mb-6 rounded-2xl border border-white/10 bg-obsidian-surface p-4 sm:p-5 shadow-card-elevation space-y-3">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* Selector Dual 1-Tap: MODO REAL vs MODO PRUEBA */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-electricViolet font-bold">
-                    CONTROL MAESTRO DE MATRIZ // ENTORNO ACTIVO
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-widest border ${
-                      appMode === "real"
-                        ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                        : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                    }`}
-                  >
-                    {appMode === "real"
-                      ? `EN VIVO (${profiles.length} REALES EN MATRIX)`
-                      : `SANDBOX (${profiles.length} BOTS DEMO)`}
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Alterná en 1 clic entre usuarios reales sincronizados en Firestore (TTL 30m) o perfiles simulados de prueba.
-                </p>
+            {/* Controles de Negocio: Modo Real vs Modo Prueba */}
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-electricViolet font-bold">
+                  CONTROL MAESTRO // ENTORNO DE OPERACIÓN
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-widest border ${
+                    appMode === "real"
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                      : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                  }`}
+                >
+                  {appMode === "real"
+                    ? `🟢 EN VIVO (${profiles.length} REALES EN MATRIX)`
+                    : `🧪 SANDBOX (${profiles.length} PERFILES DEMO)`}
+                </span>
               </div>
+              <p className="text-xs text-neutral-400 mt-1">
+                Elegí si operás sobre usuarios reales sincronizados en Firestore (TTL 30m) o con la simulación de pruebas.
+              </p>
+            </div>
 
+            {/* Selector de Modo (Real vs Test) */}
+            <div className="flex items-center gap-3">
               {isLocalEnvironment() ? (
-                <div className="grid grid-cols-2 gap-2 min-w-[290px] bg-black/60 p-1.5 rounded-lg border border-white/10">
+                <div className="grid grid-cols-2 gap-2 min-w-[280px] bg-black/60 p-1.5 rounded-xl border border-white/10">
                   <button
                     type="button"
                     onClick={() => {
                       setAppMode("real");
                       audioEngine.playVesselCrescendoAlert();
                     }}
-                    className={`px-3 py-2.5 rounded-md font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`px-3 py-2.5 min-h-[44px] rounded-lg font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation ${
                       appMode === "real"
-                        ? "bg-emerald-500/25 border-2 border-emerald-400 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.35)]"
+                        ? "bg-emerald-500/25 border border-emerald-400 text-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.35)]"
                         : "bg-white/[0.02] border border-transparent text-neutral-400 hover:text-white"
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${appMode === "real" ? "bg-emerald-400 animate-ping" : "bg-neutral-600"}`} />
-                    🟢 MODO REAL
+                    <span>🟢 MODO REAL</span>
                   </button>
                   <button
                     type="button"
@@ -356,26 +372,54 @@ export default function AdminConsolePage() {
                       setAppMode("test");
                       audioEngine.playStateSwitch("dormant");
                     }}
-                    className={`px-3 py-2.5 rounded-md font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`px-3 py-2.5 min-h-[44px] rounded-lg font-mono text-[11px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer touch-manipulation ${
                       appMode === "test"
-                        ? "bg-amber-500/25 border-2 border-amber-400 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.35)]"
+                        ? "bg-amber-500/25 border border-amber-400 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.35)]"
                         : "bg-white/[0.02] border border-transparent text-neutral-400 hover:text-white"
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${appMode === "test" ? "bg-amber-400 animate-pulse" : "bg-neutral-600"}`} />
-                    🧪 MODO PRUEBA
+                    <span>🧪 MODO PRUEBA</span>
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                <div className="flex items-center gap-2 px-3.5 py-2 min-h-[44px] rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-xs font-bold shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span>ONLINE REAL // FIRESTORE SYNC</span>
                 </div>
               )}
-            </div>
 
-            {/* Acciones Rápidas: Links VIP Beta + Modo Fiesta (Llegué) + Vibración Crescendo */}
-            <div className="flex flex-wrap items-center gap-2 border-t lg:border-t-0 pt-3 lg:pt-0 border-white/10">
+              {/* Botón de despliegue para Dev Tools (solo en local) */}
+              {isLocalEnvironment() && (
+                <button
+                  type="button"
+                  onClick={() => setIsDevToolsOpen(!isDevToolsOpen)}
+                  className={`px-3 py-2 min-h-[44px] rounded-xl border text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer touch-manipulation ${
+                    isDevToolsOpen
+                      ? "bg-electricViolet/20 text-electricViolet border-electricViolet/50"
+                      : "bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10"
+                  }`}
+                  title="Herramientas de simulación para desarrollo local"
+                >
+                  <Wrench className="w-4 h-4" />
+                  <span className="hidden sm:inline">🛠️ Simulación & Dev Tools</span>
+                  {isDevToolsOpen ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Bandeja de Herramientas de Testeo (Colapsable, disponible sólo en localhost) */}
+          {isLocalEnvironment() && isDevToolsOpen && (
+            <div className="pt-3 border-t border-white/10 flex flex-wrap items-center gap-2.5 animate-in fade-in">
+              <span className="text-[10px] font-mono uppercase text-neutral-400 tracking-wider mr-1">
+                Herramientas de Simulación:
+              </span>
+
               <button
                 type="button"
                 onClick={async () => {
@@ -391,7 +435,7 @@ export default function AdminConsolePage() {
                   setVipCopiedMsg(`Copiado: ?vip=${res.code}`);
                   setTimeout(() => setVipCopiedMsg(null), 4000);
                 }}
-                className="px-3 py-2 rounded-lg bg-electricViolet/20 hover:bg-electricViolet/30 border border-electricViolet/50 text-electricViolet font-mono text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                className="px-3.5 py-2 min-h-[40px] rounded-xl bg-electricViolet/20 hover:bg-electricViolet/30 border border-electricViolet/50 text-electricViolet font-mono text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
               >
                 🎟️ {vipCopiedMsg || "Generar & Copiar Link VIP Beta"}
               </button>
@@ -400,7 +444,7 @@ export default function AdminConsolePage() {
                 <button
                   type="button"
                   onClick={() => confirmPartyArrivalLock("techno_bunker")}
-                  className="px-3 py-2 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className="px-3.5 py-2 min-h-[40px] rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-mono text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
                   title="Fija ubicación en la fiesta por 4h, apaga el GPS continuo para ahorrar batería y dispara la vibración in-crescendo VESSEL"
                 >
                   🎉 Llegué a la Fiesta (Anclar 4h + Hibernar GPS)
@@ -409,7 +453,7 @@ export default function AdminConsolePage() {
                 <button
                   type="button"
                   onClick={() => checkOutOfEvent()}
-                  className="px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className="px-3.5 py-2 min-h-[40px] rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-mono text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   🔋 GPS Hibernando (Anclado 4h) · Salir de Fiesta
                 </button>
@@ -418,13 +462,13 @@ export default function AdminConsolePage() {
               <button
                 type="button"
                 onClick={() => audioEngine.playVesselCrescendoAlert()}
-                className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/15 text-neutral-200 font-mono text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                className="px-3.5 py-2 min-h-[40px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-neutral-200 font-mono text-[11px] uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5"
                 title="Patrón Háptico [15,90,25,75,40,60,65,45,100,30,180] + Sub-Bass Sweep 45Hz ➔ 88Hz"
               >
                 📳 Probar Vibración Crescendo (45Hz➔88Hz)
               </button>
             </div>
-          </div>
+          )}
         </div>
         {activeTab === "dashboard" && (
           <DashboardOverviewTab
@@ -496,8 +540,9 @@ export default function AdminConsolePage() {
         )}
 
         {activeTab === "audit" && <AuditLogsTab logs={auditLogs} />}
-      </main>
-    </div>
+          </main>
+        </div>
+      </div>
     </AdminAuthGuard>
   );
 }

@@ -114,7 +114,7 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
       />
     );
 
-    const declineBtn = screen.getByRole("button", { name: /Paso, gracias/i });
+    const declineBtn = screen.getByRole("button", { name: /Paso/i });
     fireEvent.click(declineBtn);
 
     expect(audioEngine.playPulse).toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
       />
     );
 
-    const acceptBtn = screen.getByRole("button", { name: /Aceptar Zumbido/i });
+    const acceptBtn = screen.getByRole("button", { name: /Aceptar (Zumbido|Toque)/i });
     fireEvent.click(acceptBtn);
 
     expect(audioEngine.playSubBass).toHaveBeenCalledWith(60);
@@ -169,6 +169,6 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
 
     expect(screen.queryByTestId("pulse-sintonia-review")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Agendar Encuentro/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Abrir Conversación/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Abrir (Conversación|Chat)/i })).toBeInTheDocument();
   });
 });

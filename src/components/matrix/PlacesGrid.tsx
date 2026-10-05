@@ -358,7 +358,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
               <span className="font-extrabold text-white font-mono flex items-center gap-1.5 text-[11px] sm:text-xs flex-shrink-0">
                 <span className="w-2 h-2 rounded-full bg-electricViolet animate-ping inline-block" />
                 <span>
-                  {filteredHotspots.length + filteredEvents.length} {language === "es" ? "Lugares & Fiestas" : "Spots & Parties"}
+                  {filteredHotspots.length + filteredEvents.length} {language === "es" ? "Boliches y Lugares" : "Clubs & Places"}
                 </span>
               </span>
 
@@ -442,19 +442,29 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
           CONTENIDO: LISTADO TÁCTICO DE LUGARES Y FIESTAS
           ========================================================= */}
       <div className="p-3 sm:p-4 space-y-4">
-        {/* Sección: Fiestas & Cartelera Nocturna (Si aplica a la categoría seleccionada) */}
+        {/* Sección 1: Cartelera Nocturna & Fiestas Activas (Visible antes de mostrar todos los lugares) */}
         {filteredEvents.length > 0 && (
-          <div className="space-y-2.5">
+          <section
+            aria-label={language === "es" ? "Cartelera Nocturna & Fiestas Activas" : "Active Nightlife & Parties"}
+            className="p-3.5 sm:p-4 bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-obsidian-surface border border-pink-500/30 rounded-2xl space-y-3 backdrop-blur-md shadow-[0_0_25px_rgba(236,72,153,0.15)]"
+          >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <PartyPopper className="w-4 h-4 text-electricViolet-glow" />
-                <h3 className="font-mono text-xs font-extrabold uppercase text-white tracking-wider">
-                  {language === "es" ? "Fiestas & Boliches Destacados" : "Featured Parties & Nightlife"}
-                </h3>
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl animate-pulse">🍸</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-mono text-xs sm:text-sm font-black uppercase text-white tracking-wider">
+                      {language === "es" ? "Cartelera Nocturna & Fiestas Activas" : "Active Nightlife & Parties"}
+                    </h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-bold border border-pink-500/30">
+                      {filteredEvents.length} {language === "es" ? "activas hoy" : "active"}
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-pink-300/80 font-sans">
+                    {language === "es" ? "Eventos y clubes recomendados para esta noche" : "Recommended events and clubs tonight"}
+                  </p>
+                </div>
               </div>
-              <span className="text-[10px] font-mono text-neutral-400">
-                {filteredEvents.length} {language === "es" ? "eventos" : "events"}
-              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -536,20 +546,23 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                 );
               })}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Sección: Puntos Tácticos & Cruising (Hotspots) */}
-        <div className="space-y-2.5 pt-2">
+        {/* Sección 2: Todos los Boliches, Saunas & Puntos Tácticos */}
+        <section
+          aria-label={language === "es" ? "Todos los Boliches, Saunas & Puntos Tácticos" : "All Clubs, Saunas & Tactical Spots"}
+          className="space-y-2.5 pt-2"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-electricViolet-glow" />
               <h3 className="font-mono text-xs font-extrabold uppercase text-white tracking-wider">
-                {language === "es" ? "Puntos Tácticos & Cruising" : "Tactical Hotspots & Cruising"}
+                {language === "es" ? "Todos los Boliches, Saunas & Puntos Tácticos" : "All Clubs, Saunas & Tactical Spots"}
               </h3>
             </div>
             <span className="text-[10px] font-mono text-neutral-400">
-              {filteredHotspots.length} {language === "es" ? "puntos activos" : "active spots"}
+              {filteredHotspots.length} {language === "es" ? "lugares activos" : "active spots"}
             </span>
           </div>
 
@@ -774,7 +787,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
               })}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
       {/* =========================================================

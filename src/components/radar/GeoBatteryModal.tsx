@@ -86,8 +86,19 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
   const modeInfo = getModeLabel(batteryEngineState.mode);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex justify-center items-center p-3 sm:p-4 select-none animate-in fade-in">
-      <div className="w-full max-w-lg bg-obsidian-surface border border-white/10 rounded-3xl flex flex-col max-h-[92vh] overflow-hidden shadow-card-elevation relative">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Privacidad de Ubicación & Batería"
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex justify-center items-end sm:items-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[88vh] sm:max-h-[92vh] overflow-hidden shadow-card-elevation relative animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* Cabecera del Modal */}
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-obsidian-deep/80 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
@@ -108,7 +119,7 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
             type="button"
             onClick={onClose}
             aria-label="Cerrar modal de privacidad de ubicación y batería"
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
           >
             <X className="w-5 h-5" />
           </button>

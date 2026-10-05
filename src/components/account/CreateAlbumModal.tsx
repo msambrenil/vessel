@@ -233,8 +233,19 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 select-none animate-in fade-in">
-      <div className="w-full max-w-xl bg-obsidian-deep border border-white/15 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.account?.createAlbumModalTitle || "Crear Nuevo Álbum"}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl bg-obsidian-deep border-t sm:border border-white/15 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[92vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* Cabecera */}
         <div className="p-4 bg-obsidian-surface border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">

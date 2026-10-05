@@ -116,7 +116,7 @@ describe("ProfileGrid — División en Personas/Lugares y Modo Viajero", () => {
     };
   });
 
-  it("renderiza el switcher segmentado con Personas y Lugares", () => {
+  it("no renderiza el switcher segmentado redundante de Personas vs Lugares (ahora en IntentHubSelector)", () => {
     render(
       <ProfileGrid
         onSelectProfile={mockOnSelectProfile}
@@ -124,25 +124,8 @@ describe("ProfileGrid — División en Personas/Lugares y Modo Viajero", () => {
       />
     );
 
-    const peopleTab = screen.getByTestId("matrix-tab-people");
-    const placesTab = screen.getByTestId("matrix-tab-places");
-
-    expect(peopleTab).toBeInTheDocument();
-    expect(placesTab).toBeInTheDocument();
-  });
-
-  it("permite alternar a la pestaña Lugares y llama a setMatrixTab", () => {
-    render(
-      <ProfileGrid
-        onSelectProfile={mockOnSelectProfile}
-        onOpenChat={mockOnOpenChat}
-      />
-    );
-
-    const placesTab = screen.getByTestId("matrix-tab-places");
-    fireEvent.click(placesTab);
-
-    expect(mockSetMatrixTab).toHaveBeenCalledWith("places");
+    expect(screen.queryByTestId("matrix-tab-people")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("matrix-tab-places")).not.toBeInTheDocument();
   });
 
   it("en pestaña Personas, muestra la barra de búsqueda de perfiles y el botón de Modo Viajero", () => {

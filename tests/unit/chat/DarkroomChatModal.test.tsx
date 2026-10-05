@@ -164,4 +164,44 @@ describe("DarkroomChatModal — Pinned Pre-Flight Agreement Banner (Fase 4)", ()
     expect(within(banner).getByText(/Dominación & Fuerte/i)).toBeInTheDocument();
     expect(within(banner).getByText(/PrEP \+ Doxy-PEP/i)).toBeInTheDocument();
   });
+
+  it("abre la Ficha del chongo al hacer click en el botón 'Ficha' de la cabecera", () => {
+    render(<DarkroomChatModal profileId="partner-99" onClose={onClose} />);
+
+    const dossierBtn = screen.getByRole("button", { name: /Ver ficha y datos/i });
+    expect(dossierBtn).toBeInTheDocument();
+    fireEvent.click(dossierBtn);
+
+    // ChatProfileDrawer debe abrirse mostrando su encabezado
+    expect(screen.getByText(/Ficha del chongo/i)).toBeInTheDocument();
+    expect(mockAudioEngine.playPulse).toHaveBeenCalled();
+  });
+
+  it("renderiza la pastilla compacta inline para álbumes revocados", () => {
+    mockTestState.messages = [
+      {
+        id: "msg-revoked-album-1",
+        senderId: "me",
+        text: "",
+        timestamp: "14:35",
+        isRead: true,
+        mediaAttachment: {
+          mediaType: "photo",
+          mode: "permanent",
+          url: "https://example.com/thumb.jpg",
+          sharedAlbumId: "album-1",
+          albumTitle: "PRIVADO HOT",
+          albumPrivacy: "private",
+          albumPhotoCount: 5,
+          isRevoked: true,
+        },
+      },
+    ];
+
+    render(<DarkroomChatModal profileId="partner-99" onClose={onClose} />);
+
+    // Verifica que se muestre el aviso compacto y la acción de re-compartir
+    expect(screen.getByText(/Dejaste de compartir tu álbum acá/i)).toBeInTheDocument();
+    expect(screen.getByText(/Compartir de nuevo/i)).toBeInTheDocument();
+  });
 });

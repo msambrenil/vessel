@@ -134,11 +134,11 @@ export const BetaManagementTab: React.FC = () => {
       </div>
 
       {/* Barra de Acciones: Generador de Invitación VIP Beta */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-electricViolet/15 via-black/40 to-black/60 border border-electricViolet/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-electricViolet/15 via-black/40 to-black/60 border border-electricViolet/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-card-elevation">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-black text-white uppercase tracking-wider">
-              ENROLAMIENTO DE BETA TESTERS
+              GESTIÓN DE PASES VIP BETA
             </span>
             <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-electricViolet text-white font-bold">
               1-CLICK VIP LINK
@@ -153,17 +153,17 @@ export const BetaManagementTab: React.FC = () => {
           type="button"
           onClick={handleCreateBetaVip}
           disabled={isGeneratingVip}
-          className="px-4 py-2.5 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer disabled:opacity-50"
+          className="px-4 py-2.5 min-h-[44px] rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer disabled:opacity-50 touch-manipulation flex-shrink-0"
         >
           {copiedCode ? (
             <>
               <Check className="w-4 h-4 text-mintNeon" />
-              <span>Link Copiado: {copiedCode}</span>
+              <span>Pase Copiado: {copiedCode}</span>
             </>
           ) : (
             <>
               <Plus className="w-4 h-4" />
-              <span>Generar & Copiar Link VIP Beta</span>
+              <span>Generar Pase VIP Beta</span>
             </>
           )}
         </button>
@@ -182,7 +182,7 @@ export const BetaManagementTab: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setActiveFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              className={`px-3 py-2 min-h-[40px] rounded-lg text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer touch-manipulation ${
                 activeFilter === tab.id
                   ? "bg-electricViolet text-white shadow-violet-soft"
                   : "text-neutral-400 hover:text-white"
@@ -194,13 +194,13 @@ export const BetaManagementTab: React.FC = () => {
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-neutral-500" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por usuario, ruta o palabra..."
-            className="w-full bg-black/60 border border-white/15 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-neutral-600 font-mono focus:outline-none focus:border-electricViolet"
+            placeholder="Buscá por usuario, ruta o palabra..."
+            className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-neutral-500 font-mono focus:outline-none focus:border-electricViolet"
           />
         </div>
       </div>

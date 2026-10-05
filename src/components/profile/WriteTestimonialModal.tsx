@@ -64,8 +64,20 @@ export const WriteTestimonialModal: React.FC<WriteTestimonialModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 select-none animate-in fade-in">
-      <div className="w-full max-w-md bg-obsidian-surface rounded-3xl border border-white/15 p-5 shadow-2xl flex flex-col relative space-y-4 max-h-[92vh] overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Testimonio Consensuado"
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md bg-obsidian-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/15 p-5 shadow-2xl flex flex-col relative space-y-4 max-h-[88vh] sm:max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto -mt-2 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2.5">
@@ -86,7 +98,7 @@ export const WriteTestimonialModal: React.FC<WriteTestimonialModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Cerrar modal de testimonio"
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
           >
             <X className="w-4 h-4" />
           </button>

@@ -41,118 +41,97 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* BANNER DE ALERTA CRÍTICA: DURESS PIN / COACCIÓN ACTIVA */}
       {usersWithDuress.length > 0 && (
-        <div className="bg-bloodNeon/15 border-2 border-bloodNeon rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-bloodNeon/10 animate-pulse">
+        <div className="bg-bloodNeon/15 border-2 border-bloodNeon rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-bloodNeon/15 animate-pulse">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-bloodNeon/30 text-bloodNeon">
+            <div className="p-3 rounded-xl bg-bloodNeon/30 text-bloodNeon flex-shrink-0">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-black text-bloodNeon uppercase font-mono tracking-wider">
-                  ALERTA DE SEGURIDAD MÁXIMA: DURESS PIN DISPARADO
+                  ALERTA CRÍTICA // DURESS PIN DISPARADO
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-bloodNeon text-white font-bold">
-                  {usersWithDuress.length} CASO(S)
+                  {usersWithDuress.length} CASO(S) URGENTE(S)
                 </span>
               </div>
-              <p className="text-xs text-neutral-300 mt-0.5">
-                Un usuario ingresó su PIN de coacción o activó la baliza de auxilio táctico.
+              <p className="text-xs text-neutral-200 mt-1">
+                Un usuario ingresó su PIN de coacción o disparó la baliza táctica de auxilio. Revisá la ficha del usuario ya mismo.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {usersWithDuress.map((u) => (
               <button
                 key={u.id}
                 type="button"
                 onClick={() => onSelectUserForInspection(u)}
-                className="px-3 py-1.5 rounded-xl bg-bloodNeon text-white text-xs font-mono font-bold hover:bg-red-700 transition-colors cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl bg-bloodNeon text-white text-xs font-mono font-bold hover:bg-red-700 transition-colors cursor-pointer touch-manipulation flex items-center gap-1.5"
               >
-                INSPECCIONAR {u.codename}
+                <span>Inspeccionar a {u.codename}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* TARJETAS KPI DE ALTA DENSIDAD */}
+      {/* TARJETAS KPI DE ALTA DENSIDAD Y ENFOQUE EJECUTIVO */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Ecosistema de Usuarios */}
-        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-card-elevation">
+        {/* KPI 1: Membresías & Ingresos (MRR) DESTACADA */}
+        <div className="bg-obsidian-surface border-2 border-emerald-500/40 rounded-2xl p-4 sm:p-5 space-y-3 relative overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.12)]">
+          <div className="flex items-center justify-between text-neutral-400">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
+              VESSEL UNLIMITED // MRR
+            </span>
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <CreditCard className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
+              ${metrics.estimatedMrrUsd.toFixed(2)}
+            </span>
+            <span className="text-xs text-emerald-400 font-mono font-bold">USD / mes</span>
+          </div>
+          <div className="text-[11px] text-neutral-300 font-mono space-y-1 border-t border-white/10 pt-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-neutral-400">Suscriptores Unlimited:</span>
+              <span className="text-emerald-400 font-bold">{metrics.unlimitedUsers} ({metrics.conversionRatePercent}% conv.)</span>
+            </div>
+            <div className="text-[10px] text-neutral-400">Tarifa oficial: $14.99 USD/mes</div>
+          </div>
+        </div>
+
+        {/* KPI 2: Tracción de Comunidad & Actividad en Vivo */}
+        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 relative overflow-hidden shadow-card-elevation">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-mono font-bold uppercase tracking-wider">
-              Usuarios Registrados
+              Tracción & Usuarios
             </span>
             <div className="p-2 rounded-xl bg-white/5 text-electricViolet-glow">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white font-mono tracking-tight">
+            <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
               {metrics.totalUsers}
             </span>
             <span className="text-xs text-emerald-400 font-mono flex items-center font-bold">
               <ArrowUpRight className="w-3.5 h-3.5" />
-              {metrics.activeUsersNow} online
+              {metrics.activeUsersNow} activos ahora
             </span>
           </div>
-          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/5 pt-2">
+          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/10 pt-2.5">
             <span>Verificados Biométricos</span>
             <span className="text-white font-bold">
-              {metrics.totalUsers - metrics.pendingVerificationsCount} / {metrics.totalUsers}
+              {metrics.totalUsers - metrics.pendingVerificationsCount} de {metrics.totalUsers}
             </span>
           </div>
         </div>
 
-        {/* KPI 2: Membresías & Ingresos (MRR) */}
-        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-card-elevation">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider">
-              VESSEL UNLIMITED
-            </span>
-            <div className="p-2 rounded-xl bg-white/5 text-emerald-400">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white font-mono tracking-tight">
-              ${metrics.estimatedMrrUsd.toFixed(2)}
-            </span>
-            <span className="text-xs text-neutral-400 font-mono">USD / mes</span>
-          </div>
-          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/5 pt-2">
-            <span>Conversión a Pago</span>
-            <span className="text-emerald-400 font-bold">
-              {metrics.conversionRatePercent}% ({metrics.unlimitedUsers} suscriptores)
-            </span>
-          </div>
-        </div>
-
-        {/* KPI 3: Cultura del Respeto & Anti-Ghost */}
-        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-card-elevation">
-          <div className="flex items-center justify-between text-neutral-400">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider">
-              Respect Karma Score
-            </span>
-            <div className="p-2 rounded-xl bg-white/5 text-electricViolet-glow">
-              <Flame className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-electricViolet-glow font-mono tracking-tight">
-              {metrics.avgRespectKarma}%
-            </span>
-            <span className="text-xs text-neutral-400 font-mono">Promedio global</span>
-          </div>
-          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/5 pt-2">
-            <span>Protocolo No-Ghost</span>
-            <span className="text-white font-bold">Activo por defecto</span>
-          </div>
-        </div>
-
-        {/* KPI 4: Encuentros & Logística PIN */}
-        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 space-y-3 relative overflow-hidden shadow-card-elevation">
+        {/* KPI 3: Encuentros & Rendezvous PIN */}
+        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 relative overflow-hidden shadow-card-elevation">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-mono font-bold uppercase tracking-wider">
               Encuentros Validados
@@ -162,19 +141,41 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white font-mono tracking-tight">
+            <span className="text-3xl sm:text-4xl font-black text-white font-mono tracking-tight">
               {metrics.encountersValidated24h}
             </span>
-            <span className="text-xs text-blue-400 font-mono font-bold">Rendezvous PIN</span>
+            <span className="text-xs text-blue-400 font-mono font-bold">en 24 horas</span>
           </div>
-          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/5 pt-2">
-            <span>Reportes pendientes</span>
+          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/10 pt-2.5">
+            <span>Validación de cita</span>
+            <span className="text-blue-300 font-bold">Confirmados por PIN</span>
+          </div>
+        </div>
+
+        {/* KPI 4: Cultura del Respeto & Anti-Ghost */}
+        <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3 relative overflow-hidden shadow-card-elevation">
+          <div className="flex items-center justify-between text-neutral-400">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider">
+              Respect Karma Score
+            </span>
+            <div className="p-2 rounded-xl bg-white/5 text-electricViolet-glow">
+              <Flame className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl sm:text-4xl font-black text-electricViolet-glow font-mono tracking-tight">
+              {metrics.avgRespectKarma}%
+            </span>
+            <span className="text-xs text-neutral-400 font-mono">Promedio global</span>
+          </div>
+          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between border-t border-white/10 pt-2.5">
+            <span>Denuncias pendientes</span>
             <span
               className={`font-bold ${
                 metrics.pendingReportsCount > 0 ? "text-bloodNeon" : "text-emerald-400"
               }`}
             >
-              {metrics.pendingReportsCount} casos
+              {metrics.pendingReportsCount} casos en cola
             </span>
           </div>
         </div>
@@ -191,7 +192,7 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
                 Distribución de Estado Corporal en Radar
               </h3>
             </div>
-            <span className="text-[10px] font-mono text-neutral-400">TIEMPO REAL</span>
+            <span className="text-[10px] font-mono text-neutral-400 uppercase">TIEMPO REAL</span>
           </div>
 
           {/* Barra de Proporción Brutalista */}
@@ -199,22 +200,22 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
             <div
               style={{ width: `${pctOpen}%` }}
               className="bg-emerald-500 hover:opacity-90 transition-all relative group"
-              title={`Activo (Open): ${metrics.bodyStateDistribution.open} (${pctOpen}%)`}
+              title={`Activo: ${metrics.bodyStateDistribution.open} (${pctOpen}%)`}
             />
             <div
               style={{ width: `${pctOccupied}%` }}
               className="bg-electricViolet hover:opacity-90 transition-all relative group"
-              title={`Ocupado (Occupied): ${metrics.bodyStateDistribution.occupied} (${pctOccupied}%)`}
+              title={`Ocupado: ${metrics.bodyStateDistribution.occupied} (${pctOccupied}%)`}
             />
             <div
               style={{ width: `${pctDormant}%` }}
               className="bg-zinc-600 hover:opacity-90 transition-all relative group"
-              title={`De incógnito (Dormant): ${metrics.bodyStateDistribution.dormant} (${pctDormant}%)`}
+              title={`En pausa: ${metrics.bodyStateDistribution.dormant} (${pctDormant}%)`}
             />
           </div>
 
           <div className="grid grid-cols-3 gap-3 pt-2">
-            <div className="p-2.5 rounded-xl bg-white/5 border border-emerald-500/20">
+            <div className="p-3 rounded-xl bg-white/5 border border-emerald-500/20">
               <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span>Activo</span>
@@ -225,7 +226,7 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-electricViolet/20">
+            <div className="p-3 rounded-xl bg-white/5 border border-electricViolet/20">
               <div className="flex items-center gap-1.5 text-xs text-electricViolet-glow font-mono font-bold">
                 <span className="w-2 h-2 rounded-full bg-electricViolet" />
                 <span>Ocupado</span>
@@ -236,10 +237,10 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-zinc-500/20">
+            <div className="p-3 rounded-xl bg-white/5 border border-zinc-500/20">
               <div className="flex items-center gap-1.5 text-xs text-neutral-400 font-mono font-bold">
                 <span className="w-2 h-2 rounded-full bg-neutral-400" />
-                <span>De incógnito</span>
+                <span>En pausa</span>
               </div>
               <div className="text-lg font-mono font-black text-white mt-1">
                 {metrics.bodyStateDistribution.dormant}{" "}
@@ -255,10 +256,10 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-electricViolet-glow" />
               <h3 className="text-sm font-bold font-mono text-white uppercase tracking-wider">
-                Composición Sexual de la Comunidad
+                Composición de la Comunidad por Rol
               </h3>
             </div>
-            <span className="text-[10px] font-mono text-neutral-400">DEMOGRAFÍA</span>
+            <span className="text-[10px] font-mono text-neutral-400 uppercase">DEMOGRAFÍA</span>
           </div>
 
           <div className="space-y-2 text-xs font-mono">
@@ -274,7 +275,7 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
                     />
                   </div>
                   <span className="text-white font-bold w-12 text-right">
-                    {count} <span className="text-neutral-500 font-normal">({pct}%)</span>
+                    {count} <span className="text-neutral-400 font-normal">({pct}%)</span>
                   </span>
                 </div>
               );
@@ -283,27 +284,27 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
         </div>
       </div>
 
-      {/* ACCIONES OPERATIVAS RÁPIDAS */}
+      {/* ACCIONES OPERATIVAS RÁPIDAS (MIN 44PX TOUCH TARGETS) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <button
           type="button"
           onClick={() => onNavigateTab("users")}
-          className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group cursor-pointer"
+          className="p-4 min-h-[44px] rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group cursor-pointer touch-manipulation"
         >
           <div className="flex items-center justify-between text-electricViolet-glow mb-2">
             <Users className="w-5 h-5" />
             <ArrowUpRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
           </div>
-          <div className="text-sm font-bold text-white font-mono">Revisar Usuarios & IDs</div>
+          <div className="text-sm font-bold text-white font-mono">Revisá Usuarios & Biometría</div>
           <p className="text-xs text-neutral-400 mt-1">
-            {metrics.pendingVerificationsCount} perfiles pendientes de verificación biométrica.
+            {metrics.pendingVerificationsCount} perfiles pendientes de validación biométrica.
           </p>
         </button>
 
         <button
           type="button"
           onClick={() => onNavigateTab("moderation")}
-          className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group cursor-pointer"
+          className="p-4 min-h-[44px] rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group cursor-pointer touch-manipulation"
         >
           <div className="flex items-center justify-between text-bloodNeon mb-2">
             <ShieldAlert className="w-5 h-5" />
@@ -311,22 +312,22 @@ export const DashboardOverviewTab: React.FC<DashboardOverviewTabProps> = ({
           </div>
           <div className="text-sm font-bold text-white font-mono">Cola de Denuncias</div>
           <p className="text-xs text-neutral-400 mt-1">
-            {metrics.pendingReportsCount} reportes de la comunidad sin resolver.
+            {metrics.pendingReportsCount} reportes comunitarios pendientes de resolución.
           </p>
         </button>
 
         <button
           type="button"
           onClick={() => onNavigateTab("memberships")}
-          className="p-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group cursor-pointer"
+          className="p-4 min-h-[44px] rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left transition-all group cursor-pointer touch-manipulation"
         >
           <div className="flex items-center justify-between text-emerald-400 mb-2">
             <CreditCard className="w-5 h-5" />
             <ArrowUpRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
           </div>
-          <div className="text-sm font-bold text-white font-mono">Membresías & Cuotas</div>
+          <div className="text-sm font-bold text-white font-mono">Límites Plan Free & Cuotas</div>
           <p className="text-xs text-neutral-400 mt-1">
-            Gestionar cuotas de Free y otorgar planes Unlimited de cortesía.
+            Configurá las cuotas maestras o asigná cortesías de Unlimited.
           </p>
         </button>
       </div>

@@ -64,13 +64,15 @@ export const BrutalistModal: React.FC<BrutalistModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div
-        className={`relative w-full ${maxWidthClasses} bg-obsidian-surface border border-white/15 rounded-2xl shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden ${className}`}
+        className={`relative w-full ${maxWidthClasses} bg-obsidian-surface border-t sm:border border-white/15 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[90dvh] overflow-hidden animate-in slide-in-from-bottom duration-200 sm:animate-none ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* Cabecera Estándar Táctica */}
         <div className="p-4 border-b border-white/10 bg-black/40 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">

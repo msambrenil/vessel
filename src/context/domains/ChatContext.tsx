@@ -331,7 +331,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       const sysMsg: ChatMessage = {
         id: `sys-respect-${Date.now()}`,
         senderId: "system",
-        text: "⚡ PROTOCOLO ANTI-GHOST CUMPLIDO // +5 Puntos de Respeto añadidos a tu perfil. Tu visibilidad en el radar se ha incrementado.",
+        text: "⚡ PROTOCOLO CERO PLANTONES CUMPLIDO // +5 Puntos de Respeto sumados a tu perfil. Mayor visibilidad en el radar.",
         isRead: true,
         timestamp: "Ahora",
       };

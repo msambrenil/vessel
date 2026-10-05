@@ -5,10 +5,12 @@ import { IntentHubSelector } from "@/components/matrix/IntentHubSelector";
 import { TRANSLATIONS } from "@/lib/i18n/translations";
 
 const mockSetOperatingIntent = vi.fn();
+const mockSetMatrixTab = vi.fn();
 const mockStartOnTheClock = vi.fn();
 const mockStopOnTheClock = vi.fn();
 
 let mockOperatingIntent: "now" | "nightlife" | "kink" | "stealth" = "now";
+let mockMatrixTab: "people" | "places" = "people";
 let mockOnTheClock: {
   isActive: boolean;
   durationMinutes: number;
@@ -27,6 +29,11 @@ vi.mock("@/context/VesselContext", () => ({
     setOperatingIntent: (intent: "now" | "nightlife" | "kink" | "stealth") => {
       mockOperatingIntent = intent;
       mockSetOperatingIntent(intent);
+    },
+    matrixTab: mockMatrixTab,
+    setMatrixTab: (tab: "people" | "places") => {
+      mockMatrixTab = tab;
+      mockSetMatrixTab(tab);
     },
     myOnTheClock: mockOnTheClock,
     startOnTheClock: mockStartOnTheClock,
@@ -50,6 +57,7 @@ describe("IntentHubSelector — Selector Táctico de Sintonías", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockOperatingIntent = "now";
+    mockMatrixTab = "people";
     mockOnTheClock = {
       isActive: false,
       durationMinutes: 60,
@@ -58,46 +66,51 @@ describe("IntentHubSelector — Selector Táctico de Sintonías", () => {
     };
   });
 
-  it("renderiza los 4 modos de sintonía operativa (YA, Noche, Kink, Sigilo)", () => {
+  it("renderiza los 4 modos ordenados: Pinta ya, Morbos y Fetiches, Discreto, y Boliches y Lugares", () => {
     render(<IntentHubSelector />);
 
-    expect(screen.getByTitle("Ahora")).toBeInTheDocument();
-    expect(screen.getByTitle("Noche")).toBeInTheDocument();
-    expect(screen.getByTitle("Kink & Morbos")).toBeInTheDocument();
-    expect(screen.getByTitle("Modo Discreto")).toBeInTheDocument();
+    expect(screen.getByTestId("intent-tab-now")).toBeInTheDocument();
+    expect(screen.getByTestId("intent-tab-kink")).toBeInTheDocument();
+    expect(screen.getByTestId("intent-tab-stealth")).toBeInTheDocument();
+    expect(screen.getByTestId("intent-tab-nightlife")).toBeInTheDocument();
+
+    expect(screen.getByTitle(TRANSLATIONS.es.intents.now)).toBeInTheDocument();
+    expect(screen.getByTitle(TRANSLATIONS.es.intents.kink)).toBeInTheDocument();
+    expect(screen.getByTitle(TRANSLATIONS.es.intents.stealth)).toBeInTheDocument();
+    expect(screen.getByTitle(TRANSLATIONS.es.intents.nightlife)).toBeInTheDocument();
   });
 
-  it("al tocar una pestaña de modo, invoca setOperatingIntent", () => {
+  it("al tocar Boliches y Lugares, invoca setMatrixTab('places') y setOperatingIntent('nightlife')", () => {
     render(<IntentHubSelector />);
 
-    const nightlifeTab = screen.getByTitle("Noche");
+    const nightlifeTab = screen.getByTestId("intent-tab-nightlife");
     fireEvent.click(nightlifeTab);
 
+    expect(mockSetMatrixTab).toHaveBeenCalledWith("places");
     expect(mockSetOperatingIntent).toHaveBeenCalledWith("nightlife");
   });
 
-  it("permite activar el disparador Listo YA (On The Clock)", () => {
+  it("al tocar pestaña kink o stealth, invoca setMatrixTab('people') con los modos correspondientes", () => {
     render(<IntentHubSelector />);
 
-    const clockBtn = screen.getByTitle("Activar disponibilidad inmediata (1 hora)");
-    fireEvent.click(clockBtn);
+    const kinkTab = screen.getByTestId("intent-tab-kink");
+    fireEvent.click(kinkTab);
+    expect(mockSetMatrixTab).toHaveBeenCalledWith("people");
+    expect(mockSetOperatingIntent).toHaveBeenCalledWith("kink");
 
-    expect(mockStartOnTheClock).toHaveBeenCalledWith(60, "Disponible ahora");
+    const stealthTab = screen.getByTestId("intent-tab-stealth");
+    fireEvent.click(stealthTab);
+    expect(mockSetMatrixTab).toHaveBeenCalledWith("people");
+    expect(mockSetOperatingIntent).toHaveBeenCalledWith("stealth");
   });
 
-  it("permite desactivar Listo YA cuando está activo", () => {
-    mockOnTheClock = {
-      isActive: true,
-      durationMinutes: 60,
-      startedAt: "2026-10-04T12:00:00Z",
-      expiresAt: "2026-10-04T13:00:00Z",
-    };
-
+  it("al tocar Pinta ya, invoca setMatrixTab('people') y setOperatingIntent('now')", () => {
+    mockMatrixTab = "places";
     render(<IntentHubSelector />);
 
-    const clockBtn = screen.getByTitle("Desactivar Listo YA");
-    fireEvent.click(clockBtn);
-
-    expect(mockStopOnTheClock).toHaveBeenCalled();
+    const nowTab = screen.getByTestId("intent-tab-now");
+    fireEvent.click(nowTab);
+    expect(mockSetMatrixTab).toHaveBeenCalledWith("people");
+    expect(mockSetOperatingIntent).toHaveBeenCalledWith("now");
   });
 });

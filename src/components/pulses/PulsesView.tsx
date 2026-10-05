@@ -153,7 +153,7 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
       aria-label={t.pulses?.title || "Zumbidos"}
       className="flex flex-col flex-1 p-3 sm:p-4 pb-48 sm:pb-56 space-y-4 select-none bg-obsidian-deep min-h-[calc(100vh-140px)]"
     >
-      {/* CABECERA DE TRIAJE TÁCTICO DE 1 SOLO NIVEL */}
+      {/* CABECERA BIFOCAL TÁCTICA */}
       <header className="border-b border-white/10 pb-3 space-y-3">
         <div className="flex items-center justify-between gap-2">
           <div>
@@ -166,116 +166,124 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
             </p>
           </div>
 
-          {cleanableReadCount > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {cleanableReadCount > 0 && activeTab === "received" && (
+              <button
+                type="button"
+                onClick={clearAllReadPulses}
+                className="min-h-[44px] px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-neutral-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-neutral-400" />
+                <span>{t.pulses?.clearAll || "Limpiar leídos"}</span>
+              </button>
+            )}
+
+            {activeTab !== "sent" && (
+              <button
+                type="button"
+                onClick={() => {
+                  audioEngine.playPulse();
+                  setActiveTab("sent");
+                }}
+                className="min-h-[44px] px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-neutral-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+              >
+                <ArrowUpRight className="w-3.5 h-3.5 text-neutral-400" />
+                <span>{t.pulses?.sentCountBtn || "Tus envíos"} ({enrichedSentPulses.length})</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Banner de Salida si está en pestaña Enviados */}
+        {activeTab === "sent" ? (
+          <div className="flex items-center justify-between p-3 rounded-2xl bg-obsidian-surface border border-electricViolet/30 shadow-card-elevation">
+            <div className="flex items-center gap-2">
+              <ArrowUpRight className="w-4 h-4 text-electricViolet-glow" />
+              <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">
+                {t.pulses?.sentBannerTitle || "Zumbidos enviados"} ({enrichedSentPulses.length})
+              </span>
+            </div>
             <button
               type="button"
-              onClick={clearAllReadPulses}
-              className="min-h-[44px] px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-neutral-300 hover:text-white text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+              onClick={() => {
+                audioEngine.playPulse();
+                setActiveTab("received");
+              }}
+              className="min-h-[44px] px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-mono font-black text-electricViolet-glow hover:underline flex items-center gap-1 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
             >
-              <Trash2 className="w-3.5 h-3.5 text-neutral-400" />
-              <span>{t.pulses?.clearAll || "Limpiar vistos"}</span>
+              <span>← {t.pulses?.backToReceived || "Volver a Recibidos"}</span>
             </button>
-          )}
-        </div>
-
-        {/* Selector de Triaje (Mutuos | Recibidos | Enviados) - 44px Touch Targets */}
-        <div
-          role="tablist"
-          aria-label={t.pulses?.title || "Zumbidos"}
-          className="grid grid-cols-3 gap-1.5 p-1 bg-obsidian-surface rounded-2xl border border-white/10 shadow-card-elevation"
-        >
-          {/* Pestaña 1: Recibidos */}
-          <button
-            id="tab-pulses-received"
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "received"}
-            aria-controls="panel-pulses-received"
-            onClick={() => {
-              audioEngine.playPulse();
-              setActiveTab("received");
-            }}
-            className={`min-h-[44px] px-2 py-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-              activeTab === "received"
-                ? "bg-electricViolet text-white shadow-violet-soft font-black"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
+          </div>
+        ) : (
+          /* Selector Bifocal de Triaje (Recibidos vs Onda Mutua) - Touch Targets amplios de 48px */
+          <div
+            role="tablist"
+            aria-label={t.pulses?.title || "Zumbidos"}
+            className="grid grid-cols-2 gap-1.5 p-1 bg-obsidian-surface rounded-2xl border border-white/10 shadow-card-elevation"
           >
-            <ArrowDownLeft className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate">{t.pulses?.tabReceived || "Recibidos"}</span>
-            <span
-              className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
-                unreadPulsesCount > 0
-                  ? "bg-bloodNeon text-white font-black animate-pulse"
-                  : activeTab === "received"
-                  ? "bg-black/40 text-white font-black"
-                  : "bg-white/10 text-neutral-300"
+            {/* Pestaña 1: Te tiraron onda (Recibidos) */}
+            <button
+              id="tab-pulses-received"
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "received"}
+              aria-controls="panel-pulses-received"
+              onClick={() => {
+                audioEngine.playPulse();
+                setActiveTab("received");
+              }}
+              className={`min-h-[48px] px-3 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                activeTab === "received"
+                  ? "bg-electricViolet text-white shadow-violet-soft font-black"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
               }`}
             >
-              {enrichedReceivedPulses.length}
-            </span>
-          </button>
+              <ArrowDownLeft className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{t.pulses?.tabReceived || "Te tiraron onda"}</span>
+              <span
+                className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+                  unreadPulsesCount > 0
+                    ? "bg-bloodNeon text-white font-black animate-pulse"
+                    : activeTab === "received"
+                    ? "bg-black/40 text-white font-black"
+                    : "bg-white/10 text-neutral-300"
+                }`}
+              >
+                {enrichedReceivedPulses.length}
+              </span>
+            </button>
 
-          {/* Pestaña 2: Mutuos */}
-          <button
-            id="tab-pulses-mutual"
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "mutual"}
-            aria-controls="panel-pulses-mutual"
-            onClick={() => {
-              audioEngine.playPulse();
-              setActiveTab("mutual");
-            }}
-            className={`min-h-[44px] px-2 py-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-              activeTab === "mutual"
-                ? "bg-emerald-500/25 border border-emerald-400/60 text-emerald-300 font-black"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-            <span className="truncate">{t.pulses?.tabMutual || "Mutuos 🔥"}</span>
-            <span
-              className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+            {/* Pestaña 2: Onda Mutua (Mutuos 🔥) */}
+            <button
+              id="tab-pulses-mutual"
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "mutual"}
+              aria-controls="panel-pulses-mutual"
+              onClick={() => {
+                audioEngine.playPulse();
+                setActiveTab("mutual");
+              }}
+              className={`min-h-[48px] px-3 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
                 activeTab === "mutual"
-                  ? "bg-emerald-950 text-emerald-300 font-black"
-                  : "bg-white/10 text-neutral-300"
+                  ? "bg-emerald-500/25 border border-emerald-400/60 text-emerald-300 font-black"
+                  : "text-neutral-400 hover:text-white hover:bg-white/5"
               }`}
             >
-              {enrichedMutualPulses.length}
-            </span>
-          </button>
-
-          {/* Pestaña 3: Enviados */}
-          <button
-            id="tab-pulses-sent"
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "sent"}
-            aria-controls="panel-pulses-sent"
-            onClick={() => {
-              audioEngine.playPulse();
-              setActiveTab("sent");
-            }}
-            className={`min-h-[44px] px-2 py-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-              activeTab === "sent"
-                ? "bg-electricViolet text-white shadow-violet-soft font-black"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <ArrowUpRight className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate">{t.pulses?.tabSent || "Enviados"}</span>
-            <span
-              className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
-                activeTab === "sent"
-                  ? "bg-black/40 text-white font-black"
-                  : "bg-white/10 text-neutral-300"
-              }`}
-            >
-              {enrichedSentPulses.length}
-            </span>
-          </button>
-        </div>
+              <Flame className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span className="truncate">{t.pulses?.tabMutual || "Onda Mutua 🔥"}</span>
+              <span
+                className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+                  activeTab === "mutual"
+                    ? "bg-emerald-950 text-emerald-300 font-black"
+                    : "bg-white/10 text-neutral-300"
+                }`}
+              >
+                {enrichedMutualPulses.length}
+              </span>
+            </button>
+          </div>
+        )}
       </header>
 
       {/* PANEL 1: ZUMBIDOS RECIBIDOS */}

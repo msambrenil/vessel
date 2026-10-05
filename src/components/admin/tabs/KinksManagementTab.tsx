@@ -78,13 +78,13 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
       operatorName: currentStaff.name,
       operatorRole: currentStaff.role,
       action: "KINK_TOGGLED",
-      details: `${nextState ? "Activó" : "Desactivó"} el morbo/fetiche '${name}' (ID: ${id})`,
+      details: `${nextState ? "Activó" : "Pausó"} el morbo/fetiche '${name}' (ID: ${id})`,
     });
-    showToast(`Morbo '${name}' ${nextState ? "activado" : "desactivado"} en la app.`);
+    showToast(`Morbo '${name}' ${nextState ? "activado" : "pausado"} en la app.`);
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (!confirm(`¿Eliminar definitivamente el morbo '${name}'?`)) return;
+    if (!confirm(`¿Seguro que querés eliminar definitivamente el morbo '${name}'?`)) return;
     deleteKink(id);
     loadKinks();
     logAdminAction({
@@ -94,11 +94,11 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
       action: "KINK_DELETED",
       details: `Eliminó el morbo/fetiche personalizado '${name}' (ID: ${id})`,
     });
-    showToast(`Morbo '${name}' eliminado del catálogo.`);
+    showToast(`¡Morbo '${name}' eliminado del catálogo!`);
   };
 
   const handleResetDefaults = () => {
-    if (!confirm("¿Restablecer el catálogo a los 35 morbos predeterminados de VESSEL?")) return;
+    if (!confirm("¿Seguro que querés restablecer el catálogo a los 35 morbos predeterminados de VESSEL?")) return;
     resetKinksToDefault();
     loadKinks();
     logAdminAction({
@@ -204,13 +204,13 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
       <div className="bg-obsidian-surface border border-white/10 rounded-2xl p-4 space-y-4 shadow-card-elevation">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, palabra clave o descripción..."
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-electricViolet"
+              placeholder="Buscá por nombre, morbo o descripción..."
+              className="w-full min-h-[44px] pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-electricViolet"
             />
           </div>
 
@@ -218,7 +218,7 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-electricViolet hover:bg-electricViolet-hover text-white text-xs font-bold font-mono uppercase tracking-wider transition-all shadow-violet-soft cursor-pointer active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-[44px] rounded-xl bg-electricViolet hover:bg-electricViolet-hover text-white text-xs font-bold font-mono uppercase tracking-wider transition-all shadow-violet-soft cursor-pointer active:scale-95 touch-manipulation"
             >
               <Plus className="w-4 h-4" />
               Nuevo Morbo
@@ -228,7 +228,7 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
               type="button"
               onClick={handleResetDefaults}
               title="Restablecer predeterminados"
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-400 hover:text-white transition-all cursor-pointer"
+              className="p-2.5 min-h-[44px] min-w-[44px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-400 hover:text-white transition-all cursor-pointer flex items-center justify-center touch-manipulation"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -237,13 +237,13 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
 
         {/* FILTROS DE CATEGORÍA Y ESTADO */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
-          <span className="text-xs font-mono text-neutral-500 flex items-center gap-1 mr-1">
+          <span className="text-xs font-mono text-neutral-400 flex items-center gap-1 mr-1">
             <Filter className="w-3 h-3" /> Categoría:
           </span>
           <button
             type="button"
             onClick={() => setSelectedCategory("all")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all ${
+            className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-mono transition-all touch-manipulation ${
               selectedCategory === "all"
                 ? "bg-white text-black font-bold"
                 : "bg-white/5 text-neutral-400 hover:text-white"
@@ -258,7 +258,7 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
                 key={catKey}
                 type="button"
                 onClick={() => setSelectedCategory(catKey)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all ${
+                className={`px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-mono transition-all touch-manipulation ${
                   selectedCategory === catKey
                     ? "bg-electricViolet text-white font-bold"
                     : "bg-white/5 text-neutral-400 hover:text-white"
@@ -273,8 +273,8 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
             <button
               type="button"
               onClick={() => setStatusFilter("all")}
-              className={`px-2 py-1 rounded text-[11px] font-mono ${
-                statusFilter === "all" ? "bg-white/20 text-white font-bold" : "text-neutral-400"
+              className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-mono touch-manipulation ${
+                statusFilter === "all" ? "bg-white/20 text-white font-bold" : "text-neutral-400 hover:text-white"
               }`}
             >
               Todos
@@ -282,8 +282,8 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
             <button
               type="button"
               onClick={() => setStatusFilter("active")}
-              className={`px-2 py-1 rounded text-[11px] font-mono ${
-                statusFilter === "active" ? "bg-emerald-500/20 text-emerald-400 font-bold" : "text-neutral-400"
+              className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-mono touch-manipulation ${
+                statusFilter === "active" ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30" : "text-neutral-400 hover:text-white"
               }`}
             >
               Activos ({activeCount})
@@ -291,11 +291,11 @@ export const KinksManagementTab: React.FC<KinksManagementTabProps> = ({ currentS
             <button
               type="button"
               onClick={() => setStatusFilter("inactive")}
-              className={`px-2 py-1 rounded text-[11px] font-mono ${
-                statusFilter === "inactive" ? "bg-red-500/20 text-red-400 font-bold" : "text-neutral-400"
+              className={`px-2.5 py-1.5 min-h-[36px] rounded-lg text-[11px] font-mono touch-manipulation ${
+                statusFilter === "inactive" ? "bg-purple-900/30 text-purple-300 font-bold border border-purple-500/30" : "text-neutral-400 hover:text-white"
               }`}
             >
-              Inactivos ({inactiveCount})
+              Pausados ({inactiveCount})
             </button>
           </div>
         </div>

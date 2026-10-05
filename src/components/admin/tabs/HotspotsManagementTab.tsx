@@ -68,13 +68,13 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
       case "proposed":
         return (
           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">
-            PROPUESTO (EN VALIDACIÓN)
+            PROPUESTO (A REVISAR)
           </span>
         );
       case "flagged":
         return (
           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-bloodNeon/20 text-bloodNeon border border-bloodNeon/50 animate-pulse">
-            ALERTA / DENUNCIADO
+            DENUNCIADO
           </span>
         );
       case "suspended":
@@ -97,7 +97,7 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
     <div className="space-y-6 font-mono select-none">
       {/* 1. Métricas Rápidas */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="p-3.5 rounded-2xl bg-obsidian-surface border border-white/10 space-y-1">
+        <div className="p-3.5 rounded-2xl bg-obsidian-surface border border-white/10 space-y-1 shadow-card-elevation">
           <span className="text-[10px] text-neutral-400 uppercase tracking-wider block">Total Puntos</span>
           <div className="text-xl font-black text-white flex items-center gap-1.5">
             <Compass className="w-5 h-5 text-electricViolet" />
@@ -106,17 +106,17 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
         </div>
 
         <div className="p-3.5 rounded-2xl bg-amber-950/20 border border-amber-500/30 space-y-1">
-          <span className="text-[10px] text-amber-300 uppercase tracking-wider block">En Validación</span>
+          <span className="text-[10px] text-amber-300 uppercase tracking-wider block">A revisar</span>
           <div className="text-xl font-black text-amber-400">{proposedCount}</div>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-1">
-          <span className="text-[10px] text-emerald-300 uppercase tracking-wider block">Activos</span>
+          <span className="text-[10px] text-emerald-300 uppercase tracking-wider block">Activos & Oficiales</span>
           <div className="text-xl font-black text-emerald-400">{activeCount}</div>
         </div>
 
         <div className="p-3.5 rounded-2xl bg-bloodNeon/15 border border-bloodNeon/30 space-y-1">
-          <span className="text-[10px] text-bloodNeon uppercase tracking-wider block">Bajo Alerta</span>
+          <span className="text-[10px] text-bloodNeon uppercase tracking-wider block">Denunciados</span>
           <div className="text-xl font-black text-bloodNeon">{flaggedCount}</div>
         </div>
 
@@ -130,13 +130,13 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
       </div>
 
       {/* 2. Barra de Filtros y Búsqueda */}
-      <div className="p-4 rounded-2xl bg-obsidian-surface border border-white/10 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-obsidian-surface border border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 shadow-card-elevation">
         {/* Filtro por estado */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           <button
             type="button"
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
               statusFilter === "all"
                 ? "bg-white text-black"
                 : "bg-white/5 text-neutral-400 hover:text-white"
@@ -147,40 +147,40 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
           <button
             type="button"
             onClick={() => setStatusFilter("proposed")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
               statusFilter === "proposed"
                 ? "bg-amber-500 text-black"
                 : "bg-white/5 text-amber-400 hover:bg-amber-500/20"
             }`}
           >
-            Propuestas ({proposedCount})
+            Propuestos (A revisar) ({proposedCount})
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter("active")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
               statusFilter === "active"
                 ? "bg-emerald-500 text-black"
                 : "bg-white/5 text-emerald-400 hover:bg-emerald-500/20"
             }`}
           >
-            Activos ({activeCount})
+            Activos & Oficiales ({activeCount})
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter("flagged")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
               statusFilter === "flagged"
                 ? "bg-bloodNeon text-white"
                 : "bg-white/5 text-bloodNeon hover:bg-bloodNeon/20"
             }`}
           >
-            Alertas ({flaggedCount})
+            Denunciados ({flaggedCount})
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter("suspended")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-2 min-h-[40px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap touch-manipulation ${
               statusFilter === "suspended"
                 ? "bg-neutral-700 text-white"
                 : "bg-white/5 text-neutral-400 hover:text-white"
@@ -347,11 +347,11 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
                 <button
                   type="button"
                   onClick={async () => {
-                    if (confirm(`¿Estás seguro de eliminar definitivamente "${spot.name}"?`)) {
+                    if (confirm(`¿Seguro que querés eliminar definitivamente el punto "${spot.name}"?`)) {
                       await adminDeleteHotspot(spot.id);
                     }
                   }}
-                  className="p-1.5 rounded-xl bg-white/5 hover:bg-bloodNeon/20 text-neutral-500 hover:text-bloodNeon border border-white/5 hover:border-bloodNeon/30 transition-all cursor-pointer"
+                  className="p-2 min-h-[36px] min-w-[36px] rounded-xl bg-white/5 hover:bg-bloodNeon/20 text-neutral-500 hover:text-bloodNeon border border-white/5 hover:border-bloodNeon/30 transition-all cursor-pointer flex items-center justify-center touch-manipulation"
                   title="Eliminar punto de la base de datos"
                 >
                   <Trash2 className="w-4 h-4" />

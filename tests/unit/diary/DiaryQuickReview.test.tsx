@@ -140,7 +140,7 @@ describe("DiaryEntryCard — Micro-Evaluación en 1 Toque", () => {
     render(<DiaryEntryCard {...defaultProps} entry={upcomingEntry} />);
 
     expect(screen.queryByTestId("diary-quick-review-fire")).toBeNull();
-    expect(screen.getByText("Evaluar Cita")).toBeDefined();
+    expect(screen.getByText(t.diary.evaluateDateBtn || "Evaluar Cita")).toBeDefined();
   });
 
   it("muestra las calificaciones guardadas si la cita ya fue evaluada", () => {

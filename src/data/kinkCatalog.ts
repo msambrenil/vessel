@@ -44,8 +44,8 @@ export const ROLE_OPTIONS = [
 ] as const;
 
 export const INTENSITY_LABELS: Record<number, { label: string; desc: string; color: string }> = {
-  1: { label: "SENSUAL", desc: "Tacto pausado, piel y respiración", color: "#8E8E98" },
-  2: { label: "CARNAL", desc: "Contacto directo, calor corporal intenso", color: "#E5A93C" },
-  3: { label: "SIN FILTRO", desc: "Sin filtros, ritmo acelerado y entrega física", color: "#FF9800" },
-  4: { label: "EXTREMO", desc: "Sala oscura total, alta intensidad y fetiche pesado", color: "#D90429" },
+  1: { label: "Tranqui", desc: "Mimos, charla y caricias lentas", color: "#8E8E98" },
+  2: { label: "Al hueso", desc: "Contacto directo y química corporal", color: "#E5A93C" },
+  3: { label: "Picante", desc: "Ritmo acelerado, sin vueltas ni filtro", color: "#FF9800" },
+  4: { label: "Extremo", desc: "Darkroom, fetiche pesado y entrega total", color: "#D90429" },
 };

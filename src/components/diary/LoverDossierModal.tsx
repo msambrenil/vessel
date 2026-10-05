@@ -245,9 +245,15 @@ export const LoverDossierModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="lover-dossier-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none [overscroll-behavior:contain]"
+      onClick={closeLoverDossierModal}
     >
-      <div className="relative w-full max-w-2xl bg-obsidian-surface/95 border border-white/10 rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl">
+      <div
+        className="relative w-full max-w-2xl bg-obsidian-surface/95 border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl max-h-[88vh] sm:max-h-[92vh] flex flex-col shadow-2xl overflow-hidden backdrop-blur-xl animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
         {/* CABECERA TÁCTICA */}
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between gap-3 bg-gradient-to-r from-obsidian to-obsidian-surface">
           <div className="flex items-center gap-3 min-w-0">
@@ -312,7 +318,9 @@ export const LoverDossierModal: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-[10px] text-neutral-400">
-                    Fotos cifradas en el servidor de la app y protegidas con Hold to Reveal
+                    {language === "es"
+                      ? "Fotos cifradas en el servidor y protegidas (mantené presionado para ver)"
+                      : "Server-encrypted photos protected with Hold to Reveal"}
                   </p>
                 </div>
               </div>

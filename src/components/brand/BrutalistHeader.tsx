@@ -13,6 +13,7 @@ import {
   ChevronDown,
   User,
   Crown,
+  Zap,
 } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { BeaconCountdownWidget } from "@/components/safety/BeaconCountdownWidget";
@@ -34,6 +35,10 @@ export const BrutalistHeader: React.FC = () => {
     appSettings,
     updateAppSettings,
     t,
+    language,
+    myOnTheClock,
+    startOnTheClock,
+    stopOnTheClock,
   } = useVessel();
 
   const [isAudioUnlocked, setIsAudioUnlocked] = React.useState<boolean>(() =>
@@ -46,6 +51,87 @@ export const BrutalistHeader: React.FC = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // Temporizador en tiempo real y degradado cónico de barra de progreso para Listo YA
+  const [now, setNow] = React.useState<number>(() => Date.now());
+
+  React.useEffect(() => {
+    if (!myOnTheClock?.isActive) return;
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [myOnTheClock?.isActive]);
+
+  const { elapsedDegrees, countdownLabel } = React.useMemo(() => {
+    if (!myOnTheClock?.isActive || !myOnTheClock?.expiresAt) {
+      return { elapsedDegrees: 0, countdownLabel: "" };
+    }
+
+    const expiresAtMs = new Date(myOnTheClock.expiresAt).getTime();
+    const durationMinutes = myOnTheClock.durationMinutes || 60;
+    const totalDurationMs = durationMinutes * 60 * 1000;
+    const startedAtMs = myOnTheClock.startedAt
+      ? new Date(myOnTheClock.startedAt).getTime()
+      : expiresAtMs - totalDurationMs;
+
+    const effectiveTotalMs =
+      expiresAtMs > startedAtMs ? expiresAtMs - startedAtMs : totalDurationMs;
+    const remainingMs = Math.max(0, expiresAtMs - now);
+
+    const remainingFraction =
+      effectiveTotalMs > 0 ? remainingMs / effectiveTotalMs : 0;
+    const elapsedFraction = 1 - remainingFraction;
+
+    // 0deg = 12 en punto. El borde se apaga en sentido horario
+    const deg = Math.min(360, Math.max(0, elapsedFraction * 360));
+
+    const remainingMinutes = Math.ceil(remainingMs / 60000);
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+
+    const label =
+      remainingMinutes > 1
+        ? `${remainingMinutes}m`
+        : remainingSeconds > 0
+        ? `${remainingSeconds}s`
+        : "0m";
+
+    return { elapsedDegrees: deg, countdownLabel: label };
+  }, [
+    myOnTheClock?.isActive,
+    myOnTheClock?.expiresAt,
+    myOnTheClock?.durationMinutes,
+    myOnTheClock?.startedAt,
+    now,
+  ]);
+
+  const clockGradient = React.useMemo(() => {
+    if (!myOnTheClock?.isActive) return "";
+
+    const deg = Math.round(elapsedDegrees * 10) / 10;
+
+    if (deg <= 0.5) {
+      // 100% completo e iluminado en violeta neón
+      return `conic-gradient(from 0deg at 50% 50%, #8b5cf6 0deg, #a855f7 180deg, #8b5cf6 360deg)`;
+    }
+
+    if (deg >= 359.5) {
+      // Completamente consumido
+      return `rgba(139, 92, 246, 0.15)`;
+    }
+
+    const sparkEnd = Math.min(360, deg + 4);
+
+    return `conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255, 255, 255, 0.12) 0deg,
+      rgba(255, 255, 255, 0.12) ${deg}deg,
+      #ffffff ${deg}deg,
+      #c084fc ${sparkEnd}deg,
+      #8b5cf6 ${sparkEnd}deg,
+      #8b5cf6 360deg
+    )`;
+  }, [myOnTheClock?.isActive, elapsedDegrees]);
 
   const [isMenuOpen, setIsMenuOpen] = React.useState<boolean>(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -167,9 +253,76 @@ export const BrutalistHeader: React.FC = () => {
         </div>
 
         {/* =========================================================
-            ZONA DERECHA: Cápsula de Usuario Ergonómica Zen (44px)
+            ZONA DERECHA: Botón de Estado Rápido + Menú de Usuario
             ========================================================= */}
-        <div className="relative flex items-center flex-shrink-0" ref={menuRef}>
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Quick Toggle On-The-Clock / Estoy Listo con Barra de Progreso de Borde */}
+          {myOnTheClock?.isActive ? (
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playSubBass(60, 0.15);
+                stopOnTheClock();
+              }}
+              className="group relative overflow-hidden flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-1 min-h-[36px] sm:min-h-[38px] rounded-full bg-obsidian-deep/95 text-white font-mono text-[10px] sm:text-[10.5px] font-black shadow-[0_0_15px_rgba(139,92,246,0.35)] cursor-pointer hover:brightness-110 active:scale-95 transition-all select-none"
+              title={
+                language === "es"
+                  ? `Listo ahora activo • Restan ${countdownLabel} • Tocar para pausar`
+                  : `Ready now active • ${countdownLabel} left • Tap to pause`
+              }
+              aria-label={
+                language === "es"
+                  ? `Listo ahora activo. Restan ${countdownLabel}. Tocar para desactivar.`
+                  : `Ready now active. ${countdownLabel} left. Tap to deactivate.`
+              }
+            >
+              {/* Borde Estilo Reloj de Conteo Regresivo Dinámico (Degradado Cónico) */}
+              <div
+                data-testid="header-on-the-clock-border"
+                className="absolute inset-0 rounded-full pointer-events-none p-[2px] z-10 overflow-hidden"
+                style={{
+                  background: clockGradient,
+                  WebkitMask:
+                    "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                  mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                  WebkitMaskComposite: "xor",
+                  maskComposite: "exclude",
+                  filter:
+                    "drop-shadow(0 0 5px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 10px rgba(139, 92, 246, 0.45))",
+                }}
+              />
+
+              {/* Punto indicador + Rayo + Texto con tiempo */}
+              <span className="relative z-20 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
+                <Zap className="w-3 h-3 text-electricViolet fill-electricViolet" />
+                <span className="font-mono font-black tracking-wider whitespace-nowrap">
+                  {language === "es" ? "LISTO" : "READY"}
+                  {countdownLabel && (
+                    <span className="ml-1 text-electricViolet-glow font-bold text-[9px] sm:text-[9.5px]">
+                      · {countdownLabel}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playSubBass(70, 0.15);
+                startOnTheClock(60, language === "es" ? "Disponible ahora" : "Available now");
+              }}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 min-h-[36px] sm:min-h-[38px] rounded-full bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-electricViolet/10 text-neutral-300 hover:text-white font-mono text-[10px] sm:text-[10.5px] font-semibold transition-all cursor-pointer active:scale-95"
+              title={language === "es" ? "Activar disponibilidad inmediata (1 hora)" : "Activate immediate availability (1 hour)"}
+              aria-label={language === "es" ? "Activarme disponible" : "Activate availability"}
+            >
+              <Zap className="w-3 h-3 text-electricViolet" />
+              <span>{language === "es" ? "Estoy listo" : "Ready now"}</span>
+            </button>
+          )}
+
+          <div className="relative flex items-center flex-shrink-0" ref={menuRef}>
           <button
             type="button"
             data-testid="header-user-menu-btn"
@@ -427,6 +580,7 @@ export const BrutalistHeader: React.FC = () => {
           )}
         </div>
       </div>
-    </header>
-  );
+    </div>
+  </header>
+);
 };

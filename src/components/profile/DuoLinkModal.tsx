@@ -67,13 +67,19 @@ export const DuoLinkModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Modo Dúo"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none [overscroll-behavior:contain]"
       onClick={closeDuoModal}
     >
       <div
-        className="relative w-full max-w-md bg-obsidian-surface border border-white/10 rounded-2xl shadow-card-elevation overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-md bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-card-elevation overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Tactical Drag Handle */}
+        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Header Táctico */}
         <div className="p-4 border-b border-white/10 bg-black/40 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -98,10 +104,10 @@ export const DuoLinkModal: React.FC = () => {
           <button
             type="button"
             onClick={closeDuoModal}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Cerrar modal de pareja"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

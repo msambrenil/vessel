@@ -188,8 +188,8 @@ describe("i18n — Internacionalización, Paridad de Diccionarios y Formato", ()
       }
     });
 
-    it("debe contener menuLabel y menuSubtitle para preFlight / Pacto Previo", () => {
-      expect(tEs.tacticalSuite.preFlight.menuLabel).toBe("Pacto Previo");
+    it("debe contener menuLabel y menuSubtitle para preFlight / Puntos Claros", () => {
+      expect(tEs.tacticalSuite.preFlight.menuLabel).toBe("Puntos Claros");
       expect(tEn.tacticalSuite.preFlight.menuLabel).toBe("Pre-Flight");
     });
   });
