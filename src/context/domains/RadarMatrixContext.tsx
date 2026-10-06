@@ -32,6 +32,7 @@ import {
 import {
   subscribeToMatrixProfiles,
   updateMyMatrixPresence,
+  isGhostOrMockProfileId,
 } from "@/lib/firebase/matrixService";
 import {
   sendPulseToCloud,
@@ -439,11 +440,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       );
       if (inKnown) return inKnown;
 
-      // 3. Catálogo de perfiles mock
-      const inMock = MOCK_PROFILES.find(
-        (p) => p.id === idOrCodename || (p.codename && p.codename.toLowerCase() === normalized)
-      );
-      if (inMock) return inMock;
+      // 3. Catálogo de perfiles mock (EXCLUSIVO para modo prueba)
+      if (appMode !== "real") {
+        const inMock = MOCK_PROFILES.find(
+          (p) => p.id === idOrCodename || (p.codename && p.codename.toLowerCase() === normalized)
+        );
+        if (inMock) return inMock;
+      }
 
       // 4. Si es modo real y no está en caché, disparar fetch asíncrono a Firestore
       if (appMode === "real" && idOrCodename !== "me" && idOrCodename !== "local-user" && idOrCodename !== "system") {
@@ -551,9 +554,13 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   const [sentPulsesMeta, setSentPulsesMeta] = useState<
     Record<string, { lastSentAt: string; syncStatus?: "synced" | "queued_offline" }>
   >({});
-  const [receivedPulses, setReceivedPulses] = useState<ReceivedPulse[]>(() =>
-    getActiveAppMode() === "real" ? [] : INITIAL_RECEIVED_PULSES
-  );
+  const [receivedPulses, setReceivedPulses] = useState<ReceivedPulse[]>(() => {
+    if (getActiveAppMode() === "real") {
+      const local = loadFromStorage<ReceivedPulse[]>(STORAGE_KEYS.RECEIVED_PULSES, [], "real");
+      return (local || []).filter((p) => !isGhostOrMockProfileId(p.fromProfileId));
+    }
+    return INITIAL_RECEIVED_PULSES;
+  });
 
   const [myOnTheClock, setMyOnTheClock] = useState<OnTheClockState>(INITIAL_ON_THE_CLOCK);
   const [isOnTheClockFilterActive, setIsOnTheClockFilterActive] = useState<boolean>(false);
@@ -568,7 +575,11 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   useEffect(() => {
     if (appMode === "real") {
       const localReceivedPulses = loadFromStorage<ReceivedPulse[]>(STORAGE_KEYS.RECEIVED_PULSES, [], "real");
-      if (localReceivedPulses) setReceivedPulses(localReceivedPulses);
+      const cleanPulses = (localReceivedPulses || []).filter((p) => !isGhostOrMockProfileId(p.fromProfileId));
+      setReceivedPulses(cleanPulses);
+      if (localReceivedPulses && localReceivedPulses.length !== cleanPulses.length) {
+        saveToStorage(STORAGE_KEYS.RECEIVED_PULSES, cleanPulses, "real");
+      }
     } else {
       setProfiles(getSanitizedMockProfiles());
 

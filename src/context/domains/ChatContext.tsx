@@ -19,6 +19,7 @@ import {
   burnCloudMessage,
   revokeCloudSharedAlbum,
   syncBoundarySetting,
+  markCloudMessagesAsRead,
 } from "@/lib/firebase/chatService";
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from "@/lib/storage/localStorageSync";
 import { BOUNDARY_PROTOCOLS_CATALOG } from "@/data/energyCatalog";
@@ -101,7 +102,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 }) => {
   const { authUser, currentUserUid, myProfile } = useAuth();
 
-  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(() => {
+    return loadFromStorage<Record<string, ChatMessage[]>>(STORAGE_KEYS.CHAT_MESSAGES, INITIAL_MESSAGES);
+  });
   const [activeChatProfileId, setActiveChatProfileId] = useState<string | null>(null);
   const [discoveredPartnerIds, setDiscoveredPartnerIds] = useState<string[]>([]);
   const [chatRetentionMode, setChatRetentionMode] = useState<"ephemeral" | "persistent">("persistent");
@@ -165,6 +168,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       const chatId = [myUid, targetUid].sort().join("_");
       const unsub = subscribeToChatMessages(chatId, (cloudMsgs) => {
         if (!cloudMsgs || cloudMsgs.length === 0) return;
+        const unreadCloudIdsToMark: string[] = [];
         setChatMessages((prev) => {
           const localList = prev[targetUid] || [];
           const existingIds = new Set(localList.map((m) => m.id));
@@ -178,8 +182,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
             if (!existingIds.has(m.id) && !isFromMe) {
               hasNewIncoming = true;
             }
-            const isRead =
-              existing?.isRead || isFromMe || activeChatProfileId === targetUid;
+            const isRead = Boolean(
+              existing?.isRead || m.isRead || isFromMe || activeChatProfileId === targetUid
+            );
+            if (activeChatProfileId === targetUid && !isFromMe && !m.isRead) {
+              unreadCloudIdsToMark.push(m.id);
+            }
             mergedMap.set(m.id, {
               ...m,
               senderId: isFromMe ? "me" : m.senderId,
@@ -196,6 +204,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
           return next;
         });
+
+        if (unreadCloudIdsToMark.length > 0 && authUser && authUser.uid !== "local-user") {
+          markCloudMessagesAsRead(chatId, unreadCloudIdsToMark).catch(() => {});
+        }
       });
       unsubscribers.push(unsub);
     });
@@ -211,6 +223,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   }, [authUser]);
 
   const markMessagesAsRead = useCallback((profileId: string) => {
+    let unreadIds: string[] = [];
     setChatMessages((prev) => {
       const msgs = prev[profileId];
       if (!msgs || msgs.length === 0) return prev;
@@ -218,6 +231,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       const updated = msgs.map((m) => {
         if (m.senderId !== "me" && m.senderId !== "system" && !m.isRead) {
           hasUnread = true;
+          unreadIds.push(m.id);
           return { ...m, isRead: true };
         }
         return m;
@@ -227,7 +241,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
       return next;
     });
-  }, []);
+
+    if (authUser && authUser.uid !== "local-user" && unreadIds.length > 0) {
+      const chatId = getChatChannelId(profileId);
+      markCloudMessagesAsRead(chatId, unreadIds).catch((err) => {
+        console.error("[ChatContext] Failed to mark messages as read in cloud:", err);
+      });
+    }
+  }, [authUser, getChatChannelId]);
 
   const sendChatMessage = useCallback(
     (profileId: string, text: string, isBurnOnView = false) => {

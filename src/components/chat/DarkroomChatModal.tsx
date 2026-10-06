@@ -314,15 +314,31 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                       : "border-purple-400/60"
                   }`}
                 >
-                  <img
-                    src={profile.avatarUrl}
-                    alt={profile.codename}
-                    className={`w-full h-full object-cover ${
-                      profile.isFogMode ? "filter blur-[3px] scale-105" : ""
+                  {profile.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt={profile.codename}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      className={`w-full h-full object-cover ${
+                        profile.isFogMode ? "filter blur-[3px] scale-105" : ""
+                      }`}
+                      loading="lazy"
+                      decoding="async"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`w-full h-full flex items-center justify-center font-mono font-black text-sm bg-purple-950/80 text-electricViolet-glow ${
+                      profile.avatarUrl ? "hidden" : "flex"
                     }`}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  >
+                    {(profile.codename || "??").slice(0, 2).toUpperCase()}
+                  </div>
                 </div>
                 {profile.bodyState === "open" && (
                   <span className="absolute bottom-0 right-0 w-3 h-3 bg-mintNeon rounded-full border-2 border-black z-10 animate-pulse" />

@@ -659,6 +659,7 @@ export const saveManagedProfiles = (
       if (isTestOrMockProfile(profile)) continue;
       try {
         const profileRef = doc(db, "vessel_profiles", profile.id);
+        const userRef = doc(db, "vessel_users", profile.id);
         setDoc(
           profileRef,
           sanitizeForFirestore({
@@ -673,6 +674,18 @@ export const saveManagedProfiles = (
           { merge: true }
         ).catch((err) =>
           console.warn("[VESSEL Admin] Error sincronizando perfil en Firestore:", err)
+        );
+
+        setDoc(
+          userRef,
+          sanitizeForFirestore({
+            userPlan: profile.userPlan,
+            isUnlimited: profile.isUnlimited,
+            updatedAt: new Date().toISOString(),
+          }),
+          { merge: true }
+        ).catch((err) =>
+          console.warn("[VESSEL Admin] Error sincronizando userPlan en vessel_users:", err)
         );
 
         if (profile.moderationStatus === "banned") {
@@ -874,14 +887,45 @@ export const changeUserPlan = (
   if (index === -1) return null;
 
   const target = profiles[index];
+  const isUnlimited = tier === "unlimited" || tier === "pro";
   const updated: ManagedUserProfile = {
     ...target,
     userPlan: tier,
-    isUnlimited: tier === "unlimited" || tier === "pro",
+    isUnlimited,
   };
 
   profiles[index] = updated;
   saveManagedProfiles(profiles, mode);
+
+  // Inmediata sincronización atómica con Firestore para ambos documentos (vessel_profiles y vessel_users)
+  if (mode === "real" && typeof window !== "undefined" && db && ("app" in db || "type" in db)) {
+    try {
+      const publicRef = doc(db, "vessel_profiles", userId);
+      const userRef = doc(db, "vessel_users", userId);
+      const payload = sanitizeForFirestore({
+        userPlan: tier,
+        isUnlimited,
+        updatedAt: new Date().toISOString(),
+      });
+      setDoc(publicRef, payload, { merge: true }).catch((err) =>
+        console.warn("[VESSEL Admin] Error actualizando plan en vessel_profiles:", err)
+      );
+      setDoc(userRef, payload, { merge: true }).catch((err) =>
+        console.warn("[VESSEL Admin] Error actualizando plan en vessel_users:", err)
+      );
+    } catch (err) {
+      console.warn("[VESSEL Admin] Error sincronizando membresía en Firestore:", err);
+    }
+  }
+
+  // Notificar al entorno cliente local en tiempo real si coincide con la misma sesión
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("vessel:user-plan-updated", {
+        detail: { userId, tier, isUnlimited },
+      })
+    );
+  }
 
   logAdminAction({
     operatorId: operator.id,

@@ -12,6 +12,7 @@ import {
   IdentityVerification,
   VerificationMethod,
   GenderInterest,
+  UserSubscriptionTier,
 } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -432,6 +433,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
                 saveFullUserDataToCloud(uid, { profile: sanitized, kinkMatrix: {} });
               }
             }
+            if (cloudData.userPlan) {
+              const isUnl = cloudData.userPlan === "unlimited" || cloudData.userPlan === "pro";
+              setMyProfile((prev) => ({
+                ...prev,
+                userPlan: cloudData.userPlan,
+                isUnlimited: isUnl,
+              }));
+            }
             if (cloudData.bodyState) {
               setMyBodyStateInternal(cloudData.bodyState);
               saveToStorage(STORAGE_KEYS.BODY_STATE, cloudData.bodyState, appMode);
@@ -448,11 +457,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
       }
     });
 
+    const handlePlanUpdated = (e: Event) => {
+      const detail = (e as CustomEvent<{ userId: string; tier: UserSubscriptionTier; isUnlimited: boolean }>).detail;
+      if (!detail) return;
+      if (!uidRef.current || uidRef.current === detail.userId) {
+        setMyProfile((prev) => ({
+          ...prev,
+          userPlan: detail.tier,
+          isUnlimited: detail.isUnlimited,
+        }));
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("vessel:user-plan-updated", handlePlanUpdated);
+    }
+
     return () => {
       isMounted = false;
       unsubAuth();
       if (unsubFullData) {
         unsubFullData();
+      }
+      if (typeof window !== "undefined") {
+        window.removeEventListener("vessel:user-plan-updated", handlePlanUpdated);
       }
     };
   }, [appMode, sanitizeLegacyTemplateProfile]);

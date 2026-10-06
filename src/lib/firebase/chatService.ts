@@ -44,6 +44,7 @@ export const subscribeToChatMessages = (
           mediaAttachment: data.mediaAttachment,
           isBurnOnView: data.isBurnOnView || false,
           isBurned: data.isBurned || false,
+          isRead: Boolean(data.isRead),
           isRevoked: data.isRevoked || false,
           revokedAt: data.revokedAt,
           isKindClosure: data.isKindClosure || false,
@@ -177,6 +178,27 @@ export const burnCloudMessage = async (
   } catch (error) {
     console.warn("Aviso destruyendo mensaje en Firestore:", error);
     return false;
+  }
+};
+
+/**
+ * Marca uno o varios mensajes como leídos en Firestore para sincronización persistente
+ */
+export const markCloudMessagesAsRead = async (
+  chatId: string,
+  messageIds: string[]
+): Promise<void> => {
+  if (!chatId || !messageIds || messageIds.length === 0 || !db) return;
+  try {
+    for (const msgId of messageIds) {
+      if (!msgId) continue;
+      const msgRef = doc(db, CHATS_COLLECTION, chatId, "messages", msgId);
+      setDoc(msgRef, { isRead: true }, { merge: true }).catch((err) =>
+        console.warn(`[VESSEL Chat] Error marcando mensaje ${msgId} como leído:`, err)
+      );
+    }
+  } catch (error) {
+    console.warn("[VESSEL Chat] Error en markCloudMessagesAsRead:", error);
   }
 };
 

@@ -20,6 +20,8 @@ import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { formatLocaleTime24h, hasHostingCapability, getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import { ExitProtocol, VesselProfile } from "@/types/vessel";
+import { getActiveAppMode } from "@/lib/storage/localStorageSync";
+import { isGhostOrMockProfile, isGhostOrMockProfileId } from "@/lib/firebase/matrixService";
 
 interface DarkroomListViewProps {
   onOpenChat: (profileId: string) => void;
@@ -65,7 +67,12 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
 
   // Pulsos recibidos enriquecidos (100% persistentes, nunca se descartan por desconexión)
   const enrichedReceivedPulses = useMemo(() => {
+    const isReal = getActiveAppMode() === "real";
     return receivedPulses
+      .filter((pulse) => {
+        if (isReal && isGhostOrMockProfileId(pulse.fromProfileId)) return false;
+        return true;
+      })
       .map((pulse) => ({
         ...pulse,
         profile:
@@ -74,19 +81,26 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
           (getProfileById ? getProfileById(pulse.fromProfileId) : undefined) ||
           createFallbackProfile(pulse.fromProfileId || "usuario"),
       }))
+      .filter((item) => {
+        if (isReal && item.profile && isGhostOrMockProfile(item.profile)) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [receivedPulses, profilesMap, getProfileById]);
 
   // Obtener todos los IDs de conversación existentes (chatMessages con mensajes o transmisiones con pulsos)
   const conversationPartnerIds = useMemo(() => {
+    const isReal = getActiveAppMode() === "real";
     const ids = new Set<string>();
     Object.entries(chatMessages).forEach(([id, msgs]) => {
       if (msgs && msgs.length > 0 && id !== "me" && id !== "system") {
+        if (isReal && isGhostOrMockProfileId(id)) return;
         ids.add(id);
       }
     });
     Object.entries(transmissions).forEach(([id, count]) => {
       if (count && count > 0 && id !== "me" && id !== "system") {
+        if (isReal && isGhostOrMockProfileId(id)) return;
         ids.add(id);
       }
     });
@@ -95,9 +109,14 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
 
   // Perfiles con interacción de chat activa (conversaciones reales 100% persistentes)
   const profilesWithInteractions = useMemo(() => {
+    const isReal = getActiveAppMode() === "real";
     return conversationPartnerIds
       .map((id) => profilesMap.get(id) || (getProfileById ? getProfileById(id) : undefined) || createFallbackProfile(id))
-      .filter((p): p is VesselProfile => Boolean(p && p.id))
+      .filter((p): p is VesselProfile => {
+        if (!p || !p.id) return false;
+        if (isReal && isGhostOrMockProfile(p)) return false;
+        return true;
+      })
       .sort((a, b) => {
         const msgsA = chatMessages[a.id] || [];
         const msgsB = chatMessages[b.id] || [];
@@ -275,10 +294,12 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                   className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-bloodNeon/25 via-obsidian-surface to-obsidian-surface border border-bloodNeon/60 hover:border-bloodNeon text-left transition-all cursor-pointer shadow-blood-glow flex-shrink-0 active:scale-98"
                 >
                   <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-bloodNeon bg-neutral-900 flex-shrink-0">
-                    {targetProfile ? (
+                    {targetProfile?.avatarUrl ? (
                       <img
                         src={targetProfile.avatarUrl}
                         alt={activeRendezvous.profileCodename}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -327,6 +348,8 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     <img
                       src={entry.person.avatarUrl || partnerProfile?.avatarUrl || "/placeholders/avatar.jpg"}
                       alt={entry.person.codename}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
                       className="w-full h-full object-cover"
                     />
                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-mintNeon border border-black" />
@@ -409,15 +432,31 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 bg-neutral-900 transition-transform cursor-pointer hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${avatarBorderClass}`}
                     title={language === "es" ? `Ver ficha de ${profile.codename}` : `View bio of ${profile.codename}`}
                   >
-                    <img
-                      src={profile.avatarUrl}
-                      alt={profile.codename}
-                      className={`w-full h-full object-cover transition-transform duration-200 ${
-                        profile.isFogMode ? "filter blur-[3px]" : ""
+                    {profile.avatarUrl ? (
+                      <img
+                        src={profile.avatarUrl}
+                        alt={profile.codename}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        className={`w-full h-full object-cover transition-transform duration-200 ${
+                          profile.isFogMode ? "filter blur-[3px]" : ""
+                        }`}
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-full h-full flex items-center justify-center font-mono font-black text-sm bg-purple-950/80 text-electricViolet-glow ${
+                        profile.avatarUrl ? "hidden" : "flex"
                       }`}
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    >
+                      {(profile.codename || "??").slice(0, 2).toUpperCase()}
+                    </div>
                   </button>
                   {profile.bodyState === "open" && (
                     <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-mintNeon rounded-full border-2 border-black z-10" />

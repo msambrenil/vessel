@@ -104,13 +104,29 @@ export const ChatProfileDrawer: React.FC<ChatProfileDrawerProps> = ({
           className="relative rounded-2xl overflow-hidden aspect-[4/5] border-2 border-white/10 hover:border-electricViolet transition-all cursor-pointer group shadow-card-elevation"
           title={language === "es" ? "Tocá para ver perfil y fotos completas" : "Tap to view full profile"}
         >
-          <img
-            src={profile.avatarUrl}
-            alt={profile.codename}
-            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
-              profile.isFogMode ? "filter blur-[4px] scale-105" : ""
+          {profile.avatarUrl ? (
+            <img
+              src={profile.avatarUrl}
+              alt={profile.codename}
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                profile.isFogMode ? "filter blur-[4px] scale-105" : ""
+              }`}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = "flex";
+              }}
+            />
+          ) : null}
+          <div
+            className={`w-full h-full flex items-center justify-center font-mono font-black text-2xl bg-purple-950/80 text-electricViolet-glow ${
+              profile.avatarUrl ? "hidden" : "flex"
             }`}
-          />
+          >
+            {(profile.codename || "??").slice(0, 2).toUpperCase()}
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
 
           <div className="absolute bottom-3 inset-x-3 text-left">

@@ -233,13 +233,24 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       setUserPlanState("free");
     };
 
+    const handlePlanUpdated = (e: Event) => {
+      const detail = (e as CustomEvent<{ userId: string; tier: UserSubscriptionTier }>).detail;
+      if (!detail) return;
+      if (!currentUserUid || currentUserUid === detail.userId) {
+        setUserPlanState(detail.tier);
+        saveToStorage(STORAGE_KEYS.PLAN, detail.tier, appMode);
+      }
+    };
+
     window.addEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
     window.addEventListener("vessel:user-switched", handleUserSwitched);
+    window.addEventListener("vessel:user-plan-updated", handlePlanUpdated);
     return () => {
       window.removeEventListener("vessel:cloud-user-hydrated", handleCloudHydrated);
       window.removeEventListener("vessel:user-switched", handleUserSwitched);
+      window.removeEventListener("vessel:user-plan-updated", handlePlanUpdated);
     };
-  }, [appMode]);
+  }, [appMode, currentUserUid]);
 
   // Hidratación segura local-first
   useEffect(() => {

@@ -22,23 +22,32 @@ const PROFILES_COLLECTION = "vessel_profiles";
  * Detecta si un documento de perfil corresponde a un bot de prueba, cuenta dev (@vessel.dev),
  * sesión sin configurar (VESSEL_USER), foto de stock de Unsplash o coordenada fantasma (Berlín 52.52 / Null Island).
  */
+/**
+ * Detecta si un ID corresponde a un perfil de prueba, bot, o sesión local
+ */
+export const isGhostOrMockProfileId = (id?: string | null): boolean => {
+  if (!id) return false;
+  const trimmed = id.trim();
+  return (
+    trimmed.startsWith("vessel-") ||
+    trimmed.startsWith("mock_") ||
+    trimmed.startsWith("mock-") ||
+    trimmed.startsWith("test-") ||
+    trimmed.startsWith("usr-mock-") ||
+    trimmed.startsWith("usr-") ||
+    trimmed === "local-user" ||
+    trimmed === "unauthenticated" ||
+    trimmed === "me" ||
+    MOCK_PROFILES.some((m) => m.id === trimmed)
+  );
+};
+
 export const isGhostOrMockProfile = (p: Partial<VesselProfile> | undefined | null): boolean => {
   if (!p || !p.id || !p.codename) return true;
   const id = p.id.trim();
   const code = p.codename.trim().toUpperCase();
 
-  if (
-    id.startsWith("vessel-") ||
-    id.startsWith("mock_") ||
-    id.startsWith("mock-") ||
-    id.startsWith("test-") ||
-    id.startsWith("usr-mock-") ||
-    id.startsWith("usr-") ||
-    id === "local-user" ||
-    id === "unauthenticated" ||
-    id === "me" ||
-    MOCK_PROFILES.some((m) => m.id === id)
-  ) {
+  if (isGhostOrMockProfileId(id)) {
     return true;
   }
 

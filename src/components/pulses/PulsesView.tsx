@@ -14,6 +14,8 @@ import { useVessel, createFallbackProfile } from "@/context/VesselContext";
 import { VesselProfile } from "@/types/vessel";
 import { PulseCard } from "./PulseCard";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { getActiveAppMode } from "@/lib/storage/localStorageSync";
+import { isGhostOrMockProfile, isGhostOrMockProfileId } from "@/lib/firebase/matrixService";
 
 export interface PulsesViewProps {
   onOpenChat: (profileId: string) => void;
@@ -80,7 +82,12 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
 
   // Hidratación de Zumbidos Recibidos (con soporte de resolución dual id/codename)
   const enrichedReceivedPulses = useMemo(() => {
+    const isReal = getActiveAppMode() === "real";
     return receivedPulses
+      .filter((pulse) => {
+        if (isReal && isGhostOrMockProfileId(pulse.fromProfileId)) return false;
+        return true;
+      })
       .map((pulse) => {
         const profile =
           resolveProfile(pulse.fromProfileId) ||
@@ -90,12 +97,17 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
           profile,
         };
       })
-      .filter((item): item is typeof item & { profile: VesselProfile } => Boolean(item.profile))
+      .filter((item): item is typeof item & { profile: VesselProfile } => {
+        if (!item.profile) return false;
+        if (isReal && isGhostOrMockProfile(item.profile)) return false;
+        return true;
+      })
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [receivedPulses, resolveProfile]);
 
   // Hidratación de Zumbidos Enviados + Zumbidos de Reencuentro ("Te vi en la pista")
   const enrichedSentPulses = useMemo(() => {
+    const isReal = getActiveAppMode() === "real";
     const itemsMap = new Map<
       string,
       {
@@ -108,8 +120,10 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
 
     Object.entries(transmissions).forEach(([profileId, count]) => {
       if (count <= 0) return;
+      if (isReal && isGhostOrMockProfileId(profileId)) return;
       const profile = resolveProfile(profileId);
       if (!profile) return;
+      if (isReal && isGhostOrMockProfile(profile)) return;
       const meta = sentPulsesMeta?.[profile.id] || sentPulsesMeta?.[profileId];
       itemsMap.set(profile.id, {
         profile,
@@ -120,8 +134,10 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
     // Unificar Zumbidos de Reencuentro enviados desde MissedConnectionsModal
     (missedConnections || []).forEach((conn) => {
       if (!conn.pulseSent) return;
+      if (isReal && (isGhostOrMockProfileId(conn.peerProfileId) || isGhostOrMockProfileId(conn.peerCodename))) return;
       const profile = resolveProfile(conn.peerProfileId) || resolveProfile(conn.peerCodename);
       if (!profile) return;
+      if (isReal && isGhostOrMockProfile(profile)) return;
       const existing = itemsMap.get(profile.id);
       itemsMap.set(profile.id, {
         profile,
