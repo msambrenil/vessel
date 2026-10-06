@@ -34,7 +34,7 @@ export const BrutalistNav: React.FC = () => {
       },
       {
         id: "pulses",
-        label: t.nav.pulses || (language === "es" ? "Zumbidos" : "Nudges"),
+        label: t.nav.pulses || (language === "es" ? "Toques" : "Taps"),
         icon: Activity,
       },
       {
@@ -106,7 +106,7 @@ export const BrutalistNav: React.FC = () => {
                   {tab.id === "pulses" && unreadPulsesCount > 0 && (
                     <span
                       className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-electricViolet shadow-violet-soft animate-pulse pointer-events-none"
-                      title={language === "es" ? `${unreadPulsesCount} zumbidos entrantes` : `${unreadPulsesCount} incoming nudges`}
+                      title={language === "es" ? `${unreadPulsesCount} toques entrantes` : `${unreadPulsesCount} incoming taps`}
                     >
                       {unreadPulsesCount > 9 ? "9+" : unreadPulsesCount}
                     </span>

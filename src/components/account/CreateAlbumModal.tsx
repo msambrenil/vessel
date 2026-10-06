@@ -460,7 +460,7 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Añade detalles sobre el contenido, atmósfera o requisitos de acceso..."
+              placeholder="Agregá detalles sobre el contenido, onda o requisitos de acceso..."
               rows={2}
               className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs p-3 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all resize-none"
             />
@@ -545,10 +545,10 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
             </div>
           </div>
 
-          {/* 5. Añadir Foto/Video con URL Directa */}
+          {/* 5. Agregar Foto/Video con URL Directa */}
           <div className="space-y-2 pt-1 border-t border-white/5">
             <label className="text-[11px] font-bold text-neutral-400 block">
-              O añadir por URL directa:
+              O agregar por link directo:
             </label>
             <div className="flex gap-2">
               <input

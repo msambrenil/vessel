@@ -9,22 +9,18 @@ import {
   useDiary,
   useSettings,
 } from "@/context/VesselContext";
-import { Lock, MessageCircle, Star, Zap } from "lucide-react";
+import { Lock, Star, Zap } from "lucide-react";
 import Image from "next/image";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getRoleActionMeta, getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
 
-const RendezvousSheet = dynamic(
-  () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
-  { ssr: false }
-);
-
 interface ProfileCardProps {
   profile: VesselProfile;
   onSelect: (profile: VesselProfile) => void;
   onOpenChat: (profileId: string) => void;
+  onOpenRendezvous?: (profile: VesselProfile) => void;
   isPriority?: boolean;
   isLockedByGridLimit?: boolean;
 }
@@ -33,6 +29,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   profile,
   onSelect,
   onOpenChat,
+  onOpenRendezvous,
   isPriority = false,
   isLockedByGridLimit = false,
 }) => {
@@ -51,11 +48,13 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const { getProfileDossier } = useDiary();
   const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
   const [isPulsing, setIsPulsing] = React.useState(false);
-  const [isRendezvousOpen, setIsRendezvousOpen] = React.useState(false);
   const resolvedAvatarUrl = React.useMemo(() => {
     if (!profile.avatarUrl) return "";
     if (profile.avatarUrl.includes("googleusercontent.com") && profile.avatarUrl.includes("=s96-c")) {
       return profile.avatarUrl.replace("=s96-c", "=s400-c");
+    }
+    if (profile.avatarUrl.includes("images.unsplash.com")) {
+      return profile.avatarUrl.replace(/w=(800|1200)/, "w=400");
     }
     return profile.avatarUrl;
   }, [profile.avatarUrl]);
@@ -283,8 +282,8 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         </div>
       )}
 
-      {/* Degradado Táctico de Legibilidad: 100% contraste desde la base hasta la cápsula, nítido y sin gradiente hacia arriba */}
-      <div className="absolute inset-x-0 bottom-0 h-[46%] bg-gradient-to-t from-black via-black/92 via-55% to-transparent pointer-events-none" />
+      {/* Degradado Táctico de Legibilidad: 100% contraste desde la base, protegiendo legibilidad sin oscurecer la parte superior */}
+      <div className="absolute inset-x-0 bottom-0 h-[46%] bg-gradient-to-t from-black via-black/85 via-50% to-transparent pointer-events-none" />
 
       {/* Badge Superior Izquierdo: Solo para el Usuario Actual o Listo YA */}
       {profile.isCurrentUser ? (
@@ -401,7 +400,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
 
         {/* Fila 2: Rol Táctico + Hospedaje + Micro-chips de Salud / Morbos */}
         <div className="flex items-center gap-1 w-full min-w-0 pointer-events-auto overflow-hidden">
-          <span className="text-[11px] sm:text-xs text-electricViolet-glow font-black tracking-tight drop-shadow-sm truncate flex-shrink-0">
+          <span className="text-[11px] sm:text-xs text-electricViolet-glow font-black tracking-tight drop-shadow-sm truncate min-w-0 max-w-[80px] sm:max-w-none">
             {roleDisplay}
           </span>
           {/* Micro-Ficha Táctica de Hospedaje */}
@@ -452,14 +451,14 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           {mutualMatches.length > 0 ? (
             <span
               data-testid={`kinks-badge-${profile.id}`}
-              className="px-1 py-0.2 rounded bg-pink-950/70 border border-pink-500/40 text-pink-300 text-[8px] font-mono font-bold flex-shrink-0 truncate max-w-[85px]"
+              className="px-1 py-0.2 rounded bg-pink-950/70 border border-pink-500/40 text-pink-300 text-[8px] font-mono font-bold flex-shrink-0 truncate max-w-[65px] min-[380px]:max-w-[85px]"
               title={language === "es" ? `${mutualMatches.length} morbos mutuos` : `${mutualMatches.length} mutual kinks`}
             >
               ✨ {mutualMatches.length} {language === "es" ? "morbos" : "mutual"}
             </span>
           ) : profile.kinks && profile.kinks.length > 0 ? (
             <span
-              className="px-1 py-0.2 rounded bg-white/5 border border-white/10 text-neutral-400 text-[8px] font-mono truncate max-w-[75px]"
+              className="px-1 py-0.2 rounded bg-white/5 border border-white/10 text-neutral-400 text-[8px] font-mono truncate max-w-[60px] min-[380px]:max-w-[75px]"
               title={profile.kinks[0]}
             >
               #{profile.kinks[0]}
@@ -467,10 +466,10 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           ) : null}
         </div>
 
-        {/* Fila 3: Acción Primaria Zen (Sintonizar con Pre-Flight) + Favorito */}
+        {/* Fila 3: Acción Primaria Zen (Coordinación Rápida) + Favorito */}
         {!profile.isCurrentUser && (
           <div className="flex items-center gap-1.5 w-full pt-0.5 pointer-events-auto relative z-20">
-            {/* Botón Primario Único: Sintonizar */}
+            {/* Botón Táctico de Coordinación Rápida */}
             <button
               type="button"
               data-testid={`profile-sintonizar-btn-${profile.id}`}
@@ -482,9 +481,11 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   return;
                 }
                 audioEngine.playSubBass(55);
-                setIsRendezvousOpen(true);
+                if (onOpenRendezvous) {
+                  onOpenRendezvous(profile);
+                }
               }}
-              className="flex-1 min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 rounded-xl bg-gradient-to-r from-electricViolet via-fuchsia-600 to-electricViolet hover:brightness-110 text-white font-mono text-[10px] sm:text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-violet-soft active:scale-95 transition-all cursor-pointer border border-white/20"
+              className="flex-1 min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 rounded-xl bg-black/60 hover:bg-electricViolet/25 border border-white/15 hover:border-electricViolet/60 text-white font-mono text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 backdrop-blur-xs shadow-sm hover:shadow-violet-soft active:scale-95 transition-all cursor-pointer"
               title={language === "es" ? "Coordinar encuentro y acuerdos" : "Coordinate date & terms"}
               aria-label={`${language === "es" ? "Coordinar con" : "Coordinate with"} ${profile.codename}`}
             >
@@ -492,7 +493,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               <span className="truncate">{language === "es" ? "Coordinar" : "Coordinate"}</span>
             </button>
 
-            {/* Botón Favorito (★) 1-Tap (Ergonómico 34px) */}
+            {/* Botón Favorito (★) 1-Tap */}
             <button
               type="button"
               data-testid={`profile-favorite-toggle-${profile.id}`}
@@ -500,10 +501,10 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 e.stopPropagation();
                 toggleFavoriteProfile(profile.id);
               }}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-md focus-visible:outline-none focus-visible:ring-2 cursor-pointer ${
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${
                 isFavoriteProfile(profile.id)
-                  ? "border-amber-400 bg-amber-950/80 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] focus-visible:ring-amber-400"
-                  : "border-white/20 bg-black/90 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black focus-visible:ring-amber-400"
+                  ? "border-amber-400 bg-amber-950/80 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)] focus-visible:ring-amber-400"
+                  : "border-white/15 bg-black/60 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black/90 focus-visible:ring-amber-400"
               }`}
               title={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
               aria-label={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
@@ -518,15 +519,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           </div>
         )}
       </div>
-
-      {/* Sheet Táctico de Rendezvous / Pre-Flight en 3 Taps */}
-      {isRendezvousOpen && (
-        <RendezvousSheet
-          isOpen={isRendezvousOpen}
-          onClose={() => setIsRendezvousOpen(false)}
-          targetProfile={profile}
-        />
-      )}
     </article>
   );
 };

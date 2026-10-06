@@ -725,7 +725,7 @@ export const BioTab: React.FC<BioTabProps> = ({ children }) => {
                 addCustomIntention();
               }
             }}
-            placeholder={language === "es" ? "Añadir otra intención..." : "Add custom intention..."}
+            placeholder={language === "es" ? "Sumar otra intención..." : "Add custom intention..."}
             className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-bloodNeon"
           />
           <BrutalistButton
@@ -733,7 +733,7 @@ export const BioTab: React.FC<BioTabProps> = ({ children }) => {
             size="default"
             onClick={addCustomIntention}
           >
-            {language === "es" ? "+ Añadir" : "+ Add"}
+            {language === "es" ? "+ Sumar" : "+ Add"}
           </BrutalistButton>
         </div>
       </div>
@@ -802,7 +802,7 @@ export const BioTab: React.FC<BioTabProps> = ({ children }) => {
                 addCustomBoundary();
               }
             }}
-            placeholder={language === "es" ? "Añadir otro límite claro..." : "Add custom boundary..."}
+            placeholder={language === "es" ? "Sumar otro límite claro..." : "Add custom boundary..."}
             className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs font-mono px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-purple-500"
           />
           <BrutalistButton
@@ -810,7 +810,7 @@ export const BioTab: React.FC<BioTabProps> = ({ children }) => {
             size="default"
             onClick={addCustomBoundary}
           >
-            {language === "es" ? "+ Añadir" : "+ Add"}
+            {language === "es" ? "+ Sumar" : "+ Add"}
           </BrutalistButton>
         </div>
       </div>

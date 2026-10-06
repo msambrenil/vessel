@@ -112,9 +112,9 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
   // Categorías de Filtro
   const categories: { id: "all" | HotspotCategory | "nightlife"; label: string; icon: string }[] = [
     { id: "all", label: language === "es" ? "Todos" : "All", icon: "🌐" },
-    { id: "cruising_area", label: language === "es" ? "Al Aire Libre" : "Cruising", icon: "🌲" },
+    { id: "cruising_area", label: language === "es" ? "Áreas de Cruising" : "Cruising Areas", icon: "🌲" },
     { id: "nightlife", label: language === "es" ? "Fiestas" : "Nightlife", icon: "🎉" },
-    { id: "darkroom_club", label: language === "es" ? "Salas Oscuras" : "Darkrooms", icon: "⚡" },
+    { id: "darkroom_club", label: language === "es" ? "Cuartos Oscuros" : "Darkrooms", icon: "⚡" },
     { id: "sauna", label: language === "es" ? "Saunas" : "Saunas", icon: "🧖" },
     { id: "queer_bar", label: language === "es" ? "Bares Queer" : "Queer Bars", icon: "🍸" },
   ];
@@ -271,10 +271,10 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
   return (
     <div className="flex flex-col flex-1 pb-48 sm:pb-56 select-none animate-in fade-in duration-200">
       {/* =========================================================
-          SUB-HEADER CONTEXTUAL DE LUGARES & FIESTAS (Sticky Top)
+          SUB-HEADER CONTEXTUAL DE LUGARES & FIESTAS (Flujo Natural Zen)
           ========================================================= */}
       {!hideStickyHeader && (
-        <div className="p-2 sm:p-2.5 bg-obsidian-deep/95 border-b border-white/10 sticky top-[52px] sm:top-[56px] z-20 space-y-2 shadow-md backdrop-blur-md">
+        <div className="p-2 sm:p-2.5 bg-obsidian-surface/60 border-b border-white/5 space-y-2 backdrop-blur-sm">
           {/* Fila 1: Búsqueda de Lugares + Botón Proponer Lugar */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className="relative flex-1">
@@ -422,7 +422,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                 openTravelModal();
               }}
               aria-label={travelMode.isActive ? `Modo Viajero Activo: ${travelMode.cityName}` : "Activar Modo Viajero"}
-              title={travelMode.isActive ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocar para cambiar o volver` : "Simular ubicación en otra ciudad"}
+              title={travelMode.isActive ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocá para cambiar o volver` : "Simular ubicación en otra ciudad"}
               className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-mono text-[9.5px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
                 travelMode.isActive
                   ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow animate-pulse"
@@ -843,7 +843,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                     onChange={(e) => setProposeCategory(e.target.value as HotspotCategory)}
                     className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
                   >
-                    <option value="cruising_area">Cruising / Aire Libre</option>
+                    <option value="cruising_area">{language === "es" ? "Áreas de Cruising" : "Cruising Areas"}</option>
                     <option value="darkroom_club">Darkroom / Club</option>
                     <option value="sauna">Sauna Gay</option>
                     <option value="queer_bar">Bar Queer</option>

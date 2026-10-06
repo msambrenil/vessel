@@ -101,14 +101,14 @@ export default function VesselApp() {
     <div className="flex flex-col flex-1 relative bg-obsidian text-white min-h-screen w-full selection:bg-electricViolet selection:text-white">
       {/* Contenedor Responsivo Centralizado */}
       <div className="w-full max-w-4xl mx-auto flex flex-col flex-1 relative min-h-screen">
-        {/* Cabecera Brutalista Real */}
-        <BrutalistHeader />
+        {/* Cabecera Brutalista Unificada & Hub de Sintonías (Sticky Top Consolidado) */}
+        <header className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md border-b border-white/10 select-none shadow-sm">
+          <BrutalistHeader />
+          {activeView === "grid" && <IntentHubSelector />}
+        </header>
 
         {/* Banner Táctico de Modo "En Camino" con Telemetría */}
         {enRouteState.isActive && <EnRouteBanner />}
-
-        {/* Selector Táctico de Sintonía e Intención Inmediata (Hub Operativo De-Grindr) */}
-        {activeView === "grid" && <IntentHubSelector />}
 
         {/* Recordatorio Táctico de Próxima Cita Agendada (1-Tap Chat & Confirmación) */}
         {activeView === "grid" && <UpcomingEncounterBanner />}

@@ -39,6 +39,7 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
     transmissions,
     receivedPulses,
     unreadPulsesCount,
+    hasMutualPulse,
     diaryEntries,
     activeRendezvous,
     t,
@@ -48,8 +49,8 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
     setSelectedProfile,
   } = useVessel();
 
-  // Filtro segmentado de la bandeja: "all" | "hosting" | "unread"
-  const [chatFilter, setChatFilter] = useState<"all" | "hosting" | "unread">("all");
+  // Filtro segmentado de la bandeja: "all" | "mutual" | "hosting" | "unread"
+  const [chatFilter, setChatFilter] = useState<"all" | "mutual" | "hosting" | "unread">("all");
 
   // Mapa de perfiles por ID y Codename combinando radar y perfiles conocidos
   const profilesMap = useMemo(() => {
@@ -88,7 +89,13 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [receivedPulses, profilesMap, getProfileById]);
 
-  // Obtener todos los IDs de conversación existentes (chatMessages con mensajes o transmisiones con pulsos)
+  // Perfiles con sintonía / onda mutua activa (toques correspondidos)
+  const mutualPulseProfiles = useMemo(() => {
+    if (!hasMutualPulse) return [];
+    return enrichedReceivedPulses.filter((p) => p.profile && hasMutualPulse(p.profile.id));
+  }, [enrichedReceivedPulses, hasMutualPulse]);
+
+  // Obtener todos los IDs de conversación existentes (chatMessages con mensajes, transmisiones con pulsos o toques mutuos)
   const conversationPartnerIds = useMemo(() => {
     const isReal = getActiveAppMode() === "real";
     const ids = new Set<string>();
@@ -104,8 +111,17 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
         ids.add(id);
       }
     });
+    // Auto-promover perfiles con Onda Mutua 🔥 para que aparezcan de inmediato en la bandeja de chats
+    if (hasMutualPulse) {
+      enrichedReceivedPulses.forEach((pulse) => {
+        if (pulse.profile && hasMutualPulse(pulse.profile.id)) {
+          if (isReal && isGhostOrMockProfileId(pulse.profile.id)) return;
+          ids.add(pulse.profile.id);
+        }
+      });
+    }
     return Array.from(ids);
-  }, [chatMessages, transmissions]);
+  }, [chatMessages, transmissions, enrichedReceivedPulses, hasMutualPulse]);
 
   // Perfiles con interacción de chat activa (conversaciones reales 100% persistentes)
   const profilesWithInteractions = useMemo(() => {
@@ -151,10 +167,11 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
 
   // Lista filtrada según pestaña seleccionada
   const filteredChatList = useMemo(() => {
+    if (chatFilter === "mutual") return profilesWithInteractions.filter((p) => hasMutualPulse?.(p.id));
     if (chatFilter === "hosting") return hostingChatProfiles;
     if (chatFilter === "unread") return unreadChatProfiles;
     return profilesWithInteractions;
-  }, [chatFilter, profilesWithInteractions, hostingChatProfiles, unreadChatProfiles]);
+  }, [chatFilter, profilesWithInteractions, hostingChatProfiles, unreadChatProfiles, hasMutualPulse]);
 
   // Helper para renderizar micro-píldora de protocolo de salida
   const renderExitProtocolPill = (protocol: ExitProtocol | undefined) => {
@@ -187,6 +204,15 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
               label: t.chat.filterAll || (language === "es" ? "Todos" : "All"),
               count: profilesWithInteractions.length,
             },
+            ...(mutualPulseProfiles.length > 0
+              ? [
+                  {
+                    id: "mutual" as const,
+                    label: language === "es" ? "Onda Mutua 🔥" : "Mutual 🔥",
+                    count: mutualPulseProfiles.length,
+                  },
+                ]
+              : []),
             {
               id: "hosting" as const,
               label: t.chat.filterHosting || (language === "es" ? "Ponen lugar 🏠" : "Can Host 🏠"),
@@ -223,6 +249,8 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                         ? "bg-black/40 text-white"
                         : tab.id === "unread"
                         ? "bg-bloodNeon text-white animate-pulse"
+                        : tab.id === "mutual"
+                        ? "bg-mintNeon text-obsidian-deep font-black"
                         : "bg-white/10 text-neutral-300"
                     }`}
                   >
@@ -243,8 +271,8 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
             <span className="font-mono text-[11px] text-neutral-300 truncate">
               <strong className="text-white">{enrichedReceivedPulses.length}</strong>{" "}
               {enrichedReceivedPulses.length === 1
-                ? (language === "es" ? "zumbido recibido" : "nudge received")
-                : (language === "es" ? "zumbidos recibidos" : "nudges received")}
+                ? (language === "es" ? "toque recibido" : "tap received")
+                : (language === "es" ? "toques recibidos" : "taps received")}
               {unreadPulsesCount > 0 && (
                 <span className="ml-1.5 text-[9px] px-1.5 py-0.2 rounded bg-bloodNeon text-white font-bold">
                   {unreadPulsesCount} {language === "es" ? "NUEVOS" : "NEW"}
@@ -266,16 +294,16 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
         </div>
       )}
 
-      {/* 3. SMART BAR: CÁPSULAS DE CITAS HOY / PIN ACTIVO (Solo visible si hay actividad) */}
-      {(activeRendezvous || todayUpcomingDates.length > 0) && (
+      {/* 3. SMART BAR: CÁPSULAS DE ONDA MUTUA / CITAS HOY / PIN ACTIVO (Solo visible si hay actividad) */}
+      {(activeRendezvous || todayUpcomingDates.length > 0 || mutualPulseProfiles.length > 0) && (
         <div className="space-y-2 pt-0.5">
           <div className="flex items-center justify-between px-1">
             <span className="text-[10px] font-black uppercase font-mono tracking-wider text-electricViolet-glow flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-electricViolet" />
-              <span>{t.chat.filterUpcoming || (language === "es" ? "Citas de hoy y encuentros activos" : "Today's Dates & Active Meets")}</span>
+              <span>{t.chat.filterUpcoming || (language === "es" ? "Citas de hoy, toques mutuos y encuentros" : "Today's Dates & Active Meets")}</span>
             </span>
             <span className="text-[10px] text-neutral-400 font-mono">
-              {(activeRendezvous ? 1 : 0) + todayUpcomingDates.length} {language === "es" ? "ACTIVAS" : "ACTIVE"}
+              {(activeRendezvous ? 1 : 0) + todayUpcomingDates.length + mutualPulseProfiles.length} {language === "es" ? "ACTIVAS" : "ACTIVE"}
             </span>
           </div>
 
@@ -371,6 +399,49 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-electricViolet-glow ml-1 flex-shrink-0" />
+                </button>
+              );
+            })}
+
+            {/* Cápsulas de Onda Mutua 🔥 (Mutual Matches por Toques) */}
+            {mutualPulseProfiles.slice(0, 6).map((pulse) => {
+              const partnerProfile = pulse.profile;
+              if (!partnerProfile) return null;
+              return (
+                <button
+                  key={`mutual-${partnerProfile.id}`}
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playPulse();
+                    onOpenChat(partnerProfile.id);
+                  }}
+                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-mintNeon/20 via-obsidian-surface to-obsidian-surface border border-mintNeon/40 hover:border-mintNeon text-left transition-all cursor-pointer shadow-mint-glow flex-shrink-0 active:scale-98"
+                >
+                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-mintNeon/60 bg-neutral-900 flex-shrink-0">
+                    <img
+                      src={partnerProfile.avatarUrl || "/placeholders/avatar.jpg"}
+                      alt={partnerProfile.codename}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-mintNeon border border-black animate-pulse" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black text-white truncate">
+                        {partnerProfile.codename}
+                      </span>
+                      <span className="text-[8px] font-mono font-black px-1.5 py-0.2 rounded bg-mintNeon text-obsidian-deep uppercase">
+                        ONDA MUTUA 🔥
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-mintNeon font-mono truncate flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-mintNeon flex-shrink-0 fill-current" />
+                      <span>{language === "es" ? "Toque correspondido" : "Mutual tap"}</span>
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-mintNeon ml-1 flex-shrink-0" />
                 </button>
               );
             })}
@@ -495,6 +566,12 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                           size="xs"
                         />
                       )}
+                      {hasMutualPulse?.(profile.id) && (
+                        <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-mintNeon/20 border border-mintNeon/40 text-mintNeon uppercase tracking-tight flex items-center gap-0.5">
+                          <span>🔥</span>
+                          <span>{language === "es" ? "Onda Mutua" : "Mutual"}</span>
+                        </span>
+                      )}
                     </div>
 
                     {lastMsg && (() => {
@@ -543,11 +620,18 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                         ) : (
                           lastMsg.text
                         )
+                      ) : hasMutualPulse?.(profile.id) ? (
+                        <span className="text-mintNeon font-mono text-[11px] font-bold flex items-center gap-1">
+                          <Zap className="w-3 h-3 text-mintNeon flex-shrink-0 fill-current" />
+                          <span>
+                            {language === "es" ? "¡Onda Mutua! 🔥 Toque correspondido" : "Mutual Pulse! 🔥 Tap matched"}
+                          </span>
+                        </span>
                       ) : signalCount > 0 ? (
                         <span className="text-electricViolet-glow font-mono text-[11px] flex items-center gap-1">
                           <Zap className="w-3 h-3" />
                           <span>
-                            {language === "es" ? `Zumbido enviado (+${signalCount})` : `Nudge sent (+${signalCount})`}
+                            {language === "es" ? `Toque enviado (+${signalCount})` : `Tap sent (+${signalCount})`}
                           </span>
                         </span>
                       ) : (

@@ -178,7 +178,7 @@ export const DateDiaryView: React.FC = () => {
               openCreateDiaryModal();
               audioEngine.playPulse();
             }}
-            className="px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-electricViolet to-purple-600 hover:from-electricViolet-glow hover:to-purple-500 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(139,92,246,0.45)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet hover:scale-[1.02] active:scale-[0.96] flex-shrink-0"
+            className="w-full sm:w-auto px-5 py-2.5 min-h-[44px] bg-gradient-to-r from-electricViolet to-purple-600 hover:from-electricViolet-glow hover:to-purple-500 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(139,92,246,0.45)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet hover:scale-[1.01] active:scale-[0.97]"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span className="font-mono uppercase tracking-wider whitespace-nowrap">
@@ -226,7 +226,7 @@ export const DateDiaryView: React.FC = () => {
             </span>
           </button>
 
-          {/* Solapa 2: Mis Chongos (Libreta Íntima) */}
+          {/* Solapa 2: Mis Vínculos (Libreta Íntima) */}
           <button
             type="button"
             role="tab"
@@ -244,7 +244,7 @@ export const DateDiaryView: React.FC = () => {
           >
             <Flame className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${activeTab === "lovers" ? "text-black fill-black" : "text-amber-400"}`} />
             <span className="truncate">
-              {language === "es" ? "Chongos" : "Lovers"}
+              {language === "es" ? "Vínculos" : "Connections"}
             </span>
             <span
               className={`text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-mono ${

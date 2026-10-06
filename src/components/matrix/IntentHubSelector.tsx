@@ -69,10 +69,25 @@ export const IntentHubSelector: React.FC = () => {
 
   const isPlacesActive = matrixTab === "places";
 
+  const getShortLabel = (key: string, fullLabel: string) => {
+    if (language === "es") {
+      if (key === "kink") return "Morbos";
+      if (key === "nightlife") return "Boliches";
+      if (key === "now") return "Pinta ya";
+      if (key === "stealth") return "Discreto";
+    } else {
+      if (key === "kink") return "Kink";
+      if (key === "nightlife") return "Places";
+      if (key === "now") return "Ready";
+      if (key === "stealth") return "Stealth";
+    }
+    return fullLabel;
+  };
+
   return (
-    <section
+    <nav
       aria-label="Selector de Sintonías e Intenciones"
-      className="w-full bg-obsidian-deep/95 border-b border-white/10 px-2 sm:px-4 py-1.5 backdrop-blur-md sticky top-[52px] z-20 select-none shadow-sm"
+      className="w-full px-2 sm:px-4 py-1 pb-1.5 border-t border-white/5 select-none"
     >
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-1 p-0.5 bg-black/60 border border-white/10 rounded-xl">
@@ -81,6 +96,7 @@ export const IntentHubSelector: React.FC = () => {
             {peopleTabs.map((tab) => {
               const isActive = matrixTab === "people" && operatingIntent === tab.id;
               const label = t.intents[tab.labelKey];
+              const shortLabel = getShortLabel(tab.labelKey, label);
 
               return (
                 <button
@@ -99,8 +115,11 @@ export const IntentHubSelector: React.FC = () => {
                   aria-pressed={isActive}
                 >
                   {tab.icon}
-                  <span className="tracking-tight truncate max-w-full">
+                  <span className="hidden sm:inline tracking-tight truncate max-w-full">
                     {label}
+                  </span>
+                  <span className="sm:hidden tracking-tight truncate max-w-full">
+                    {shortLabel}
                   </span>
                 </button>
               );
@@ -124,13 +143,16 @@ export const IntentHubSelector: React.FC = () => {
               aria-pressed={isPlacesActive}
             >
               <Moon className={`w-3.5 h-3.5 flex-shrink-0 ${isPlacesActive ? "text-pink-300 animate-pulse" : "text-pink-400"}`} />
-              <span className="tracking-tight truncate max-w-full font-black">
+              <span className="hidden sm:inline tracking-tight truncate max-w-full font-black">
                 {t.intents.nightlife}
+              </span>
+              <span className="sm:hidden tracking-tight truncate max-w-full font-black">
+                {getShortLabel("nightlife", t.intents.nightlife)}
               </span>
             </button>
           </div>
         </div>
       </div>
-    </section>
+    </nav>
   );
 };

@@ -2,9 +2,7 @@
 
 import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
-import { MissedConnection } from "@/types/vessel";
-import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { Eye, Clock, Send, Check, MessageSquare, X, MapPin, Sparkles, ShieldCheck } from "lucide-react";
+import { Eye, Clock, Send, Check, MessageSquare, X, MapPin, Sparkles } from "lucide-react";
 
 export const MissedConnectionsModal: React.FC = () => {
   const {
@@ -172,7 +170,7 @@ export const MissedConnectionsModal: React.FC = () => {
                   ) : conn.pulseSent ? (
                     <div className="w-full py-2 bg-white/5 border border-emerald-500/30 rounded-lg text-emerald-400 font-mono text-xs flex items-center justify-center gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{language === "es" ? "Zumbido de Reencuentro Enviado ✓" : "Re-encounter Nudge Sent ✓"}</span>
+                      <span>{language === "es" ? "Toque de Reencuentro Enviado ✓" : "Re-encounter Tap Sent ✓"}</span>
                     </div>
                   ) : activeNoteInputId === conn.id ? (
                     <div className="w-full flex items-center gap-1.5">
@@ -207,7 +205,7 @@ export const MissedConnectionsModal: React.FC = () => {
                       className="w-full py-2 bg-neutral-800 hover:bg-neutral-750 border border-white/15 hover:border-electricViolet/60 text-white font-mono text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-electricViolet-glow" />
-                      <span>{language === "es" ? 'Mandar Zumbido de Reencuentro ("Te vi en la pista")' : 'Send Re-encounter Nudge ("Saw you on the dancefloor")'}</span>
+                      <span>{language === "es" ? 'Mandar Toque de Reencuentro ("Te vi en la pista")' : 'Send Re-encounter Tap ("Saw you on the dancefloor")'}</span>
                     </button>
                   )}
                 </div>

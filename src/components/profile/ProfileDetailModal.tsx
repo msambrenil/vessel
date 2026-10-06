@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { VesselProfile } from "@/types/vessel";
 import { useVessel } from "@/context/VesselContext";
-import { INTENSITY_LABELS } from "@/data/kinkCatalog";
 
 const RendezvousSheet = dynamic(
   () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
@@ -21,7 +20,6 @@ import {
   Play,
   Pause,
   MessageSquare,
-  Navigation,
   ChevronLeft,
   ChevronRight,
   Car,
@@ -38,14 +36,12 @@ import {
 } from "lucide-react";
 import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
-import { ENERGY_VIBE_CATALOG, KINK_ITEMS_CATALOG } from "@/data/energyCatalog";
+import { ENERGY_VIBE_CATALOG } from "@/data/energyCatalog";
 import { BoundaryManagerModal } from "@/components/chat/BoundaryManagerModal";
 import { EditMockProfileModal } from "./EditMockProfileModal";
 import { getRoleDisplayLabel, getRoleActionMeta } from "@/data/roleActionCatalog";
-import { SteganographicWatermark } from "@/components/security/SteganographicWatermark";
 import { ProfileDossierSection } from "./ProfileDossierSection";
 import { ProfileGlanceHero } from "./ProfileGlanceHero";
-import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { HostCardBadge } from "@/components/logistics/HostCardBadge";
 import { VoiceVibePlayer } from "@/components/profile/VoiceVibePlayer";
 import { ExitProtocolBadge } from "@/components/profile/ExitProtocolBadge";
@@ -114,7 +110,13 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
   }, [profile]);
 
   const signalCount = transmissions[currentProfile.id] || 0;
-  const photos = currentProfile.galleryUrls.length > 0 ? currentProfile.galleryUrls : [currentProfile.avatarUrl];
+  const rawGallery = Array.isArray(currentProfile.galleryUrls)
+    ? currentProfile.galleryUrls.filter(Boolean)
+    : [];
+  const photos =
+    rawGallery.length > 0
+      ? rawGallery
+      : [currentProfile.avatarUrl || "/placeholder-avatar.png"];
   const boundary = getBoundaryForProfile(currentProfile.id);
   const dossier = getProfileDossier(currentProfile.id);
   const roleAction = getRoleActionMeta(currentProfile.role, language, currentProfile.codename);
@@ -129,48 +131,6 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
       currentProfile.mobility?.toLowerCase().includes("lugar") ||
       currentProfile.mobility?.toLowerCase().includes("depto")
     );
-
-  const getProtocolMeta = (protocol?: string | null) => {
-    if (!protocol) return null;
-    switch (protocol) {
-      case "fast_encounter":
-        return {
-          icon: "⏱️",
-          label: language === "es" ? "AL HUESO / RÁPIDO" : "FAST",
-          sub: language === "es" ? "Sin vueltas" : "No lingering",
-          desc: t.tacticalSuite?.exitProtocol?.fastEncounter
-            ? `Protocolo: ${t.tacticalSuite.exitProtocol.fastEncounter}`
-            : (language === "es" ? "Protocolo: Encuentro al hueso (sin vueltas)" : "Protocol: Fast encounter (no lingering)"),
-        };
-      case "chill_cuddle":
-        return {
-          icon: "🫂",
-          label: language === "es" ? "TRANQUI CON MIMOS" : "CUDDLE",
-          sub: language === "es" ? "Ducha & relax" : "Shower & cuddle",
-          desc: t.tacticalSuite?.exitProtocol?.chillCuddle
-            ? `Protocolo: ${t.tacticalSuite.exitProtocol.chillCuddle}`
-            : (language === "es" ? "Protocolo: Ducha y relax de 20-30 min" : "Protocol: Shower and cuddle (20-30 min)"),
-        };
-      case "sleepover":
-        return {
-          icon: "🌙",
-          label: language === "es" ? "QUEDARSE A DORMIR" : "SLEEPOVER",
-          sub: language === "es" ? "Pasar la noche si pinta" : "Stay over",
-          desc: t.tacticalSuite?.exitProtocol?.sleepover
-            ? `Protocolo: ${t.tacticalSuite.exitProtocol.sleepover}`
-            : (language === "es" ? "Protocolo: Quedarse a dormir si hay química mutua" : "Protocol: Sleepover if mutual vibe"),
-        };
-      default:
-        return {
-          icon: "⏱️",
-          label: protocol.toUpperCase(),
-          sub: language === "es" ? "Acuerdo directo" : "Direct agreement",
-          desc: `Protocolo: ${protocol}`,
-        };
-    }
-  };
-
-  const protocolMeta = getProtocolMeta(currentProfile.exitProtocol);
 
   const nextPhoto = () => {
     setSelectedPhotoIdx((prev) => (prev + 1) % photos.length);
@@ -247,7 +207,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 onClick={() => toggleFavoriteProfile(currentProfile.id)}
                 aria-label={isFavoriteProfile(currentProfile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
                 aria-pressed={isFavoriteProfile(currentProfile.id)}
-                className={`p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
+                className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
                   isFavoriteProfile(currentProfile.id)
                     ? "bg-amber-950/80 border-amber-400 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
                     : "bg-white/5 border-white/10 text-neutral-400 hover:text-amber-300 hover:bg-white/15"
@@ -262,6 +222,19 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
               </button>
             )}
 
+            {/* Botón Agenda / Libreta Íntima */}
+            {!currentProfile.isCurrentUser && (
+              <button
+                type="button"
+                onClick={() => openCreateDiaryModal(currentProfile.id)}
+                aria-label="Documentar o agendar encuentro en la Agenda"
+                title="Documentar o agendar encuentro en la Agenda"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:bg-white/15 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+              >
+                <BookOpen className="w-4 h-4 text-electricViolet stroke-[2.2]" />
+              </button>
+            )}
+
             {/* Botón de Edición del Perfil de Prueba (Solo Dev) */}
             {process.env.NODE_ENV === "development" && (
               <button
@@ -269,7 +242,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 onClick={() => setIsEditModalOpen(true)}
                 aria-label="Editar este perfil de prueba"
                 title="Editar datos de este perfil (Dev / Preset)"
-                className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white transition-all border border-electricViolet/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-violet-soft"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white transition-all border border-electricViolet/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-violet-soft"
               >
                 <Edit3 className="w-4 h-4 stroke-[2.5]" />
               </button>
@@ -279,7 +252,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
               type="button"
               onClick={() => setIsBoundaryModalOpen(true)}
               aria-label="Gestionar límites y acuerdos de este perfil"
-              className={`p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 ${
+              className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 ${
                 boundary
                   ? "bg-purple-900/50 border-purple-500/70 text-purple-300 shadow-sm"
                   : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/15"
@@ -338,7 +311,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     <span className="text-base">{isMutualPulseActive ? "🔥" : "🛰️"}</span>
                     <span className="font-mono text-xs font-black uppercase tracking-wider text-white">
                       {isMutualPulseActive
-                        ? (t.card.mutualPulseBanner || "🔥 SINTONÍA MUTUA - ¡Zumbidos recíprocos! Chat libre desbloqueado.")
+                        ? (t.card.mutualPulseBanner || (language === "es" ? "🔥 SINTONÍA MUTUA - ¡Toques recíprocos! Chat libre desbloqueado." : "🔥 MUTUAL VIBE - Reciprocal taps! Free chat unlocked."))
                         : (t.card.distantSignalBanner || "SEÑAL FUERA DE RANGO LOCAL (> 1.0 KM)")}
                     </span>
                   </div>
@@ -368,7 +341,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             {/* =========================================================
                 SELECTOR DE 3 PESTAÑAS TÁCTICAS (≥44px TOUCH-FIRST)
                 ========================================================= */}
-            <div className="flex items-center gap-1.5 p-1 bg-obsidian-surface rounded-2xl border border-white/10 shadow-inner sticky top-0 z-20 backdrop-blur-md">
+            <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-obsidian-surface rounded-2xl border border-white/10 shadow-inner sticky top-0 z-20 backdrop-blur-md">
               <button
                 type="button"
                 role="tab"
@@ -378,7 +351,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   audioEngine.playSubBass(70);
                   setActiveTab("profile");
                 }}
-                className={`flex-1 min-h-[44px] py-2 px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+                className={`flex-1 min-w-0 min-h-[44px] py-2 px-1.5 sm:px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
                   activeTab === "profile"
                     ? "bg-electricViolet text-white shadow-violet-soft"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
@@ -397,14 +370,15 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   audioEngine.playSubBass(70);
                   setActiveTab("chemistry");
                 }}
-                className={`flex-1 min-h-[44px] py-2 px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet relative active:scale-95 ${
+                className={`flex-1 min-w-0 min-h-[44px] py-2 px-1.5 sm:px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet relative active:scale-95 ${
                   activeTab === "chemistry"
                     ? "bg-electricViolet text-white shadow-violet-soft"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                 }`}
               >
                 <Flame className={`w-4 h-4 flex-shrink-0 ${mutualKinks.length > 0 ? "text-bloodNeon fill-current animate-pulse" : ""}`} />
-                <span className="truncate">{t.card?.tabChemistry || (language === "es" ? "Química & Morbo" : "Chemistry & Kinks")}</span>
+                <span className="truncate sm:hidden">{language === "es" ? "Química" : "Chemistry"}</span>
+                <span className="truncate hidden sm:inline">{t.card?.tabChemistry || (language === "es" ? "Química & Morbo" : "Chemistry & Kinks")}</span>
                 {mutualKinks.length > 0 && (
                   <span className="w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow flex-shrink-0 animate-ping" />
                 )}
@@ -419,14 +393,15 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   audioEngine.playSubBass(70);
                   setActiveTab("trust");
                 }}
-                className={`flex-1 min-h-[44px] py-2 px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+                className={`flex-1 min-w-0 min-h-[44px] py-2 px-1.5 sm:px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
                   activeTab === "trust"
                     ? "bg-electricViolet text-white shadow-violet-soft"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                 }`}
               >
                 <ShieldCheck className="w-4 h-4 flex-shrink-0 text-mintNeon" />
-                <span className="truncate">{t.card?.tabTrust || (language === "es" ? "Confianza" : "Trust")}</span>
+                <span className="truncate sm:hidden">{language === "es" ? "Confianza" : "Trust"}</span>
+                <span className="truncate hidden sm:inline">{t.card?.tabTrust || (language === "es" ? "Confianza & Salud" : "Trust")}</span>
               </button>
             </div>
 
@@ -734,34 +709,15 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                   )}
 
                   {/* Después de vernos / Dinámica de Salida */}
-                  <div
-                    className="bg-obsidian-surface rounded-2xl p-4 border border-white/10 flex items-center justify-between gap-3 shadow-card-elevation cursor-pointer hover:border-electricViolet/40 transition-all"
-                    onClick={() => setIsBoundaryModalOpen(true)}
-                    title="Toca para ver o acordar dinámica de salida"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-2xl leading-none select-none flex-shrink-0">
-                        {protocolMeta?.icon || "⏱️"}
-                      </span>
-                      <div className="min-w-0">
-                        <span className="text-[9px] uppercase font-mono text-neutral-400 block font-bold tracking-wider">
-                          {t.card?.exitProtocolHeader || (language === "es" ? "Después de vernos" : "After we meet")}
-                        </span>
-                        <span className="text-xs font-mono font-black truncate block mt-0.5 text-electricViolet-glow">
-                          {protocolMeta?.label || (language === "es" ? "AL HUESO / RÁPIDO" : "FAST")} • {protocolMeta?.sub || (language === "es" ? "Sin vueltas" : "No lingering")}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsBoundaryModalOpen(true);
-                      }}
-                      className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-neutral-300 hover:text-white text-[10px] font-mono font-bold uppercase transition-all flex-shrink-0 cursor-pointer"
-                    >
-                      {language === "es" ? "Acordar" : "Agree"}
-                    </button>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] uppercase font-mono text-neutral-400 block font-bold tracking-wider px-1">
+                      {t.card?.exitProtocolHeader || (language === "es" ? "Después de vernos" : "After we meet")}
+                    </span>
+                    <ExitProtocolBadge
+                      protocol={currentProfile.exitProtocol}
+                      variant="tactical"
+                      onClick={() => setIsBoundaryModalOpen(true)}
+                    />
                   </div>
 
                   {/* Límites & Consentimiento */}
@@ -890,7 +846,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                       </div>
                     </div>
                     <span className="text-[10px] font-bold font-mono bg-white/10 text-neutral-300 px-2.5 py-1 rounded-full uppercase flex-shrink-0">
-                      {profile.healthStatus.testedDate}
+                      {profile.healthStatus?.testedDate || (language === "es" ? "AL DÍA" : "UP TO DATE")}
                     </span>
                   </div>
 
@@ -907,7 +863,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 
                   {/* Álbum de Nudes / Fotos Privadas */}
                   <PrivateVault
-                    items={profile.privateVault}
+                    items={profile.privateVault || []}
                     profileCodename={profile.codename}
                     isOwner={!!profile.isCurrentUser}
                   />
@@ -935,7 +891,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             </button>
           ) : (
             <>
-              {/* Botón 1: Zumbido Cinético de Rol (1-Tap Kinetic Reaction Instantáneo) */}
+              {/* Botón 1: Toque Cinético de Rol (1-Tap Kinetic Reaction Instantáneo) */}
               <button
                 type="button"
                 onClick={() => {
@@ -960,47 +916,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                 )}
               </button>
 
-              {/* Botón 2: Enviar Ubicación y Rendezvous PIN */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!canChatDirectly) {
-                    audioEngine.playPulse();
-                    openUnlimitedModal();
-                    return;
-                  }
-                  audioEngine.playSubBass(60);
-                  setIsRendezvousOpen(true);
-                }}
-                aria-label={canChatDirectly ? (language === "es" ? "Coordinar Cita" : "Coordinate Date") : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Toque")}
-                className={`p-3 min-h-[48px] min-w-[48px] border rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0 ${
-                  canChatDirectly
-                    ? "bg-white/5 border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white"
-                    : "bg-white/5 border-purple-500/30 text-electricViolet-glow hover:border-purple-400"
-                }`}
-                title={canChatDirectly ? (language === "es" ? "Coordinar Cita" : "Coordinate Date") : (t.card.distantChatLocked || "Requiere VESSEL UNLIMITED o Toque")}
-              >
-                {canChatDirectly ? (
-                  <Navigation className="w-4 h-4 text-electricViolet" />
-                ) : (
-                  <Lock className="w-4 h-4 text-electricViolet" />
-                )}
-                <span className="hidden md:inline font-mono text-[11px]">{t.card.rendezvousBtn}</span>
-              </button>
-
-              {/* Botón 3: Agenda de Encuentros */}
-              <button
-                type="button"
-                onClick={() => openCreateDiaryModal(currentProfile.id)}
-                aria-label="Documentar o agendar encuentro en la Agenda"
-                className="p-3 min-h-[48px] min-w-[48px] bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white rounded-2xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0"
-                title="Documentar o agendar encuentro con este perfil en la Agenda"
-              >
-                <BookOpen className="w-4 h-4 text-electricViolet" />
-                <span className="hidden md:inline font-mono text-[11px]">{t.card.diaryBtn}</span>
-              </button>
-
-              {/* Botón 4: Principal Coordinar Cita o Abrir Chat Darkroom / Desbloqueo Unlimited */}
+              {/* Botón 2: Acción Primaria Contextual (Chat Directo / Coordinar Cita / Desbloqueo Unlimited) */}
               {canChatDirectly ? (
                 isMutualPulseActive ? (
                   <button
@@ -1013,7 +929,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     className="flex-1 min-h-[48px] py-3 px-4 text-xs font-black rounded-2xl bg-mintNeon hover:bg-emerald-400 text-obsidian-deep shadow-mint-glow flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
                   >
                     <MessageSquare className="w-4 h-4 fill-current" />
-                    <span>{t.card.mutualPulseChat || "Chat Sintonía Mutua"}</span>
+                    <span>{t.card.mutualPulseChat || "Chatear · Onda Mutua 🔥"}</span>
                   </button>
                 ) : (
                   <div className="flex-1 flex items-center gap-2 min-w-0">

@@ -49,7 +49,7 @@ const LOCATION_CATEGORIES: { id: DiaryLocationCategory; label: string; icon: str
   { id: "bar_lounge", label: "Bar / Tragos / Café", icon: "🍸" },
   { id: "club_darkroom", label: "Boliche / Darkroom", icon: "⚡" },
   { id: "hotel", label: "Telo / Hotel", icon: "🏨" },
-  { id: "outdoor_cruising", label: "Al Aire Libre", icon: "🌲" },
+  { id: "outdoor_cruising", label: "Áreas de Cruising", icon: "🌲" },
   { id: "other", label: "Otro Espacio", icon: "📍" },
 ];
 
@@ -1461,7 +1461,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                           <div className="flex items-center justify-between mb-1.5">
                             <label className="text-[11px] font-semibold text-neutral-300 flex items-center gap-1.5">
                               <Camera className="w-3.5 h-3.5 text-electricViolet-glow" />
-                              <span>{t.diary?.modalChatPhotosLabel || "Fotos del Chat (Tocar para archivar)"}</span>
+                              <span>{t.diary?.modalChatPhotosLabel || "Fotos del Chat (Tocá para archivar)"}</span>
                             </label>
                             <span className="text-[10px] font-mono text-electricViolet-glow">
                               {selectedArchivedPhotos.length} guardadas

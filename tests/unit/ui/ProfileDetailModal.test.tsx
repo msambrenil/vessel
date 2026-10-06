@@ -255,4 +255,55 @@ describe("ProfileDetailModal — Refactor Ergonómico de 3 Pestañas (Fase 3)", 
 
     expect(audioEngine.playSubBass).toHaveBeenCalledWith(60);
   });
+
+  it("renderiza de forma segura un perfil real de producción con campos undefined (galleryUrls, healthStatus, etc.)", () => {
+    const rawCloudProfile = {
+      id: "usr-prod-99",
+      codename: "OPERATIVO_REAL",
+      avatarUrl: "https://example.com/real.jpg",
+      age: 30,
+      showAge: true,
+      role: "Versátil" as const,
+      bodyState: "open" as const,
+      mobility: "Tengo depto / lugar" as const,
+      yoSoy: "Musculoso / Gym",
+      heightCm: 180,
+      weightKg: 80,
+      intensity: 3 as const,
+      distanceMeters: 200,
+      statement: "En la Matrix de verdad",
+      hivStatus: "Negativo en PrEP" as const,
+      // Los siguientes campos suelen venir ausentes en documentos directos de Firestore:
+      galleryUrls: undefined,
+      healthStatus: undefined,
+      testimonials: undefined,
+      privateVault: undefined,
+      kinks: undefined,
+      boundaries: undefined,
+      intentions: undefined,
+      energyVibes: undefined,
+    } as unknown as VesselProfile;
+
+    expect(() => {
+      render(
+        <ProfileDetailModal
+          profile={rawCloudProfile}
+          onClose={mockOnClose}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+    }).not.toThrow();
+
+    expect(screen.getAllByText("OPERATIVO_REAL").length).toBeGreaterThanOrEqual(1);
+
+    // Navegar por las pestañas para asegurar que ninguna subsección falle
+    const chemistryTab = screen.getByTestId("tab-chemistry-trigger");
+    fireEvent.click(chemistryTab);
+    expect(screen.getByRole("tab", { selected: true })).toBe(chemistryTab);
+
+    const trustTab = screen.getByTestId("tab-trust-trigger");
+    fireEvent.click(trustTab);
+    expect(screen.getByRole("tab", { selected: true })).toBe(trustTab);
+  });
 });
+

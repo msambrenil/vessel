@@ -278,7 +278,7 @@ export const KINK_ITEMS_CATALOG: KinkItemDefinition[] = [
   { id: "fisting", name: "Dilatación profunda", category: "dynamics", emoji: "✊", description: "Penetración manual profunda, relajación total y confianza extrema" },
   { id: "waterplay", name: "Lluvia dorada", category: "bodily", emoji: "💧", description: "Juegos eróticos con orina, desinhibición total y marcado de territorio" },
   { id: "verbal", name: "Charla sucia", category: "roleplay", emoji: "🗣️", description: "Lenguaje procaz explícito, humillación consentida y sumisión verbal" },
-  { id: "cruising", name: "Encuentros al aire libre", category: "dynamics", emoji: "🌲", description: "Encuentros espontáneos al aire libre o zonas de tránsito" },
+  { id: "cruising", name: "Áreas de Cruising", category: "dynamics", emoji: "🌲", description: "Encuentros espontáneos en zonas de cruising o al aire libre" },
   { id: "darkroom", name: "Sala oscura", category: "dynamics", emoji: "🌑", description: "Anonimato en penumbra total, tacto y pulsión sensorial" },
   { id: "gloryhole", name: "Cabina anónima", category: "dynamics", emoji: "🕳️", description: "Placer anónimo a través de barreras físicas" },
   { id: "group", name: "Encuentros grupales", category: "dynamics", emoji: "👥", description: "Encuentros de más de 2 personas, tríos o dinámicas colectivas" },

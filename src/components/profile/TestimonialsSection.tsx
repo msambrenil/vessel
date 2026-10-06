@@ -30,16 +30,17 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 
   const isEncounterValidated = !!validatedEncounters[profile.id];
 
-  const approvedTestimonials = profile.testimonials.filter(
+  const testimonials = Array.isArray(profile.testimonials) ? profile.testimonials : [];
+  const approvedTestimonials = testimonials.filter(
     (t) => t.status === "approved"
   );
-  const pendingByMe = profile.testimonials.find(
+  const pendingByMe = testimonials.find(
     (t) => t.authorId === "me" && t.status === "pending"
   );
 
   const totalVerifiedCount = Math.max(
     profile.totalEncountersVerified || 0,
-    profile.testimonials.length
+    testimonials.length
   );
 
   return (

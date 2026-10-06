@@ -118,20 +118,43 @@ export const SafetyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (localHarmReduction) setHarmReductionSession(localHarmReduction);
   }, []);
 
-  // Timer aislado de comprobación de alarma del Guardián (cada 5s)
+  // Timer reactivo de comprobación de alarma del Guardián (cero polling, precisión exacta con setTimeout y sincronización al volver a primer plano)
   useEffect(() => {
     if (!safetyBeacon.isActive || !safetyBeacon.expiresAt || safetyBeacon.isAlarmTriggered) return;
 
-    const checkInterval = setInterval(() => {
-      const now = Date.now();
-      const expiry = new Date(safetyBeacon.expiresAt!).getTime();
-      if (now >= expiry) {
-        setSafetyBeacon((prev) => ({ ...prev, isAlarmTriggered: true }));
-        audioEngine.playSubBass(45);
-      }
-    }, 5000);
+    const expiry = new Date(safetyBeacon.expiresAt).getTime();
+    const delay = Math.max(0, expiry - Date.now());
 
-    return () => clearInterval(checkInterval);
+    if (delay === 0) {
+      setSafetyBeacon((prev) => ({ ...prev, isAlarmTriggered: true }));
+      audioEngine.playSubBass(45);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setSafetyBeacon((prev) => ({ ...prev, isAlarmTriggered: true }));
+      audioEngine.playSubBass(45);
+    }, delay);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        if (Date.now() >= expiry) {
+          setSafetyBeacon((prev) => ({ ...prev, isAlarmTriggered: true }));
+          audioEngine.playSubBass(45);
+        }
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
   }, [safetyBeacon.isActive, safetyBeacon.expiresAt, safetyBeacon.isAlarmTriggered]);
 
   // Listener opcional de tecla de pánico (Escape) exclusivo para escritorio cuando está habilitado

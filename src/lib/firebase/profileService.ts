@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./config";
 import { sanitizeForFirestore } from "./firestoreSanitizer";
+import { normalizeMatrixProfile } from "./matrixService";
 import { MyProfileState } from "@/context/VesselContext";
 import { VesselProfile, BodyState, UserSubscriptionTier, ExitProtocol, OnTheClockState } from "@/types/vessel";
 
@@ -193,7 +194,7 @@ export const fetchPublicProfileById = async (uid: string): Promise<VesselProfile
     const publicRef = doc(db, PROFILES_COLLECTION, uid);
     const snap = await getDoc(publicRef);
     if (snap.exists()) {
-      return snap.data() as VesselProfile;
+      return normalizeMatrixProfile(snap.data() as Partial<VesselProfile>);
     }
   } catch (error) {
     console.warn(`[ProfileService] Error al obtener perfil público ${uid}:`, error);

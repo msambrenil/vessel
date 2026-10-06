@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { WingmanPair } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { Users, Shield, ShieldCheck, HeartHandshake, X, Check, AlertCircle } from "lucide-react";
+import { Users, ShieldCheck, X } from "lucide-react";
 
 export const WingmanModal: React.FC = () => {
   const {

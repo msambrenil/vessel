@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { Moon, Home, Search, Users, X, Music, Check, Sparkles } from "lucide-react";
+import { Moon, Home, Search, X, Music, Check, Sparkles } from "lucide-react";
 
 export const AfterHoursModal: React.FC = () => {
   const { isAfterHoursModalOpen, closeAfterHoursModal, profiles, setSelectedProfile } = useVessel();

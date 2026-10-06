@@ -741,6 +741,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
     // Barrido periódico cada 30s para expulsar de la Matrix radar perfiles cuyo TTL de 30 minutos haya expirado o hayan sido eliminados
     const ttlSweepInterval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
       const now = Date.now();
       setProfiles((prev) =>
         sortAndEnrichProfilesByProximity(
@@ -832,6 +833,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       desires: myProfile.desires || [],
       intentions: myProfile.intentions || [],
       boundaries: myProfile.boundaries || [],
+      galleryUrls: myFullProfile.galleryUrls || [],
       lastActiveAt: nowMs,
       presenceExpiresAt: computePresenceExpiry(isPartyAnchored, nowMs),
       isPartyAnchored,
@@ -850,17 +852,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     lastGpsPingAt,
   ]);
 
-  // Timer aislado de expiración de On-The-Clock (cada 5s)
-  useEffect(() => {
-    if (!myOnTheClock.isActive || !myOnTheClock.expiresAt) return;
-    const interval = setInterval(() => {
-      const expiry = new Date(myOnTheClock.expiresAt!).getTime();
-      if (Date.now() >= expiry) {
-        stopOnTheClock();
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [myOnTheClock.isActive, myOnTheClock.expiresAt]);
+
 
   const updateProfile = useCallback((profileId: string, updates: Partial<VesselProfile>) => {
     setProfiles((prev) => {
@@ -1078,6 +1070,41 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     audioEngine.playPulse();
   }, []);
 
+  // Timer reactivo de expiración de On-The-Clock (cero polling, precisión exacta con setTimeout y sincronización al volver a primer plano)
+  useEffect(() => {
+    if (!myOnTheClock.isActive || !myOnTheClock.expiresAt) return;
+    const expiry = new Date(myOnTheClock.expiresAt).getTime();
+    const delay = Math.max(0, expiry - Date.now());
+
+    if (delay === 0) {
+      stopOnTheClock();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      stopOnTheClock();
+    }, delay);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        if (Date.now() >= expiry) {
+          stopOnTheClock();
+        }
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
+  }, [myOnTheClock.isActive, myOnTheClock.expiresAt, stopOnTheClock]);
+
   const setKinkPreference = useCallback(
     (kinkId: string, level: KinkPreferenceLevel) => {
       setMyKinkMatrix((prev) => {
@@ -1286,7 +1313,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         return false;
       }
       if (filters.selectedKinks.length > 0) {
-        const hasAnyKink = filters.selectedKinks.some((k) => p.kinks.includes(k));
+        const hasAnyKink = filters.selectedKinks.some((k) => (p.kinks || []).includes(k));
         if (!hasAnyKink) return false;
       }
       if (filters.energyVibes.length > 0) {

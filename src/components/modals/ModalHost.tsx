@@ -79,6 +79,26 @@ const NightlifeEventsModal = dynamic(
   () => import("@/components/nightlife/NightlifeEventsModal").then((m) => m.NightlifeEventsModal),
   { ssr: false }
 );
+const OpticalBeaconModal = dynamic(
+  () => import("@/components/nightlife/OpticalBeaconModal").then((m) => m.OpticalBeaconModal),
+  { ssr: false }
+);
+const MissedConnectionsModal = dynamic(
+  () => import("@/components/nightlife/MissedConnectionsModal").then((m) => m.MissedConnectionsModal),
+  { ssr: false }
+);
+const AfterHoursModal = dynamic(
+  () => import("@/components/nightlife/AfterHoursModal").then((m) => m.AfterHoursModal),
+  { ssr: false }
+);
+const WingmanModal = dynamic(
+  () => import("@/components/nightlife/WingmanModal").then((m) => m.WingmanModal),
+  { ssr: false }
+);
+const SpikedDrinkAlertModal = dynamic(
+  () => import("@/components/nightlife/SpikedDrinkAlertModal").then((m) => m.SpikedDrinkAlertModal),
+  { ssr: false }
+);
 // ==========================================
 // 5. Utilidades, Salud & Cuentas
 // ==========================================
@@ -149,7 +169,11 @@ export const ModalHost: React.FC = memo(function ModalHost() {
     isHarmReductionModalOpen,
     isItsExposureModalOpen,
     isNightlifeModalOpen,
-    isCoverScreenActive,
+    isOpticalBeaconOpen,
+    isMissedConnectionsModalOpen,
+    isAfterHoursModalOpen,
+    isWingmanModalOpen,
+    isSpikedAlertModalOpen,
     isGenderOnboardingOpen,
     isDuoModalOpen,
     isDossierModalOpen,
@@ -196,12 +220,17 @@ export const ModalHost: React.FC = memo(function ModalHost() {
       {isDuressPinSettingsOpen && <DuressPinSettingsModal />}
       {isHarmReductionModalOpen && <HarmReductionModal />}
 
-      {/* 4. Suite Táctica & Logística */}
+      {/* 4. Suite Táctica, Logística & Vida Nocturna */}
       {isHostCardModalOpen && <HostCardModal />}
       {isVoiceRecorderOpen && <VoiceVibeRecorderModal />}
       {isEnRouteModalOpen && <EnRouteTrackerModal />}
       {isTravelModalOpen && <TravelModeModal />}
       {isNightlifeModalOpen && <NightlifeEventsModal />}
+      {isOpticalBeaconOpen && <OpticalBeaconModal />}
+      {isMissedConnectionsModalOpen && <MissedConnectionsModal />}
+      {isAfterHoursModalOpen && <AfterHoursModal />}
+      {isWingmanModalOpen && <WingmanModal />}
+      {isSpikedAlertModalOpen && <SpikedDrinkAlertModal />}
 
       {/* 5. Utilidades, Salud, Cuentas & The Black Vault */}
       {isAppSettingsModalOpen && <AppSettingsModal />}

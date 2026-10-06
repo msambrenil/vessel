@@ -7,7 +7,7 @@ export const PulsesListSkeleton: React.FC = () => {
     <div
       className="flex flex-col flex-1 p-3 sm:p-4 pb-48 space-y-4 bg-obsidian-deep min-h-[calc(100vh-140px)]"
       aria-busy="true"
-      aria-label="Cargando bandeja de zumbidos"
+      aria-label="Cargando bandeja de toques"
     >
       {/* Cabecera Táctica Skeleton */}
       <div className="space-y-3 border-b border-white/10 pb-3">

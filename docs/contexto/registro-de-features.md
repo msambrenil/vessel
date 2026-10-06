@@ -25,8 +25,16 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
   - [x] Sincronización en memoria Engram y documentos de contexto.
 ```
 
-## 📊 Matriz Resumen de Entregas del Sistema (Inventario Completo: 154 Features)
+## 📊 Matriz Resumen de Entregas del Sistema (Inventario Completo: 162 Features)
 
+| **FEAT-162** | 2026-10-06 | Mobile UX/UI, Chat Darkroom, PulsesView, ProfileDetailModal, DateDiaryView, ProtocolView, i18n | `Ergonomía Mobile de 5 Ejes Tácticos: Headers Descomprimidos, Triaje Unificado de Toques, Pestañas Responsivas y Terminología Inclusiva (Vínculos)` | (1) **Chat Darkroom (`DarkroomChatModal.tsx`)**: Reorganización de la cabecera móvil ocultando accesos secundarios redundantes (`Retención` y `Ficha`, reubicados al menú táctico `[ ⋯ ]` con acceso por tap en avatar), liberando >120px de espacio horizontal para que el alias del usuario, insignias de verificación 3D, distancia y rol se lean sin truncamiento ni elipsis en pantallas de 360px-390px; (2) **Cabecera de Toques (`PulsesView.tsx`)**: Erradicación del apilamiento vertical de botones descolgados a la derecha del título; unificación en un selector segmentado horizontal de 3 pestañas (`Recibidos`, `Onda Mutua`, `Enviados`) con contadores numéricos y botón minimalista de basura para limpiar leídos; (3) **Pestañas de Detalle de Perfil (`ProfileDetailModal.tsx`)**: Adaptación de etiquetas en mobile (`[ 👤 Perfil ]`, `[ 🔥 Química ]`, `[ 🛡️ Confianza ]`) preservando la versión extendida en desktop vía `hidden sm:inline`, eliminando el desborde y recorte de la 3ra solapa; (4) **Agenda y Terminología Inclusiva (`DateDiaryView.tsx` & `translations.ts`)**: Actualización oficial del título de agenda a `"Citas (Agenda)"`, redenominación de la pestaña `"Chongos"` al término inclusivo y universal rioplatense 2026 `"Vínculos"` (`data-testid="diary-tab-lovers"` intacto), y estandarización del botón `+ Anotar Cita` a ancho completo en mobile; (5) **Mi Perfil (`ProtocolView.tsx`)**: Eliminación de la barra redundante `← Volver a Mi Tarjeta Viva` en Modo Avanzado, y rediseño de la barra sticky de 4 solapas (`Ficha`, `Fotos`, `Morbos`, `Seguridad`) con layout vertical/horizontal y badges compactos, garantizando que "Seguridad" nunca se recorte a "Segurid..." en 360px; (6) 414/414 tests unitarios pasando al 100% en 64 suites de Vitest y 0 errores en `npm run typecheck`. | **100%** ✅ |
+| **FEAT-161** | 2026-10-06 | Mobile UX/UI, Ergonomía 360px, Chat Darkroom, ProfileCard, IntentHub, BrutalistHeader, SpikedDrinkAlert | `Auditoría Profunda 4 Fases: Ergonomía Mobile 360px, Descompresión de Viewport, Poda de Código Muerto y Rescate Táctico SOS` | (1) **Fase 1 (Poda de Código Muerto & Saneamiento de Imports)**: Limpieza exhaustiva de imports no utilizados en `ProfileDetailModal`, `DarkroomChatModal`, `ChatVoiceRecorderInline`, `PulseCard`, `ProfileCard`, `ProtocolView`, `UserAlbumManager`, `MissedConnectionsModal`, `WingmanModal` y `AfterHoursModal`; eliminación del botón huérfano "Señuelo" en `AppDisguiseSection`; unificación rioplatense 2026 en bio, álbumes y traducciones ("Agregar", "Depto, piso y timbre exacto", "Sumar límite/intención"); (2) **Fase 2 (Ergonomía de Matriz, Radar & Cabecera)**: Responsive short labels en `IntentHubSelector` ("Morbos", "Boliches", "Pinta ya", "Discreto") evitando truncamiento visual en 360px; soporte responsivo de `VesselLogo` con isotipo/glifo en `<400px` y acotamiento de ancho máximo de nombre de usuario en `BrutalistHeader` para proteger los widgets centrales; descompresión de `ProfileCard` (anulación de `flex-shrink-0` en rol, ajuste de ancho máximo en chips de morbos y preservación de badges de transporte y hospedaje); (3) **Fase 3 (Descompresión de Chat & Perfil en Mobile)**: Ocultamiento automático de la barra de respuestas rápidas al hacer foco en el input de texto (`isInputFocused`) en `DarkroomChatModal`, devolviendo el 100% del viewport vertical a los mensajes con el teclado virtual abierto; banner `pinnedPreFlight` compacto (`py-1.5`); compactación de botones de cabecera; estandarización de targets táctiles mínimos de 44x44px en `ProfileDetailModal`; (4) **Fase 4 (Rescate de Features Huérfanas & Pulido Final)**: Rescate e integración de `SpikedDrinkAlertModal` en la barra de herramientas nocturnas de `NightlifeEventsModal` ("Alerta Trago SOS"); (5) Verificación estricta: 414/414 tests unitarios en verde en 64 suites y 0 errores en `npm run typecheck`. | **100%** ✅ |
+| **FEAT-160** | 2026-10-06 | Mobile UX/UI, Rendimiento & Memoria, Limpieza Código Muerto, Matriz, PlacesGrid, BrutalistHeader, i18n | `Auditoría 100% Mobile, Rendimiento, Poda de Código Muerto y Vernáculo Rioplatense 2026` | (1) **Poda de Código Muerto & Saneamiento de Modales**: Eliminación definitiva de componentes huérfanos sin uso (`StatusToggle.tsx` de 296 líneas y `CalculatorCoverScreen.tsx` de 162 líneas, junto con sus suites de prueba obsoletas). En `ModalHost.tsx`, reemplazo del montaje incondicional de los 5 modales nocturnos por guardas booleanas estrictas para evitar reconciliación innecesaria en React 19 y carga prematura de chunks; (2) **Desacoplamiento de Rendimiento y Memoria en ProfileCard**: Elevación de `RendezvousSheet` a singleton dinámico en la raíz de `ProfileGrid.tsx`, erradicando 40+ instancias duplicadas en memoria por render de grilla (ahorro masivo de RAM en móviles de gama media tipo Moto G84 / arquetipo Facundo #2). Redimensionamiento optimizado de thumbnails de Unsplash (`w=400`) reduciendo el ancho de banda en ~60%; (3) **Ergonomía Viewport Mobile en BrutalistHeader**: Soporte adaptativo para pantallas compactas (<380px) en `HeaderReadyNowButton` (alternancia inteligente `Estoy listo` / `Listo`) evitando quiebres de línea o compresión de la cápsula de usuario; (4) **Vernáculo Rioplatense Queer Argentino 2026 Exhaustivo**: Sinceramiento y unificación lingüística a voseo natural rioplatense: "Cuartos Oscuros" en lugar de "Salas Oscuras", "Tocá para..." en botones/tooltips ("Tocá para activar", "Tocá para calibrar", "Tocá para cortar", "Tocá para archivar", "Tocá para ver/ocultar"), "Mandar Audio de Voz", "Boliche y Cuarto Oscuro"; (5) 414/414 pruebas unitarias pasando al 100% en las 64 suites de Vitest y 0 errores en compilación estricta de TypeScript (`npm run typecheck`). | **100%** ✅ |
+| **FEAT-159** | 2026-10-06 | Performance, Batería, Ciclo de Vida, Timers, Header, Matrix, Safety, Logistics | `Fase 5: Optimización de Rendimiento Móvil y Batería (Desacople Reactivo de Temporizadores y Ciclo de Vida Visible)` | (1) **Aislamiento y Erradicación de Re-renders por Segundo en BrutalistHeader**: Extracción del temporizador y borde dinámico cónico de `myOnTheClock` en el componente memoizado `ActiveReadyNowBadge` / `HeaderReadyNowButton`, evitando que la cabecera completa (telemetría de batería, audio, logo, navegación, búsquedas) re-renderice cada 1000ms al estar activo el modo Listo YA; (2) **Aislamiento de Temporizador en StatusToggle**: Extracción de `ReadyNowStatusButton`, blindando los 3 botones principales de estado corporal (`Disponible`, `Ocupado`, `Ausente`) contra re-renders periódicos innecesarios; (3) **Suspensión Inteligente en Segundo Plano (`visibilitychange`)**: Todos los temporizadores de cuenta regresiva activa (`HeaderReadyNowButton`, `ReadyNowStatusButton`, `BeaconCountdownWidget`, barrido TTL de matriz en `RadarMatrixContext` y tracking de `LogisticsContext`) ahora detectan `document.hidden` para congelar tics de reloj cuando el usuario apaga la pantalla, cambia de pestaña o minimiza la app, recalculando el delta instantáneamente al recuperar foco; (4) **Erradicación de Polling Periódico Innecesario**: Reemplazo de los intervalos de comprobación cada 5s en `RadarMatrixContext` y `SafetyContext` por `setTimeout` atómico al milisegundo exacto de expiración, reduciendo a cero el consumo de CPU en reposo; (5) Suite completa de 424/424 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
+| **FEAT-158** | 2026-10-06 | Perfil, ProtocolView, EasyProfileCardView, ModalHost, Nightlife, Modales, UX/UI | `Fase 4: Reingeniería de Mi Perfil (Navegación Táctica 4-Tab) y Desacoplamiento de Modales Nocturnos en ModalHost` | (1) **Desacoplamiento Radical de Modales Nocturnos**: Extracción de los 5 submodales (`OpticalBeaconModal`, `MissedConnectionsModal`, `AfterHoursModal`, `WingmanModal`, `SpikedDrinkAlertModal`) de `NightlifeEventsModal.tsx` y su migración como ciudadanos de primera clase a nivel raíz en `ModalHost.tsx` con carga dinámica (code-splitting), erradicando las capas de modales anidados sobre `NightlifeEventsModal` (solapamiento de backdrops y GPU stutter) y eliminando la prop huérfana `isCoverScreenActive`; (2) **Reingeniería y Armonización de Mi Perfil**: Inclusión de la tarjeta `Mi Ficha & Bio` en `EasyProfileCardView.tsx` cubriendo de forma simétrica las 4 solapas macro (`public`, `vaults`, `logistics`, `security`), e incorporación de la barra táctica de retorno rápido (`← Volver a Mi Tarjeta Viva`) en `ProtocolView.tsx` para evitar la desorientación del usuario al explorar el editor detallado; (3) **Limpieza de Código Muerto**: Eliminación de la carpeta vacía residual `src/components/cruising/`; (4) 424/424 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
+| **FEAT-157** | 2026-10-06 | Perfil, Modal, Chat Darkroom, Toques, Onda Mutua, Smart Bar, UX/UI, Ergonomía | `Fase 3: Racionalización de Acciones (Hick's Law) en Detalle de Perfil y Auto-Promoción de Onda Mutua 🔥 en Chats` | (1) **Racionalización de Botones al Pie en ProfileDetailModal.tsx**: Poda radical de la botonera inferior sobresaturada (que colisionaba con la Ley de Hick al presentar hasta 5 botones en pantallas móviles), eliminando el botón redundante de Rendezvous PIN (100% duplicado con Coordinar Cita) y reubicando la acción de 'Anotar en Agenda' en los accesos de cabecera junto a Favoritos y Límites. El pie de modal quedó unificado en una tríada ergonómica limpia: Botón 1 (Toque Cinético 48x48px con feedback háptico/sub-bass), Botón 2 (CTA Principal Contextual de alto impacto: `[ 🔥 Chatear · Onda Mutua ⚡ ]` en sintonía recíproca, `[ ⚡ Coordinar Cita ⚡ ]` + acceso a chat efímero si hay chat directo, o `[ 🔒 Desbloquear Chat ]` con VESSEL UNLIMITED); (2) **Auto-Promoción de Onda Mutua 🔥 en DarkroomListView.tsx**: Integración de `hasMutualPulse` para promover automáticamente a los perfiles con toques correspondidos a la bandeja de conversaciones (`conversationPartnerIds`), permitiendo que el usuario vea a sus matches de inmediato sin tener que buscarlos manualmente; (3) **Cápsula de Onda Mutua en la Smart Bar & Filtro Segmentado**: Incorporación de tarjetas de match mutuo en la Smart Bar horizontal con acceso a chat en 1 tap, nuevo filtro de pestaña `Onda Mutua 🔥` en la cabecera cuando hay sintonías activas, e insignia destacada `[ 🔥 ONDA MUTUA ]` en cada conversación; (4) 424/424 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
+| **FEAT-156** | 2026-10-06 | Viewport Mobile, Header, IntentHub, Matrix, ProfileCard, UX/UI, Ergonomía | `Fase 2: Desasfixia del Viewport Mobile y Rediseño de Tarjetas Zen (Consolidación de Cabecera y Progressive Disclosure)` | (1) **Consolidación de Barras Fijas Superiores**: Unificación de `BrutalistHeader` e `IntentHubSelector` dentro de un único contenedor `<header className="sticky top-0 z-30 ...">` en `src/app/page.tsx`, erradicando el offset frágil hardcodeado `top-[52px]` y garantizando soporte nativo para safe-area-insets en notches y Dynamic Island de iOS sin solapamientos ni brechas; (2) **Desasfixia Radical del Viewport (~120px Recuperados)**: Eliminación de `sticky top-[98px]` en `ProfileGrid.tsx` y `sticky top-[52px]` en `PlacesGrid.tsx`, permitiendo que la barra de búsqueda y filtros rápidos fluyan naturalmente con el scroll del usuario y reduciendo la altura fija superior de ~210px a sólo ~86px (un 59% menos de asfixia en pantallas móviles); (3) **Rediseño de Tarjetas Zen (`ProfileCard.tsx`)**: Calibración del gradiente de legibilidad (`h-[46%]`), reducción de la contaminación visual de botones fucsia saturados a píldoras tácticas de cristal oscuro brutalista con `stopPropagation()` estricto, protegiendo el tap primario del cuerpo de la tarjeta para abrir el dossier y manteniendo la integridad de las 7 especificaciones de testing; (4) 424/424 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
+| **FEAT-155** | 2026-10-06 | i18n, Navegación, Pulsos/Toques, Cruising, Hotspots, Chat Darkroom, UX/UI | `Sinceramiento Lingüístico Rioplatense 2026 (Toques Unificados) y Denominación Oficial de Áreas de Cruising` | (1) **Denominación Oficial de Áreas de Cruising**: Reemplazo integral de "Al Aire Libre" y "Puntos urbanos al aire libre" por "Áreas de Cruising" en `translations.ts` (`cruisingCategory`), `PlacesGrid.tsx`, `ProfileGrid.tsx`, `CreateDiaryEntryModal.tsx` y `energyCatalog.ts`; (2) **Erradicación Definitiva de 'Zumbidos' por 'Toques'**: Unificación 100% al vernáculo rioplatense contemporáneo argentino en `BrutalistNav.tsx` (`Toques / Taps`), `DarkroomListView.tsx` ('toques recibidos', 'Toque enviado'), `PulsesView.tsx` ('Toques', 'Toques enviados'), `PulseCard.tsx` ('Toque enviado', 'Te envió un toque', 'Toque Mutuo 🔥', 'Descartar toque', 'Aceptar Toque ⚡'), `PulsesListSkeleton.tsx`, `ProfileDetailModal.tsx` ('Toques recíprocos'), `MissedConnectionsModal.tsx` ('Toque de Reencuentro') y `LogisticsContext.tsx`; (3) 424/424 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
 | **FEAT-154** | 2026-10-06 | Pulsos, Chat Darkroom, Admin, Membresías, Fotos & Avatares, Firestore, UX/UI | `Aislamiento Estricto de Pulsos Reales, Resiliencia de Fotos OAuth, Sincronización en Vivo de Membresía Unlimited y Persistencia de Lectura de Mensajes` | (1) **Aislamiento Hermético de Toques/Pulsos Reales en Modo Real**: Creación de `isGhostOrMockProfileId()` en `matrixService.ts`. Condicionamiento estricto de búsqueda en `MOCK_PROFILES` en `RadarMatrixContext.tsx` con `if (appMode !== "real")`. Filtrado de pulsos residuales/mock (`vessel-01`..`07`) en `receivedPulses`, `PulsesView.tsx` y `DarkroomListView.tsx`, garantizando que en Modo Real NUNCA aparezcan perfiles de prueba en la solapa de toques ni en los banners de zumbidos; (2) **Visualización Robusta de Fotos de Nuevos Usuarios (EMC) en Chats**: Incorporación de `referrerPolicy="no-referrer"`, `crossOrigin="anonymous"`, estado de error y fallback táctico con iniciales en `DarkroomListView.tsx`, `DarkroomChatModal.tsx`, `ChatProfileDrawer.tsx` y `PulseCard.tsx`, eliminando el bloqueo 403 Forbidden de Google CDN para usuarios autenticados con Google OAuth; (3) **Sincronización en Tiempo Real de Membresía UNLIMITED sin Recargar**: Corrección de causa raíz en `adminService.ts` (`changeUserPlan` y `saveManagedProfiles`) escribiendo atómicamente a `vessel_users/${userId}` además de `vessel_profiles/${userId}`, sumado al despacho del evento `vessel:user-plan-updated`. Conexión de listeners en `AuthContext.tsx` y `SettingsContext.tsx` para mutar inmediatamente el perfil activo y el estado del plan en el cliente en vivo; (4) **Persistencia Total del Estado de Lectura de Mensajes en Recarga**: Mapeo estricto de `isRead` en `chatService.ts` (`subscribeToChatMessages`), implementación de `markCloudMessagesAsRead()` en Firestore, sincronización automática en `ChatContext.tsx` al abrir la conversación o recibir mensajes en el chat activo, e inicialización síncrona desde `localStorage` para evitar que recargar la página marque mensajes ya leídos como no leídos; (5) 423/423 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
 | **FEAT-153** | 2026-10-06 | Admin, Usuarios, Fotos & Avatares, Identidad, Seguridad & DRM, Biometría, UX/UI | `Blindaje de Carga de Fotos en /admin, Erradicación de src="" y Fallbacks Tácticos de Biometría 3D` | (1) **Erradicación del Error de Consola src="" y Fallbacks Tácticos**: Se identificó y resolvió la violación del navegador donde avatares vacíos (`avatarUrl: ""`) de usuarios registrados por email directo se inyectaban en etiquetas `<img src={selectedUser.avatarUrl} />` en `UserManagementTab.tsx`, provocando descargas de bucle y console errors en Next.js. Se reemplazó por renderizado condicional estricto y un placeholder brutalista táctico de alta estética con ícono `CameraOff` e iniciales del codename; (2) **Solución al Error 403 Forbidden de Google CDN**: Se incorporaron los atributos `referrerPolicy="no-referrer"` y `crossOrigin="anonymous"` en todas las etiquetas `<img>` de la consola de administración (`UserManagementTab`, `MembershipsTab`, `ModerationTab`, `AdminHeader`, `AdminNav`, `StaffManagementTab`), eliminando el bloqueo que Google CDN (`lh3.googleusercontent.com`) aplica al detectar encabezados `Referer` externos; (3) **Corrección de Prevalencia en la Hidratación Cloud vs Caché Local**: Se corrigió el orden de desestructuración en `adminService.ts` (`getManagedProfiles`, `fetchRealUsersFromCloud`, `subscribeToRealUsersForAdmin`), garantizando que los datos vivos de Firestore nunca sean sobreescritos por objetos de `localStorage` con avatares vacíos desactualizados; (4) **Sinceramiento de la Selfie 3D de Validación**: Se subsanó la visualización engañosa en la solapa de Identidad donde usuarios no verificados mostraban la foto de perfil duplicada con la insignia "SCAN 3D OK", reemplazándolo por el estado real (`isLivenessVerified && !selfieError`) y placeholder de advertencia (`ShieldAlert` - "PENDIENTE DE ESCANEO // Sin selfie biométrica registrada aún"), junto con corrección en el cálculo del trust score (`trustScore ?? (isVerified ? 88 : 0)%`); (5) 423/423 tests en verde en 66 suites y `npm run typecheck` en 0 errores. | **100%** ✅ |
 | **FEAT-152** | 2026-10-05 | Geoespacial, Beta & Testing, Logística, Seguridad & Entorno, Storage, UX/UI | `Bloqueo Estricto de Modo Real en Producción y Anclaje Táctico en Río Cuarto (Saavedra 620) con Conmutador GPS en Píldora Beta` | (1) **Bloqueo Incondicional de Modo Real en Producción**: Se garantizó que en entornos no locales (`!isLocalEnvironment() && !isUnitTestEnv`), `getActiveAppMode()` y `setActiveAppMode()` devuelvan y fuercen estrictamente `"real"`. `AppModeModal` no se monta en producción y `AppSettingsSection` no muestra controles de simulación mock; (2) **Anclaje Táctico por Defecto en Río Cuarto (Saavedra 620)**: Se definió `SAAVEDRA_620_COORDS = { lat: -33.1325, lng: -64.3470 }` como punto de anclaje geográfico por defecto en `LogisticsContext.tsx`. Se incorporó `isSimulatedLocationActive` (por defecto `true`) persistido en `STORAGE_KEYS.BETA_SIMULATED_LOCATION` (`vessel_beta_simulated_location_v1`); (3) **Protección Wake-on-Open y Background Sync**: El protocolo de refresco GPS automático al abrir la app o volver a primer plano (`handleAppWake`, `visibilitychange`, `serviceWorker`) queda pausado mientras la ubicación simulada esté activa, evitando que el GPS real sobreescriba las coordenadas de Río Cuarto; (4) **Control Ergonómico en la Píldora Beta (`BetaFeedbackFab.tsx`)**: Reemplazo del modal de entorno por una tarjeta táctica de control GPS con feedback háptico/sub-bass que permite alternar entre "RÍO CUARTO · SAAVEDRA 620" y "GPS REAL DEL DISPOSITIVO", disparando inmediatamente `refreshRealGeolocation()` al desactivar la simulación; (5) Nuevas pruebas unitarias en `localStorageSync.test.ts` y `SimulatedLocationSaavedra.test.ts` (423/423 tests en verde en 66 suites) y `npm run typecheck` en 0 errores. | **100%** ✅ |
@@ -66,7 +74,248 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
 | **FEAT-118** | 2026-09-22 | Diario & Salud, Seguridad & Cripto, Chat Darkroom, UX/UI | `Nueva Feature & Fortalecimiento Táctico` | Micro-Evaluación en 1 Toque, Respaldo Cifrado Local (.json), Exportador de Calendario (.ics RFC 5545) y Sincronización Automática de Encuentros: (1) Micro-evaluación express en 1 toque en `DiaryEntryCard.tsx` con 3 botones táctiles (`🔥 Explosiva`, `👍 Buena`, `👎 Sin onda`) para evaluar citas pasadas de inmediato con síntesis sub-bass (65Hz); (2) Respaldo Cifrado Local Soberano en `src/lib/security/diaryBackupCrypto.ts` con PBKDF2 (100.000 iteraciones) + AES-GCM 256 bits nativo del navegador, con UI de exportación e importación en `DiaryLoversVaultSection.tsx`; (3) Generador y exportador nativo de calendario `.ics` estándar RFC 5545 en `src/lib/calendar/icsExport.ts` con camuflaje de privacidad ("Reunión Privada") para Google/Apple Calendar; (4) Sincronización automática del Ticket de Encuentro desde `RendezvousSheet.tsx` hacia la Agenda con persistencia en `DiaryContext.tsx`; (5) 307/307 tests en verde (46 suites) y TypeScript 100% estricto con 0 errores. | **100%** ✅ |
 | **FEAT-117** | 2026-09-22 | Diario & Salud, UX/UI, Arquitectura, Purificación Lingüística | `Refactor & Rediseño UX/UI Mayor (Auditoría Integral)` | Auditoría Integral y Rediseño Modular de la Agenda de Encuentros: (1) Fragmentación de monolito de 1.896 líneas en 4 solapas modulares táctiles: Citas (`DiaryScheduleSection`), Agenda Íntima (`DiaryLoversVaultSection`), Salud & Cuidados (`DiaryHealthSection`) y Métricas (`DiaryInsights`); (2) Erradicación absoluta de Spanglish e inconsistencias bilingües en toda la agenda, implementando los nombres aprobados "Agenda Íntima" (y "Agenda de Amantes") y botón oficial "Quiero la Revancha"; (3) Simplificación del wizard de creación (`CreateDiaryEntryModal`) bifurcando citas futuras (2 pasos directos sin evaluación prematura) de citas concretadas (4 pasos con feedback íntimo); (4) Creación del componente atómico `DiaryEntryCard` con targets táctiles ≥44px, fechas relativas ("Hoy", "Mañana") y notas confidenciales cifradas; (5) Eliminación de duplicaciones de salud en Métricas y carruseles redundantes de favoritos; (6) 289/289 tests en Vitest pasando y TypeScript con 0 errores. | **100%** ✅ |
 | **FEAT-116** | 2026-09-22 | Diario & Salud, Chat Darkroom, Seguridad & DRM, Logística & Encuentros | `Nueva Feature Disruptiva (Killer Feature)` | Evolución Disruptiva de la Agenda de Encuentros ("The Black Vault", "La Ficha de Cada Amante", "Ticket de Encuentro", "VESSEL Wrapped" y "Revancha Táctica"): (1) Tarjetas interactivas de "Ticket de Encuentro" en Darkroom Chat generadas desde `RendezvousSheet` con aceptación en 1 toque y protocolo anti-plantón H-2 (confirmación 2 horas antes), (2) Bóveda Visual del Amante ("La Ficha de Cada Amante") en `LoverDossierModal.tsx` con archivado directo desde el chat (`Archivar en Ficha`) o al crear cita (`CreateDiaryEntryModal`), protegida con DRM "Hold to Reveal" (10px blur, audio sub-bass 65Hz y blackout ante captura), (3) "The Black Vault" en `DateDiaryView.tsx` (Muro de Trofeos y Conquistas soberano Local-First / Zero-Cloud inmune a bloqueos o borrado de cuentas ajenas), (4) "Revancha Táctica" (carrusel de amantes 5★ para enviar pulso de repetición en 1 toque), (5) "VESSEL Wrapped" (`VesselWrappedModal.tsx`) con telemetría de placer, percentil de ciudad, compañero MVP, la noche más salvaje y mapa de calor de conquistas barriales, (6) Exportación camuflada a calendario (`.ics`) con título señuelo ("Reunión Táctica / Gimnasio") y alarma H-2, (7) 290/290 tests en verde (42 suites en Vitest) y TypeScript estricto con 0 errores. | **100%** ✅ |
-| **FEAT-115** | 2026-09-21 | Core, Agentes, Arquitectura, Calidad | `Infra / Agentes & Calidad de Código` | Integración Calibrada de la Skill y Filosofía Ponytail (Lazy Senior Dev) en VESSEL: Creación de `.agents/skills/ponytail/SKILL.md` adaptada con la escalera de decisiones (The Ladder: YAGNI, reuso interno de codebase, APIs nativas Web, cero librerías npm innecesarias, fixes de causa raíz con grep), articulada con cláusula de salvaguarda inquebrantable para Impeccable UI (estética brutalista, sub-bass 45-80Hz y diseño sensorial intocables); sincronización en `antigravity_global_rules.md` y `GEMINI.md`. | **100%** ✅ |
+### [FEAT-161] · [2026-10-06] Auditoría Profunda 4 Fases: Ergonomía Mobile 360px, Descompresión de Viewport, Poda de Código Muerto y Rescate Táctico SOS
+- **Tipo**: `Auditoría Integral`, `Optimización Móvil`, `Refactor & Poda`, `Ergonomía UX/UI`, `i18n & Rioplatense 2026`
+- **Módulo / Eje**: `Mobile UX/UI`, `Chat Darkroom`, `ProfileCard`, `IntentHubSelector`, `BrutalistHeader`, `ProfileDetailModal`, `NightlifeEventsModal`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Ejecución exhaustiva y de precisión de las 4 fases de optimización, simplificación y ergonomía mobile táctica (360px–414px) en VESSEL, diseñada para los 20 arquetipos de usuario:
+  1. **Fase 1: Poda de Código Muerto, Imports No Utilizados y Vernáculo Rioplatense 2026**:
+     - Limpieza sistemática de imports muertos y no utilizados en `ProfileDetailModal.tsx` (`INTENSITY_LABELS`, `KINK_ITEMS_CATALOG`, `SteganographicWatermark`, `DOSSIER_VERDICT_CONFIG`, función duplicada `getProtocolMeta`), `DarkroomChatModal.tsx`, `ChatVoiceRecorderInline.tsx`, `PulseCard.tsx`, `ProfileCard.tsx`, `ProtocolView.tsx`, `UserAlbumManager.tsx`, `MissedConnectionsModal.tsx`, `WingmanModal.tsx` y `AfterHoursModal.tsx`.
+     - Poda del botón huérfano "Señuelo" en `AppDisguiseSection.tsx` tras el retiro previo de `CalculatorCoverScreen.tsx`.
+     - Sinceramiento lingüístico rioplatense contemporáneo (2026) en `translations.ts` ("Agregar", "Depto, piso y timbre exacto", "Sumar límites/intenciones" en `BioTab.tsx`, "Agregar fotos" en `UserAlbumManager.tsx` y `CreateAlbumModal.tsx`).
+  2. **Fase 2: Ergonomía de Matriz, Radar y Cabecera en Pantallas Angostas (360px)**:
+     - En `IntentHubSelector.tsx`, adición de responsive short labels ("Morbos", "Boliches", "Pinta ya", "Discreto") preservando los títulos semánticos completos para accesibilidad y testing, erradicando el truncamiento visual en columnas angostas de teléfonos de 360px.
+     - En `BrutalistHeader.tsx`, adaptación responsiva de `VesselLogo` mostrando el isotipo/glifo en `<400px` y limitando el ancho máximo de la cápsula de usuario, protegiendo el espacio central para el Rendezvous PIN y el botón de disponibilidad inmediata.
+     - En `ProfileCard.tsx`, eliminación de `flex-shrink-0` en `roleDisplay` con limitación de ancho máximo responsivo, impidiendo que el rol táctico comprima o expulse los badges de hospedaje y transporte en tarjetas de 167px de ancho.
+  3. **Fase 3: Descompresión de Chat Darkroom y Perfil en Mobile**:
+     - En `DarkroomChatModal.tsx`, implementación de ocultamiento condicional de la barra de respuestas rápidas durante el foco en el input de texto (`isInputFocused`), devolviendo el 100% de la altura de pantalla a la conversación cuando el teclado virtual del celular está desplegado.
+     - Reducción de padding vertical en el banner `pinnedPreFlight` (`py-1.5`) para maximizar el área de mensajes.
+     - Compactación de botones de cabecera en el chat para evitar colisiones en pantallas móviles.
+     - En `ProfileDetailModal.tsx`, estandarización de botones de acción de cabecera a targets táctiles mínimos de 44×44px (`min-w-[44px] min-h-[44px]`).
+  4. **Fase 4: Rescate de Funcionalidades Huérfanas & Pulido Final**:
+     - Integración del modal de emergencia `SpikedDrinkAlertModal.tsx` en la barra de herramientas nocturnas de `NightlifeEventsModal.tsx` ("Alerta Trago SOS" con ícono `ShieldAlert`), haciéndolo accesible y utilizable en tiempo real para usuarios en boliches y fiestas.
+  5. **Verificación & Suite de Pruebas**:
+     - 414/414 tests unitarios pasando al 100% en las 64 suites de Vitest (`npm run test`).
+     - 0 errores en compilación estricta de TypeScript (`npm run typecheck`).
+- **Componentes & Archivos Clave**:
+  - `src/components/matrix/IntentHubSelector.tsx`
+  - `src/components/matrix/ProfileCard.tsx`
+  - `src/components/brand/BrutalistHeader.tsx`
+  - `src/components/chat/DarkroomChatModal.tsx`
+  - `src/components/profile/ProfileDetailModal.tsx`
+  - `src/components/nightlife/NightlifeEventsModal.tsx`
+  - `src/components/safety/AppDisguiseSection.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Poda de imports no utilizados y código muerto en 10 componentes.
+  - [x] Etiquetas responsivas en `IntentHubSelector` sin truncamiento en 360px.
+  - [x] Cabecera `BrutalistHeader` adaptativa con logo glifo en pantallas <400px.
+  - [x] `ProfileCard` sin colisión de chips en cuadrícula de 167px.
+  - [x] Descompresión de chat con teclado abierto ocultando respuestas rápidas al escribir.
+  - [x] Targets táctiles ≥44×44px en `ProfileDetailModal`.
+  - [x] Rescate e integración de `SpikedDrinkAlertModal` en `NightlifeEventsModal`.
+  - [x] Sinceramiento de español rioplatense gay 2026.
+  - [x] 414 tests unitarios en verde en Vitest.
+  - [x] `npm run typecheck` sin errores.
+
+### [FEAT-160] · [2026-10-06] Auditoría 100% Mobile, Rendimiento, Poda de Código Muerto y Vernáculo Rioplatense 2026
+- **Tipo**: `Auditoría Integral`, `Optimización Móvil`, `Refactor & Poda`, `i18n & UX/UI`
+- **Módulo / Eje**: `Mobile UX/UI`, `Rendimiento & Memoria`, `Limpieza Código Muerto`, `Matriz & ProfileCard`, `PlacesGrid`, `BrutalistHeader`, `i18n & Rioplatense 2026`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Auditoría e implementación integral 100% de la aplicación móvil de VESSEL basada en el informe maestro de auditoría (`auditoria_vessel_mobile_2026.md`), diseñada para los 20 arquetipos de usuario tácticos (especialmente Facundo #2, Mateo #1, Ignacio #13 y Santi #18):
+  1. **Poda de Código Muerto & Saneamiento de Modales**:
+     - Eliminación definitiva de componentes huérfanos sin llamadas activas: `src/components/matrix/StatusToggle.tsx` (296 líneas de código obsoleto) y `src/components/safety/CalculatorCoverScreen.tsx` (162 líneas desfasadas tras FEAT-148), junto con sus respectivas suites de tests en Vitest.
+     - En `ModalHost.tsx`, erradicación del montaje incondicional de los 5 modales nocturnos (`OpticalBeaconModal`, `MissedConnectionsModal`, `AfterHoursModal`, `WingmanModal`, `SpikedDrinkAlertModal`), envolviéndolos con guardas booleanas estrictas para prevenir reconciliación innecesaria en React 19 y carga prematura de chunks de JavaScript.
+  2. **Desacoplamiento de Rendimiento y Memoria en ProfileCard**:
+     - Elevación de `RendezvousSheet` a singleton dinámico (`ssr: false`) en la raíz de `ProfileGrid.tsx`, suprimiendo más de 40 instancias pesadas anidadas dentro de cada celda `ProfileCard`. Esto previene fugas de memoria y bloqueos de render en dispositivos móviles de gama media/baja (arquetipo Facundo #2, Moto G84).
+     - Redimensionamiento optimizado de fotos de Unsplash en `ProfileCard.tsx` (`w=400`), reduciendo el ancho de banda descargado en la grilla móvil en un 60%.
+  3. **Ergonomía Viewport Mobile en BrutalistHeader**:
+     - Adaptabilidad responsive en `HeaderReadyNowButton`: En viewports ultra-compactos (<380px), la etiqueta alterna a `Listo` / `Ready`, preservando el espacio para la cápsula de menú de usuario sin saltos de línea ni apiñamiento.
+  4. **Vernáculo Rioplatense Queer Argentino 2026 Exhaustivo**:
+     - Sinceramiento lingüístico y unificación en `translations.ts`, `PlacesGrid.tsx`, `ProfileGrid.tsx`, `BrutalistHeader.tsx` y `CreateDiaryEntryModal.tsx`:
+     - Reemplazo de "Salas Oscuras" por "Cuartos Oscuros" en la categorización de lugares nocturnos.
+     - Estandarización a voseo natural rioplatense ("Tocá para activar", "Tocá para calibrar", "Tocá para cortar", "Tocá para archivar", "Tocá para ver/ocultar nota").
+     - Reemplazo de "Enviar Audio de Voz" por "Mandar Audio de Voz" y "Boliche y Sala Oscura" por "Boliche y Cuarto Oscuro".
+  5. **Verificación & Suite de Pruebas**:
+     - 414/414 tests unitarios en verde en 64 suites de Vitest (`npm run test`).
+     - 0 errores en compilación estricta de TypeScript (`npm run typecheck`).
+- **Componentes & Archivos Clave**:
+  - `src/components/matrix/ProfileCard.tsx`
+  - `src/components/matrix/ProfileGrid.tsx`
+  - `src/components/matrix/PlacesGrid.tsx`
+  - `src/components/brand/BrutalistHeader.tsx`
+  - `src/components/modals/ModalHost.tsx`
+  - `src/components/diary/CreateDiaryEntryModal.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Eliminación de `StatusToggle.tsx` y `CalculatorCoverScreen.tsx` completada.
+  - [x] `RendezvousSheet` unificado como singleton en `ProfileGrid.tsx`.
+  - [x] Thumbnails de Unsplash optimizados a `w=400` en la grilla.
+  - [x] Cabecera adaptativa en anchos <380px sin desbordamiento.
+  - [x] Diccionario i18n y componentes alineados con jerga queer rioplatense 2026.
+  - [x] 414 tests pasando al 100% en Vitest.
+  - [x] `npm run typecheck` sin errores.
+
+### [FEAT-159] · [2026-10-06] Fase 5: Optimización de Rendimiento Móvil y Batería (Desacople Reactivo de Temporizadores y Ciclo de Vida Visible)
+- **Tipo**: `Performance & Optimización Móvil` / `Batería & Ciclo de Vida Hardware`
+- **Módulo / Eje**: `Rendimiento`, `BrutalistHeader`, `StatusToggle`, `RadarMatrixContext`, `SafetyContext`, `LogisticsContext`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Fase 5 del plan de optimización móvil integral de VESSEL: Rendimiento móvil y optimización de consumo de batería de acuerdo a `BatteryStateEngine`:
+  1. **Aislamiento y Erradicación de Re-renders por Segundo en BrutalistHeader**:
+     - **Causa Raíz**: El temporizador de 1000ms para el modo Listo YA (`myOnTheClock`) ejecutaba un `setInterval` continuo directamente en el cuerpo de `BrutalistHeader`, provocando que toda la cabecera (logo, batería, audio, menú desplegable, disparadores de búsqueda y navegación) sufriera re-renders cada segundo.
+     - **Solución**: Se extrajo la lógica del temporizador y el cálculo del gradiente cónico del borde a los subcomponentes memoizados `ActiveReadyNowBadge` y `HeaderReadyNowButton`. Ahora sólo la pastilla del botón activo re-renderiza con el paso de los segundos, manteniendo el resto de la cabecera totalmente inmutable.
+  2. **Aislamiento de Temporizador en StatusToggle**:
+     - Se extrajo el subcomponente memoizado `ReadyNowStatusButton` en `StatusToggle.tsx`, evitando que los 3 botones principales de estado corporal (`Disponible`, `Ocupado`, `Ausente`) re-rendericen innecesariamente cada segundo al tener activo Listo YA.
+  3. **Suspensión Inteligente en Segundo Plano (`visibilitychange` & `document.hidden`)**:
+     - Los temporizadores de conteo visual (`BrutalistHeader`, `StatusToggle`, `BeaconCountdownWidget`, barrido TTL de matriz en `RadarMatrixContext` y tracking de `LogisticsContext`) ahora verifican `document.hidden`.
+     - Cuando la app queda en segundo plano o el usuario bloquea su teléfono, los tics de reloj se detienen de inmediato, eliminando consumo de CPU y batería en reposo.
+     - Al regresar a primer plano (`document.visibilityState === "visible"`), se sincroniza el delta de tiempo inmediatamente.
+  4. **Erradicación de Polling Periódico Innecesario en Contextos**:
+     - En `RadarMatrixContext` y `SafetyContext`, se eliminaron los bucles de sondeo periódicos (`setInterval` cada 5s) para comprobar expiración de Listo YA y del Guardián Silencioso. Se sustituyeron por `setTimeout` atómico programado para el milisegundo exacto de expiración, con validación inmediata al despertar de segundo plano vía `visibilitychange`.
+  5. **Verificación & Calidad de Código**:
+     - 424/424 pruebas unitarias pasando al 100% en las 66 suites de Vitest (`npm run test`).
+     - 0 errores en compilación estricta de TypeScript (`npm run typecheck`).
+- **Componentes & Archivos Clave**:
+  - `src/components/brand/BrutalistHeader.tsx`
+  - `src/components/matrix/StatusToggle.tsx`
+  - `src/components/safety/BeaconCountdownWidget.tsx`
+  - `src/context/domains/RadarMatrixContext.tsx`
+  - `src/context/domains/SafetyContext.tsx`
+  - `src/context/domains/LogisticsContext.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Cero re-renders en `BrutalistHeader` ajenos a la pastilla de Listo YA durante la cuenta regresiva.
+  - [x] Cero consumo de CPU por polling en `RadarMatrixContext` y `SafetyContext`.
+  - [x] Suspensión de tics en segundo plano confirmada.
+  - [x] 424 tests en verde en Vitest (`npm run test`).
+  - [x] TypeScript estricto con 0 errores (`npm run typecheck`).
+
+### [FEAT-158] · [2026-10-06] Fase 4: Reingeniería de Mi Perfil (Navegación Táctica 4-Tab) y Desacoplamiento de Modales Nocturnos en ModalHost
+- **Tipo**: `Enhancement (Mejora/Refactor) & Arquitectura UX/UI`
+- **Módulo / Eje**: `Perfil`, `ProtocolView`, `EasyProfileCardView`, `ModalHost`, `Nightlife`, `Modales`, `UX/UI`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Fase 4 del plan de optimización móvil integral de VESSEL: Reingeniería de la experiencia de Mi Perfil y desacoplamiento de la suite nocturna hacia ModalHost:
+  1. **Desacoplamiento Radical de Modales Nocturnos**:
+     - **Problema**: `NightlifeEventsModal` montaba 5 submodales complementarios (`OpticalBeaconModal`, `MissedConnectionsModal`, `AfterHoursModal`, `WingmanModal`, `SpikedDrinkAlertModal`) anidados en su propio JSX. Esto provocaba que si el modal de fiestas no estaba abierto, dichos modales no pudieran abrirse de forma autónoma; y cuando se abrían, generaban un modal sobre otro modal con backdrops superpuestos y degradación de rendimiento.
+     - **Solución**: Se extrajeron los 5 submodales de `NightlifeEventsModal.tsx` y se migraron a `src/components/modals/ModalHost.tsx` con carga diferida (`next/dynamic`, `ssr: false`). Ahora son ciudadanos de primera clase independientes en la raíz del árbol de overlays.
+     - Se limpió además la propiedad huérfana `isCoverScreenActive` en `ModalHost.tsx`.
+  2. **Reingeniería y Armonización de Mi Perfil (`EasyProfileCardView` & `ProtocolView`)**:
+     - Se incorporó la tarjeta `Mi Ficha & Bio` dentro de las secciones tácticas de `EasyProfileCardView.tsx`, garantizando que las 4 solapas macro (`public`, `vaults`, `logistics`, `security`) tengan acceso directo sin obligar al usuario a descifrar cómo llegar a su bio desde la tarjeta visual.
+     - Se agregó una barra táctica de retorno rápido (`← Volver a Mi Tarjeta Viva`) en la cabecera del modo detallado de `ProtocolView.tsx`, resolviendo la desorientación espacial y permitiendo regresar a la tarjeta viva en 1 toque.
+  3. **Limpieza de Código y Estructura**:
+     - Se eliminó el directorio vacío residual `src/components/cruising/`.
+  4. **Pruebas y Verificación**:
+     - 424 tests pasando en 66 suites de Vitest y 0 errores en `npm run typecheck`.
+- **Componentes & Archivos Clave**:
+  - `src/components/account/ProtocolView.tsx`
+  - `src/components/account/EasyProfileCardView.tsx`
+  - `src/components/nightlife/NightlifeEventsModal.tsx`
+  - `src/components/modals/ModalHost.tsx`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de Vitest pasando al 100% (424/424 tests en 66 suites).
+  - [x] Modales nocturnos desacoplados en `ModalHost.tsx` sin capas anidadas.
+  - [x] Tarjeta de Mi Ficha & Bio integrada en `EasyProfileCardView.tsx`.
+  - [x] Barra de retorno rápido a Mi Tarjeta Viva en `ProtocolView.tsx`.
+  - [x] Directorio vacío `src/components/cruising/` eliminado.
+  - [x] Sincronización en memoria Engram y feature ledger.
+
+### [FEAT-157] · [2026-10-06] Fase 3: Racionalización de Acciones (Hick's Law) en Detalle de Perfil y Auto-Promoción de Onda Mutua 🔥 en Chats
+- **Tipo**: `Enhancement (Mejora/Refactor) & Arquitectura UX/UI`
+- **Módulo / Eje**: `Perfil`, `Modal`, `Chat Darkroom`, `Toques`, `Onda Mutua`, `Smart Bar`, `UX/UI`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Fase 3 del plan de optimización móvil integral de VESSEL: Racionalización de la Ley de Hick en el pie del modal de perfil y auto-promoción reactiva de sintonías mutuas en la bandeja de chats:
+  1. **Racionalización de Botones al Pie en `ProfileDetailModal.tsx` (Ley de Hick)**:
+     - **Problema**: El modal de perfil presentaba hasta 5 botones compitiendo en el pie de página móvil (`Toque` + `Rendezvous PIN` + `Agenda` + `Coordinar Cita` + `Chat`), generando fatiga de decisión, saturación táctil y duplicación funcional (los botones 2 y 4a abrían exactamente el mismo modal de Rendezvous PIN).
+     - **Solución**: Se reubicó la acción de 'Anotar en Agenda' (`BookOpen`) en la botonera superior de cabecera junto a Favoritos y Límites (donde pertenece orgánicamente como acción de confianza/gestión). Se eliminó el botón duplicado de Rendezvous PIN del pie.
+     - **Resultado**: El pie de modal quedó reducido a una tríada táctica limpia y ergonómica (≥48px): (a) Botón 1: Toque Cinético instantáneo con audio sub-bass y contador reactivo; (b) Botón 2: CTA Principal Contextual de alta jerarquía: `[ 🔥 Chatear · Onda Mutua ⚡ ]` si hay toque mutuo, `[ ⚡ Coordinar Cita ⚡ ]` con atajo directo a chat si hay chat habilitado, o `[ 🔒 Desbloquear Chat ]` con VESSEL UNLIMITED si es perfil lejano sin toque previo.
+  2. **Auto-Promoción de Onda Mutua 🔥 en `DarkroomListView.tsx`**:
+     - Se integró `hasMutualPulse` en `DarkroomListView.tsx` y se incluyeron automáticamente los IDs de perfiles con sintonía mutua en `conversationPartnerIds`.
+     - Esto garantiza que cuando dos usuarios se tocan recíprocamente, el perfil aparece de inmediato en la bandeja de entrada de chats sin forzar al usuario a buscarlo en el radar o esperar a que alguien envíe un mensaje primero.
+  3. **Cápsula de Onda Mutua en la Smart Bar & Filtro Segmentado**:
+     - Se incorporó la sección de tarjetas de Onda Mutua 🔥 en la Smart Bar horizontal con acceso a chat en 1 toque.
+     - Se agregó la pestaña dinámica `Onda Mutua 🔥` en los filtros de cabecera (`Todos`, `Onda Mutua 🔥`, `Ponen lugar 🏠`, `No leídos`).
+     - Cada fila de conversación con sintonía mutua ahora exhibe la insignia `[ 🔥 Onda Mutua ]` y el estado "¡Onda Mutua! 🔥 Toque correspondido".
+  4. **Pruebas y Verificación**:
+     - 424 tests pasando en 66 suites de Vitest y 0 errores en `npm run typecheck`.
+- **Componentes & Archivos Clave**:
+  - `src/components/profile/ProfileDetailModal.tsx`
+  - `src/components/chat/DarkroomListView.tsx`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de Vitest pasando al 100% (424/424 tests en 66 suites).
+  - [x] Eliminación de botones redundantes en `ProfileDetailModal.tsx` (resolución de Ley de Hick).
+  - [x] Reubicación de Agenda en cabecera de `ProfileDetailModal.tsx`.
+  - [x] Auto-promoción de sintonías mutuas en `DarkroomListView.tsx`.
+  - [x] Cápsula de Onda Mutua 🔥 en la Smart Bar horizontal.
+  - [x] Pestaña de filtro `Onda Mutua 🔥` en la cabecera de chats.
+  - [x] Sincronización en memoria Engram y feature ledger.
+
+### [FEAT-156] · [2026-10-06] Fase 2: Desasfixia del Viewport Mobile y Rediseño de Tarjetas Zen (Consolidación de Cabecera y Progressive Disclosure)
+- **Tipo**: `Enhancement (Mejora/Refactor) & Arquitectura UX/UI`
+- **Módulo / Eje**: `Viewport Mobile`, `Header`, `IntentHub`, `Matriz`, `ProfileCard`, `UX/UI`, `Ergonomía`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Rediseño integral de la cabecera móvil y cuadrícula de perfiles para eliminar la asfixia vertical y sobrecarga cognitiva:
+  1. **Consolidación de Barras Superiores en Contenedor Sticky Único**:
+     - **Problema**: Tres barras independientes (`BrutalistHeader`, `IntentHubSelector` y `ProfileGrid`) estaban apiladas de forma rígida con `top-[52px]` y `top-[98px]` hardcodeados, consumiendo más de 210px verticales permanentes en pantallas móviles y rompiendo el alineamiento en dispositivos con notch o Dynamic Island (donde `safe-area-inset-top` varía entre 47px y 59px).
+     - **Solución**: Se consolidaron `BrutalistHeader` e `IntentHubSelector` dentro de un único `<header className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md border-b border-white/10 select-none shadow-sm">` en `src/app/page.tsx`. `IntentHubSelector` se transformó en un elemento semántico `<nav>` con `border-t border-white/5` sin offsets hardcodeados.
+  2. **Desasfixia Radical del Viewport (~120px Recuperados al Scrollear)**:
+     - Se eliminó `sticky top-[98px] z-20` en `ProfileGrid.tsx` y `sticky top-[52px]` en `PlacesGrid.tsx`, transformando la barra de búsqueda y filtros rápidos en parte del flujo natural de scroll (`bg-obsidian-surface/60 border-b border-white/5`).
+     - Al desplazarse por la matriz, el área fija se redujo de ~210px a sólo ~86px (un 59% de reducción en altura fija), liberando la pantalla casi por completo para ver las fotos y perfiles.
+  3. **Rediseño Zen de `ProfileCard.tsx` (Progressive Disclosure)**:
+     - Calibración del degradado inferior (`h-[46%] bg-gradient-to-t from-black via-black/85 via-50% to-transparent`), manteniendo el 100% de legibilidad en tipografía mientras se maximiza la visibilidad de la foto.
+     - Transformación de los botones de acción inferior de fucsia saturado estridente a píldoras tácticas de cristal oscuro brutalista (`bg-black/60 hover:bg-electricViolet/25 border border-white/15`) con ícono de rayo ámbar y `e.stopPropagation()` estricto.
+     - Preservación y verificación de las 7 especificaciones de testing de `ProfileCard` (píldora de telemetría unificada con estado corporal y distancia S2, ausencia de colisión top-left en perfiles lejanos, apertura de perfil al tap en cuerpo de la tarjeta, autito expandible, exclusión de salud de la card y botón coordinar).
+  4. **Pruebas y Verificación**:
+     - 424 tests pasando en 66 suites de Vitest y 0 errores en `npm run typecheck`.
+- **Componentes & Archivos Clave**:
+  - `src/app/page.tsx`
+  - `src/components/brand/BrutalistHeader.tsx`
+  - `src/components/matrix/IntentHubSelector.tsx`
+  - `src/components/matrix/ProfileGrid.tsx`
+  - `src/components/matrix/PlacesGrid.tsx`
+  - `src/components/matrix/ProfileCard.tsx`
+  - `tests/unit/ui/ProfileCard.test.tsx`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de Vitest pasando al 100% (424/424 tests en 66 suites).
+  - [x] Contenedor sticky único consolidando cabecera y selector de sintonías.
+  - [x] Erradicación de `top-[52px]` y `top-[98px]` hardcodeados.
+  - [x] Barra de búsqueda en flujo natural de scroll para liberar ~120px de pantalla móvil.
+  - [x] Rediseño Zen de tarjetas con `ProfileCard` brutalista y foto protagonista.
+  - [x] Sincronización en memoria Engram y feature ledger.
+
+### [FEAT-155] · [2026-10-06] Sinceramiento Lingüístico Rioplatense 2026 (Toques Unificados) y Denominación Oficial de Áreas de Cruising
+- **Tipo**: `Enhancement (Mejora/Refactor) & Purificación Lingüística`
+- **Módulo / Eje**: `i18n`, `Navegación`, `Pulsos/Toques`, `Cruising`, `Hotspots`, `Chat Darkroom`, `UX/UI`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Fase 1 del plan de modernización integral: Sinceramiento lingüístico rioplatense contemporáneo y denominación oficial de cruising:
+  1. **Denominación Oficial de Áreas de Cruising**:
+     - Reemplazo completo de "Puntos urbanos al aire libre" y "Al Aire Libre" por "Áreas de Cruising" en `translations.ts` (`cruisingCategory: "Áreas de Cruising"`, en: `"Cruising Areas"`).
+     - Actualización de categorías y selectores en `PlacesGrid.tsx`, `ProfileGrid.tsx`, `CreateDiaryEntryModal.tsx` y catálogo de dinámicas en `energyCatalog.ts`.
+  2. **Erradicación Definitiva de 'Zumbidos' por 'Toques'**:
+     - Unificación al dialecto queer contemporáneo argentino de 2026 reemplazando 'zumbidos' por 'toques' en toda la aplicación: `BrutalistNav.tsx` (pestaña 'Toques'), `DarkroomListView.tsx`, `PulsesView.tsx`, `PulseCard.tsx`, `PulsesListSkeleton.tsx`, `ProfileDetailModal.tsx` y `MissedConnectionsModal.tsx`.
+  3. **Pruebas y Verificación**:
+     - 424 tests pasando en 66 suites de Vitest y 0 errores en `npm run typecheck`.
+- **Componentes & Archivos Clave**:
+  - `src/lib/i18n/translations.ts`
+  - `src/components/matrix/PlacesGrid.tsx`
+  - `src/components/matrix/ProfileGrid.tsx`
+  - `src/components/navigation/BrutalistNav.tsx`
+  - `src/components/pulses/PulsesView.tsx`
+  - `src/components/pulses/PulseCard.tsx`
+  - `src/components/diary/CreateDiaryEntryModal.tsx`
+  - `src/data/energyCatalog.ts`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
+  - [x] Suite de Vitest pasando al 100% (424/424 tests en 66 suites).
+  - [x] "Áreas de Cruising" como denominación oficial en todo el sistema.
+  - [x] "Toques" como único término aprobado en español rioplatense.
+  - [x] Sincronización en memoria Engram y feature ledger.
+
 ### [FEAT-154] · [2026-10-06] Aislamiento Estricto de Pulsos Reales, Resiliencia de Fotos OAuth, Sincronización en Vivo de Membresía Unlimited y Persistencia de Lectura de Mensajes
 - **Tipo**: `Bug Fix (Corrección de Causa Raíz) & Resiliencia Full-Stack`
 - **Módulo / Eje**: `Pulsos`, `Chat Darkroom`, `Admin`, `Membresías`, `Fotos & Avatares`, `Firestore`, `UX/UI`
@@ -428,8 +677,34 @@ Cada vez que se implemente una nueva característica, se corrija una falla o se 
   - [x] TypeScript estricto validado (`npm run typecheck` con 0 errores).
   - [x] Suite de Vitest pasando al 100% (63 suites, 397 tests).
   - [x] Targets táctiles mínimos de 44px en toda la consola.
-  - [x] Aislamiento de herramientas dev fuera de la vista de producción.
-  - [x] Registro en `registro-de-features.md` y memoria Engram sincronizada.
+### [FEAT-162] · [2026-10-06] Ergonomía Mobile de 5 Ejes Tácticos: Headers Descomprimidos, Triaje Unificado de Toques, Pestañas Responsivas y Terminología Inclusiva (Vínculos)
+- **Tipo**: `Enhancement (Mejora/Refactor & Ergonomía Mobile UX/UI)`
+- **Módulo / Eje**: `Chat Darkroom`, `Pulsos & Toques`, `Perfil & Cuenta`, `Diario & Agenda`, `i18n`, `UX/UI`, `Ergonomía 360px`
+- **Estado Actual**: `100% — Completado & Verificado`
+- **Descripción**: Refactorización y rediseño de 5 cuellos de botella ergonómicos críticos identificados en pantallas móviles (360px a 390px, iPhone SE y terminales compactas Android), erradicando el estrangulamiento horizontal de controles, colapso de alias, desbordes de pestañas y botones aislados:
+  1. **Header de Chat Descomprimido (`DarkroomChatModal.tsx`)**: Reorganización de la botonera superior ocultando botones secundarios en mobile (`Modo Efímero / Retención` y `Ficha Táctica`, accesibles en desktop vía `hidden md:inline-flex` y en mobile a través del menú táctico `[ ⋯ ]` o tocando directamente el avatar/alias). Con solo `⚡ Coordinar` (o `PIN Activo`) y `[ ⋯ ]` a la derecha, se recuperaron más de 120px de espacio horizontal libre, permitiendo que el alias (`dossier.customAlias` o `profile.codename`), insignias 3D y de Respeto, distancia, rol y hospedaje respiren completamente sin recortes a 2 letras.
+  2. **Header de Toques con Triaje Unificado (`PulsesView.tsx`)**: Erradicación del apilamiento vertical de dos botones de 44px a la derecha del título. Consolidación de un selector segmentado horizontal de 3 pestañas (`Recibidos`, `Onda Mutua`, `Enviados`) con targets táctiles ≥44px y badges numéricos reactivos, reubicando la acción de "Limpiar leídos" como un botón minimalista de basura en la esquina superior derecha.
+  3. **Pestañas Responsivas en Detalle de Perfil (`ProfileDetailModal.tsx`)**: Síntesis de etiquetas en móviles pequeños (`[ 👤 Perfil ]`, `[ 🔥 Química ]`, `[ 🛡️ Confianza ]`) preservando la versión extendida en desktop vía `hidden sm:inline`, erradicando el desborde horizontal y recorte de la 3ra solapa en anchos de 360px.
+  4. **Agenda y Terminología Inclusiva (`DateDiaryView.tsx` & `translations.ts`)**: Actualización de `diary.title` a `"Citas (Agenda)"` y `diary.subtitle` mencionando libreta de vínculos. Redenominación oficial de la pestaña `"Chongos"` al término contemporáneo rioplatense 2026 `"Vínculos"` (`data-testid="diary-tab-lovers"` intacto), y estandarización del botón `+ Anotar Cita` a ancho completo en móviles dentro del Hero.
+  5. **Mi Perfil Desasfixiado (`ProtocolView.tsx`)**: Eliminación de la barra redundante `← Volver a Mi Tarjeta Viva` en Modo Avanzado, y rediseño de la barra sticky de 4 solapas (`Ficha`, `Fotos`, `Morbos`, `Seguridad`) con layout vertical/horizontal (`flex-col sm:flex-row`) y badges relativos compactos, asegurando que "Seguridad" nunca se trunque a "Segurid..." en 360px.
+  6. **Cero Regresiones**: 414/414 tests unitarios pasando al 100% en las 64 suites de Vitest y 0 errores en compilación estricta de TypeScript (`npm run typecheck`).
+- **Componentes & Archivos Clave**:
+  - `src/components/chat/DarkroomChatModal.tsx`
+  - `src/components/pulses/PulsesView.tsx`
+  - `src/components/profile/ProfileDetailModal.tsx`
+  - `src/components/diary/DateDiaryView.tsx`
+  - `src/components/account/ProtocolView.tsx`
+  - `src/lib/i18n/translations.ts`
+  - `tests/unit/ui/DateDiaryView.test.tsx`
+  - `docs/contexto/registro-de-features.md`
+- **Criterios de Aceptación & Verificación (DoD)**:
+  - [x] Header de chat con espaciado amplio y alias legible completo en 360px.
+  - [x] Header de toques unificado en 3 pestañas sin apilamientos rotos.
+  - [x] Pestañas de detalle de perfil con etiquetas responsivas sin overflow.
+  - [x] Agenda con título "Citas (Agenda)", solapa "Vínculos" y botón ergonómico full-width en mobile.
+  - [x] Mi Perfil sin barras redundantes y solapas de 4 botones sin texto truncado.
+  - [x] Suite completa de Vitest pasando al 100% (414/414 tests verdes en 64 suites).
+  - [x] Cero errores en `npm run typecheck`.
 
 ### [FEAT-141] · [2026-10-04] Arquitectura de Pantalla y Hojas Tácticas (Desmantelamiento de Modal Hell & Vernáculo Rioplatense Gay 2026)
 - **Tipo**: `Arquitectura & Rediseño Táctico (Opción A — Fullscreen Views & Tactical Bottom Sheets)`

@@ -13,6 +13,7 @@ export const BeaconCountdownWidget: React.FC = () => {
     if (!safetyBeacon.isActive || !safetyBeacon.expiresAt) return;
 
     const updateTimer = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       const now = Date.now();
       const expiry = new Date(safetyBeacon.expiresAt!).getTime();
       const diffMs = expiry - now;
@@ -34,7 +35,23 @@ export const BeaconCountdownWidget: React.FC = () => {
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+
+    const handleVisibility = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        updateTimer();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
+    };
   }, [safetyBeacon.isActive, safetyBeacon.expiresAt]);
 
   if (!safetyBeacon.isActive) return null;

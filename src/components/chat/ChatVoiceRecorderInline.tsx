@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mic, Square, X, Send, Play, Pause, Flame } from "lucide-react";
+import { Square, X, Send, Play, Pause, Flame } from "lucide-react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useVessel } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";

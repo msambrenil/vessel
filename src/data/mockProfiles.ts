@@ -518,7 +518,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
     hosting: "Me muevo / voy",
     tagline: "Banda Norte, Río Cuarto. Presencia en sigilo.",
     statement:
-      "En modo discreto por Banda Norte. Tirame un zumbido para reactivarme si estás cerca con lugar y ganas.",
+      "En modo discreto por Banda Norte. Tirame un toque para reactivarme si estás cerca con lugar y ganas.",
     avatarUrl:
       "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
     isStylizedAvatar: true, // Avatar estilizado

@@ -4,11 +4,6 @@ import React, { useState } from "react";
 import { useVessel } from "@/context/VesselContext";
 import { NightlifeEvent } from "@/types/vessel";
 import { EventDetailModal } from "./EventDetailModal";
-import { MissedConnectionsModal } from "./MissedConnectionsModal";
-import { OpticalBeaconModal } from "./OpticalBeaconModal";
-import { AfterHoursModal } from "./AfterHoursModal";
-import { WingmanModal } from "./WingmanModal";
-import { SpikedDrinkAlertModal } from "./SpikedDrinkAlertModal";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   PartyPopper,
@@ -24,6 +19,7 @@ import {
   Sparkles,
   Flame,
   Check,
+  ShieldAlert,
 } from "lucide-react";
 
 export const NightlifeEventsModal: React.FC = () => {
@@ -37,6 +33,7 @@ export const NightlifeEventsModal: React.FC = () => {
     openOpticalBeacon,
     openAfterHoursModal,
     openWingmanModal,
+    openSpikedAlertModal,
     wingmanPair,
     toggleEventRsvp,
     currentUserUid,
@@ -159,6 +156,19 @@ export const NightlifeEventsModal: React.FC = () => {
             >
               <Moon className="w-3.5 h-3.5 text-indigo-400" />
               <span>After-Hours</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                audioEngine.playSubBass(75);
+                openSpikedAlertModal();
+              }}
+              className="px-3 py-1.5 bg-red-950/30 hover:bg-red-950/60 border border-red-500/30 hover:border-red-500/60 rounded-xl font-mono text-xs text-red-300 flex items-center gap-1.5 flex-shrink-0 transition-all cursor-pointer shadow-xs"
+              title="Alerta SOS / Trago Sospechoso"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
+              <span>Alerta Trago SOS</span>
             </button>
           </div>
 
@@ -283,13 +293,6 @@ export const NightlifeEventsModal: React.FC = () => {
           onClose={() => setSelectedEvent(null)}
         />
       )}
-
-      {/* Modales Complementarios */}
-      <MissedConnectionsModal />
-      <OpticalBeaconModal />
-      <AfterHoursModal />
-      <WingmanModal />
-      <SpikedDrinkAlertModal />
     </>
   );
 };

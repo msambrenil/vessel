@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import {
   useRadarMatrix,
   useSettings,
@@ -12,6 +13,11 @@ import { ProfileCard } from "./ProfileCard";
 import { PlacesGrid } from "./PlacesGrid";
 import { MatrixUnlimitedPromoCard } from "./MatrixUnlimitedPromoCard";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
+
+const RendezvousSheet = dynamic(
+  () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
+  { ssr: false }
+);
 import {
   Search,
   X,
@@ -66,6 +72,9 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     nightlifeEvents,
   } = useLogistics();
 
+  // Estado desacoplado del sheet táctico de Rendezvous (Singleton en memoria)
+  const [rendezvousTargetProfile, setRendezvousTargetProfile] = React.useState<VesselProfile | null>(null);
+
   // Estados locales para la pestaña Lugares & Fiestas
   const [placesSearchQuery, setPlacesSearchQuery] = React.useState("");
   const [placesCategory, setPlacesCategory] = React.useState<"all" | HotspotCategory | "nightlife">("all");
@@ -74,9 +83,9 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
 
   const placesCategories: { id: "all" | HotspotCategory | "nightlife"; label: string; icon: string }[] = [
     { id: "all", label: language === "es" ? "Todos" : "All", icon: "🌐" },
-    { id: "cruising_area", label: language === "es" ? "Al Aire Libre" : "Cruising", icon: "🌲" },
+    { id: "cruising_area", label: language === "es" ? "Áreas de Cruising" : "Cruising Areas", icon: "🌲" },
     { id: "nightlife", label: language === "es" ? "Fiestas" : "Nightlife", icon: "🎉" },
-    { id: "darkroom_club", label: language === "es" ? "Salas Oscuras" : "Darkrooms", icon: "⚡" },
+    { id: "darkroom_club", label: language === "es" ? "Cuartos Oscuros" : "Darkrooms", icon: "⚡" },
     { id: "sauna", label: language === "es" ? "Saunas" : "Saunas", icon: "🧖" },
     { id: "queer_bar", label: language === "es" ? "Bares" : "Bars", icon: "🍸" },
   ];
@@ -307,9 +316,9 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
   return (
     <div className="flex flex-col flex-1 pb-48 sm:pb-56 select-none">
       {/* =========================================================
-          BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS (Sticky Top con Frosted Glass)
+          BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS (Flujo Natural Zen)
           ========================================================= */}
-      <div className="p-2 sm:p-2.5 bg-obsidian-deep/95 border-b border-white/10 sticky top-[98px] z-20 space-y-2 shadow-md backdrop-blur-md">
+      <div className="p-2 sm:p-2.5 bg-obsidian-surface/60 border-b border-white/5 space-y-2 backdrop-blur-sm">
         {/* =========================================================
             HEADER CONTEXTUAL PARA PESTAÑA: PERSONAS (2 FILAS COMPACTAS)
             ========================================================= */}
@@ -359,7 +368,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                 aria-label={travelMode.isActive ? `Modo Viajero Activo: ${travelMode.cityName}` : "Activar Modo Viajero"}
                 title={
                   travelMode.isActive
-                    ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocar para cambiar o restablecer`
+                    ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocá para cambiar o restablecer`
                     : "Simular ubicación en otra ciudad (Modo Viajero)"
                 }
                 className={`px-2.5 min-h-[38px] rounded-xl flex items-center justify-center gap-1 font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
@@ -577,7 +586,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                 aria-label={travelMode.isActive ? `Modo Viajero Activo: ${travelMode.cityName}` : "Activar Modo Viajero"}
                 title={
                   travelMode.isActive
-                    ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocar para cambiar o restablecer`
+                    ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocá para cambiar o restablecer`
                     : "Simular ubicación en otra ciudad (Modo Viajero)"
                 }
                 className={`px-2.5 min-h-[38px] rounded-xl flex items-center justify-center gap-1 font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
@@ -798,6 +807,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                               profile={profile}
                               onSelect={onSelectProfile}
                               onOpenChat={onOpenChat}
+                              onOpenRendezvous={setRendezvousTargetProfile}
                               isPriority={idx < 2}
                               isLockedByGridLimit={isLockedByLimit}
                             />
@@ -829,6 +839,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                         profile={profile}
                         onSelect={onSelectProfile}
                         onOpenChat={onOpenChat}
+                        onOpenRendezvous={setRendezvousTargetProfile}
                         isPriority={index < 4}
                         isLockedByGridLimit={isLockedByLimit}
                       />
@@ -1052,6 +1063,15 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Sheet Táctico Desacoplado de Rendezvous / Pre-Flight (Singleton para toda la Grilla) */}
+      {rendezvousTargetProfile && (
+        <RendezvousSheet
+          isOpen={Boolean(rendezvousTargetProfile)}
+          onClose={() => setRendezvousTargetProfile(null)}
+          targetProfile={rendezvousTargetProfile}
+        />
       )}
     </div>
   );

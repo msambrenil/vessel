@@ -11,7 +11,6 @@ import {
   X,
   Sparkles,
 } from "lucide-react";
-import Image from "next/image";
 import { ExitProtocol, VesselProfile } from "@/types/vessel";
 import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
@@ -61,8 +60,8 @@ export const PulseCard: React.FC<PulseCardProps> = ({
 
   const timeTemplate =
     mode === "sent"
-      ? t.pulses?.sentAgo || (language === "es" ? "Zumbido enviado hace {time}" : "Nudge sent {time} ago")
-      : t.pulses?.receivedAgo || (language === "es" ? "Te envió un zumbido hace {time}" : "Sent you a nudge {time} ago");
+      ? t.pulses?.sentAgo || (language === "es" ? "Toque enviado hace {time}" : "Tap sent {time} ago")
+      : t.pulses?.receivedAgo || (language === "es" ? "Te envió un toque hace {time}" : "Sent you a tap {time} ago");
 
   const localizedTimeLabel = timeTemplate.replace("{time}", relativeTime);
 
@@ -157,7 +156,7 @@ export const PulseCard: React.FC<PulseCardProps> = ({
                 {isMutual && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 font-mono text-[9px] font-black uppercase tracking-wider">
                     <Flame className="w-3 h-3 text-emerald-400 fill-current" />
-                    <span>{t.pulses?.mutualBadge || "Zumbido Mutuo 🔥"}</span>
+                    <span>{t.pulses?.mutualBadge || (language === "es" ? "Toque Mutuo 🔥" : "Mutual Tap 🔥")}</span>
                   </span>
                 )}
               </div>
@@ -183,8 +182,8 @@ export const PulseCard: React.FC<PulseCardProps> = ({
                   audioEngine.playPulse();
                   onDismissPulse(pulseId);
                 }}
-                aria-label={t.pulses?.dismissPulseLabel || "Descartar zumbido"}
-                title={t.pulses?.dismissPulseLabel || "Descartar zumbido"}
+                aria-label={t.pulses?.dismissPulseLabel || (language === "es" ? "Descartar toque" : "Dismiss tap")}
+                title={t.pulses?.dismissPulseLabel || (language === "es" ? "Descartar toque" : "Dismiss tap")}
                 className="w-11 h-11 min-w-[44px] min-h-[44px] -mr-1.5 -mt-1.5 rounded-xl flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
               >
                 <X className="w-4 h-4" />
@@ -363,11 +362,11 @@ export const PulseCard: React.FC<PulseCardProps> = ({
               onReturnPulse(profile.id);
               onOpenChat(profile.id);
             }}
-            aria-label={t.intents?.acceptTone || "Aceptar Zumbido ⚡"}
+            aria-label={t.intents?.acceptTone || (language === "es" ? "Aceptar Toque ⚡" : "Accept Tap ⚡")}
             className="min-h-[44px] px-3 py-2.5 rounded-xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:brightness-110 shadow-violet-soft border border-electricViolet/60 transition-all text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
             <Zap className="w-4 h-4 fill-current stroke-[2.5]" />
-            <span className="truncate">{t.intents?.acceptTone ? `${t.intents.acceptTone}` : "Aceptar Zumbido ⚡"}</span>
+            <span className="truncate">{t.intents?.acceptTone ? `${t.intents.acceptTone}` : (language === "es" ? "Aceptar Toque ⚡" : "Accept Tap ⚡")}</span>
           </button>
         ) : (
           <button

@@ -49,12 +49,11 @@ import { SendMediaModal } from "./SendMediaModal";
 import { ChatMediaViewerModal } from "./ChatMediaViewerModal";
 import { ChatVoiceMessageBubble } from "./ChatVoiceMessageBubble";
 import { ChatVoiceRecorderInline } from "./ChatVoiceRecorderInline";
-import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { KIND_CLOSURE_MESSAGES } from "@/data/energyCatalog";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
-import { ChatMediaAttachment, ExitProtocol } from "@/types/vessel";
+import { ChatMediaAttachment } from "@/types/vessel";
 import { PreFlightCard } from "./PreFlightCard";
 import { RendezvousSheet } from "./RendezvousSheet";
 import { EncounterContextBar } from "./EncounterContextBar";
@@ -126,6 +125,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const [isDossierDrawerOpen, setIsDossierDrawerOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [confirmingCancelPin, setConfirmingCancelPin] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   // Estados de Multimedia y Álbumes
   const [isSendMediaModalOpen, setIsSendMediaModalOpen] = useState<boolean>(false);
@@ -418,8 +418,8 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
             </div>
 
             {/* CINTA DE ACCIONES RÁPIDAS (RETENCIÓN + FICHA + COORDINAR + MENÚ) */}
-            <div className="flex items-center gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
-              {/* 1. Pill Discreto de Retención / Modo Efímero */}
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 relative" ref={tacticalMenuRef}>
+              {/* 1. Pill Discreto de Retención / Modo Efímero (Desktop/Tablet) */}
               <button
                 type="button"
                 onClick={() => {
@@ -428,7 +428,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   toggleChatRetention(profile.id);
                   setTimeout(() => setIsTogglingRetention(false), 450);
                 }}
-                className={`px-2 py-1 min-h-[36px] rounded-xl text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1 cursor-pointer border active:scale-95 ${
+                className={`hidden md:inline-flex px-2 py-1 min-h-[34px] rounded-xl text-[10px] font-mono font-bold uppercase transition-all items-center gap-1 cursor-pointer border active:scale-95 ${
                   currentRetention === "persistent"
                     ? "bg-mintNeon/10 border-mintNeon/40 text-mintNeon hover:bg-mintNeon/20"
                     : "bg-electricViolet/10 border-electricViolet/40 text-electricViolet-glow hover:bg-electricViolet/20"
@@ -440,10 +440,10 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                 ) : (
                   <Lock className={`w-3.5 h-3.5 ${isTogglingRetention ? "animate-spin" : ""}`} />
                 )}
-                <span className="hidden sm:inline">{currentRetention === "persistent" ? (language === "es" ? "Guardado" : "Saved") : (language === "es" ? "Efímero" : "Burn")}</span>
+                <span className="hidden lg:inline">{currentRetention === "persistent" ? (language === "es" ? "Guardado" : "Saved") : (language === "es" ? "Efímero" : "Burn")}</span>
               </button>
 
-              {/* 2. Botón Ficha del Chongo */}
+              {/* 2. Botón Ficha del Chongo (Desktop/Tablet) */}
               <button
                 type="button"
                 onClick={() => {
@@ -451,11 +451,11 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   setIsDossierDrawerOpen(true);
                 }}
                 aria-label={language === "es" ? "Ver ficha y datos" : "View bio"}
-                className="px-2.5 py-1 min-h-[36px] rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-neutral-200 hover:text-white font-mono text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-                title={language === "es" ? "Ficha del chongo (perfil, notas y respeto)" : "Profile dossier"}
+                className="hidden md:inline-flex px-2 sm:px-2.5 py-1 min-h-[34px] rounded-xl border border-white/10 bg-white/5 hover:bg-white/15 text-neutral-200 hover:text-white font-mono text-[11px] font-bold items-center gap-1 cursor-pointer transition-all active:scale-95"
+                title={language === "es" ? "Ficha del vínculo (perfil, notas y respeto)" : "Profile dossier"}
               >
                 <span>👤</span>
-                <span className="hidden xs:inline">{language === "es" ? "Ficha" : "Bio"}</span>
+                <span className="hidden lg:inline">{language === "es" ? "Ficha" : "Bio"}</span>
               </button>
 
               {/* 3. Botón Unificado Coordinar Cita */}
@@ -466,7 +466,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                   setIsRendezvousSheetOpen(true);
                 }}
                 aria-label="Coordinar cita segura"
-                className={`px-3 py-1 min-h-[36px] flex items-center gap-1.5 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm font-mono text-xs font-bold ${
+                className={`px-2.5 sm:px-3 py-1 min-h-[34px] flex items-center gap-1 sm:gap-1.5 rounded-xl transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm font-mono text-[11px] sm:text-xs font-bold ${
                   activeRendezvous?.profileId === profile.id
                     ? "bg-bloodNeon/20 border border-bloodNeon/60 text-bloodNeon shadow-[0_0_12px_rgba(230,25,55,0.35)] animate-pulse"
                     : "bg-electricViolet text-white hover:bg-electricViolet/90 shadow-violet-soft"
@@ -474,7 +474,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                 title="Asistente Integral de Encuentros (Sintonía + Lugar + Guardián SOS)"
               >
                 <span className="text-xs leading-none">⚡</span>
-                <span>{activeRendezvous?.profileId === profile.id ? (language === "es" ? "PIN Activo" : "Active PIN") : (language === "es" ? "Coordinar" : "Meetup")}</span>
+                <span className="truncate">{activeRendezvous?.profileId === profile.id ? (language === "es" ? "PIN Activo" : "Active PIN") : (language === "es" ? "Coordinar" : "Meetup")}</span>
               </button>
 
               {/* 4. Botón Menú Táctico Más Acciones [ ⋯ ] */}
@@ -486,7 +486,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                 }}
                 aria-label="Más herramientas tácticas"
                 aria-expanded={isTacticalMenuOpen}
-                className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 relative ${
+                className={`p-2 min-w-[34px] min-h-[34px] flex items-center justify-center rounded-xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 relative ${
                   isTacticalMenuOpen
                     ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
                     : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
@@ -772,6 +772,44 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                           </span>
                         )}
                       </button>
+
+                      {/* Modo Efímero vs Guardado */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsTogglingRetention(true);
+                          audioEngine.playVaultUnlock();
+                          toggleChatRetention(profile.id);
+                          setTimeout(() => setIsTogglingRetention(false), 450);
+                        }}
+                        className="w-full flex items-start justify-between gap-2.5 p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-electricViolet/40 transition-all group cursor-pointer text-left"
+                        role="menuitem"
+                      >
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-electricViolet/20 border border-electricViolet/30 text-electricViolet-glow flex items-center justify-center flex-shrink-0 mt-0.5">
+                            {currentRetention === "persistent" ? <Save className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {currentRetention === "persistent"
+                                ? (language === "es" ? "Historial Guardado en este Teléfono" : "Chat Saved on Device")
+                                : (language === "es" ? "Chat Efímero (Auto-Borrado)" : "Ephemeral Chat (Auto-Burn)")}
+                            </span>
+                            <span className="text-[10px] text-neutral-300 block leading-snug mt-0.5">
+                              {currentRetention === "persistent"
+                                ? (language === "es" ? "Tocá para cambiar a efímero y que no guarde historial." : "Tap to switch to auto-burn ephemeral mode.")
+                                : (language === "es" ? "Tocá para guardar mensajes en almacenamiento local seguro." : "Tap to save chat history locally.")}
+                            </span>
+                          </div>
+                        </div>
+                        <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                          currentRetention === "persistent"
+                            ? "bg-mintNeon/20 border-mintNeon/40 text-mintNeon"
+                            : "bg-electricViolet/20 border-electricViolet/40 text-electricViolet-glow"
+                        }`}>
+                          {currentRetention === "persistent" ? (language === "es" ? "GUARDADO" : "SAVED") : (language === "es" ? "EFÍMERO" : "BURN")}
+                        </span>
+                      </button>
                     </div>
 
                     {/* GRUPO 3: PERFIL, NOTAS PRIVADAS & HISTORIAL (GRILLA COMPACTA 2x2) */}
@@ -781,6 +819,29 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                       </span>
 
                       <div className="grid grid-cols-2 gap-2">
+                        {/* Ficha Táctica */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            audioEngine.playPulse();
+                            setIsTacticalMenuOpen(false);
+                            setIsDossierDrawerOpen(true);
+                          }}
+                          className="p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.10] border border-white/10 hover:border-white/25 transition-all cursor-pointer text-left flex items-start gap-2"
+                          role="menuitem"
+                        >
+                          <span className="w-8 h-8 rounded-xl bg-electricViolet/15 border border-electricViolet/30 text-electricViolet-glow flex items-center justify-center text-sm flex-shrink-0">
+                            📋
+                          </span>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-white block leading-tight">
+                              {language === "es" ? "Ficha Táctica" : "Tactical Bio"}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block leading-tight mt-0.5">
+                              {language === "es" ? "Alias, notas privadas y respeto" : "Custom alias, notes & score"}
+                            </span>
+                          </div>
+                        </button>
                         {/* Ver Fotos y Perfil */}
                         <button
                           type="button"
@@ -991,22 +1052,22 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
         {pinnedPreFlight && (
           <div
             data-testid="pinned-preflight-banner"
-            className="px-3.5 py-2.5 bg-gradient-to-r from-purple-950/70 via-obsidian-surface to-electricViolet/15 border-b border-electricViolet/40 flex items-center justify-between gap-3 text-xs z-10 shadow-sm flex-shrink-0"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-gradient-to-r from-purple-950/70 via-obsidian-surface to-electricViolet/15 border-b border-electricViolet/40 flex items-center justify-between gap-2 sm:gap-3 text-xs z-10 shadow-sm flex-shrink-0"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className="text-base flex-shrink-0">⚡</span>
+              <span className="text-sm sm:text-base flex-shrink-0">⚡</span>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-[10px] font-black uppercase tracking-wider text-electricViolet-glow">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="font-mono text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider text-electricViolet-glow">
                     {t.intents?.title || (language === "es" ? "Sintonía Acordada" : "Agreed Pre-Flight")}
                   </span>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-electricViolet/25 border border-electricViolet/40 text-purple-200">
+                  <span className="text-[8.5px] sm:text-[9px] font-mono px-1.5 py-0.2 rounded bg-electricViolet/25 border border-electricViolet/40 text-purple-200">
                     {pinnedPreFlight.source === "explicit"
                       ? (language === "es" ? "Pacto Confirmado" : "Confirmed Accord")
                       : (language === "es" ? "Sintonía Mutua" : "Mutual Intent")}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-300 truncate mt-0.5">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[9.5px] sm:text-[10px] font-mono text-neutral-300 truncate mt-0.5">
                   <span>{tempoLabels[pinnedPreFlight.tempo] || pinnedPreFlight.tempo}</span>
                   <span>•</span>
                   <span>{protectionLabels[pinnedPreFlight.protection] || pinnedPreFlight.protection}</span>
@@ -1034,7 +1095,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
               }}
               aria-label="Ajustar sintonía"
               title="Ajustar sintonía o coordinar encuentro"
-              className="px-2.5 py-1.5 rounded-xl bg-electricViolet/20 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 transition-all font-mono text-[10px] font-black uppercase tracking-wider flex-shrink-0 cursor-pointer active:scale-95"
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl bg-electricViolet/20 hover:bg-electricViolet text-electricViolet-glow hover:text-white border border-electricViolet/40 transition-all font-mono text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider flex-shrink-0 cursor-pointer active:scale-95"
             >
               {language === "es" ? "Ajustar ⚡" : "Adjust ⚡"}
             </button>
@@ -1839,7 +1900,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
 
         {/* BARRA TÁCTICA UNIFICADA (RESPUESTAS RÁPIDAS + SALIDAS ANTI-GHOST) */}
         {activeBoundary?.chatStatus !== "readonly" && activeBoundary?.chatStatus !== "disconnected" && (
-          <div className="px-2.5 py-1.5 bg-obsidian-surface/90 border-t border-white/10 flex items-center gap-1.5 overflow-x-auto no-scrollbar select-none">
+          <div className={`px-2.5 py-1.5 bg-obsidian-surface/90 border-t border-white/10 ${isInputFocused ? "hidden sm:flex" : "flex"} items-center gap-1.5 overflow-x-auto no-scrollbar select-none`}>
             {quickBarMode === "quick" ? (
               <>
                 {/* Switcher a modo Anti-Ghost (+5 Karma) */}
@@ -2019,6 +2080,8 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
                     }
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                     className={`w-full min-h-[44px] bg-black/50 border rounded-2xl text-white text-xs px-3.5 py-2.5 sm:py-3 placeholder:text-neutral-500 focus:outline-none focus-visible:ring-2 transition-all ${
                       isBurnMode
                         ? "border-bloodNeon/60 focus:border-bloodNeon focus-visible:ring-bloodNeon/60 pr-8"

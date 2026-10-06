@@ -420,8 +420,33 @@ export const EasyProfileCardView: React.FC<EasyProfileCardViewProps> = ({
           {language === "es" ? "SECCIONES TÁCTICAS" : "TACTICAL SECTIONS"}
         </span>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {/* Tarjeta 1: Bóvedas & Fotos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {/* Tarjeta 1: Mi Ficha & Bio */}
+          <button
+            type="button"
+            onClick={() => {
+              audioEngine.playPulse();
+              onOpenAdvancedTab("public");
+            }}
+            className="p-3.5 min-h-[64px] rounded-2xl bg-obsidian-surface/90 hover:bg-obsidian-surface border border-white/10 hover:border-electricViolet/50 transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.98] group shadow-sm text-left"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-electricViolet-glow flex-shrink-0 group-hover:scale-105 transition-transform">
+                <User className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs font-mono font-bold text-white truncate">
+                  {language === "es" ? "Mi Ficha & Bio" : "Bio & Details"}
+                </h3>
+                <p className="text-[10px] font-mono text-neutral-400 truncate">
+                  {language === "es" ? "Descripción, medidas y pronombres" : "Description, measurements, pronouns"}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors flex-shrink-0" />
+          </button>
+
+          {/* Tarjeta 2: Bóvedas & Fotos */}
           <button
             type="button"
             onClick={() => {

@@ -618,6 +618,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     const initialEta = enRouteState.etaMinutes || 15;
 
     const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
       const now = Date.now();
       const elapsedSeconds = (now - startedTime) / 1000;
       const elapsedMinutes = elapsedSeconds / 60;
@@ -1307,7 +1308,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         return {
           ...conn,
           pulseSent: true,
-          pulseNote: note || "Te vi en la pista // Zumbido de reencuentro",
+          pulseNote: note || "Te vi en la pista // Toque de reencuentro",
         };
       });
       saveToStorage(STORAGE_KEYS.MISSED_CONNECTIONS, next);

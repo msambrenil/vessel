@@ -40,7 +40,7 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
       {/* Contenedor Principal de Fotografía */}
       <div className="relative aspect-[4/5] sm:aspect-[4/4.5] md:aspect-[4/5] bg-black overflow-hidden group md:rounded-2xl md:border md:border-white/10 shadow-lg">
         <Image
-          src={photos[selectedPhotoIdx]}
+          src={photos[selectedPhotoIdx] || profile.avatarUrl || "/placeholder-avatar.png"}
           alt={profile.codename}
           fill
           sizes="(max-width: 768px) 100vw, 42vw"
@@ -225,7 +225,7 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
               }`}
             >
               <Image
-                src={photoUrl}
+                src={photoUrl || profile.avatarUrl || "/placeholder-avatar.png"}
                 alt=""
                 fill
                 sizes="48px"

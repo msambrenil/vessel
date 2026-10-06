@@ -186,10 +186,10 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     vi.clearAllMocks();
   });
 
-  it("debe renderizar la cabecera táctica con el título 'Chongos & Citas (Agenda)' y credencial AES-256", () => {
+  it("debe renderizar la cabecera táctica con el título 'Citas (Agenda)' y credencial AES-256", () => {
     render(<DateDiaryView />);
 
-    expect(screen.getByText(/Chongos & Citas/i)).toBeInTheDocument();
+    expect(screen.getByText(/Citas \(Agenda\)/i)).toBeInTheDocument();
     expect(screen.getAllByText(/AES-256/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Anotar Cita|Documentar Encuentro/i)).toBeInTheDocument();
   });

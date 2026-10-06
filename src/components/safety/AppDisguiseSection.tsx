@@ -12,7 +12,6 @@ export const AppDisguiseSection: React.FC = () => {
   const {
     appDisguise,
     setAppDisguiseMode,
-    setCoverScreenActive,
     toggleStealthMode,
     openDuressPinSettings,
     language,
@@ -29,23 +28,11 @@ export const AppDisguiseSection: React.FC = () => {
           </h3>
           <p className="text-[10px] text-neutral-400 font-mono mt-0.5">
             {language === "es"
-              ? "Camuflá la app en tu pantalla de inicio y activá pantallas señuelo"
-              : "Disguise the app on your home screen and activate decoy screens"}
+              ? "Camuflá la app en tu pantalla de inicio y activá el modo sigilo en el radar"
+              : "Disguise the app on your home screen and activate stealth mode on radar"}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              audioEngine.playPulse();
-              setCoverScreenActive(true);
-            }}
-            className="px-3 py-1.5 min-h-[38px] bg-white/10 hover:bg-white/20 border border-white/15 text-white font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-sm"
-          >
-            <span>🛡️</span>
-            <span>{language === "es" ? "Señuelo" : "Decoy"}</span>
-          </button>
-
           <button
             type="button"
             onClick={() => {
@@ -53,7 +40,7 @@ export const AppDisguiseSection: React.FC = () => {
               toggleStealthMode();
             }}
             className="px-3 py-1.5 min-h-[38px] bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 font-mono text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-sm"
-            title="Bloquear pantalla con PIN inmediatamente"
+            title="Activar o desactivar modo sigilo invisible en radar"
           >
             <span>🔒</span>
             <span>{language === "es" ? "Bloqueo Sigilo" : "Stealth Lock"}</span>

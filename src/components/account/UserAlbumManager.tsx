@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useVessel, FREE_TIER_LIMITS } from "@/context/VesselContext";
-import { UserAlbum, AlbumPrivacy } from "@/types/vessel";
+import { AlbumPrivacy } from "@/types/vessel";
 import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { CreateAlbumModal } from "./CreateAlbumModal";
 import { AlbumDetailModal } from "./AlbumDetailModal";
@@ -160,7 +160,7 @@ export const UserAlbumManager: React.FC = () => {
               {allPhotos.length === 0 ? (
                 <div className="flex-1 p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-2">
                   <span className="text-[11px] text-neutral-400 font-mono">
-                    Aún no cargaste fotos en tus álbumes. Creá o abrí tu álbum para añadir fotos.
+                    Aún no cargaste fotos en tus álbumes. Creá o abrí tu álbum para agregar fotos.
                   </span>
                   <button
                     type="button"

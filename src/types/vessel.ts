@@ -222,11 +222,11 @@ export interface VesselProfile {
   isCurrentUser?: boolean; // True si corresponde al usuario activo de la app
   verification: IdentityVerification; // Sistema de Verificación de Identidad Digital
   totalEncountersVerified: number; // Contador total público de verificaciones de encuentros físicos
-  galleryUrls: string[];
-  privateVault: PrivateVaultItem[];
-  testimonials: EncounterTestimonial[];
-  kinks: string[];
-  healthStatus: {
+  galleryUrls?: string[];
+  privateVault?: PrivateVaultItem[];
+  testimonials?: EncounterTestimonial[];
+  kinks?: string[];
+  healthStatus?: {
     prep: boolean;
     testedDate: string;
     details: string;

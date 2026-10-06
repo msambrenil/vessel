@@ -16,7 +16,7 @@ import {
   LogisticsTab,
 } from "./tabs";
 import { EasyProfileCardView } from "./EasyProfileCardView";
-import { TacticalBadge, BrutalistButton, SectionHeroHeader } from "@/components/ui";
+import { SectionHeroHeader } from "@/components/ui";
 import {
   checkCodenameAvailability,
   claimCodename,
@@ -597,11 +597,11 @@ export const ProtocolView: React.FC = () => {
           {/* =========================================================================
               2. CONMUTADOR SEGMENTADO STICKY (4 SOLAPAS TÁCTICAS)
               ========================================================================= */}
-          <div className="sticky top-2 z-30 bg-obsidian-surface/95 p-1.5 rounded-2xl border border-white/15 backdrop-blur-xl shadow-card-elevation">
+          <div className="sticky top-2 z-30 bg-obsidian-surface/95 p-1 sm:p-1.5 rounded-2xl border border-white/15 backdrop-blur-xl shadow-card-elevation">
             <div
               role="tablist"
               aria-label={language === "es" ? "Secciones de Mi Perfil" : "My Profile Sections"}
-              className="grid grid-cols-4 gap-1.5"
+              className="grid grid-cols-4 gap-1 sm:gap-1.5"
             >
               {/* Pestaña 1: Mi Ficha */}
               <button
@@ -612,13 +612,13 @@ export const ProtocolView: React.FC = () => {
                   setActiveMacroTab("public");
                   audioEngine.playPulse();
                 }}
-                className={`py-2 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+                className={`py-1.5 sm:py-2 px-1 min-h-[46px] sm:min-h-[44px] rounded-xl text-[10px] sm:text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
                   activeMacroTab === "public"
                     ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <User className="w-4 h-4 flex-shrink-0" />
+                <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="truncate hidden sm:inline">{language === "es" ? "Mi Ficha" : "Profile"}</span>
                 <span className="truncate sm:hidden">{language === "es" ? "Ficha" : "Bio"}</span>
               </button>
@@ -632,17 +632,22 @@ export const ProtocolView: React.FC = () => {
                   setActiveMacroTab("vaults");
                   audioEngine.playPulse();
                 }}
-                className={`py-2 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
+                className={`py-1.5 sm:py-2 px-1 min-h-[46px] sm:min-h-[44px] rounded-xl text-[10px] sm:text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
                   activeMacroTab === "vaults"
                     ? "bg-electricViolet text-white shadow-violet-soft font-extrabold"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <FolderLock className="w-4 h-4 flex-shrink-0" />
+                <div className="relative flex-shrink-0">
+                  <FolderLock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {userAlbums.length > 0 && (
+                    <span className="sm:hidden absolute -top-1 -right-1.5 w-1.5 h-1.5 rounded-full bg-electricViolet-glow" />
+                  )}
+                </div>
                 <span className="truncate hidden sm:inline">{language === "es" ? "Bóvedas" : "Vaults"}</span>
                 <span className="truncate sm:hidden">{language === "es" ? "Fotos" : "Vaults"}</span>
                 <span
-                  className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                  className={`hidden sm:inline text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
                     activeMacroTab === "vaults"
                       ? "bg-white/20 text-white font-extrabold"
                       : "bg-white/10 text-neutral-300"
@@ -661,13 +666,13 @@ export const ProtocolView: React.FC = () => {
                   setActiveMacroTab("logistics");
                   audioEngine.playPulse();
                 }}
-                className={`py-2 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 ${
+                className={`py-1.5 sm:py-2 px-1 min-h-[46px] sm:min-h-[44px] rounded-xl text-[10px] sm:text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 ${
                   activeMacroTab === "logistics"
                     ? "bg-bloodNeon text-white shadow-blood-glow font-extrabold"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Flame className="w-4 h-4 flex-shrink-0" />
+                <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="truncate hidden sm:inline">{language === "es" ? "Logística" : "Logistics"}</span>
                 <span className="truncate sm:hidden">{language === "es" ? "Morbos" : "Kinks"}</span>
               </button>
@@ -681,20 +686,27 @@ export const ProtocolView: React.FC = () => {
                   setActiveMacroTab("security");
                   audioEngine.playPulse();
                 }}
-                className={`py-2 px-1.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 ${
+                className={`py-1.5 sm:py-2 px-1 min-h-[46px] sm:min-h-[44px] rounded-xl text-[10px] sm:text-xs font-mono font-bold flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 ${
                   activeMacroTab === "security"
                     ? "bg-purple-600 text-white shadow-sm font-extrabold"
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+                <div className="relative flex-shrink-0">
+                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  {pendingTestimonialsCount > 0 ? (
+                    <span className="sm:hidden absolute -top-1 -right-1 w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow animate-pulse" />
+                  ) : activeBoundariesCount > 0 ? (
+                    <span className="sm:hidden absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-purple-300" />
+                  ) : null}
+                </div>
                 <span className="truncate hidden sm:inline">{language === "es" ? "Seguridad" : "Security"}</span>
                 <span className="truncate sm:hidden">{language === "es" ? "Seguridad" : "Safety"}</span>
                 {pendingTestimonialsCount > 0 ? (
-                  <span className="w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow animate-pulse" />
+                  <span className="hidden sm:inline w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow animate-pulse" />
                 ) : activeBoundariesCount > 0 ? (
                   <span
-                    className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                    className={`hidden sm:inline text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
                       activeMacroTab === "security"
                         ? "bg-white/20 text-white font-extrabold"
                         : "bg-purple-500/20 text-purple-300"

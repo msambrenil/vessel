@@ -86,6 +86,124 @@ export const isGhostOrMockProfile = (p: Partial<VesselProfile> | undefined | nul
 };
 
 /**
+ * Normaliza y complementa defensivamente un documento de perfil público de Firestore,
+ * garantizando que colecciones como galleryUrls, testimonials, privateVault, kinks,
+ * healthStatus y verification cumplan la firma estricta de VesselProfile y nunca causen TypeError.
+ */
+export const normalizeMatrixProfile = (
+  p: Partial<VesselProfile> | undefined | null
+): VesselProfile => {
+  if (!p) {
+    return {
+      id: "unknown",
+      codename: "OPERATIVO",
+      age: 28,
+      showAge: true,
+      twitterHandle: "",
+      yoSoy: "Musculoso / Gym",
+      mobility: "Me muevo / voy",
+      hivStatus: "Lo charlamos por privado",
+      genderIdentity: "",
+      pronouns: "",
+      desires: [],
+      intentions: [],
+      boundaries: [],
+      energyVibes: [],
+      respectScore: 100,
+      isAntiGhost: true,
+      responseRateMinutes: 3,
+      distanceMeters: 50,
+      bodyState: "open",
+      role: "Versátil",
+      heightCm: 175,
+      weightKg: 75,
+      bodyArchetype: "Atlético",
+      intensity: 3,
+      hosting: "Me muevo / voy",
+      tagline: "VESSEL OPERATIVE",
+      statement: "Operativo en la Matrix",
+      avatarUrl: "",
+      isStylizedAvatar: false,
+      isFogMode: false,
+      isCurrentUser: false,
+      verification: {
+        isVerified: false,
+        hasFacialPrivacy: true,
+        badgeLabel: "NO VERIFICADO",
+        trustScore: 80,
+      },
+      totalEncountersVerified: 0,
+      galleryUrls: [],
+      privateVault: [],
+      testimonials: [],
+      kinks: [],
+      healthStatus: {
+        prep: false,
+        testedDate: "AL DÍA",
+        details: "Lo charlamos por privado",
+      },
+      coordinates: { lat: -34.588, lng: -58.43 },
+    } as unknown as VesselProfile;
+  }
+
+  const avatarUrl = typeof p.avatarUrl === "string" ? p.avatarUrl : "";
+  const rawGallery = Array.isArray(p.galleryUrls) ? p.galleryUrls.filter(Boolean) : [];
+  const galleryUrls = rawGallery.length > 0 ? rawGallery : (avatarUrl ? [avatarUrl] : []);
+
+  return {
+    ...p,
+    id: p.id || "unknown",
+    codename: p.codename || "OPERATIVO",
+    age: typeof p.age === "number" ? p.age : 28,
+    showAge: p.showAge ?? true,
+    twitterHandle: p.twitterHandle || "",
+    yoSoy: (p.yoSoy as any) || "Musculoso / Gym",
+    mobility: (p.mobility as any) || "Me muevo / voy",
+    hivStatus: (p.hivStatus as any) || "Lo charlamos por privado",
+    genderIdentity: p.genderIdentity || "",
+    pronouns: p.pronouns || "",
+    desires: Array.isArray(p.desires) ? p.desires : [],
+    intentions: Array.isArray(p.intentions) ? p.intentions : [],
+    boundaries: Array.isArray(p.boundaries) ? p.boundaries : [],
+    energyVibes: Array.isArray(p.energyVibes) ? p.energyVibes : [],
+    respectScore: typeof p.respectScore === "number" ? p.respectScore : 100,
+    isAntiGhost: p.isAntiGhost ?? true,
+    responseRateMinutes: typeof p.responseRateMinutes === "number" ? p.responseRateMinutes : 3,
+    distanceMeters: typeof p.distanceMeters === "number" ? p.distanceMeters : 50,
+    bodyState: p.bodyState || "open",
+    role: p.role || "Versátil",
+    heightCm: typeof p.heightCm === "number" ? p.heightCm : 175,
+    weightKg: typeof p.weightKg === "number" ? p.weightKg : 75,
+    bodyArchetype: p.bodyArchetype || p.yoSoy || "Atlético",
+    intensity: p.intensity ?? 3,
+    hosting: p.hosting || p.mobility || "Me muevo / voy",
+    tagline: p.tagline || (p.genderIdentity ? `${p.genderIdentity} • ${p.pronouns}` : "VESSEL OPERATIVE"),
+    statement: p.statement || (Array.isArray(p.intentions) && p.intentions.length > 0 ? p.intentions.join(" · ") : "Operativo en la Matrix"),
+    avatarUrl,
+    isStylizedAvatar: !!p.isStylizedAvatar,
+    isFogMode: !!p.isFogMode,
+    isCurrentUser: !!p.isCurrentUser,
+    verification: p.verification || {
+      isVerified: false,
+      hasFacialPrivacy: true,
+      badgeLabel: "NO VERIFICADO",
+      trustScore: 80,
+    },
+    totalEncountersVerified: typeof p.totalEncountersVerified === "number" ? p.totalEncountersVerified : 0,
+    galleryUrls,
+    privateVault: Array.isArray(p.privateVault) ? p.privateVault : [],
+    testimonials: Array.isArray(p.testimonials) ? p.testimonials : [],
+    kinks: Array.isArray(p.kinks) ? p.kinks : [],
+    healthStatus: p.healthStatus || {
+      prep: /prep/i.test(p.hivStatus || ""),
+      testedDate: "AL DÍA",
+      details: p.hivStatus || "No especificado",
+    },
+    coordinates: p.coordinates || { lat: -34.588, lng: -58.43 },
+  } as VesselProfile;
+};
+
+/**
  * Escucha en tiempo real todos los perfiles de la matriz
  * En modo real: Solo retorna perfiles reales de usuarios, filtra y purga cualquier documento fantasma/mock.
  * En modo prueba: Retorna perfiles de prueba como fallback.
@@ -108,12 +226,12 @@ export const subscribeToMatrixProfiles = (
 
         if (mode === "real") {
           const realProfiles = allDocs
-            .map((item) => item.data)
+            .map((item) => normalizeMatrixProfile(item.data))
             .filter((p) => !isGhostOrMockProfile(p));
           onUpdate(realProfiles);
         } else {
           const validProfiles = allDocs
-            .map((item) => item.data)
+            .map((item) => normalizeMatrixProfile(item.data))
             .filter((p) => p && p.id && p.codename && p.coordinates && typeof p.coordinates.lat === "number");
           onUpdate(validProfiles.length > 0 ? validProfiles : MOCK_PROFILES);
         }

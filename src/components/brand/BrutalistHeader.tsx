@@ -17,6 +17,200 @@ import {
 } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { BeaconCountdownWidget } from "@/components/safety/BeaconCountdownWidget";
+import { OnTheClockState } from "@/types/vessel";
+
+interface ActiveReadyNowBadgeProps {
+  myOnTheClock: OnTheClockState;
+  stopOnTheClock: () => void;
+  language: string;
+}
+
+const ActiveReadyNowBadge: React.FC<ActiveReadyNowBadgeProps> = React.memo(({
+  myOnTheClock,
+  stopOnTheClock,
+  language,
+}) => {
+  const [now, setNow] = React.useState<number>(() => Date.now());
+
+  React.useEffect(() => {
+    const updateTick = () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      setNow(Date.now());
+    };
+
+    const interval = setInterval(updateTick, 1000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        setNow(Date.now());
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
+
+  const { elapsedDegrees, countdownLabel } = React.useMemo(() => {
+    if (!myOnTheClock?.expiresAt) {
+      return { elapsedDegrees: 0, countdownLabel: "" };
+    }
+
+    const expiresAtMs = new Date(myOnTheClock.expiresAt).getTime();
+    const durationMinutes = myOnTheClock.durationMinutes || 60;
+    const totalDurationMs = durationMinutes * 60 * 1000;
+    const startedAtMs = myOnTheClock.startedAt
+      ? new Date(myOnTheClock.startedAt).getTime()
+      : expiresAtMs - totalDurationMs;
+
+    const effectiveTotalMs =
+      expiresAtMs > startedAtMs ? expiresAtMs - startedAtMs : totalDurationMs;
+    const remainingMs = Math.max(0, expiresAtMs - now);
+
+    const remainingFraction =
+      effectiveTotalMs > 0 ? remainingMs / effectiveTotalMs : 0;
+    const elapsedFraction = 1 - remainingFraction;
+
+    const deg = Math.min(360, Math.max(0, elapsedFraction * 360));
+
+    const remainingMinutes = Math.ceil(remainingMs / 60000);
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+
+    const label =
+      remainingMinutes > 1
+        ? `${remainingMinutes}m`
+        : remainingSeconds > 0
+        ? `${remainingSeconds}s`
+        : "0m";
+
+    return { elapsedDegrees: deg, countdownLabel: label };
+  }, [
+    myOnTheClock?.expiresAt,
+    myOnTheClock?.durationMinutes,
+    myOnTheClock?.startedAt,
+    now,
+  ]);
+
+  const clockGradient = React.useMemo(() => {
+    const deg = Math.round(elapsedDegrees * 10) / 10;
+
+    if (deg <= 0.5) {
+      return `conic-gradient(from 0deg at 50% 50%, #8b5cf6 0deg, #a855f7 180deg, #8b5cf6 360deg)`;
+    }
+
+    if (deg >= 359.5) {
+      return `rgba(139, 92, 246, 0.15)`;
+    }
+
+    const sparkEnd = Math.min(360, deg + 4);
+
+    return `conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255, 255, 255, 0.12) 0deg,
+      rgba(255, 255, 255, 0.12) ${deg}deg,
+      #ffffff ${deg}deg,
+      #c084fc ${sparkEnd}deg,
+      #8b5cf6 ${sparkEnd}deg,
+      #8b5cf6 360deg
+    )`;
+  }, [elapsedDegrees]);
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        audioEngine.playSubBass(60, 0.15);
+        stopOnTheClock();
+      }}
+      className="group relative overflow-hidden flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-1 min-h-[36px] sm:min-h-[38px] rounded-full bg-obsidian-deep/95 text-white font-mono text-[10px] sm:text-[10.5px] font-black shadow-[0_0_15px_rgba(139,92,246,0.35)] cursor-pointer hover:brightness-110 active:scale-95 transition-all select-none"
+      title={
+        language === "es"
+          ? `Listo ahora activo • Restan ${countdownLabel} • Tocá para pausar`
+          : `Ready now active • ${countdownLabel} left • Tap to pause`
+      }
+      aria-label={
+        language === "es"
+          ? `Listo ahora activo. Restan ${countdownLabel}. Tocá para desactivar.`
+          : `Ready now active. ${countdownLabel} left. Tap to deactivate.`
+      }
+    >
+      {/* Borde Estilo Reloj de Conteo Regresivo Dinámico (Degradado Cónico) */}
+      <div
+        data-testid="header-on-the-clock-border"
+        className="absolute inset-0 rounded-full pointer-events-none p-[2px] z-10 overflow-hidden"
+        style={{
+          background: clockGradient,
+          WebkitMask:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+          filter:
+            "drop-shadow(0 0 5px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 10px rgba(139, 92, 246, 0.45))",
+        }}
+      />
+
+      {/* Punto indicador + Rayo + Texto con tiempo */}
+      <span className="relative z-20 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
+        <Zap className="w-3 h-3 text-electricViolet fill-electricViolet" />
+        <span className="font-mono font-black tracking-wider whitespace-nowrap">
+          {language === "es" ? "LISTO" : "READY"}
+          {countdownLabel && (
+            <span className="ml-1 text-electricViolet-glow font-bold text-[9px] sm:text-[9.5px]">
+              · {countdownLabel}
+            </span>
+          )}
+        </span>
+      </span>
+    </button>
+  );
+});
+ActiveReadyNowBadge.displayName = "ActiveReadyNowBadge";
+
+interface HeaderReadyNowButtonProps {
+  myOnTheClock?: OnTheClockState;
+  startOnTheClock: (durationMinutes: number, note?: string) => void;
+  stopOnTheClock: () => void;
+  language: string;
+}
+
+const HeaderReadyNowButton: React.FC<HeaderReadyNowButtonProps> = React.memo(({
+  myOnTheClock,
+  startOnTheClock,
+  stopOnTheClock,
+  language,
+}) => {
+  if (myOnTheClock?.isActive) {
+    return (
+      <ActiveReadyNowBadge
+        myOnTheClock={myOnTheClock}
+        stopOnTheClock={stopOnTheClock}
+        language={language}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        audioEngine.playSubBass(70, 0.15);
+        startOnTheClock(60, language === "es" ? "Disponible ahora" : "Available now");
+      }}
+      className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 min-h-[36px] sm:min-h-[38px] rounded-full bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-electricViolet/10 text-neutral-300 hover:text-white font-mono text-[10px] sm:text-[10.5px] font-semibold transition-all cursor-pointer active:scale-95"
+      title={language === "es" ? "Activar disponibilidad inmediata (1 hora)" : "Activate immediate availability (1 hour)"}
+      aria-label={language === "es" ? "Activarme disponible" : "Activate availability"}
+    >
+      <Zap className="w-3 h-3 text-electricViolet" />
+      <span className="hidden min-[380px]:inline">{language === "es" ? "Estoy listo" : "Ready now"}</span>
+      <span className="min-[380px]:hidden">{language === "es" ? "Listo" : "Ready"}</span>
+    </button>
+  );
+});
+HeaderReadyNowButton.displayName = "HeaderReadyNowButton";
 
 export const BrutalistHeader: React.FC = () => {
   const {
@@ -52,86 +246,7 @@ export const BrutalistHeader: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Temporizador en tiempo real y degradado cónico de barra de progreso para Listo YA
-  const [now, setNow] = React.useState<number>(() => Date.now());
 
-  React.useEffect(() => {
-    if (!myOnTheClock?.isActive) return;
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [myOnTheClock?.isActive]);
-
-  const { elapsedDegrees, countdownLabel } = React.useMemo(() => {
-    if (!myOnTheClock?.isActive || !myOnTheClock?.expiresAt) {
-      return { elapsedDegrees: 0, countdownLabel: "" };
-    }
-
-    const expiresAtMs = new Date(myOnTheClock.expiresAt).getTime();
-    const durationMinutes = myOnTheClock.durationMinutes || 60;
-    const totalDurationMs = durationMinutes * 60 * 1000;
-    const startedAtMs = myOnTheClock.startedAt
-      ? new Date(myOnTheClock.startedAt).getTime()
-      : expiresAtMs - totalDurationMs;
-
-    const effectiveTotalMs =
-      expiresAtMs > startedAtMs ? expiresAtMs - startedAtMs : totalDurationMs;
-    const remainingMs = Math.max(0, expiresAtMs - now);
-
-    const remainingFraction =
-      effectiveTotalMs > 0 ? remainingMs / effectiveTotalMs : 0;
-    const elapsedFraction = 1 - remainingFraction;
-
-    // 0deg = 12 en punto. El borde se apaga en sentido horario
-    const deg = Math.min(360, Math.max(0, elapsedFraction * 360));
-
-    const remainingMinutes = Math.ceil(remainingMs / 60000);
-    const remainingSeconds = Math.ceil(remainingMs / 1000);
-
-    const label =
-      remainingMinutes > 1
-        ? `${remainingMinutes}m`
-        : remainingSeconds > 0
-        ? `${remainingSeconds}s`
-        : "0m";
-
-    return { elapsedDegrees: deg, countdownLabel: label };
-  }, [
-    myOnTheClock?.isActive,
-    myOnTheClock?.expiresAt,
-    myOnTheClock?.durationMinutes,
-    myOnTheClock?.startedAt,
-    now,
-  ]);
-
-  const clockGradient = React.useMemo(() => {
-    if (!myOnTheClock?.isActive) return "";
-
-    const deg = Math.round(elapsedDegrees * 10) / 10;
-
-    if (deg <= 0.5) {
-      // 100% completo e iluminado en violeta neón
-      return `conic-gradient(from 0deg at 50% 50%, #8b5cf6 0deg, #a855f7 180deg, #8b5cf6 360deg)`;
-    }
-
-    if (deg >= 359.5) {
-      // Completamente consumido
-      return `rgba(139, 92, 246, 0.15)`;
-    }
-
-    const sparkEnd = Math.min(360, deg + 4);
-
-    return `conic-gradient(
-      from 0deg at 50% 50%,
-      rgba(255, 255, 255, 0.12) 0deg,
-      rgba(255, 255, 255, 0.12) ${deg}deg,
-      #ffffff ${deg}deg,
-      #c084fc ${sparkEnd}deg,
-      #8b5cf6 ${sparkEnd}deg,
-      #8b5cf6 360deg
-    )`;
-  }, [myOnTheClock?.isActive, elapsedDegrees]);
 
   const [isMenuOpen, setIsMenuOpen] = React.useState<boolean>(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -183,7 +298,7 @@ export const BrutalistHeader: React.FC = () => {
       : rawCodename;
 
   return (
-    <header className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md border-b border-white/10 px-2.5 sm:px-4 py-1.5 pt-[max(env(safe-area-inset-top,0px),0.375rem)] select-none shadow-sm">
+    <div className="w-full px-2.5 sm:px-4 py-1.5 pt-[max(env(safe-area-inset-top,0px),0.375rem)] select-none">
       <div className="flex items-center justify-between gap-2 max-w-4xl mx-auto">
         {/* =========================================================
             ZONA IZQUIERDA: Marca & Identidad del Sistema
@@ -195,12 +310,13 @@ export const BrutalistHeader: React.FC = () => {
               audioEngine.playPulse();
               setActiveView("grid");
             }}
-            className="flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all p-1 -ml-1 min-h-[40px] rounded-xl hover:bg-white/5 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet/60"
+            className="flex items-center gap-1.5 sm:gap-2 hover:opacity-90 active:scale-95 transition-all p-1 -ml-1 min-h-[40px] rounded-xl hover:bg-white/5 cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet/60"
             title="VESSEL · Matriz & Radar"
             aria-label="Ir al inicio de VESSEL"
           >
-            <VesselLogo size={24} showWordmark={true} />
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-electricViolet/10 border border-electricViolet/30 text-electricViolet-glow text-[9px] font-mono font-bold uppercase tracking-wider">
+            <VesselLogo size={24} showWordmark={true} className="hidden min-[400px]:inline-flex" />
+            <VesselLogo size={24} showWordmark={false} className="min-[400px]:hidden" />
+            <span className="hidden min-[480px]:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-electricViolet/10 border border-electricViolet/30 text-electricViolet-glow text-[9px] font-mono font-bold uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
               {t.system?.live || "EN VIVO"}
             </span>
@@ -221,9 +337,9 @@ export const BrutalistHeader: React.FC = () => {
                   setActiveChatProfileId(activeRendezvous.profileId);
                 }
               }}
-              aria-label={`Punto de Encuentro Activo con ${activeRendezvous.profileCodename || "usuario"}. Tocar para abrir chat`}
+              aria-label={`Punto de Encuentro Activo con ${activeRendezvous.profileCodename || "usuario"}. Tocá para abrir chat`}
               className="flex items-center gap-1.5 bg-bloodNeon/20 border border-bloodNeon/60 hover:bg-bloodNeon/30 hover:border-bloodNeon text-bloodNeon px-2.5 py-1.5 min-h-[36px] rounded-full transition-all shadow-[0_0_15px_rgba(230,25,55,0.35)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 group flex-shrink-0"
-              title={`Punto de Encuentro Activo con ${activeRendezvous.profileCodename || "usuario"} - Tocar para abrir chat`}
+              title={`Punto de Encuentro Activo con ${activeRendezvous.profileCodename || "usuario"} - Tocá para abrir chat`}
             >
               <span className="w-2 h-2 rounded-full bg-bloodNeon animate-ping flex-shrink-0" />
               <span className="text-[10px] text-bloodNeon font-black font-mono tracking-wider uppercase group-hover:text-white transition-colors truncate max-w-[90px] sm:max-w-none">
@@ -256,71 +372,13 @@ export const BrutalistHeader: React.FC = () => {
             ZONA DERECHA: Botón de Estado Rápido + Menú de Usuario
             ========================================================= */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-          {/* Quick Toggle On-The-Clock / Estoy Listo con Barra de Progreso de Borde */}
-          {myOnTheClock?.isActive ? (
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playSubBass(60, 0.15);
-                stopOnTheClock();
-              }}
-              className="group relative overflow-hidden flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-1 min-h-[36px] sm:min-h-[38px] rounded-full bg-obsidian-deep/95 text-white font-mono text-[10px] sm:text-[10.5px] font-black shadow-[0_0_15px_rgba(139,92,246,0.35)] cursor-pointer hover:brightness-110 active:scale-95 transition-all select-none"
-              title={
-                language === "es"
-                  ? `Listo ahora activo • Restan ${countdownLabel} • Tocar para pausar`
-                  : `Ready now active • ${countdownLabel} left • Tap to pause`
-              }
-              aria-label={
-                language === "es"
-                  ? `Listo ahora activo. Restan ${countdownLabel}. Tocar para desactivar.`
-                  : `Ready now active. ${countdownLabel} left. Tap to deactivate.`
-              }
-            >
-              {/* Borde Estilo Reloj de Conteo Regresivo Dinámico (Degradado Cónico) */}
-              <div
-                data-testid="header-on-the-clock-border"
-                className="absolute inset-0 rounded-full pointer-events-none p-[2px] z-10 overflow-hidden"
-                style={{
-                  background: clockGradient,
-                  WebkitMask:
-                    "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                  mask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                  WebkitMaskComposite: "xor",
-                  maskComposite: "exclude",
-                  filter:
-                    "drop-shadow(0 0 5px rgba(168, 85, 247, 0.85)) drop-shadow(0 0 10px rgba(139, 92, 246, 0.45))",
-                }}
-              />
-
-              {/* Punto indicador + Rayo + Texto con tiempo */}
-              <span className="relative z-20 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
-                <Zap className="w-3 h-3 text-electricViolet fill-electricViolet" />
-                <span className="font-mono font-black tracking-wider whitespace-nowrap">
-                  {language === "es" ? "LISTO" : "READY"}
-                  {countdownLabel && (
-                    <span className="ml-1 text-electricViolet-glow font-bold text-[9px] sm:text-[9.5px]">
-                      · {countdownLabel}
-                    </span>
-                  )}
-                </span>
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playSubBass(70, 0.15);
-                startOnTheClock(60, language === "es" ? "Disponible ahora" : "Available now");
-              }}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 min-h-[36px] sm:min-h-[38px] rounded-full bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-electricViolet/10 text-neutral-300 hover:text-white font-mono text-[10px] sm:text-[10.5px] font-semibold transition-all cursor-pointer active:scale-95"
-              title={language === "es" ? "Activar disponibilidad inmediata (1 hora)" : "Activate immediate availability (1 hour)"}
-              aria-label={language === "es" ? "Activarme disponible" : "Activate availability"}
-            >
-              <Zap className="w-3 h-3 text-electricViolet" />
-              <span>{language === "es" ? "Estoy listo" : "Ready now"}</span>
-            </button>
-          )}
+          {/* Quick Toggle On-The-Clock / Estoy Listo con Barra de Progreso Aislada */}
+          <HeaderReadyNowButton
+            myOnTheClock={myOnTheClock}
+            startOnTheClock={startOnTheClock}
+            stopOnTheClock={stopOnTheClock}
+            language={language}
+          />
 
           <div className="relative flex items-center flex-shrink-0" ref={menuRef}>
           <button
@@ -365,7 +423,7 @@ export const BrutalistHeader: React.FC = () => {
             </div>
 
             {/* Nombre de Usuario / Invitado */}
-            <span className="text-[11px] font-mono font-bold tracking-tight uppercase truncate max-w-[80px] sm:max-w-[110px]">
+            <span className="text-[11px] font-mono font-bold tracking-tight uppercase truncate max-w-[65px] min-[380px]:max-w-[85px] sm:max-w-[110px]">
               {isAuthenticated ? userCodename : (t.header?.guestSession || "INVITADO")}
             </span>
 
@@ -431,7 +489,7 @@ export const BrutalistHeader: React.FC = () => {
                     </span>
                     <span className="text-[10px] text-neutral-400 truncate">
                       {!appSettings.soundEnabled
-                        ? "Silenciado • Tocar para activar"
+                        ? "Silenciado • Tocá para activar"
                         : !isAudioUnlocked
                         ? "Requiere toque para calibrar"
                         : "Resonancia analógica activa"}
@@ -581,6 +639,6 @@ export const BrutalistHeader: React.FC = () => {
         </div>
       </div>
     </div>
-  </header>
-);
+    </div>
+  );
 };
