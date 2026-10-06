@@ -366,11 +366,28 @@ export const MembershipsTab: React.FC<MembershipsTabProps> = ({
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-800 border border-white/20 flex-shrink-0">
-                          <img
-                            src={user.avatarUrl}
-                            alt={user.codename}
-                            className="w-full h-full object-cover"
-                          />
+                          {user.avatarUrl ? (
+                            <img
+                              src={user.avatarUrl}
+                              alt={user.codename}
+                              referrerPolicy="no-referrer"
+                              crossOrigin="anonymous"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = "none";
+                                const parent = e.currentTarget.parentElement;
+                                const fallback = parent?.querySelector(".membership-avatar-fallback");
+                                if (fallback) (fallback as HTMLElement).style.display = "flex";
+                              }}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : null}
+                          <div
+                            className={`membership-avatar-fallback w-full h-full flex items-center justify-center font-bold text-xs text-electricViolet-glow font-mono ${
+                              user.avatarUrl ? "hidden" : "flex"
+                            }`}
+                          >
+                            {(user.codename || "U").slice(0, 2).toUpperCase()}
+                          </div>
                         </div>
                         <div>
                           <div className="font-bold text-white">{user.codename}</div>

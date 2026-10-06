@@ -206,6 +206,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   <img
                     src={currentStaff.avatarUrl}
                     alt={currentStaff.name}
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -262,6 +264,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                             <img
                               src={member.avatarUrl}
                               alt={member.name}
+                              referrerPolicy="no-referrer"
+                              crossOrigin="anonymous"
                               className="w-full h-full object-cover"
                             />
                           ) : (

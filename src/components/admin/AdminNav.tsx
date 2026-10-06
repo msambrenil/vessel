@@ -362,6 +362,8 @@ export const AdminNav: React.FC<AdminNavProps> = ({
                 <img
                   src={currentStaff.avatarUrl}
                   alt={currentStaff.name}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                   className="w-full h-full object-cover"
                 />
               ) : (

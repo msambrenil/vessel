@@ -167,6 +167,8 @@ export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({
                           <img
                             src={member.avatarUrl}
                             alt={member.name}
+                            referrerPolicy="no-referrer"
+                            crossOrigin="anonymous"
                             className="w-full h-full object-cover"
                           />
                         ) : (

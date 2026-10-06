@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { ManagedUserProfile, StaffMember, UserModerationStatus } from "@/types/admin";
 import {
   Search,
@@ -20,6 +20,7 @@ import {
   Sparkles,
   RefreshCw,
   Trash2,
+  CameraOff,
 } from "lucide-react";
 
 interface UserManagementTabProps {
@@ -65,6 +66,13 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
   const [userToDelete, setUserToDelete] = useState<ManagedUserProfile | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
+  const [selfieError, setSelfieError] = useState(false);
+
+  useEffect(() => {
+    setAvatarError(false);
+    setSelfieError(false);
+  }, [selectedUser?.id]);
 
   // Motivos preconfigurados rioplatenses para agilizar la moderación
   const reasonPresets = [
@@ -243,13 +251,24 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
                               <img
                                 src={user.avatarUrl}
                                 alt={user.codename}
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                  const parent = e.currentTarget.parentElement;
+                                  const fallback = parent?.querySelector(".table-avatar-fallback");
+                                  if (fallback) (fallback as HTMLElement).style.display = "flex";
+                                }}
                                 className={`w-full h-full object-cover ${isFog ? "blur-[2.5px]" : ""}`}
                               />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-electricViolet/20 text-electricViolet-glow font-bold text-xs font-mono">
-                                {(user.codename || "U").slice(0, 2).toUpperCase()}
-                              </div>
-                            )}
+                            ) : null}
+                            <div
+                              className={`table-avatar-fallback w-full h-full flex items-center justify-center bg-electricViolet/20 text-electricViolet-glow font-bold text-xs font-mono ${
+                                user.avatarUrl ? "hidden" : "flex"
+                              }`}
+                            >
+                              {(user.codename || "U").slice(0, 2).toUpperCase()}
+                            </div>
                             {isFog && (
                               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                                 <CloudFog className="w-3.5 h-3.5 text-white" />
@@ -436,10 +455,13 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-obsidian-deep">
               <div className="flex items-center gap-3">
                 <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-800 border border-white/20 flex-shrink-0">
-                  {selectedUser.avatarUrl ? (
+                  {selectedUser.avatarUrl && !avatarError ? (
                     <img
                       src={selectedUser.avatarUrl}
                       alt={selectedUser.codename}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      onError={() => setAvatarError(true)}
                       className={`w-full h-full object-cover ${
                         selectedUser.isFogMode || selectedUser.forcedFogMode ? "blur-[3px]" : ""
                       }`}
@@ -535,8 +557,17 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
                         <Shield className="w-4 h-4" />
                         Validación Biométrica Facial 3D
                       </span>
-                      <span className="text-[11px] font-bold text-emerald-400">
-                        Confianza: {selectedUser.verification?.trustScore || 88}%
+                      <span
+                        className={`text-[11px] font-bold ${
+                          (selectedUser.verification?.trustScore ?? 0) > 70
+                            ? "text-emerald-400"
+                            : "text-amber-400"
+                        }`}
+                      >
+                        Confianza:{" "}
+                        {selectedUser.verification?.trustScore ??
+                          (selectedUser.verification?.isVerified ? 88 : 0)}
+                        %
                       </span>
                     </div>
 
@@ -546,27 +577,65 @@ export const UserManagementTab: React.FC<UserManagementTabProps> = ({
                         <div className="text-[10px] text-neutral-400 mb-1.5 uppercase tracking-wider">
                           Foto de Perfil Pública
                         </div>
-                        <div className="aspect-square rounded-xl overflow-hidden bg-black border border-white/10 relative">
-                          <img
-                            src={selectedUser.avatarUrl}
-                            alt="Foto pública"
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="aspect-square rounded-xl overflow-hidden bg-black border border-white/10 relative flex items-center justify-center">
+                          {selectedUser.avatarUrl && !avatarError ? (
+                            <img
+                              src={selectedUser.avatarUrl}
+                              alt={`Foto pública de ${selectedUser.codename}`}
+                              referrerPolicy="no-referrer"
+                              crossOrigin="anonymous"
+                              onError={() => setAvatarError(true)}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-zinc-950 text-neutral-500">
+                              <CameraOff className="w-7 h-7 mb-1.5 text-neutral-600" />
+                              <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase">
+                                Sin Foto Pública
+                              </span>
+                              <span className="text-[8px] font-mono text-neutral-600 mt-0.5">
+                                {avatarError
+                                  ? "Error al cargar imagen externa"
+                                  : "Usuario registrado sin avatar"}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div>
                         <div className="text-[10px] text-neutral-400 mb-1.5 uppercase tracking-wider">
                           Selfie 3D de Validación
                         </div>
-                        <div className="aspect-square rounded-xl overflow-hidden bg-black border border-white/10 relative">
-                          <img
-                            src={selectedUser.avatarUrl}
-                            alt="Selfie 3D"
-                            className="w-full h-full object-cover filter contrast-125"
-                          />
-                          <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded bg-black/70 text-[9px] text-emerald-400 font-bold border border-emerald-500/40">
-                            SCAN 3D OK
-                          </div>
+                        <div className="aspect-square rounded-xl overflow-hidden bg-black border border-white/10 relative flex items-center justify-center">
+                          {selectedUser.isLivenessVerified && selectedUser.avatarUrl && !selfieError ? (
+                            <>
+                              <img
+                                src={selectedUser.avatarUrl}
+                                alt={`Selfie 3D de ${selectedUser.codename}`}
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                                onError={() => setSelfieError(true)}
+                                className="w-full h-full object-cover filter contrast-125"
+                              />
+                              <div className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded bg-black/70 text-[9px] text-emerald-400 font-bold border border-emerald-500/40">
+                                SCAN 3D OK
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-zinc-950 text-neutral-500">
+                              <ShieldAlert className="w-7 h-7 mb-1.5 text-amber-500/70" />
+                              <span className="text-[10px] font-mono font-bold text-amber-400 uppercase">
+                                {selectedUser.verification?.isVerified
+                                  ? "Validación Documental"
+                                  : "Pendiente de Escaneo"}
+                              </span>
+                              <span className="text-[8px] font-mono text-neutral-500 mt-0.5">
+                                {selectedUser.verification?.isVerified
+                                  ? "Aprobado sin biometría 3D"
+                                  : "Sin selfie biométrica registrada aún"}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

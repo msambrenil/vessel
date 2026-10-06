@@ -182,13 +182,23 @@ export const ModerationTab: React.FC<ModerationTabProps> = ({
                         <img
                           src={report.reporterAvatar}
                           alt={report.reporterCodename}
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = "none";
+                            const fallback = e.currentTarget.parentElement?.querySelector(".moderation-reporter-fallback");
+                            if (fallback) (fallback as HTMLElement).style.display = "flex";
+                          }}
                           className="w-8 h-8 rounded-full object-cover border border-white/20 flex-shrink-0"
                         />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/20 flex items-center justify-center text-xs font-bold text-neutral-400 flex-shrink-0">
-                          {report.reporterCodename[0]}
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className={`moderation-reporter-fallback w-8 h-8 rounded-full bg-zinc-800 border border-white/20 items-center justify-center text-xs font-bold text-neutral-400 flex-shrink-0 ${
+                          report.reporterAvatar ? "hidden" : "flex"
+                        }`}
+                      >
+                        {report.reporterCodename[0]}
+                      </div>
                       <div>
                         <div className="font-bold text-white">{report.reporterCodename}</div>
                         <div className="text-[10px] text-neutral-500">ID: {report.reporterId}</div>
@@ -220,13 +230,23 @@ export const ModerationTab: React.FC<ModerationTabProps> = ({
                         <img
                           src={report.reportedUserAvatar}
                           alt={report.reportedUserCodename}
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = "none";
+                            const fallback = e.currentTarget.parentElement?.querySelector(".moderation-reported-fallback");
+                            if (fallback) (fallback as HTMLElement).style.display = "flex";
+                          }}
                           className="w-8 h-8 rounded-full object-cover border border-bloodNeon/40 flex-shrink-0"
                         />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-zinc-800 border border-bloodNeon/40 flex items-center justify-center text-xs font-bold text-bloodNeon flex-shrink-0">
-                          {report.reportedUserCodename[0]}
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className={`moderation-reported-fallback w-8 h-8 rounded-full bg-zinc-800 border border-bloodNeon/40 items-center justify-center text-xs font-bold text-bloodNeon flex-shrink-0 ${
+                          report.reportedUserAvatar ? "hidden" : "flex"
+                        }`}
+                      >
+                        {report.reportedUserCodename[0]}
+                      </div>
                       <div>
                         <div className="font-bold text-white">{report.reportedUserCodename}</div>
                         <div className="text-[10px] text-neutral-400">ID: {report.reportedUserId}</div>

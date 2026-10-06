@@ -487,8 +487,9 @@ export const getManagedProfiles = (
       }
       const existing = userMap.get(p.id);
       userMap.set(p.id, {
-        ...p,
         ...existing,
+        ...p,
+        avatarUrl: p.avatarUrl || existing?.avatarUrl || "",
         moderationStatus: existing?.moderationStatus || "active",
         moderationNotes: existing?.moderationNotes || [],
         forcedFogMode: existing?.forcedFogMode ?? p.isFogMode ?? false,
@@ -553,6 +554,7 @@ export const fetchRealUsersFromCloud = async (): Promise<ManagedUserProfile[]> =
         }
         const override = overrideMap.get(id);
         users.push({
+          ...override,
           ...data,
           id,
           codename: data.codename || override?.codename || "USUARIO",
@@ -562,7 +564,7 @@ export const fetchRealUsersFromCloud = async (): Promise<ManagedUserProfile[]> =
           intensity: data.intensity ?? override?.intensity ?? 2,
           kinks: data.kinks || override?.kinks || [],
           coordinates: data.coordinates || override?.coordinates || { lat: -34.588, lng: -58.43 },
-          ...override,
+          avatarUrl: data.avatarUrl || override?.avatarUrl || "",
           moderationStatus: override?.moderationStatus || "active",
           moderationNotes: override?.moderationNotes || [],
           forcedFogMode: override?.forcedFogMode ?? data.isFogMode ?? false,
@@ -612,6 +614,7 @@ export const subscribeToRealUsersForAdmin = (
         }
         const override = overrideMap.get(id);
         users.push({
+          ...override,
           ...data,
           id,
           codename: data.codename || override?.codename || "USUARIO",
@@ -621,7 +624,7 @@ export const subscribeToRealUsersForAdmin = (
           intensity: data.intensity ?? override?.intensity ?? 2,
           kinks: data.kinks || override?.kinks || [],
           coordinates: data.coordinates || override?.coordinates || { lat: -34.588, lng: -58.43 },
-          ...override,
+          avatarUrl: data.avatarUrl || override?.avatarUrl || "",
           moderationStatus: override?.moderationStatus || "active",
           moderationNotes: override?.moderationNotes || [],
           forcedFogMode: override?.forcedFogMode ?? data.isFogMode ?? false,
