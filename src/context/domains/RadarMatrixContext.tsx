@@ -18,6 +18,7 @@ import {
   EncounterTestimonial,
   OperatingIntentMode,
   IntentClusterGroup,
+  ChatMessage,
 } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -45,12 +46,69 @@ import { loadFromStorage, saveToStorage, STORAGE_KEYS, getActiveAppMode } from "
 import { checkGenderInterestMatch } from "@/data/genderCatalog";
 import { MOCK_PROFILES } from "@/data/mockProfiles";
 import { isDeletedUserId } from "@/lib/admin/adminService";
+import { fetchPublicProfileById } from "@/lib/firebase/profileService";
 import { useAuth } from "./AuthContext";
 import { useLogistics } from "./LogisticsContext";
 import { useSettings } from "./SettingsContext";
 import { useSafety } from "./SafetyContext";
 import { useChat } from "./ChatContext";
 import { useDiary } from "./DiaryContext";
+
+/**
+ * Crea un perfil fallback consistente si el usuario aún no cargó desde Firestore.
+ * Garantiza que chats, agenda, fotos y pulsos NUNCA queden invisibles o colapsen la UI.
+ */
+export const createFallbackProfile = (id: string): VesselProfile => {
+  const isMock = id.startsWith("vessel-");
+  const fallbackCodename = isMock ? id.toUpperCase() : `USUARIO_${id.slice(0, 6).toUpperCase()}`;
+  return {
+    id,
+    codename: fallbackCodename,
+    age: 28,
+    showAge: false,
+    role: "Versatile",
+    yoSoy: "Discreto / Perfil bajo",
+    mobility: "Me muevo / voy",
+    hivStatus: "Lo charlamos por privado",
+    genderIdentity: "Hombre Cis",
+    pronouns: "Él",
+    orientation: "Gay",
+    avatarUrl: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80",
+    isStylizedAvatar: true,
+    bodyState: "dormant",
+    coordinates: { lat: -33.1325, lng: -64.3470 },
+    distanceMeters: 50,
+    respectScore: 100,
+    isAntiGhost: true,
+    desires: [],
+    intentions: [],
+    boundaries: [],
+    energyVibes: [],
+    heightCm: 180,
+    weightKg: 78,
+    bodyArchetype: "Muscular / Athletic",
+    intensity: 3,
+    hosting: "Me muevo / voy",
+    tagline: "VESSEL OPERATIVE",
+    statement: "Operativo en la Matrix",
+    verification: {
+      isVerified: false,
+      hasFacialPrivacy: true,
+      badgeLabel: "NO VERIFICADO",
+      trustScore: 80,
+    },
+    totalEncountersVerified: 0,
+    galleryUrls: [],
+    privateVault: [],
+    testimonials: [],
+    kinks: [],
+    healthStatus: {
+      prep: false,
+      testedDate: "",
+      details: "",
+    },
+  };
+};
 
 export const DEFAULT_FILTERS: FilterState = {
   bodyStates: ["open", "occupied", "dormant"],
@@ -165,6 +223,10 @@ export interface RadarMatrixContextType {
   operatingIntent: OperatingIntentMode;
   setOperatingIntent: (intent: OperatingIntentMode) => void;
   intentClusters: IntentClusterGroup[];
+  knownProfiles: Record<string, VesselProfile>;
+  getProfileById: (idOrCodename: string) => VesselProfile | undefined;
+  getKnownProfile: (id: string) => VesselProfile | undefined;
+  registerKnownProfiles: (profiles: VesselProfile[]) => void;
 }
 
 const RadarMatrixContext = createContext<RadarMatrixContextType | undefined>(undefined);
@@ -183,9 +245,11 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   myReceivedTestimonials: propTestimonials,
 }) => {
   let chatBoundaries: Record<string, UserBoundarySetting> | undefined;
+  let chatMessages: Record<string, ChatMessage[]> | undefined;
   try {
     const chat = useChat();
     chatBoundaries = chat.boundaries;
+    chatMessages = chat.chatMessages;
   } catch {
     // standalone fallback
   }
@@ -231,11 +295,12 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       const custom = localCustom.find((c) => c.id === mock.id);
       if (!custom) return mock;
 
-      // Sanear coordenadas en caso de que hayan quedado cacheadas coordenadas heredadas de Berlín (>50° lat) o Buenos Aires (~-34.588)
+      // Sanear coordenadas en caso de que hayan quedado cacheadas coordenadas heredadas de Berlín (>50° lat) o Buenos Aires (~-34.588) o fuera del radio de Río Cuarto
       const isStaleCoords =
         !custom.coordinates ||
         custom.coordinates.lat > 50 ||
-        Math.abs(custom.coordinates.lat + 34.588) < 0.2;
+        Math.abs(custom.coordinates.lat + 34.588) < 0.2 ||
+        (custom.coordinates.lat < -35 || custom.coordinates.lat > -31 || custom.coordinates.lng < -66 || custom.coordinates.lng > -62);
       const coordinates = isStaleCoords ? mock.coordinates : custom.coordinates;
 
       let onTheClock = custom.onTheClock || mock.onTheClock;
@@ -309,6 +374,92 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       };
     });
   });
+
+  // Registro persistente de todos los perfiles conocidos (para que chats, agenda, fotos y pulsos NUNCA desaparezcan)
+  const [knownProfiles, setKnownProfiles] = useState<Record<string, VesselProfile>>(() => {
+    const stored = loadFromStorage<Record<string, VesselProfile>>(STORAGE_KEYS.KNOWN_PROFILES, {});
+    const initialMap: Record<string, VesselProfile> = { ...stored };
+    MOCK_PROFILES.forEach((p) => {
+      if (!initialMap[p.id]) {
+        initialMap[p.id] = p;
+      }
+    });
+    return initialMap;
+  });
+
+  const registerKnownProfiles = useCallback((newProfiles: VesselProfile[]) => {
+    if (!newProfiles || newProfiles.length === 0) return;
+    setKnownProfiles((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      newProfiles.forEach((p) => {
+        if (!p || !p.id) return;
+        const existing = next[p.id];
+        if (
+          !existing ||
+          existing.avatarUrl !== p.avatarUrl ||
+          existing.codename !== p.codename ||
+          existing.bodyState !== p.bodyState ||
+          existing.role !== p.role
+        ) {
+          next[p.id] = { ...(existing || {}), ...p };
+          changed = true;
+        }
+      });
+      if (changed) {
+        saveToStorage(STORAGE_KEYS.KNOWN_PROFILES, next);
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
+  const getKnownProfile = useCallback(
+    (id: string): VesselProfile | undefined => {
+      if (!id) return undefined;
+      return knownProfiles[id];
+    },
+    [knownProfiles]
+  );
+
+  const getProfileById = useCallback(
+    (idOrCodename: string): VesselProfile | undefined => {
+      if (!idOrCodename) return undefined;
+      const normalized = idOrCodename.toLowerCase();
+
+      // 1. Matriz activa (radar)
+      const inActive = profiles.find(
+        (p) => p.id === idOrCodename || (p.codename && p.codename.toLowerCase() === normalized)
+      );
+      if (inActive) return inActive;
+
+      // 2. Caché persistente conocida
+      if (knownProfiles[idOrCodename]) return knownProfiles[idOrCodename];
+      const inKnown = Object.values(knownProfiles).find(
+        (p) => p.codename && p.codename.toLowerCase() === normalized
+      );
+      if (inKnown) return inKnown;
+
+      // 3. Catálogo de perfiles mock
+      const inMock = MOCK_PROFILES.find(
+        (p) => p.id === idOrCodename || (p.codename && p.codename.toLowerCase() === normalized)
+      );
+      if (inMock) return inMock;
+
+      // 4. Si es modo real y no está en caché, disparar fetch asíncrono a Firestore
+      if (appMode === "real" && idOrCodename !== "me" && idOrCodename !== "local-user" && idOrCodename !== "system") {
+        fetchPublicProfileById(idOrCodename)
+          .then((fetched) => {
+            if (fetched) {
+              registerKnownProfiles([fetched]);
+            }
+          })
+          .catch(() => {});
+      }
+
+      return undefined;
+    },
+    [profiles, knownProfiles, appMode, registerKnownProfiles]
+  );
 
   const [filters, setFiltersState] = useState<FilterState>(() => {
     const saved = loadFromStorage<Partial<FilterState> | null>(STORAGE_KEYS.FILTERS, null);
@@ -554,25 +705,30 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   useEffect(() => {
     if (appMode !== "real") {
       // En Modo Prueba: Entorno sandbox 100% aislado en memoria/storage local, sin contaminación de Firestore
-      setProfiles(sortAndEnrichProfilesByProximity(getSanitizedMockProfiles(), myCoordinates));
+      const mocks = getSanitizedMockProfiles();
+      registerKnownProfiles(mocks);
+      setProfiles(sortAndEnrichProfilesByProximity(mocks, myCoordinates));
       return;
     }
 
     // En Modo Real: Suscripción en tiempo real a perfiles de usuarios reales en Firestore con TTL de 30m y orden por cercanía
     const unsubMatrix = subscribeToMatrixProfiles((cloudProfiles) => {
       const now = Date.now();
-      const activeOthers = cloudProfiles.filter(
+      const validCloudProfiles = cloudProfiles.filter(
         (cp) =>
           cp.id !== currentUserUid &&
           cp.id !== "me" &&
           cp.id !== "unauthenticated" &&
-          !isDeletedUserId(cp.id, "real") &&
-          isProfileActiveInMatrix(cp, now)
+          !isDeletedUserId(cp.id, "real")
       );
+      // Registrar TODOS los perfiles reales en la caché persistente para que chats, fotos, agenda y pulsos NUNCA desaparezcan
+      registerKnownProfiles(validCloudProfiles);
+
+      const activeOthers = validCloudProfiles.filter((cp) => isProfileActiveInMatrix(cp, now));
       setProfiles(sortAndEnrichProfilesByProximity(activeOthers, myCoordinates));
     }, "real");
 
-    // Barrido periódico cada 30s para expulsar de la Matrix perfiles cuyo TTL de 30 minutos haya expirado o hayan sido eliminados
+    // Barrido periódico cada 30s para expulsar de la Matrix radar perfiles cuyo TTL de 30 minutos haya expirado o hayan sido eliminados
     const ttlSweepInterval = setInterval(() => {
       const now = Date.now();
       setProfiles((prev) =>
@@ -587,7 +743,22 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       unsubMatrix();
       clearInterval(ttlSweepInterval);
     };
-  }, [currentUserUid, appMode, getSanitizedMockProfiles, myCoordinates]);
+  }, [currentUserUid, appMode, getSanitizedMockProfiles, myCoordinates, registerKnownProfiles]);
+
+  // Asegurar que todos los participantes de chats activos tengan su perfil cargado en knownProfiles
+  useEffect(() => {
+    if (appMode !== "real" || !chatMessages) return;
+    const partnerIds = Object.keys(chatMessages).filter((id) => id !== "me" && id !== "system");
+    partnerIds.forEach((pid) => {
+      if (!knownProfiles[pid] && !profiles.some((p) => p.id === pid)) {
+        fetchPublicProfileById(pid)
+          .then((fetched) => {
+            if (fetched) registerKnownProfiles([fetched]);
+          })
+          .catch(() => {});
+      }
+    });
+  }, [chatMessages, appMode, knownProfiles, profiles, registerKnownProfiles]);
 
   // Suscripción en tiempo real a pulsos entrantes en Firestore
   useEffect(() => {
@@ -1512,6 +1683,10 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       operatingIntent,
       setOperatingIntent,
       intentClusters,
+      knownProfiles,
+      getProfileById,
+      getKnownProfile,
+      registerKnownProfiles,
     }),
     [
       processedProfiles,
@@ -1556,6 +1731,10 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       operatingIntent,
       setOperatingIntent,
       intentClusters,
+      knownProfiles,
+      getProfileById,
+      getKnownProfile,
+      registerKnownProfiles,
     ]
   );
 

@@ -264,18 +264,31 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
   const [isGeoBatteryModalOpen, setIsGeoBatteryModalOpen] = useState<boolean>(false);
   const [myCoordinates, setMyCoordinates] = useState<{ lat: number; lng: number }>(() => {
     const defaultRioCuarto = { lat: -33.1325, lng: -64.3470 };
-    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, defaultRioCuarto);
+    if (appMode === "test") {
+      return defaultRioCuarto;
+    }
+    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, defaultRioCuarto, appMode);
     if (
       !stored ||
       (Math.abs(stored.lat - 52.52) < 0.05 && Math.abs(stored.lng - 13.405) < 0.05) ||
       (Math.abs(stored.lat + 34.588) < 0.1 && Math.abs(stored.lng + 58.43) < 0.1) ||
       (Math.abs(stored.lat) < 0.01 && Math.abs(stored.lng) < 0.01)
     ) {
-      saveToStorage(STORAGE_KEYS.COORDINATES, defaultRioCuarto);
+      saveToStorage(STORAGE_KEYS.COORDINATES, defaultRioCuarto, appMode);
       return defaultRioCuarto;
     }
     return stored;
   });
+
+  // En Modo Beta (test), garantizar siempre la ubicación por defecto de los usuarios en Río Cuarto, Córdoba
+  useEffect(() => {
+    if (appMode === "test") {
+      const defaultRioCuarto = { lat: -33.1325, lng: -64.3470 };
+      setMyCoordinates(defaultRioCuarto);
+      saveToStorage(STORAGE_KEYS.COORDINATES, defaultRioCuarto, "test");
+    }
+  }, [appMode]);
+
   const [myGeohashCell, setMyGeohashCell] = useState<GeohashCell>(() =>
     getGeohashCell(myCoordinates.lat, myCoordinates.lng, 7)
   );
@@ -670,7 +683,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         (pos) => {
           const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setMyCoordinates(coords);
-          saveToStorage(STORAGE_KEYS.COORDINATES, coords);
+          saveToStorage(STORAGE_KEYS.COORDINATES, coords, appMode);
           setLastGpsPingAt(Date.now());
           setIsLocating(false);
           audioEngine.playSignalSent();

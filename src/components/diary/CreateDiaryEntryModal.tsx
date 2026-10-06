@@ -7,6 +7,7 @@ import {
   DiaryEncounterType,
   DiaryWouldRepeat,
   RoleType,
+  VesselProfile,
 } from "@/types/vessel";
 import {
   X,
@@ -112,6 +113,7 @@ const getNextRoundedHalfHourTime = (offsetMinutes = 30): string => {
 export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ onClose }) => {
   const {
     profiles,
+    knownProfiles,
     myProfile,
     diaryModalPreselectedProfileId,
     editingDiaryEntry,
@@ -283,9 +285,17 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
     }
   }, [diaryModalPreselectedProfileId, editingDiaryEntry]);
 
+  // Lista de perfiles disponibles combinando radar activo y contactos conocidos
+  const availableProfiles = useMemo(() => {
+    const map = new Map<string, VesselProfile>();
+    Object.values(knownProfiles || {}).forEach((p) => map.set(p.id, p));
+    profiles.forEach((p) => map.set(p.id, p));
+    return Array.from(map.values());
+  }, [profiles, knownProfiles]);
+
   // Lista de perfiles filtrados
   const filteredProfiles = useMemo(() => {
-    return profiles
+    return availableProfiles
       .filter((p) => {
         if (showOnlyFavorites && !isFavoriteProfile(p.id)) return false;
         if (!searchProfileQuery.trim()) return true;
@@ -302,7 +312,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
         if (aFav !== bFav) return bFav - aFav;
         return a.codename.localeCompare(b.codename);
       });
-  }, [profiles, showOnlyFavorites, searchProfileQuery, isFavoriteProfile]);
+  }, [availableProfiles, showOnlyFavorites, searchProfileQuery, isFavoriteProfile]);
 
   // Subida de imagen cifrada AES-256
   const handlePhotoUpload = async (file: File) => {

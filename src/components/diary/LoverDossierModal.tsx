@@ -41,6 +41,7 @@ export const LoverDossierModal: React.FC = () => {
     archivePhotosToDossier,
     removePhotoFromDossier,
     profiles,
+    getProfileById,
     myProfile,
     chatMessages,
     userAlbums,
@@ -57,11 +58,11 @@ export const LoverDossierModal: React.FC = () => {
   // Perfil vinculado (por ID directo o por alias normalizado si fue agendado como externo)
   const linkedProfile = useMemo(() => {
     if (!selectedDossierProfileId) return undefined;
-    const direct = profiles.find((p) => p.id === selectedDossierProfileId);
+    const direct = profiles.find((p) => p.id === selectedDossierProfileId) || getProfileById(selectedDossierProfileId);
     if (direct) return direct;
     const normalizedAlias = selectedDossierProfileId.replace(/^ext-/, "").toLowerCase();
-    return profiles.find((p) => p.codename.toLowerCase() === normalizedAlias);
-  }, [profiles, selectedDossierProfileId]);
+    return profiles.find((p) => p.codename.toLowerCase() === normalizedAlias) || getProfileById(normalizedAlias);
+  }, [profiles, selectedDossierProfileId, getProfileById]);
 
   // Encuentros históricos con esta persona
   const loverEncounters = useMemo(() => {

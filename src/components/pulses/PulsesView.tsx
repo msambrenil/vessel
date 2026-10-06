@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Activity,
   Flame,
@@ -10,7 +10,7 @@ import {
   Zap,
   Trash2,
 } from "lucide-react";
-import { useVessel } from "@/context/VesselContext";
+import { useVessel, createFallbackProfile } from "@/context/VesselContext";
 import { VesselProfile } from "@/types/vessel";
 import { PulseCard } from "./PulseCard";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
@@ -22,6 +22,8 @@ export interface PulsesViewProps {
 export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
   const {
     profiles,
+    knownProfiles,
+    getProfileById,
     myBodyState,
     setMyBodyState,
     transmissions,
@@ -44,10 +46,16 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
 
   const [activeTab, setActiveTab] = useState<"received" | "mutual" | "sent">("received");
 
-  // Mapas de resolución dual (ID y Codename) para evitar pérdida de pulsos provenientes de Firestore
+  // Mapas de resolución dual (ID y Codename) combinando perfiles activos y conocidos de la caché
   const { profilesById, profilesByCodename } = useMemo(() => {
     const byId = new Map<string, VesselProfile>();
     const byCode = new Map<string, VesselProfile>();
+    Object.values(knownProfiles || {}).forEach((p) => {
+      byId.set(p.id, p);
+      if (p.codename) {
+        byCode.set(p.codename.toLowerCase(), p);
+      }
+    });
     profiles.forEach((p) => {
       byId.set(p.id, p);
       if (p.codename) {
@@ -55,17 +63,19 @@ export const PulsesView: React.FC<PulsesViewProps> = ({ onOpenChat }) => {
       }
     });
     return { profilesById: byId, profilesByCodename: byCode };
-  }, [profiles]);
+  }, [profiles, knownProfiles]);
 
-  const resolveProfile = useMemo(
-    () => (idOrCodename?: string): VesselProfile | undefined => {
+  const resolveProfile = useCallback(
+    (idOrCodename?: string): VesselProfile | undefined => {
       if (!idOrCodename) return undefined;
       return (
         profilesById.get(idOrCodename) ||
-        profilesByCodename.get(idOrCodename.toLowerCase())
+        profilesByCodename.get(idOrCodename.toLowerCase()) ||
+        getProfileById(idOrCodename) ||
+        createFallbackProfile(idOrCodename)
       );
     },
-    [profilesById, profilesByCodename]
+    [profilesById, profilesByCodename, getProfileById]
   );
 
   // Hidratación de Zumbidos Recibidos (con soporte de resolución dual id/codename)

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useVessel, createFallbackProfile } from "@/context/VesselContext";
 import {
   X,
   Send,
@@ -72,6 +72,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const {
     myProfile,
     profiles,
+    getProfileById,
     chatMessages,
     markMessagesAsRead,
     sendChatMessage,
@@ -157,7 +158,7 @@ export const DarkroomChatModal: React.FC<DarkroomChatModalProps> = ({
   const activeBoundary = getBoundaryForProfile(profileId);
   const dossier = getProfileDossier(profileId);
 
-  const profile = profiles.find((p) => p.id === profileId);
+  const profile = (getProfileById ? getProfileById(profileId) : undefined) || profiles.find((p) => p.id === profileId) || createFallbackProfile(profileId);
   const currentRetention = profile ? getChatRetentionForProfile(profile.id) : "persistent";
   const messages = chatMessages[profileId] || [];
   const isMutual = profile ? hasMutualPulse(profile.id) : false;

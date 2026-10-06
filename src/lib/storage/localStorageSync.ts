@@ -16,18 +16,11 @@ export const isLocalEnvironment = (): boolean => {
 
 /**
  * Obtiene el modo de la aplicación activo (test vs real)
- * Regla de producción estricta: Online SIEMPRE es 'real'.
- * 'test' (modo de prueba) queda confinado exclusivamente a localhost y pruebas unitarias.
+ * Permite alternar entre Modo Real y Modo Beta (Test) tanto local como en producción
  */
 export const getActiveAppMode = (): AppMode => {
   if (typeof window === "undefined") return currentActiveAppMode;
   try {
-    // Si estamos en producción online (no es localhost ni unit test), forzar 'real' de forma estricta
-    if (!isUnitTestEnv && !isLocalEnvironment()) {
-      currentActiveAppMode = "real";
-      return "real";
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
     const vipParam = urlParams.get("vip") || urlParams.get("invite");
     if (vipParam) {
@@ -53,13 +46,9 @@ export const getActiveAppMode = (): AppMode => {
 };
 
 /**
- * Establece y persiste el modo activo (solo permitido en localhost o testing)
+ * Establece y persiste el modo activo (Modo Real o Modo Beta / Test)
  */
 export const setActiveAppMode = (mode: AppMode): void => {
-  if (!isUnitTestEnv && !isLocalEnvironment()) {
-    currentActiveAppMode = "real";
-    return;
-  }
   currentActiveAppMode = mode;
   if (typeof window !== "undefined") {
     try {
@@ -102,8 +91,12 @@ export const loadFromStorage = <T>(key: string, fallback: T, mode?: AppMode): T 
     let item = window.localStorage.getItem(scopedKey);
 
     // Compatibilidad retroactiva: Si no existe la clave prefijada, probar con la clave directa
+    // (Excepto para coordenadas en modo test, que siempre deben mantenerse en su sandbox de Río Cuarto)
     if (!item && scopedKey !== key) {
-      item = window.localStorage.getItem(key);
+      const activeMode = mode || getActiveAppMode();
+      if (key !== STORAGE_KEYS.COORDINATES || activeMode !== "test") {
+        item = window.localStorage.getItem(key);
+      }
     }
 
     if (!item) return fallback;
@@ -280,6 +273,7 @@ export const STORAGE_KEYS = {
   MY_TESTIMONIALS: "vessel_user_my_testimonials_v1",
   CHAT_MESSAGES: "vessel_chat_messages_v1",
   CHAT_RETENTION: "vessel_chat_retention_v1",
+  KNOWN_PROFILES: "vessel_known_profiles_v1",
   DOSSIERS: "vessel_user_dossiers_v1",
   CUSTOM_PROFILES: "vessel_custom_profiles_v1",
   TEST_PERSONAS: "vessel_test_personas_v1",

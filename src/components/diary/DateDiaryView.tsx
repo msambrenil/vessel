@@ -38,6 +38,7 @@ export const DateDiaryView: React.FC = () => {
     restoreDiaryBackup,
     myReceivedTestimonials,
     profiles,
+    getProfileById,
     setSelectedProfile,
     setActiveChatProfileId,
     myProfile,
@@ -119,7 +120,7 @@ export const DateDiaryView: React.FC = () => {
     if (profileDossiers) {
       Object.entries(profileDossiers).forEach(([pid, dossier]) => {
         if (!map[pid]) {
-          const matchedProfile = profiles.find((p) => p.id === pid);
+          const matchedProfile = getProfileById(pid) || profiles.find((p) => p.id === pid);
           map[pid] = {
             profileId: pid,
             codename: matchedProfile?.codename || pid,

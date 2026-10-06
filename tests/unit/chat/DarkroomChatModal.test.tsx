@@ -64,6 +64,8 @@ vi.mock("@/context/VesselContext", () => ({
   useVessel: () => ({
     myProfile: { codename: "TEST_USER", id: "user-me" },
     profiles: [mockTestState.partner],
+    getProfileById: (id: string) => (id === mockTestState.partner.id ? mockTestState.partner : undefined),
+    createFallbackProfile: (id: string) => ({ ...mockTestState.partner, id }),
     chatMessages: {
       "partner-99": mockTestState.messages,
     },

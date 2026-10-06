@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useVessel, createFallbackProfile } from "@/context/VesselContext";
 import {
   MessageSquare,
   Zap,
@@ -31,6 +31,8 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
 }) => {
   const {
     profiles,
+    knownProfiles,
+    getProfileById,
     chatMessages,
     transmissions,
     receivedPulses,
@@ -47,35 +49,65 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
   // Filtro segmentado de la bandeja: "all" | "hosting" | "unread"
   const [chatFilter, setChatFilter] = useState<"all" | "hosting" | "unread">("all");
 
-  // Mapa de perfiles por ID y Codename
+  // Mapa de perfiles por ID y Codename combinando radar y perfiles conocidos
   const profilesMap = useMemo(() => {
     const map = new Map<string, VesselProfile>();
+    Object.values(knownProfiles || {}).forEach((p) => {
+      map.set(p.id, p);
+      if (p.codename) map.set(p.codename.toLowerCase(), p);
+    });
     profiles.forEach((p) => {
       map.set(p.id, p);
       if (p.codename) map.set(p.codename.toLowerCase(), p);
     });
     return map;
-  }, [profiles]);
+  }, [profiles, knownProfiles]);
 
-  // Pulsos recibidos enriquecidos (para notificación mínima y discreta)
+  // Pulsos recibidos enriquecidos (100% persistentes, nunca se descartan por desconexión)
   const enrichedReceivedPulses = useMemo(() => {
     return receivedPulses
       .map((pulse) => ({
         ...pulse,
         profile:
           profilesMap.get(pulse.fromProfileId) ||
-          (pulse.fromCodename ? profilesMap.get(pulse.fromCodename.toLowerCase()) : undefined),
+          (pulse.fromCodename ? profilesMap.get(pulse.fromCodename.toLowerCase()) : undefined) ||
+          (getProfileById ? getProfileById(pulse.fromProfileId) : undefined) ||
+          createFallbackProfile(pulse.fromProfileId || "usuario"),
       }))
-      .filter((item): item is typeof item & { profile: VesselProfile } => Boolean(item.profile))
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [receivedPulses, profilesMap]);
+  }, [receivedPulses, profilesMap, getProfileById]);
 
-  // Perfiles con interacción de chat activa (conversaciones reales)
+  // Obtener todos los IDs de conversación existentes (chatMessages con mensajes o transmisiones con pulsos)
+  const conversationPartnerIds = useMemo(() => {
+    const ids = new Set<string>();
+    Object.entries(chatMessages).forEach(([id, msgs]) => {
+      if (msgs && msgs.length > 0 && id !== "me" && id !== "system") {
+        ids.add(id);
+      }
+    });
+    Object.entries(transmissions).forEach(([id, count]) => {
+      if (count && count > 0 && id !== "me" && id !== "system") {
+        ids.add(id);
+      }
+    });
+    return Array.from(ids);
+  }, [chatMessages, transmissions]);
+
+  // Perfiles con interacción de chat activa (conversaciones reales 100% persistentes)
   const profilesWithInteractions = useMemo(() => {
-    return profiles.filter(
-      (p) => (chatMessages[p.id] && chatMessages[p.id].length > 0) || (transmissions[p.id] || 0) > 0
-    );
-  }, [profiles, chatMessages, transmissions]);
+    return conversationPartnerIds
+      .map((id) => profilesMap.get(id) || (getProfileById ? getProfileById(id) : undefined) || createFallbackProfile(id))
+      .filter((p): p is VesselProfile => Boolean(p && p.id))
+      .sort((a, b) => {
+        const msgsA = chatMessages[a.id] || [];
+        const msgsB = chatMessages[b.id] || [];
+        const lastA = msgsA[msgsA.length - 1];
+        const lastB = msgsB[msgsB.length - 1];
+        const timeA = lastA ? (lastA.timestamp ? new Date(lastA.timestamp).getTime() : 0) : 0;
+        const timeB = lastB ? (lastB.timestamp ? new Date(lastB.timestamp).getTime() : 0) : 0;
+        return timeB - timeA;
+      });
+  }, [conversationPartnerIds, profilesMap, getProfileById, chatMessages]);
 
   // Perfiles con los que chateás que tienen lugar para recibir
   const hostingChatProfiles = useMemo(() => {

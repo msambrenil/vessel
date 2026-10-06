@@ -30,6 +30,7 @@ import {
   RadarMatrixProvider,
   useRadarMatrix,
   RadarMatrixContextType,
+  createFallbackProfile,
 } from "./domains/RadarMatrixContext";
 import {
   ChatProvider,
@@ -44,7 +45,7 @@ import {
 
 // Re-export types and domain utilities
 export type { MyProfileState, AppMode };
-export { FREE_TIER_LIMITS, CLEAN_UNAUTHENTICATED_PROFILE, INITIAL_MY_PROFILE };
+export { FREE_TIER_LIMITS, CLEAN_UNAUTHENTICATED_PROFILE, INITIAL_MY_PROFILE, createFallbackProfile };
 
 // Re-export domain hooks for granular consumption in new/refactored components
 export {
