@@ -81,11 +81,13 @@ const INITIAL_EN_ROUTE: EnRouteState = {
   isArrived: false,
 };
 
+export const SAAVEDRA_620_COORDS = { lat: -33.1325, lng: -64.3470 };
+
 const INITIAL_TRAVEL_MODE: TravelModeConfig = {
   isActive: false,
   cityName: "Río Cuarto",
   country: "Argentina",
-  virtualCoords: { lat: -33.1325, lng: -64.3470 },
+  virtualCoords: SAAVEDRA_620_COORDS,
 };
 
 const INITIAL_DUO_LINK: DuoLink = {
@@ -134,6 +136,8 @@ export interface LogisticsContextType {
   myGeohashCell: GeohashCell;
   myCoordinates: { lat: number; lng: number };
   setMyCoordinates: (coords: { lat: number; lng: number }) => void;
+  isSimulatedLocationActive: boolean;
+  setSimulatedLocationActive: (active: boolean) => Promise<boolean>;
   isGeoBatteryModalOpen: boolean;
   openGeoBatteryModal: () => void;
   closeGeoBatteryModal: () => void;
@@ -262,32 +266,35 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
   const [geoPrivacyLevel, setGeoPrivacyLevelState] = useState<GeoPrivacyLevel>("exact_discretized");
   const [manualEcoSaver, setManualEcoSaver] = useState<boolean>(false);
   const [isGeoBatteryModalOpen, setIsGeoBatteryModalOpen] = useState<boolean>(false);
+  const [isSimulatedLocationActive, setIsSimulatedLocationActiveState] = useState<boolean>(() => {
+    return loadFromStorage<boolean>(STORAGE_KEYS.BETA_SIMULATED_LOCATION, true);
+  });
+
   const [myCoordinates, setMyCoordinates] = useState<{ lat: number; lng: number }>(() => {
-    const defaultRioCuarto = { lat: -33.1325, lng: -64.3470 };
-    if (appMode === "test") {
-      return defaultRioCuarto;
+    const isSimulated = loadFromStorage<boolean>(STORAGE_KEYS.BETA_SIMULATED_LOCATION, true);
+    if (isSimulated || appMode === "test") {
+      return SAAVEDRA_620_COORDS;
     }
-    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, defaultRioCuarto, appMode);
+    const stored = loadFromStorage<{ lat: number; lng: number }>(STORAGE_KEYS.COORDINATES, SAAVEDRA_620_COORDS, appMode);
     if (
       !stored ||
       (Math.abs(stored.lat - 52.52) < 0.05 && Math.abs(stored.lng - 13.405) < 0.05) ||
       (Math.abs(stored.lat + 34.588) < 0.1 && Math.abs(stored.lng + 58.43) < 0.1) ||
       (Math.abs(stored.lat) < 0.01 && Math.abs(stored.lng) < 0.01)
     ) {
-      saveToStorage(STORAGE_KEYS.COORDINATES, defaultRioCuarto, appMode);
-      return defaultRioCuarto;
+      saveToStorage(STORAGE_KEYS.COORDINATES, SAAVEDRA_620_COORDS, appMode);
+      return SAAVEDRA_620_COORDS;
     }
     return stored;
   });
 
-  // En Modo Beta (test), garantizar siempre la ubicación por defecto de los usuarios en Río Cuarto, Córdoba
+  // En Modo Beta o cuando la ubicación simulada está activa, garantizar siempre Saavedra 620 (Río Cuarto)
   useEffect(() => {
-    if (appMode === "test") {
-      const defaultRioCuarto = { lat: -33.1325, lng: -64.3470 };
-      setMyCoordinates(defaultRioCuarto);
-      saveToStorage(STORAGE_KEYS.COORDINATES, defaultRioCuarto, "test");
+    if (isSimulatedLocationActive || appMode === "test") {
+      setMyCoordinates(SAAVEDRA_620_COORDS);
+      saveToStorage(STORAGE_KEYS.COORDINATES, SAAVEDRA_620_COORDS, appMode);
     }
-  }, [appMode]);
+  }, [isSimulatedLocationActive, appMode]);
 
   const [myGeohashCell, setMyGeohashCell] = useState<GeohashCell>(() =>
     getGeohashCell(myCoordinates.lat, myCoordinates.lng, 7)
@@ -708,20 +715,35 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     });
   }, []);
 
+  const setSimulatedLocationActive = useCallback(async (active: boolean): Promise<boolean> => {
+    setIsSimulatedLocationActiveState(active);
+    saveToStorage(STORAGE_KEYS.BETA_SIMULATED_LOCATION, active);
+    if (active) {
+      setMyCoordinates(SAAVEDRA_620_COORDS);
+      saveToStorage(STORAGE_KEYS.COORDINATES, SAAVEDRA_620_COORDS, appMode);
+      setLastGpsPingAt(Date.now());
+      audioEngine.playSubBass(70);
+      return true;
+    } else {
+      audioEngine.playPulse();
+      return await refreshRealGeolocation();
+    }
+  }, [appMode, refreshRealGeolocation]);
+
   // Protocolo Wake-on-Open (Estilo Grindr / The Blowers):
-  // Cada vez que el usuario abre la app o vuelve a ponerla en primer plano, renueva el TTL de 30m y refresca el GPS (salvo hibernación en fiesta)
+  // Cada vez que el usuario abre la app o vuelve a ponerla en primer plano, renueva el TTL de 30m y refresca el GPS (salvo hibernación en fiesta o ubicación simulada)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const handleAppWake = () => {
       if (document.visibilityState && document.visibilityState !== "visible") return;
       setLastGpsPingAt(Date.now());
-      if (!isGpsHibernating && appMode === "real") {
+      if (!isGpsHibernating && appMode === "real" && !isSimulatedLocationActive) {
         refreshRealGeolocation();
       }
     };
 
-    if (appMode === "real" && !isGpsHibernating) {
+    if (appMode === "real" && !isGpsHibernating && !isSimulatedLocationActive) {
       refreshRealGeolocation();
     }
 
@@ -731,7 +753,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       document.removeEventListener("visibilitychange", handleAppWake);
       window.removeEventListener("focus", handleAppWake);
     };
-  }, [appMode, isGpsHibernating, refreshRealGeolocation]);
+  }, [appMode, isGpsHibernating, isSimulatedLocationActive, refreshRealGeolocation]);
 
   // Sincronización periódica en segundo plano vía Periodic Background Sync API modulada por batería
   useEffect(() => {
@@ -754,7 +776,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
         data &&
         (data.type === "VESSEL_PERIODIC_SYNC_TRIGGER" || data.type === "VESSEL_SYNC_PING")
       ) {
-        if (appMode === "real" && !isGpsHibernating) {
+        if (appMode === "real" && !isGpsHibernating && !isSimulatedLocationActive) {
           refreshRealGeolocation();
         }
         flushOfflineMutations().catch(() => {});
@@ -765,7 +787,7 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     return () => {
       navigator.serviceWorker.removeEventListener("message", handleServiceWorkerMessage);
     };
-  }, [appMode, isGpsHibernating, refreshRealGeolocation]);
+  }, [appMode, isGpsHibernating, isSimulatedLocationActive, refreshRealGeolocation]);
 
   // Inicialización de la cola resiliente de mutaciones offline (disparo ante reconexión 'online')
   useEffect(() => {
@@ -1421,6 +1443,8 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       isLocating,
       geoError,
       refreshRealGeolocation,
+      isSimulatedLocationActive,
+      setSimulatedLocationActive,
       isGpsHibernating,
       lastGpsPingAt,
       confirmPartyArrivalLock,
@@ -1530,6 +1554,8 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       isLocating,
       geoError,
       refreshRealGeolocation,
+      isSimulatedLocationActive,
+      setSimulatedLocationActive,
       myExitProtocol,
       setMyExitProtocol,
       sessionRooms,

@@ -68,6 +68,15 @@ describe("localStorageSync — Persistencia Local y Tareas Diferidas", () => {
     expect(STORAGE_KEYS.PROFILE).toBe("vessel_user_profile_v1");
     expect(STORAGE_KEYS.CHAT_MESSAGES).toBe("vessel_chat_messages_v1");
     expect(STORAGE_KEYS.SETTINGS).toBe("vessel_app_settings_v1");
+    expect(STORAGE_KEYS.BETA_SIMULATED_LOCATION).toBe("vessel_beta_simulated_location_v1");
+  });
+
+  it("debe compartir la clave BETA_SIMULATED_LOCATION globalmente entre entornos", () => {
+    saveToStorage(STORAGE_KEYS.BETA_SIMULATED_LOCATION, true, "test");
+    expect(loadFromStorage(STORAGE_KEYS.BETA_SIMULATED_LOCATION, false, "real")).toBe(true);
+
+    saveToStorage(STORAGE_KEYS.BETA_SIMULATED_LOCATION, false, "real");
+    expect(loadFromStorage(STORAGE_KEYS.BETA_SIMULATED_LOCATION, true, "test")).toBe(false);
   });
 
   it("debe aislar datos entre Modo de Prueba y Modo Real (namespacing)", () => {

@@ -14,7 +14,7 @@ interface AppModeModalProps {
 export const AppModeModal: React.FC<AppModeModalProps> = ({ isOpen, onClose }) => {
   const { appMode, setAppMode, resetModeData, language } = useVessel();
 
-  if (!isOpen) return null;
+  if (!isOpen || !isLocalEnvironment()) return null;
 
   const isReal = appMode === "real";
 

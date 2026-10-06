@@ -20,6 +20,13 @@ export const isLocalEnvironment = (): boolean => {
  */
 export const getActiveAppMode = (): AppMode => {
   if (typeof window === "undefined") return currentActiveAppMode;
+
+  // En producción (Vercel, staging, etc.), NUNCA se permite modo de prueba. Solo Modo Real.
+  if (!isLocalEnvironment() && !isUnitTestEnv) {
+    currentActiveAppMode = "real";
+    return "real";
+  }
+
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const vipParam = urlParams.get("vip") || urlParams.get("invite");
@@ -49,6 +56,10 @@ export const getActiveAppMode = (): AppMode => {
  * Establece y persiste el modo activo (Modo Real o Modo Beta / Test)
  */
 export const setActiveAppMode = (mode: AppMode): void => {
+  if (!isLocalEnvironment() && !isUnitTestEnv) {
+    currentActiveAppMode = "real";
+    return;
+  }
   currentActiveAppMode = mode;
   if (typeof window !== "undefined") {
     try {
@@ -69,6 +80,7 @@ export const getScopedStorageKey = (key: string, mode?: AppMode): string => {
     key === "vessel_matrix_filters_v1" ||
     key === "vessel_app_settings_v1" ||
     key === "vessel_deleted_user_ids_v1" ||
+    key === STORAGE_KEYS.BETA_SIMULATED_LOCATION ||
     key === APP_MODE_STORAGE_KEY ||
     key === "test_inexistent_key" ||
     key === "test_profile_key" ||
@@ -310,4 +322,5 @@ export const STORAGE_KEYS = {
   OPERATING_INTENT: "vessel_operating_intent_v1",
   FILTERS: "vessel_matrix_filters_v1",
   DELETED_USER_IDS: "vessel_deleted_user_ids_v1",
+  BETA_SIMULATED_LOCATION: "vessel_beta_simulated_location_v1",
 };
