@@ -1,13 +1,13 @@
-// VESSEL // Core Service Worker - Offline Shell & Tactical Caching
-const CACHE_NAME = "vessel-shell-v1";
+// VESSEL // Core Service Worker - Offline Shell, Guaranteed Latest Version & Tactical Caching
+const VESSEL_VERSION = "v2.5.0-20261006-1930";
+const CACHE_NAME = `vessel-shell-${VESSEL_VERSION}`;
 const PRECACHE_ASSETS = [
-  "/",
   "/manifest.json",
   "/icon.svg",
   "/favicon.ico"
 ];
 
-// Instalación: precarga del shell táctico
+// Instalación: precarga del shell táctico y omisión inmediata de espera
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -16,20 +16,23 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activación: limpieza de cachés antiguas
+// Activación: limpieza exhaustiva de TODAS las cachés antiguas para garantizar última versión
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+          .map((name) => {
+            console.log("[VESSEL SW] Purgando caché obsoleta:", name);
+            return caches.delete(name);
+          })
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// Intercepción de solicitudes: Red 먼저 con Respaldo en Caché para navegación, Caché primero para estáticos
+// Intercepción de solicitudes: Red primero OBLIGATORIO para navegación, Respaldo de contingencia offline
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -39,24 +42,36 @@ self.addEventListener("fetch", (event) => {
     url.hostname.includes("firestore.googleapis.com") ||
     url.hostname.includes("identitytoolkit.googleapis.com") ||
     url.hostname.includes("firebasestorage.googleapis.com") ||
+    url.pathname.startsWith("/api/system/version") ||
     url.protocol.startsWith("chrome-extension")
   ) {
     return;
   }
 
-  // Navegación HTML: Network-first con respaldo en caché del App Shell
+  // Navegación HTML (Páginas): Network-First con bypass de caché para que NUNCA sirva HTML viejo
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(async () => {
-        const cache = await caches.open(CACHE_NAME);
-        const cached = await cache.match("/");
-        return cached || Response.error();
+      fetch(request, {
+        cache: "no-cache",
       })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put("/", responseClone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // Contingencia: Solo si no hay conexión de red, devolver la copia en caché de respaldo
+          const cache = await caches.open(CACHE_NAME);
+          const cached = await cache.match("/");
+          return cached || Response.error();
+        })
     );
     return;
   }
 
-  // Activos estáticos de Next.js (_next/static, imágenes, SVG): Stale-While-Revalidate
+  // Activos estáticos de Next.js (_next/static, imágenes, SVG): Stale-While-Revalidate con auto-reparación
   if (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.endsWith(".svg") ||
@@ -66,16 +81,19 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
         if (cachedResponse) {
-          fetch(request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
-            }
-          }).catch(() => {});
+          fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse));
+              }
+            })
+            .catch(() => {});
           return cachedResponse;
         }
 
         return fetch(request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 404) {
+            // Chunks 404 tras un nuevo despliegue: forzar recarga en los clientes
             self.clients.matchAll({ type: "window" }).then((clients) => {
               clients.forEach((client) => {
                 client.postMessage({ type: "VESSEL_CHUNK_RELOAD_REQUIRED" });
@@ -97,8 +115,25 @@ self.addEventListener("fetch", (event) => {
 
 // Escucha de mensajes desde la app (activación inmediata de nueva versión y descarte de espera)
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
+  if (event.data) {
+    if (event.data.type === "SKIP_WAITING") {
+      self.skipWaiting();
+    }
+    if (
+      event.data.type === "VESSEL_CLEAR_CACHE_AND_RELOAD" ||
+      event.data.type === "VESSEL_FORCE_RELOAD"
+    ) {
+      caches.keys().then((names) => {
+        return Promise.all(names.map((name) => caches.delete(name)));
+      }).then(() => {
+        self.skipWaiting();
+        self.clients.matchAll({ type: "window" }).then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: "VESSEL_FORCE_RELOAD_EXECUTED" });
+          });
+        });
+      });
+    }
   }
 });
 
@@ -152,4 +187,3 @@ self.addEventListener("sync", (event) => {
     );
   }
 });
-

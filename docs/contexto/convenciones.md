@@ -118,3 +118,28 @@ Para garantizar consistencia de clase mundial, VESSEL adopta la skill **Impeccab
    - Todo fondo utiliza la paleta semántica `obsidian-*`.
    - Se prohíbe el uso de bordes o tarjetas genéricas grises; todo elemento visual debe alinearse con la identidad brutalista y queer de VESSEL.
 
+---
+
+## 8. Biblioteca Centralizada de Primitivas Atómicas UX (`src/components/ui/`)
+
+Para asegurar **coherencia absoluta** y evitar dispersión de clases Tailwind o micro-interacciones dispares, todo componente interactivo debe construirse a partir de las primitivas alojadas en `src/components/ui/`:
+
+1. **`FilterPill` (`FilterPill.tsx`)**:
+   - Píldora interactiva para filtros rápidos, categorías de lugares y estados de búsqueda.
+   - Variantes tipadas: `default`, `violet`, `amber`, `emerald`, `cyan`, `blood`.
+   - Soporte nativo de `aria-pressed`, contador dinámico (`count`), botón de deselección rápida (`onClear`) y feedback acústico Sub-Bass integrado (`audioEngine.playPulse()`).
+   - Targets táctiles mínimos de 32-36px con márgenes seguros para interacción con el pulgar.
+2. **`TelemetryPill` (`TelemetryPill.tsx`)**:
+   - Píldora táctica de telemetría y privacidad geoespacial (Google S2 discretizado).
+   - Unifica dot de estado corporal (`open`, `occupied`, `dormant`), indicador de satélite `🛰️` para señales remotas (>1km) y tag textual `REMOTO`.
+   - Previene clicks accidentales asegurando que la inspección del perfil ocurra solo en el contenedor principal.
+3. **`TacticalSearchInput` (`TacticalSearchInput.tsx`)**:
+   - Input de búsqueda brutalista con icono dinámico (iluminación neón ultravioleta al escribir), botón 1-tap para limpiar (`X`) y accesibilidad WAI-ARIA completa (`aria-label`, focus rings).
+4. **`SortSegmentedControl` (`SortSegmentedControl.tsx`)**:
+   - Selector segmentado para ordenamiento táctico (`Cerca`, `On-Line`, `Afinidad`), accesible con roles `radiogroup` y respuesta táctil.
+5. **`BrutalistButton` & `TacticalBadge`**:
+   - Botones y badges semánticos con micro-animaciones, elevación `active:scale-[0.97]` y síntesis acústica analógica (pulse, subbass, vault).
+
+**Regla de Consistencia Global:** Si un estilo, borde o interacción de filtro/telemetría necesita cambiar, **DEBE modificarse en su componente primitivo en `src/components/ui/`**, propagando el cambio reactivamente a todas las vistas de la aplicación.
+
+

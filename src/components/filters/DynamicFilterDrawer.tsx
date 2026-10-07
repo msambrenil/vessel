@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { getKinkLocalizedLabel } from "@/lib/kinks/kinkAdminService";
+import { FilterPill, TacticalSearchInput, BrutalistButton } from "@/components/ui";
 
 export const DynamicFilterDrawer: React.FC = () => {
   const {
@@ -33,6 +34,7 @@ export const DynamicFilterDrawer: React.FC = () => {
   } = useVessel();
 
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [kinkSearchQuery, setKinkSearchQuery] = useState("");
 
   if (!isFilterDrawerOpen) return null;
 
@@ -209,19 +211,13 @@ export const DynamicFilterDrawer: React.FC = () => {
               {ROLE_OPTIONS.map((role) => {
                 const isSelected = filters.roles.includes(role as RoleType);
                 return (
-                  <button
+                  <FilterPill
                     key={role}
-                    type="button"
-                    aria-pressed={isSelected}
+                    label={getRoleDisplayLabel(role as RoleType, language)}
+                    active={isSelected}
+                    variant="violet"
                     onClick={() => toggleRole(role as RoleType)}
-                    className={`px-3 py-1.5 min-h-[38px] rounded-full border text-xs font-medium transition-all ${
-                      isSelected
-                        ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                        : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    {getRoleDisplayLabel(role as RoleType, language)}
-                  </button>
+                  />
                 );
               })}
             </div>
@@ -400,20 +396,14 @@ export const DynamicFilterDrawer: React.FC = () => {
               {GENDER_INTEREST_OPTIONS.map((interest) => {
                 const isSelected = (filters.genderInterests || []).includes(interest.id);
                 return (
-                  <button
+                  <FilterPill
                     key={interest.id}
-                    type="button"
-                    aria-pressed={isSelected}
+                    label={interest.label}
+                    icon={<span>{interest.emoji}</span>}
+                    active={isSelected}
+                    variant="violet"
                     onClick={() => toggleGenderInterest(interest.id)}
-                    className={`px-3 py-1.5 min-h-[38px] rounded-full border text-xs font-medium transition-all flex items-center gap-1.5 ${
-                      isSelected
-                        ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                        : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <span>{interest.emoji}</span>
-                    <span>{interest.label}</span>
-                  </button>
+                  />
                 );
               })}
             </div>
@@ -462,9 +452,26 @@ export const DynamicFilterDrawer: React.FC = () => {
               <div className="mt-4 space-y-5 pl-1 pr-1 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* 3.1 Morbos del Catálogo agrupados por tribu/categoría */}
                 <div className="space-y-3 bg-white/[0.02] p-3.5 rounded-2xl border border-white/5">
-                  <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider block">
-                    {t.filters.kinksSection}
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider block">
+                      {t.filters.kinksSection}
+                    </label>
+                    {filters.selectedKinks.length > 0 && (
+                      <span className="text-[10px] font-mono text-bloodNeon font-bold">
+                        {filters.selectedKinks.length} {t.filters.selectedCount}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Buscador táctico de morbos */}
+                  <TacticalSearchInput
+                    value={kinkSearchQuery}
+                    onChange={setKinkSearchQuery}
+                    placeholder="Buscar fetiche, cuero, bdsm..."
+                    ariaLabel="Buscar fetiche o morbo"
+                    onClear={() => setKinkSearchQuery("")}
+                    testId="kink-search-input"
+                  />
 
                   {/* Grupo 1: Cuero & Gear */}
                   <div className="space-y-1.5">
@@ -473,24 +480,24 @@ export const DynamicFilterDrawer: React.FC = () => {
                       <span>{t.filters.kinkCategoryGear}</span>
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {gearKinks.map((kink) => {
-                        const isSelected = filters.selectedKinks.includes(kink.id);
-                        return (
-                          <button
+                      {gearKinks
+                        .filter((k) =>
+                          !kinkSearchQuery.trim()
+                            ? true
+                            : getKinkLocalizedLabel(k.id, t)
+                                .toLowerCase()
+                                .includes(kinkSearchQuery.toLowerCase()) ||
+                              k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
+                        )
+                        .map((kink) => (
+                          <FilterPill
                             key={kink.id}
-                            type="button"
-                            aria-pressed={isSelected}
+                            label={getKinkLocalizedLabel(kink.id, t)}
+                            active={filters.selectedKinks.includes(kink.id)}
+                            variant="blood"
                             onClick={() => toggleKink(kink.id)}
-                            className={`px-2.5 py-1 min-h-[34px] rounded-full border text-xs font-medium transition-all ${
-                              isSelected
-                                ? "bg-bloodNeon text-white border-bloodNeon font-semibold shadow-blood-glow"
-                                : "bg-white/5 border-white/10 text-neutral-400 hover:border-bloodNeon/50 hover:text-white"
-                            }`}
-                          >
-                            {getKinkLocalizedLabel(kink.id, t)}
-                          </button>
-                        );
-                      })}
+                          />
+                        ))}
                     </div>
                   </div>
 
@@ -501,24 +508,24 @@ export const DynamicFilterDrawer: React.FC = () => {
                       <span>{t.filters.kinkCategoryDynamic}</span>
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {dynamicKinks.map((kink) => {
-                        const isSelected = filters.selectedKinks.includes(kink.id);
-                        return (
-                          <button
+                      {dynamicKinks
+                        .filter((k) =>
+                          !kinkSearchQuery.trim()
+                            ? true
+                            : getKinkLocalizedLabel(k.id, t)
+                                .toLowerCase()
+                                .includes(kinkSearchQuery.toLowerCase()) ||
+                              k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
+                        )
+                        .map((kink) => (
+                          <FilterPill
                             key={kink.id}
-                            type="button"
-                            aria-pressed={isSelected}
+                            label={getKinkLocalizedLabel(kink.id, t)}
+                            active={filters.selectedKinks.includes(kink.id)}
+                            variant="blood"
                             onClick={() => toggleKink(kink.id)}
-                            className={`px-2.5 py-1 min-h-[34px] rounded-full border text-xs font-medium transition-all ${
-                              isSelected
-                                ? "bg-bloodNeon text-white border-bloodNeon font-semibold shadow-blood-glow"
-                                : "bg-white/5 border-white/10 text-neutral-400 hover:border-bloodNeon/50 hover:text-white"
-                            }`}
-                          >
-                            {getKinkLocalizedLabel(kink.id, t)}
-                          </button>
-                        );
-                      })}
+                          />
+                        ))}
                     </div>
                   </div>
 
@@ -529,24 +536,24 @@ export const DynamicFilterDrawer: React.FC = () => {
                       <span>{t.filters.kinkCategoryPractices}</span>
                     </span>
                     <div className="flex flex-wrap gap-1.5">
-                      {practicesKinks.map((kink) => {
-                        const isSelected = filters.selectedKinks.includes(kink.id);
-                        return (
-                          <button
+                      {practicesKinks
+                        .filter((k) =>
+                          !kinkSearchQuery.trim()
+                            ? true
+                            : getKinkLocalizedLabel(k.id, t)
+                                .toLowerCase()
+                                .includes(kinkSearchQuery.toLowerCase()) ||
+                              k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
+                        )
+                        .map((kink) => (
+                          <FilterPill
                             key={kink.id}
-                            type="button"
-                            aria-pressed={isSelected}
+                            label={getKinkLocalizedLabel(kink.id, t)}
+                            active={filters.selectedKinks.includes(kink.id)}
+                            variant="blood"
                             onClick={() => toggleKink(kink.id)}
-                            className={`px-2.5 py-1 min-h-[34px] rounded-full border text-xs font-medium transition-all ${
-                              isSelected
-                                ? "bg-bloodNeon text-white border-bloodNeon font-semibold shadow-blood-glow"
-                                : "bg-white/5 border-white/10 text-neutral-400 hover:border-bloodNeon/50 hover:text-white"
-                            }`}
-                          >
-                            {getKinkLocalizedLabel(kink.id, t)}
-                          </button>
-                        );
-                      })}
+                          />
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -666,12 +673,14 @@ export const DynamicFilterDrawer: React.FC = () => {
 
         {/* Footer con Safe-Area */}
         <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] border-t border-white/10 bg-obsidian/95 backdrop-blur-xl sticky bottom-0">
-          <button
+          <BrutalistButton
+            variant="primary"
+            size="default"
             onClick={() => setIsFilterDrawerOpen(false)}
-            className="w-full py-3.5 bg-electricViolet text-white font-bold text-xs rounded-xl uppercase tracking-wider hover:bg-electricViolet-glow transition-all shadow-violet-soft active:scale-[0.99] cursor-pointer"
+            className="w-full text-xs uppercase tracking-wider"
           >
             {t.filters.apply} ({filteredProfiles.length})
-          </button>
+          </BrutalistButton>
         </div>
       </div>
     </div>

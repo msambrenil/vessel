@@ -1672,5 +1672,24 @@ Historial cronológico estricto de las decisiones técnicas y de producto adopta
 - **Motivación**:
   Erradicar la sobrecarga sensorial e informativa ("asfixia visual") que impedía a los usuarios escanear el radar con tranquilidad, unificar la coherencia arquitectónica entre todos los niveles de interacción y conectar emocionalmente con la comunidad LGBT+ argentina en 2026 mediante un lenguaje identitario, auténtico, respetuoso y sin acartonamientos.
 
-
-
+### [ADR-126] · [2026-10-06 23:20] Centro Táctico Unificado de Filtros Fullscreen (Cero Scroll Horizontal) y Estandarización de Biblioteca Atómica UX
+- **Decisión**:
+  1. **Ventana Flotante de Filtros 100% Fullscreen (`TacticalBottomSheet.tsx`)**:
+     - Extender `TacticalBottomSheet` con modo `fullscreen` (`h-[100dvh] inset-0 rounded-none sm:rounded-t-3xl`) dotado de header sticky con título táctico, indicador de filtros activos y botón de cierre `✕`, cuerpo con scroll estrictamente vertical y footer sticky con botones de acción rápida (`[ Aplicar Filtros (N) ]` y `[ Restablecer ]`).
+  2. **Erradicación de Scroll Horizontal en Filtros y Estructuración en 7 Bloques**:
+     - Eliminar definitivamente todo `overflow-x-auto` en la barra de comandos tácticos.
+     - Reorganizar todas las opciones en 7 bloques semánticos y táctiles numerados:
+       1. Sintonía e Intención (`IntentHubSelector`).
+       2. Búsqueda Táctica (`TacticalSearchInput`).
+       3. Criterio de Orden (`SortSegmentedControl` a ancho completo).
+       4. Confianza & Logística Rápida (Grid de 2 columnas tácticas para preferencias binarias).
+       5. Rol & Posición (Chips con flex-wrap responsivo).
+       6. Onda & Ritmo (Grid de 2 columnas para dinámicas de encuentro).
+       7. Morbos, Sustancias & Distancia (Acordeón colapsable con buscador de morbos y selector sensorial).
+  3. **Estandarización Obligatoria en Biblioteca de Componentes (`@/components/ui/`)**:
+     - Creación de `SegmentedTabGroup.tsx` para controles segmentados con accesibilidad ARIA y feedback sub-bass.
+     - Extensión de `BrutalistButton.tsx` con variantes `tactical` y `favorite`, y tamaños `compact` e `icon`.
+     - Extensión de `TacticalBadge.tsx` con variantes `cyan` y `pink`, y tamaño `xs`.
+     - Reemplazo de todos los botones, spans y elementos inline ad-hoc en `ProfileCard.tsx`, `IntentHubSelector.tsx`, `PlacesGrid.tsx` y `DynamicFilterDrawer.tsx` por las primitivas del sistema de diseño.
+- **Motivación**:
+  Garantizar consistencia ergonómica, accesibilidad visual y táctil sin fricción (eliminando el incómodo scroll horizontal en mobile) y asegurar que cualquier cambio futuro en el sistema de diseño se propague instantáneamente a toda la aplicación sin dependencias de estilos ad-hoc.

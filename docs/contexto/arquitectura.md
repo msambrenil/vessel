@@ -40,20 +40,22 @@
 
 ## 4. Router SPA y Arquitectura de Vistas
 
-VESSEL funciona como una **Single Page Application (SPA)** responsiva fluida dentro de `src/app/page.tsx`, envuelta en un contenedor centralizado `max-w-4xl mx-auto`:
+VESSEL funciona como una **Single Page Application (SPA)** responsiva fluida dentro de `src/app/page.tsx`, envuelta en un contenedor centralizado `max-w-4xl mx-auto` estructurado bajo la arquitectura **App Shell 2.0**:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│  BrutalistHeader (Logo -> Settings, ID, Batería, Filtros, Sigilo)      │
-├────────────────────────────────────────────────────────────────────────┤
-│  StatusToggle (Open Now | In Session | Stealth)                        │
+│  BrutalistHeader (Logo, Batería, Audio Sub-bass, Pase QR, Menú Usuario) │
 ├────────────────────────────────────────────────────────────────────────┤
 │  VISTA PRINCIPAL ACTIVA:                                               │
-│  • grid    -> Cerca (Cuadrícula con Card #1 '⭐ TÚ' adaptativa 3 a 5 col)│
-│  • pulses  -> Pulsos (Bandeja de pulsos recibidos, devueltos y enviados)│
+│  • grid    -> Radar 100% Pantalla Completa (Inmersión total sin asfixia)│
+│  • pulses  -> Toques (Toques recibidos, onda mutua 🔥 y enviados)       │
 │  • chat    -> Mensajes (Darkroom efímero & salidas amables Anti-Ghost) │
-│  • diary   -> Diario (Calendario de citas, botiquín Doxy-PEP y PrEP)   │
+│  • diary   -> Citas (Agenda íntima de encuentros y botiquín de salud)  │
 │  • account -> Perfil (Ficha, Modo Niebla, gestión de álbumes y límites)│
+├────────────────────────────────────────────────────────────────────────┤
+│  TacticalBottomSheet / RadarBottomCommandBar (Sintonías & Filtros)     │
+│  • Peeking: Barra compacta flotante al alcance del pulgar (Thumb-Zone) │
+│  • Expanded: IntentHubSelector, Búsqueda Neón, Modo Viajero, Filtros   │
 ├────────────────────────────────────────────────────────────────────────┤
 │  BrutalistNav (Barra fija inferior de 5 accesos al alcance del pulgar) │
 └────────────────────────────────────────────────────────────────────────┘

@@ -11,9 +11,17 @@ export type BrutalistButtonVariant =
   | "ghost"
   | "outline"
   | "mint"
-  | "amber";
+  | "amber"
+  | "tactical"
+  | "favorite";
 
-export type BrutalistButtonSize = "default" | "sm" | "lg" | "icon";
+export type BrutalistButtonSize =
+  | "default"
+  | "sm"
+  | "lg"
+  | "icon"
+  | "compact"
+  | "compact-icon";
 
 export interface BrutalistButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -93,6 +101,10 @@ export const BrutalistButton = React.forwardRef<
         "bg-emerald-400 text-obsidian-deep hover:bg-emerald-300 hover:shadow-[0_0_18px_rgba(16,185,129,0.5)] active:bg-emerald-600 focus-visible:ring-emerald-400 border border-emerald-300 font-black",
       amber:
         "bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-obsidian-deep hover:from-amber-400 hover:to-amber-300 hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] active:bg-amber-600 focus-visible:ring-amber-400 border border-amber-300 font-black tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.4)]",
+      tactical:
+        "bg-black/60 hover:bg-electricViolet/25 border border-white/15 hover:border-electricViolet/60 text-white shadow-sm hover:shadow-violet-soft backdrop-blur-xs active:bg-electricViolet/30 focus-visible:ring-electricViolet",
+      favorite:
+        "border border-white/15 bg-black/60 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black/90 focus-visible:ring-amber-400 aria-pressed:border-amber-400 aria-pressed:bg-amber-950/80 aria-pressed:text-amber-400 aria-pressed:shadow-[0_0_10px_rgba(251,191,36,0.4)]",
     };
 
     // 3. Tamaños ergonómicos (cumpliendo 44px mínimo para touch-targets de pulgar)
@@ -101,6 +113,8 @@ export const BrutalistButton = React.forwardRef<
       sm: "min-h-[36px] px-3 py-1.5 text-[11px] gap-1.5",
       lg: "min-h-[50px] px-6 py-3 text-sm gap-2.5",
       icon: "w-11 h-11 min-w-[44px] min-h-[44px] p-0 flex items-center justify-center text-sm",
+      compact: "min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 text-[10px] sm:text-[10.5px] gap-1.5",
+      "compact-icon": "w-8 h-8 sm:w-9 sm:h-9 min-w-0 min-h-0 p-0 flex items-center justify-center text-xs",
     };
 
     const savingClasses = isSaving

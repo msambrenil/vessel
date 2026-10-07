@@ -18,6 +18,7 @@ import {
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { BeaconCountdownWidget } from "@/components/safety/BeaconCountdownWidget";
 import { OnTheClockState } from "@/types/vessel";
+import { BetaFeedbackMenuSection } from "@/components/beta/BetaFeedbackFab";
 
 interface ActiveReadyNowBadgeProps {
   myOnTheClock: OnTheClockState;
@@ -465,6 +466,9 @@ export const BrutalistHeader: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Sección Táctica Beta Tester Lab Integrada */}
+              <BetaFeedbackMenuSection onCloseMenu={() => setIsMenuOpen(false)} />
 
               {/* Opción 1: Audio Sub-Bass (45-80Hz) */}
               <button

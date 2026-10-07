@@ -4,13 +4,11 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useVessel } from "@/context/VesselContext";
 import { BrutalistHeader } from "@/components/brand/BrutalistHeader";
-import { IntentHubSelector } from "@/components/matrix/IntentHubSelector";
 import { BrutalistNav } from "@/components/navigation/BrutalistNav";
 import { ProfileGridSkeleton } from "@/components/matrix/ProfileGridSkeleton";
 import { PulsesListSkeleton } from "@/components/pulses/PulsesListSkeleton";
 import { ModalHost } from "@/components/modals/ModalHost";
 import { BetaVipGateScreen } from "@/components/auth/BetaVipGateScreen";
-import { BetaFeedbackFab } from "@/components/beta/BetaFeedbackFab";
 import { getLocalVipVerification } from "@/lib/firebase/inviteService";
 
 // Carga perezosa (Code-Splitting) para el radar local-first sin desajuste de hidratación SSR
@@ -101,10 +99,9 @@ export default function VesselApp() {
     <div className="flex flex-col flex-1 relative bg-obsidian text-white min-h-screen w-full selection:bg-electricViolet selection:text-white">
       {/* Contenedor Responsivo Centralizado */}
       <div className="w-full max-w-4xl mx-auto flex flex-col flex-1 relative min-h-screen">
-        {/* Cabecera Brutalista Unificada & Hub de Sintonías (Sticky Top Consolidado) */}
+        {/* Cabecera Brutalista Esbelta (App Shell 2.0 - Máxima Área Vertical para Perfiles) */}
         <header className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md border-b border-white/10 select-none shadow-sm">
           <BrutalistHeader />
-          {activeView === "grid" && <IntentHubSelector />}
         </header>
 
         {/* Banner Táctico de Modo "En Camino" con Telemetría */}
@@ -141,9 +138,6 @@ export default function VesselApp() {
 
         {/* Barra de Navegación Monolítica */}
         <BrutalistNav />
-
-        {/* Herramientas Flotantes de Tester Beta */}
-        <BetaFeedbackFab />
 
         {/* Orquestador Desacoplado de Modales & Overlays (Fase 4: Arquitectura & Performance) */}
         <ModalHost />

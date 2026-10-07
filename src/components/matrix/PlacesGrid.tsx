@@ -32,6 +32,13 @@ import {
   Zap,
 } from "lucide-react";
 
+import {
+  TacticalSearchInput,
+  FilterPill,
+  SortSegmentedControl,
+  BrutalistButton,
+} from "@/components/ui";
+
 export interface PlacesGridProps {
   onOpenNightlifeModal?: () => void;
   hideStickyHeader?: boolean;
@@ -114,7 +121,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
     { id: "all", label: language === "es" ? "Todos" : "All", icon: "🌐" },
     { id: "cruising_area", label: language === "es" ? "Áreas de Cruising" : "Cruising Areas", icon: "🌲" },
     { id: "nightlife", label: language === "es" ? "Fiestas" : "Nightlife", icon: "🎉" },
-    { id: "darkroom_club", label: language === "es" ? "Cuartos Oscuros" : "Darkrooms", icon: "⚡" },
+    { id: "darkroom_club", label: language === "es" ? "Darkrooms" : "Darkrooms", icon: "⚡" },
     { id: "sauna", label: language === "es" ? "Saunas" : "Saunas", icon: "🧖" },
     { id: "queer_bar", label: language === "es" ? "Bares Queer" : "Queer Bars", icon: "🍸" },
   ];
@@ -277,49 +284,38 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
         <div className="p-2 sm:p-2.5 bg-obsidian-surface/60 border-b border-white/5 space-y-2 backdrop-blur-sm">
           {/* Fila 1: Búsqueda de Lugares + Botón Proponer Lugar */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="relative flex-1">
-              <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors pointer-events-none ${
-                searchQuery ? "text-electricViolet-glow" : "text-neutral-400"
-              }`} />
-              <input
-                type="text"
-                placeholder={t.filters?.searchPlacesPlaceholder || (language === "es" ? "Buscar sauna, cruising, fiesta, boliche..." : "Search sauna, cruising, club, party...")}
-                aria-label="Buscar lugares o fiestas"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full min-h-[38px] bg-white/5 border border-white/10 rounded-xl text-white text-xs pl-10 pr-9 py-1.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-sans"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSearchQuery("");
-                  }}
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <TacticalSearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder={
+                t.filters?.searchPlacesPlaceholder ||
+                (language === "es"
+                  ? "Buscar sauna, cruising, fiesta, boliche..."
+                  : "Search sauna, cruising, club, party...")
+              }
+              ariaLabel="Buscar lugares o fiestas"
+              onClear={() => setSearchQuery("")}
+              testId="places-grid-search-input"
+            />
 
             {/* Botón Destacado: Proponer Lugar */}
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
+              size="sm"
               onClick={() => {
                 audioEngine.playPulse();
                 setIsProposeOpen(true);
               }}
               aria-label="Proponer nuevo punto táctico"
-              className="px-3 min-h-[38px] rounded-xl bg-electricViolet text-white border border-electricViolet-glow font-bold shadow-violet-glow hover:bg-electricViolet/90 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-mono active:scale-95 transition-all flex-shrink-0"
               title="Proponer nuevo punto de cruising, sauna o espacio"
+              className="flex-shrink-0"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span className="hidden sm:inline uppercase text-[10.5px]">
-                {t.filters?.proposePlaceBtn || (language === "es" ? "Proponer Lugar" : "Propose Place")}
+                {t.filters?.proposePlaceBtn ||
+                  (language === "es" ? "Proponer Lugar" : "Propose Place")}
               </span>
-            </button>
+            </BrutalistButton>
           </div>
 
           {/* Fila 2: Píldoras de Categorías de Lugares */}
@@ -329,27 +325,16 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
               <span>{language === "es" ? "Lugar:" : "Type:"}</span>
             </div>
 
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSelectedCategory(cat.id);
-                  }}
-                  className={`px-3 py-1.5 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                    isSelected
-                      ? "bg-electricViolet text-white border-electricViolet-glow font-black shadow-violet-glow"
-                      : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
+            {categories.map((cat) => (
+              <FilterPill
+                key={cat.id}
+                label={cat.label}
+                icon={<span>{cat.icon}</span>}
+                active={selectedCategory === cat.id}
+                variant="violet"
+                onClick={() => setSelectedCategory(cat.id)}
+              />
+            ))}
           </div>
 
           {/* Fila 3: Resumen, Ordenamiento y Modo Viajero */}
@@ -358,60 +343,35 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
               <span className="font-extrabold text-white font-mono flex items-center gap-1.5 text-[11px] sm:text-xs flex-shrink-0">
                 <span className="w-2 h-2 rounded-full bg-electricViolet animate-ping inline-block" />
                 <span>
-                  {filteredHotspots.length + filteredEvents.length} {language === "es" ? "Boliches y Lugares" : "Clubs & Places"}
+                  {filteredHotspots.length + filteredEvents.length}{" "}
+                  {language === "es" ? "Boliches y Lugares" : "Clubs & Places"}
                 </span>
               </span>
 
               <span className="text-neutral-600 hidden sm:inline">•</span>
 
               {/* Selector de Ordenamiento */}
-              <div className="flex items-center gap-0.5 bg-white/5 border border-white/10 rounded-lg p-0.5 font-mono text-[9.5px] flex-shrink-0">
-                <span className="text-[8.5px] text-neutral-400 font-extrabold uppercase px-1 hidden xs:inline">
-                  {language === "es" ? "ORDEN:" : "SORT:"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSortBy("distance");
-                  }}
-                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
-                    sortBy === "distance"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  📍 {language === "es" ? "Cerca" : "Dist"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSortBy("rating");
-                  }}
-                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
-                    sortBy === "rating"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  ⭐ {language === "es" ? "Calificados" : "Rating"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSortBy("activity");
-                  }}
-                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
-                    sortBy === "activity"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  👥 {language === "es" ? "Concurrencia" : "Active"}
-                </button>
-              </div>
+              <SortSegmentedControl
+                value={sortBy}
+                onChange={setSortBy}
+                options={[
+                  {
+                    id: "distance",
+                    label: language === "es" ? "Cerca" : "Dist",
+                    icon: "📍",
+                  },
+                  {
+                    id: "rating",
+                    label: language === "es" ? "Calificados" : "Rating",
+                    icon: "⭐",
+                  },
+                  {
+                    id: "activity",
+                    label: language === "es" ? "Concurrencia" : "Active",
+                    icon: "👥",
+                  },
+                ]}
+              />
             </div>
 
             {/* Botón Modo Viajero en la Fila de Opciones */}

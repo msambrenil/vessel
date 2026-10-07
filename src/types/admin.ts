@@ -81,7 +81,9 @@ export type AuditActionType =
   | "KINK_CREATED"
   | "KINK_UPDATED"
   | "KINK_TOGGLED"
-  | "KINK_DELETED";
+  | "KINK_DELETED"
+  | "SYSTEM_FORCE_RELOAD"
+  | "SYSTEM_FORCE_LOGOUT";
 
 export interface AdminAuditLogEntry {
   id: string;

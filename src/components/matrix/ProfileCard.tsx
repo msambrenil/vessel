@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import dynamic from "next/dynamic";
 import { VesselProfile } from "@/types/vessel";
 import {
   useRadarMatrix,
@@ -12,14 +11,16 @@ import {
 import { Lock, Star, Zap } from "lucide-react";
 import Image from "next/image";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { getRoleActionMeta, getRoleDisplayLabel } from "@/data/roleActionCatalog";
+import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
+import { TelemetryPill } from "@/components/ui/TelemetryPill";
+import { BrutalistButton, TacticalBadge, TacticalBadgeVariant } from "@/components/ui";
 
 interface ProfileCardProps {
   profile: VesselProfile;
   onSelect: (profile: VesselProfile) => void;
-  onOpenChat: (profileId: string) => void;
+  onOpenChat?: (profileId: string) => void;
   onOpenRendezvous?: (profile: VesselProfile) => void;
   isPriority?: boolean;
   isLockedByGridLimit?: boolean;
@@ -28,15 +29,11 @@ interface ProfileCardProps {
 const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   profile,
   onSelect,
-  onOpenChat,
   onOpenRendezvous,
   isPriority = false,
   isLockedByGridLimit = false,
 }) => {
   const {
-    transmissions,
-    transmitSignal,
-    hasMutualPulse,
     isFavoriteProfile: isFavProp,
     toggleFavoriteProfile: toggleFavProp,
     getMutualKinkMatches: getMatchesProp,
@@ -47,7 +44,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const { getBoundaryForProfile } = useChat();
   const { getProfileDossier } = useDiary();
   const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
-  const [isPulsing, setIsPulsing] = React.useState(false);
+
   const resolvedAvatarUrl = React.useMemo(() => {
     if (!profile.avatarUrl) return "";
     if (profile.avatarUrl.includes("googleusercontent.com") && profile.avatarUrl.includes("=s96-c")) {
@@ -82,32 +79,31 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const isDistant = !profile.isCurrentUser && profile.distanceMeters > FREE_TIER_LIMITS.maxFreeRadarDistanceMeters;
   const isLockedByDistance = isDistant && !isUnlimited;
   const isQuotaLocked = Boolean(isLockedByGridLimit && !isUnlimited && !profile.isCurrentUser);
-  const isMutualPulseActive = !profile.isCurrentUser && hasMutualPulse(profile.id);
-  const canChatDirectly = !isLockedByDistance || isMutualPulseActive;
 
-  const signalCount = transmissions[profile.id] || 0;
   const boundary = getBoundaryForProfile(profile.id);
   const dossier = getProfileDossier(profile.id);
-  const roleAction = getRoleActionMeta(profile.role, language, profile.codename);
   const roleDisplay = getRoleDisplayLabel(profile.role, language);
-
   const verdictMeta = dossier?.rating ? DOSSIER_VERDICT_CONFIG[dossier.rating] : null;
 
-  // Tríada de Compatibilidad 1: Ficha Táctica de Hospedaje
+  // Tríada de Compatibilidad: Ficha Táctica de Hospedaje
   const hostBadge = React.useMemo(() => {
     if (profile.hostCard?.hasPlace) {
       if (profile.hostCard.livingArrangement === "solo") {
         return {
+          isCar: false,
           label: language === "es" ? "Recibe Solo" : "Hosts Solo",
           icon: "🏠",
           shower: Boolean(profile.hostCard.amenities?.showerReady),
+          badgeVariant: "emerald" as TacticalBadgeVariant,
           className: "bg-emerald-500/25 border-emerald-400/50 text-emerald-300",
         };
       }
       return {
+        isCar: false,
         label: language === "es" ? "Con Lugar" : "Has Place",
         icon: "🏠",
         shower: Boolean(profile.hostCard.amenities?.showerReady),
+        badgeVariant: "amber" as TacticalBadgeVariant,
         className: "bg-amber-500/25 border-amber-400/40 text-amber-300",
       };
     }
@@ -120,6 +116,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         fullLabel: language === "es" ? "Tiene transporte" : "Has transport",
         icon: "🚗",
         shower: false,
+        badgeVariant: "cyan" as TacticalBadgeVariant,
         className: "bg-cyan-500/25 border-cyan-400/40 text-cyan-300",
       };
     }
@@ -130,6 +127,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         label: language === "es" ? "Con Lugar" : "Has Place",
         icon: "🏠",
         shower: false,
+        badgeVariant: "amber" as TacticalBadgeVariant,
         className: "bg-amber-500/25 border-amber-400/40 text-amber-300",
       };
     }
@@ -139,17 +137,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       label: language === "es" ? "Busca Lugar" : "Needs Place",
       icon: "📍",
       shower: false,
+      badgeVariant: "neutral" as TacticalBadgeVariant,
       className: "bg-white/10 border-white/15 text-neutral-400",
     };
   }, [profile.hostCard, profile.mobility, profile.hosting, language]);
-
-
 
   const mutualMatches = React.useMemo(() => {
     return getMutualKinkMatches(profile.kinkMatrix);
   }, [getMutualKinkMatches, profile.kinkMatrix]);
 
-  // Tríada de Compatibilidad 3: Disponibilidad Horaria Inmediata (Contador Listo YA)
+  // Contador de Disponibilidad Inmediata (Listo YA)
   const readinessMinutes = React.useMemo(() => {
     if (!profile.onTheClock?.isActive) return null;
     if (profile.onTheClock.expiresAt) {
@@ -170,6 +167,12 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     onSelect(profile);
   };
 
+  const distanceLabel =
+    profile.discretizedDistance?.displayLabel ||
+    (profile.distanceMeters < 1000
+      ? `${profile.distanceMeters}m`
+      : `${(profile.distanceMeters / 1000).toFixed(1)}km`);
+
   return (
     <article
       data-testid={`profile-card-${profile.id}`}
@@ -187,7 +190,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           : "border-white/10 hover:border-electricViolet/70 hover:shadow-violet-soft"
       }`}
     >
-      {/* Botón Base de Apertura de Dossier (Evita anidamiento inválido de <button> dentro de role="button" según WAI-ARIA 4.1.2) */}
+      {/* Botón Base de Apertura de Dossier */}
       <button
         type="button"
         onClick={(e) => {
@@ -197,7 +200,8 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         aria-label={`${language === "es" ? "Ver perfil de" : "View profile of"} ${profile.codename}, ${roleDisplay}${profile.showAge ? `, ${profile.age}` : ""}`}
         className="absolute inset-0 z-10 w-full h-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-inset rounded-2xl bg-transparent"
       />
-      {/* Borde Animado Neón Fucsia Giratorio para Miembros Pagos (Border Beam) */}
+
+      {/* Borde Animado Neón Fucsia Giratorio para Miembros Pagos */}
       {isPaidMember && (
         <div
           data-testid="neon-fuchsia-border-beam"
@@ -249,7 +253,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               aria-hidden="true"
             />
           )}
-          {/* Velo táctico para perfiles fuera de la cuota gratuita de 99 perfiles */}
+          {/* Velo táctico para perfiles fuera de la cuota gratuita */}
           {isQuotaLocked && (
             <div
               data-testid="quota-locked-overlay"
@@ -267,7 +271,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         </div>
       ) : (
         <div className="w-full h-full bg-gradient-to-b from-[#13111C] via-[#0D0B12] to-[#07060A] flex flex-col items-center justify-center relative overflow-hidden select-none border border-white/5">
-          {/* Trama táctica geométrica de fondo */}
           <div className="absolute inset-0 bg-[radial-gradient(#8A2BE2_1px,transparent_1px)] [background-size:16px_16px] opacity-15 pointer-events-none" />
           <div className="relative z-10 flex flex-col items-center justify-center p-4 text-center">
             <div className="w-14 h-14 rounded-2xl bg-electricViolet/15 border border-electricViolet/40 flex items-center justify-center shadow-[0_0_20px_rgba(138,43,226,0.25)] mb-2 backdrop-blur-xs">
@@ -282,10 +285,10 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         </div>
       )}
 
-      {/* Degradado Táctico de Legibilidad: 100% contraste desde la base, protegiendo legibilidad sin oscurecer la parte superior */}
+      {/* Degradado Táctico de Legibilidad Calibrado al 46% */}
       <div className="absolute inset-x-0 bottom-0 h-[46%] bg-gradient-to-t from-black via-black/85 via-50% to-transparent pointer-events-none" />
 
-      {/* Badge Superior Izquierdo: Solo para el Usuario Actual o Listo YA */}
+      {/* Badge Superior Izquierdo: Solo para Usuario Actual o Listo YA */}
       {profile.isCurrentUser ? (
         <div className="absolute top-2 left-2 pointer-events-none z-10">
           <div className="flex items-center gap-1 bg-electricViolet text-white px-2 py-0.5 rounded-full shadow-violet-soft font-bold whitespace-nowrap">
@@ -296,7 +299,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           </div>
         </div>
       ) : (
-        /* Badge Superior Izquierdo: Listo YA (On-The-Clock con Minutos Restantes) */
         profile.onTheClock?.isActive && (
           <div className="absolute top-2 left-2 z-10 pointer-events-none">
             <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-400 text-amber-300 px-1.5 py-0.5 rounded-full text-[8px] font-mono font-black shadow-[0_0_10px_rgba(251,191,36,0.3)] uppercase tracking-wider backdrop-blur-md">
@@ -308,51 +310,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         )
       )}
 
-      {/* Píldora Superior Derecha: Telemetría Unificada (Estado Corporal + Distancia + Señal Remota, sin acción al presionar) */}
+      {/* Píldora Superior Derecha: Telemetría Unificada Usando TelemetryPill */}
       {!profile.isCurrentUser && (
         <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1 pointer-events-auto">
-          <div
-            data-testid="distance-telemetry-pill"
-            onClick={(e) => e.stopPropagation()}
-            title={
-              isLockedByDistance
-                ? `${t.card.remoteSignal || "Señal Remota"}`
-                : undefined
-            }
-            className={`flex items-center gap-1 px-2 py-0.5 rounded-full shadow-sm font-mono text-[9px] font-bold border cursor-default select-none ${
-              isLockedByDistance
-                ? "bg-black/90 border-purple-500/50 text-purple-300"
-                : "bg-black/90 border-white/15 text-white"
-            }`}
-          >
-            {/* Dot indicador de Estado Corporal */}
-            <span
-              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                profile.bodyState === "open"
-                  ? "bg-mintNeon shadow-mint-glow animate-pulse"
-                  : profile.bodyState === "occupied"
-                  ? "bg-bloodNeon shadow-blood-glow"
-                  : "bg-purple-400"
-              }`}
-            />
-            {/* Ícono de Satélite Táctico para perfiles fuera de radio libre (>1km) */}
-            {isLockedByDistance && <span className="leading-none text-[10px]">🛰️</span>}
-            {/* Distancia discretizada S2 */}
-            <span>
-              {profile.discretizedDistance?.displayLabel ||
-                (profile.distanceMeters < 1000
-                  ? `${profile.distanceMeters}m`
-                  : `${(profile.distanceMeters / 1000).toFixed(1)}km`)}
-            </span>
-            {/* Mini tag de Señal Remota unificado en la píldora */}
-            {isLockedByDistance && (
-              <span className="text-[7.5px] uppercase tracking-wider font-extrabold text-electricViolet-glow ml-0.5">
-                {language === "es" ? "REMOTO" : "REMOTE"}
-              </span>
-            )}
-          </div>
+          <TelemetryPill
+            bodyState={profile.bodyState}
+            distanceLabel={distanceLabel}
+            isRemote={isLockedByDistance}
+            title={isLockedByDistance ? (t.card?.remoteSignal || "Señal Remota") : undefined}
+          />
 
-          {/* Alerta Sentinel Preventiva Comunitaria */}
           {profile.hasSafetyAlert && (
             <div className="flex items-center gap-1 bg-red-950/95 border border-red-500 text-red-300 px-1.5 py-0.5 rounded-full text-[8px] font-mono font-bold uppercase tracking-wider shadow-sm pointer-events-none">
               <span>⚠️</span>
@@ -361,9 +328,9 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
         </div>
       )}
 
-      {/* Pie de Foto Impeccable: Jerarquía Táctica Desacoplada (Nombre 100% visible sin colisión) */}
+      {/* Pie de Foto Impeccable: Jerarquía Táctica */}
       <div className="absolute bottom-2 inset-x-2 z-10 flex flex-col gap-1 pointer-events-none">
-        {/* Fila 1: Nombre, Edad, Química & Dúo — 100% DEL ANCHO DE LA TARJETA */}
+        {/* Fila 1: Nombre, Edad, Química & Dúo */}
         <div className="flex items-center gap-1.5 w-full min-w-0 pointer-events-auto">
           <span
             title={dossier?.customAlias || profile.codename}
@@ -378,7 +345,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               {profile.age}
             </span>
           )}
-          {/* Ícono de Química / Veredicto Dossier */}
           {verdictMeta && (
             <span
               title={`${verdictMeta.icon} ${verdictMeta.title[language]}`}
@@ -387,7 +353,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               {verdictMeta.icon}
             </span>
           )}
-          {/* Badge Dúo de Pareja */}
           {profile.isDuo && (
             <span
               title={language === "es" ? "Modo Dúo de Pareja" : "Duo Partner Mode"}
@@ -398,12 +363,12 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           )}
         </div>
 
-        {/* Fila 2: Rol Táctico + Hospedaje + Micro-chips de Salud / Morbos */}
+        {/* Fila 2: Rol Táctico + Hospedaje + Micro-chips */}
         <div className="flex items-center gap-1 w-full min-w-0 pointer-events-auto overflow-hidden">
           <span className="text-[11px] sm:text-xs text-electricViolet-glow font-black tracking-tight drop-shadow-sm truncate min-w-0 max-w-[80px] sm:max-w-none">
             {roleDisplay}
           </span>
-          {/* Micro-Ficha Táctica de Hospedaje */}
+
           {hostBadge.isCar ? (
             <div className="relative inline-flex items-center flex-shrink-0">
               <button
@@ -424,7 +389,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   </span>
                 )}
               </button>
-              {/* Tooltip flotante al presionar */}
               {showTransportLegend && (
                 <div
                   role="tooltip"
@@ -436,42 +400,49 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               )}
             </div>
           ) : (
-            <span
+            <TacticalBadge
               data-testid={`host-badge-${profile.id}`}
+              variant={hostBadge.badgeVariant}
+              size="xs"
               title={hostBadge.shower ? (language === "es" ? `${hostBadge.label} + Ducha lista` : `${hostBadge.label} + Shower ready`) : hostBadge.label}
-              className={`inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[8.5px] font-bold flex-shrink-0 shadow-xs border ${hostBadge.className}`}
+              icon={<span>{hostBadge.icon}</span>}
+              className={`flex-shrink-0 shadow-xs border ${hostBadge.className}`}
             >
-              <span>{hostBadge.icon}</span>
               <span className="text-[8px] font-mono">{hostBadge.label}</span>
-              {hostBadge.shower && <span className="text-[7.5px]">🚿</span>}
-            </span>
+              {hostBadge.shower && <span className="text-[7.5px] ml-0.5">🚿</span>}
+            </TacticalBadge>
           )}
 
-          {/* Mutual Kinks or Tags */}
           {mutualMatches.length > 0 ? (
-            <span
+            <TacticalBadge
               data-testid={`kinks-badge-${profile.id}`}
-              className="px-1 py-0.2 rounded bg-pink-950/70 border border-pink-500/40 text-pink-300 text-[8px] font-mono font-bold flex-shrink-0 truncate max-w-[65px] min-[380px]:max-w-[85px]"
+              variant="pink"
+              size="xs"
+              className="flex-shrink-0 truncate max-w-[65px] min-[380px]:max-w-[85px]"
               title={language === "es" ? `${mutualMatches.length} morbos mutuos` : `${mutualMatches.length} mutual kinks`}
+              icon={<span>✨</span>}
             >
-              ✨ {mutualMatches.length} {language === "es" ? "morbos" : "mutual"}
-            </span>
+              <span>{mutualMatches.length} {language === "es" ? "morbos" : "mutual"}</span>
+            </TacticalBadge>
           ) : profile.kinks && profile.kinks.length > 0 ? (
-            <span
-              className="px-1 py-0.2 rounded bg-white/5 border border-white/10 text-neutral-400 text-[8px] font-mono truncate max-w-[60px] min-[380px]:max-w-[75px]"
+            <TacticalBadge
+              variant="neutral"
+              size="xs"
+              className="flex-shrink-0 truncate max-w-[60px] min-[380px]:max-w-[75px]"
               title={profile.kinks[0]}
             >
               #{profile.kinks[0]}
-            </span>
+            </TacticalBadge>
           ) : null}
         </div>
 
-        {/* Fila 3: Acción Primaria Zen (Coordinación Rápida) + Favorito */}
+        {/* Fila 3: Acción Primaria Táctica + Favorito */}
         {!profile.isCurrentUser && (
           <div className="flex items-center gap-1.5 w-full pt-0.5 pointer-events-auto relative z-20">
-            {/* Botón Táctico de Coordinación Rápida */}
-            <button
-              type="button"
+            <BrutalistButton
+              variant="tactical"
+              size="compact"
+              soundEffect="none"
               data-testid={`profile-sintonizar-btn-${profile.id}`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -485,26 +456,27 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   onOpenRendezvous(profile);
                 }
               }}
-              className="flex-1 min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 rounded-xl bg-black/60 hover:bg-electricViolet/25 border border-white/15 hover:border-electricViolet/60 text-white font-mono text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 backdrop-blur-xs shadow-sm hover:shadow-violet-soft active:scale-95 transition-all cursor-pointer"
+              className="flex-1 min-h-[34px] sm:min-h-[36px]"
               title={language === "es" ? "Coordinar encuentro y acuerdos" : "Coordinate date & terms"}
               aria-label={`${language === "es" ? "Coordinar con" : "Coordinate with"} ${profile.codename}`}
             >
               <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300 flex-shrink-0" />
               <span className="truncate">{language === "es" ? "Coordinar" : "Coordinate"}</span>
-            </button>
+            </BrutalistButton>
 
-            {/* Botón Favorito (★) 1-Tap */}
-            <button
-              type="button"
+            <BrutalistButton
+              variant="favorite"
+              size="compact-icon"
+              soundEffect="pulse"
               data-testid={`profile-favorite-toggle-${profile.id}`}
               onClick={(e) => {
                 e.stopPropagation();
                 toggleFavoriteProfile(profile.id);
               }}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center transition-all duration-150 transform active:scale-75 flex-shrink-0 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${
+              className={`transform active:scale-75 ${
                 isFavoriteProfile(profile.id)
-                  ? "border-amber-400 bg-amber-950/80 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)] focus-visible:ring-amber-400"
-                  : "border-white/15 bg-black/60 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black/90 focus-visible:ring-amber-400"
+                  ? "!border-amber-400 !bg-amber-950/80 !text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
+                  : ""
               }`}
               title={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
               aria-label={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
@@ -515,7 +487,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   isFavoriteProfile(profile.id) ? "fill-amber-400 text-amber-400 scale-110" : ""
                 }`}
               />
-            </button>
+            </BrutalistButton>
           </div>
         )}
       </div>

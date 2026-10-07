@@ -12,6 +12,7 @@ import { VesselProfile, HotspotCategory } from "@/types/vessel";
 import { ProfileCard } from "./ProfileCard";
 import { PlacesGrid } from "./PlacesGrid";
 import { MatrixUnlimitedPromoCard } from "./MatrixUnlimitedPromoCard";
+import { RadarBottomCommandBar } from "./RadarBottomCommandBar";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
 
 const RendezvousSheet = dynamic(
@@ -23,12 +24,9 @@ import {
   X,
   SlidersHorizontal,
   RotateCcw,
-  Sparkles,
   Zap,
   Home,
   ShieldCheck,
-  Ghost,
-  Flame,
   Radio,
   UserPlus,
   FlaskConical,
@@ -37,6 +35,11 @@ import {
   Star,
 } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import {
+  TacticalSearchInput,
+  FilterPill,
+  SortSegmentedControl,
+} from "@/components/ui";
 
 interface ProfileGridProps {
   onSelectProfile: (profile: VesselProfile) => void;
@@ -55,7 +58,6 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     setIsFilterDrawerOpen,
     isOnTheClockFilterActive,
     setIsOnTheClockFilterActive,
-    setActiveView,
     matrixTab,
     favoriteProfileIds: favIdsProp,
     operatingIntent = "now",
@@ -85,7 +87,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     { id: "all", label: language === "es" ? "Todos" : "All", icon: "🌐" },
     { id: "cruising_area", label: language === "es" ? "Áreas de Cruising" : "Cruising Areas", icon: "🌲" },
     { id: "nightlife", label: language === "es" ? "Fiestas" : "Nightlife", icon: "🎉" },
-    { id: "darkroom_club", label: language === "es" ? "Cuartos Oscuros" : "Darkrooms", icon: "⚡" },
+    { id: "darkroom_club", label: language === "es" ? "Darkrooms" : "Darkrooms", icon: "⚡" },
     { id: "sauna", label: language === "es" ? "Saunas" : "Saunas", icon: "🧖" },
     { id: "queer_bar", label: language === "es" ? "Bares" : "Bars", icon: "🍸" },
   ];
@@ -316,385 +318,8 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
   return (
     <div className="flex flex-col flex-1 pb-48 sm:pb-56 select-none">
       {/* =========================================================
-          BARRA DE BÚSQUEDA Y FILTROS RÁPIDOS (Flujo Natural Zen)
-          ========================================================= */}
-      <div className="p-2 sm:p-2.5 bg-obsidian-surface/60 border-b border-white/5 space-y-2 backdrop-blur-sm">
-        {/* =========================================================
-            HEADER CONTEXTUAL PARA PESTAÑA: PERSONAS (2 FILAS COMPACTAS)
-            ========================================================= */}
-        {matrixTab === "people" && (
-          <>
-            {/* Fila 1: Input de Búsqueda + Modo Viajero + Botón de Filtros Avanzados */}
-            <div className="flex items-center gap-1.5">
-              <div className="relative flex-1 min-w-0">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors pointer-events-none ${
-                  searchValue ? "text-electricViolet-glow" : "text-neutral-400"
-                }`} />
-                <input
-                  type="text"
-                  data-testid="people-search-input"
-                  placeholder={t.filters?.searchPlaceholder || "Buscar por rol, fetiche, alias..."}
-                  aria-label={t.filters?.searchPlaceholder || "Buscar por rol, fetiche, alias..."}
-                  value={searchValue}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="w-full min-h-[38px] bg-white/5 border border-white/10 rounded-xl text-white text-xs pl-9 pr-8 py-1.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-sans"
-                />
-                {searchValue && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setSearchValue("");
-                      React.startTransition(() => {
-                        setFilters((prev) => ({ ...prev, searchQuery: "" }));
-                      });
-                    }}
-                    aria-label={language === "es" ? "Limpiar búsqueda" : "Clear search"}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Botón Modo Viajero integrado en Fila 1 */}
-              <button
-                type="button"
-                data-testid="people-travel-mode-button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  openTravelModal();
-                }}
-                aria-label={travelMode.isActive ? `Modo Viajero Activo: ${travelMode.cityName}` : "Activar Modo Viajero"}
-                title={
-                  travelMode.isActive
-                    ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocá para cambiar o restablecer`
-                    : "Simular ubicación en otra ciudad (Modo Viajero)"
-                }
-                className={`px-2.5 min-h-[38px] rounded-xl flex items-center justify-center gap-1 font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
-                  travelMode.isActive
-                    ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow animate-pulse font-black"
-                    : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Plane className={`w-3.5 h-3.5 ${travelMode.isActive ? "text-white" : "text-electricViolet-glow"}`} />
-                <span className="truncate max-w-[72px] sm:max-w-[110px]">
-                  {travelMode.isActive ? travelMode.cityName : (language === "es" ? "Viajero" : "Travel")}
-                </span>
-              </button>
-
-              {/* Botón de Filtros Avanzados con Badge de Filtros Activos */}
-              <button
-                type="button"
-                data-testid="filter-toggle-button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setIsFilterDrawerOpen(true);
-                }}
-                aria-label={t.filters?.title || "Filtros Avanzados"}
-                className={`px-2.5 sm:px-3 min-h-[38px] relative flex items-center justify-center gap-1.5 rounded-xl border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 flex-shrink-0 text-xs font-mono font-bold ${
-                  hasActiveFilters
-                    ? "bg-electricViolet text-white border-electricViolet-glow font-bold shadow-violet-glow hover:bg-electricViolet/90"
-                    : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                }`}
-                title={t.filters?.title || "Filtros Dinámicos"}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 stroke-[2.2]" />
-                <span className="hidden sm:inline uppercase text-[10.5px]">
-                  {language === "es" ? "Filtros" : "Filters"}
-                </span>
-                {activeFiltersCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-bloodNeon text-white text-[9px] font-mono font-black flex items-center justify-center shadow-blood-glow">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Fila 2 Unificada: Selector de Ordenamiento (1-Tap) + Píldoras de Filtro Rápido */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 -mx-1 px-1 scroll-smooth">
-              {/* Selector de Ordenamiento Táctico Integrado */}
-              <div className="flex items-center gap-0.5 bg-white/5 border border-white/10 rounded-full p-0.5 font-mono text-[9.5px] flex-shrink-0 mr-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSortBy("distance");
-                  }}
-                  className={`px-2 py-1 min-h-[28px] rounded-full transition-all cursor-pointer ${
-                    sortBy === "distance"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                  title={language === "es" ? "Ordenar por proximidad física (Google S2)" : "Sort by physical proximity"}
-                >
-                  📍 {language === "es" ? "Cerca" : "Dist"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSortBy("recent");
-                  }}
-                  className={`px-2 py-1 min-h-[28px] rounded-full transition-all cursor-pointer ${
-                    sortBy === "recent"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                  title={language === "es" ? "Ordenar por perfiles On-Line y disponibles" : "Sort by Online and available"}
-                >
-                  ⚡ {language === "es" ? "On-Line" : "Online"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setSortBy("affinity");
-                  }}
-                  className={`px-2 py-1 min-h-[28px] rounded-full transition-all cursor-pointer ${
-                    sortBy === "affinity"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                  title={language === "es" ? "Ordenar por coincidencia de preferencias y deseos mutuos" : "Sort by mutual kinks and affinity"}
-                >
-                  🔥 {language === "es" ? "Afinidad" : "Match"}
-                </button>
-              </div>
-
-              <div className="h-4 w-px bg-white/15 flex-shrink-0 mx-0.5" />
-
-              {/* 1.5. Favoritos */}
-              <button
-                type="button"
-                data-testid="filter-pill-favorites"
-                onClick={() => toggleQuickFilter("favorites")}
-                aria-pressed={isFavoritesActive}
-                className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
-                  isFavoritesActive
-                    ? "bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.3)] font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-amber-300 hover:bg-white/10"
-                }`}
-              >
-                <Star
-                  className={`w-3 h-3 ${
-                    isFavoritesActive ? "fill-amber-400 text-amber-400" : "text-amber-400/80"
-                  }`}
-                />
-                <span>{t.filters?.quickFavorites || (language === "es" ? "Favoritos" : "Favorites")}</span>
-                {favoriteProfileIds.length > 0 && (
-                  <span className={`text-[9px] px-1 rounded-full font-mono ${
-                    isFavoritesActive ? "bg-amber-400 text-black font-black" : "bg-white/10 text-neutral-400"
-                  }`}>
-                    {favoriteProfileIds.length}
-                  </span>
-                )}
-              </button>
-
-
-              {/* 3. Con lugar */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("host")}
-                aria-pressed={isHostOnlyActive}
-                className={`px-2.5 py-1 min-h-[30px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-95 ${
-                  isHostOnlyActive
-                    ? "bg-emerald-500/25 border-emerald-400 text-emerald-300 shadow-[0_0_10px_rgba(52,211,153,0.3)] font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                }`}
-                title={language === "es" ? "Mostrar solo perfiles con lugar propio disponible ya" : "Show only profiles with place"}
-              >
-                <Home className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{language === "es" ? "Con lugar" : "Has place"}</span>
-              </button>
-
-              {/* 4. Verificados */}
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("verified")}
-                aria-pressed={isVerifiedActive}
-                className={`px-2.5 py-1 min-h-[30px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 active:scale-95 ${
-                  isVerifiedActive
-                    ? "bg-cyan-500/25 border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)] font-black"
-                    : "bg-white/5 text-neutral-300 border-white/10 hover:text-cyan-300 hover:bg-white/10"
-                }`}
-                title={language === "es" ? "Solo perfiles verificados biométricamente 3D" : "Verified profiles only"}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{language === "es" ? "Verificados" : "Verified"}</span>
-              </button>
-
-              {/* Reset / Limpiar rápido si hay filtros activos */}
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={handleResetAllFilters}
-                  className="px-2.5 py-1 min-h-[30px] rounded-full text-[10px] font-mono font-bold text-bloodNeon hover:text-white bg-bloodNeon/10 border border-bloodNeon/30 hover:bg-bloodNeon/20 flex items-center gap-1 transition-all flex-shrink-0 cursor-pointer active:scale-95"
-                  title={language === "es" ? "Restablecer todos los filtros" : "Reset all filters"}
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>{language === "es" ? "Limpiar" : "Clear"}</span>
-                </button>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* =========================================================
-            HEADER CONTEXTUAL PARA PESTAÑA: LUGARES & FIESTAS (2 FILAS COMPACTAS)
-            ========================================================= */}
-        {matrixTab === "places" && (
-          <>
-            {/* Fila 1: Búsqueda de Lugares + Modo Viajero + Botón Proponer Lugar */}
-            <div className="flex items-center gap-1.5">
-              <div className="relative flex-1 min-w-0">
-                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors pointer-events-none ${
-                  placesSearchQuery ? "text-electricViolet-glow" : "text-neutral-400"
-                }`} />
-                <input
-                  type="text"
-                  data-testid="places-search-input"
-                  placeholder={t.filters?.searchPlacesPlaceholder || (language === "es" ? "Buscar sauna, cruising, fiesta, boliche..." : "Search sauna, cruising, club, party...")}
-                  aria-label="Buscar lugares o fiestas"
-                  value={placesSearchQuery}
-                  onChange={(e) => setPlacesSearchQuery(e.target.value)}
-                  className="w-full min-h-[38px] bg-white/5 border border-white/10 rounded-xl text-white text-xs pl-9 pr-8 py-1.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-sans"
-                />
-                {placesSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setPlacesSearchQuery("");
-                    }}
-                    aria-label="Limpiar búsqueda de lugares"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Botón Modo Viajero integrado en Fila 1 */}
-              <button
-                type="button"
-                data-testid="places-travel-mode-button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  openTravelModal();
-                }}
-                aria-label={travelMode.isActive ? `Modo Viajero Activo: ${travelMode.cityName}` : "Activar Modo Viajero"}
-                title={
-                  travelMode.isActive
-                    ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocá para cambiar o restablecer`
-                    : "Simular ubicación en otra ciudad (Modo Viajero)"
-                }
-                className={`px-2.5 min-h-[38px] rounded-xl flex items-center justify-center gap-1 font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
-                  travelMode.isActive
-                    ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow animate-pulse font-black"
-                    : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Plane className={`w-3.5 h-3.5 ${travelMode.isActive ? "text-white" : "text-electricViolet-glow"}`} />
-                <span className="truncate max-w-[72px] sm:max-w-[110px]">
-                  {travelMode.isActive ? travelMode.cityName : (language === "es" ? "Viajero" : "Travel")}
-                </span>
-              </button>
-
-              {/* Botón Destacado: Proponer Lugar */}
-              <button
-                type="button"
-                data-testid="propose-place-header-button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setIsProposeOpen(true);
-                }}
-                aria-label="Proponer nuevo punto táctico"
-                className="px-2.5 sm:px-3 min-h-[38px] rounded-xl bg-electricViolet text-white border border-electricViolet-glow font-bold shadow-violet-glow hover:bg-electricViolet/90 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-mono active:scale-95 transition-all flex-shrink-0"
-                title="Proponer nuevo punto de cruising, sauna o espacio"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline uppercase text-[10.5px]">
-                  {t.filters?.proposePlaceBtn || (language === "es" ? "Proponer Lugar" : "Propose Place")}
-                </span>
-              </button>
-            </div>
-
-            {/* Fila 2 Unificada: Selector de Ordenamiento + Píldoras de Categorías de Lugares */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 -mx-1 px-1 scroll-smooth">
-              <div className="flex items-center gap-0.5 bg-white/5 border border-white/10 rounded-full p-0.5 font-mono text-[9.5px] flex-shrink-0 mr-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setPlacesSortBy("distance");
-                  }}
-                  className={`px-2 py-1 min-h-[28px] rounded-full transition-all cursor-pointer ${
-                    placesSortBy === "distance"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  📍 {language === "es" ? "Cerca" : "Dist"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setPlacesSortBy("rating");
-                  }}
-                  className={`px-2 py-1 min-h-[28px] rounded-full transition-all cursor-pointer ${
-                    placesSortBy === "rating"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  ⭐ {language === "es" ? "Calificados" : "Rating"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setPlacesSortBy("activity");
-                  }}
-                  className={`px-2 py-1 min-h-[28px] rounded-full transition-all cursor-pointer ${
-                    placesSortBy === "activity"
-                      ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                      : "text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  👥 {language === "es" ? "Concurrencia" : "Active"}
-                </button>
-              </div>
-
-              {placesCategories.map((cat) => {
-                const isSelected = placesCategory === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setPlacesCategory(cat.id);
-                    }}
-                    className={`px-2.5 py-1 min-h-[32px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                      isSelected
-                        ? "bg-electricViolet text-white border-electricViolet-glow font-black shadow-violet-glow"
-                        : "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10"
-                    }`}
-                  >
-                    <span>{cat.icon}</span>
-                    <span>{cat.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* =========================================================
           CONTENIDO SEGÚN PESTAÑA ACTIVA: PERSONAS vs LUGARES
+          (100% Pantalla Completa Inmersiva - App Shell 2.0)
           ========================================================= */}
       {matrixTab === "places" ? (
         <PlacesGrid
@@ -968,88 +593,71 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           {/* Chips Interactivos de Filtros Activos (Relajación Selectiva 1-Tap) */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
             {searchValue.trim() !== "" && (
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
+              <FilterPill
+                label={`“${searchValue}”`}
+                active={true}
+                variant="default"
+                onClear={() => {
                   setSearchValue("");
                   setFilters((prev) => ({ ...prev, searchQuery: "" }));
                 }}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-white/10 hover:bg-bloodNeon/20 border border-white/15 hover:border-bloodNeon/40 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>&ldquo;{searchValue}&rdquo;</span>
-                <X className="w-3 h-3 text-bloodNeon" />
-              </button>
+              />
             )}
             {isFavoritesActive && (
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("favorites")}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>⭐ {t.filters?.quickFavorites || (language === "es" ? "Favoritos" : "Favorites")}</span>
-                <X className="w-3 h-3" />
-              </button>
+              <FilterPill
+                label={`⭐ ${t.filters?.quickFavorites || (language === "es" ? "Favoritos" : "Favorites")}`}
+                active={true}
+                variant="amber"
+                onClear={() => toggleQuickFilter("favorites")}
+              />
             )}
             {isOnTheClockFilterActive && (
-              <button
-                type="button"
-                onClick={() => setIsOnTheClockFilterActive(false)}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>⚡ {t.filters?.quickBoost || (language === "es" ? "Listos YA" : "Ready Now")}</span>
-                <X className="w-3 h-3" />
-              </button>
+              <FilterPill
+                label={`⚡ ${t.filters?.quickBoost || (language === "es" ? "Pinta ya" : "Ready Now")}`}
+                active={true}
+                variant="violet"
+                onClear={() => setIsOnTheClockFilterActive(false)}
+              />
             )}
             {isHostOnlyActive && (
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("host")}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-white/10 border border-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>🏠 {t.filters?.quickHost || (language === "es" ? "Con Casa" : "Has Place")}</span>
-                <X className="w-3 h-3 text-bloodNeon" />
-              </button>
+              <FilterPill
+                label={`🏠 ${t.filters?.quickHost || (language === "es" ? "Pone lugar" : "Has Place")}`}
+                active={true}
+                variant="emerald"
+                onClear={() => toggleQuickFilter("host")}
+              />
             )}
             {isVerifiedActive && (
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("verified")}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-white/10 border border-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>🛡️ {t.filters?.quickVerified || (language === "es" ? "Verificados" : "Verified")}</span>
-                <X className="w-3 h-3 text-bloodNeon" />
-              </button>
+              <FilterPill
+                label={`🛡️ ${t.filters?.quickVerified || (language === "es" ? "Verificados" : "Verified")}`}
+                active={true}
+                variant="cyan"
+                onClear={() => toggleQuickFilter("verified")}
+              />
             )}
             {isMutualKinksActive && (
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("mutualKinks")}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-white/10 border border-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>✨ {language === "es" ? "Deseos Mutuos" : "Mutual Kinks"}</span>
-                <X className="w-3 h-3 text-bloodNeon" />
-              </button>
+              <FilterPill
+                label={`✨ ${language === "es" ? "Morbos mutuos" : "Mutual Kinks"}`}
+                active={true}
+                variant="violet"
+                onClear={() => toggleQuickFilter("mutualKinks")}
+              />
             )}
             {isSoberActive && (
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("sober")}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-white/10 border border-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>🌿 {language === "es" ? "Sobrio" : "Sober"}</span>
-                <X className="w-3 h-3 text-bloodNeon" />
-              </button>
+              <FilterPill
+                label={`🌿 ${language === "es" ? "Sobrio" : "Sober"}`}
+                active={true}
+                variant="default"
+                onClear={() => toggleQuickFilter("sober")}
+              />
             )}
             {isHighIntensityActive && (
-              <button
-                type="button"
-                onClick={() => toggleQuickFilter("intensity")}
-                className="px-2.5 py-1.5 min-h-[32px] rounded-full bg-white/10 border border-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all"
-              >
-                <span>🚀 {language === "es" ? "+Intenso" : "+Intensity"}</span>
-                <X className="w-3 h-3 text-bloodNeon" />
-              </button>
+              <FilterPill
+                label={`🚀 ${language === "es" ? "+Picante" : "+Intensity"}`}
+                active={true}
+                variant="blood"
+                onClear={() => toggleQuickFilter("intensity")}
+              />
             )}
           </div>
 
@@ -1073,6 +681,19 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           targetProfile={rendezvousTargetProfile}
         />
       )}
+
+      {/* Barra de Comandos Flotante con BottomSheet Deslizable (App Shell 2.0) */}
+      <RadarBottomCommandBar
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        onProposePlace={() => setIsProposeOpen(true)}
+        placesSearchQuery={placesSearchQuery}
+        onPlacesSearchChange={setPlacesSearchQuery}
+        placesCategory={placesCategory}
+        onPlacesCategoryChange={setPlacesCategory}
+        placesSortBy={placesSortBy}
+        onPlacesSortByChange={setPlacesSortBy}
+      />
     </div>
   );
 };

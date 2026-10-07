@@ -210,6 +210,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Control maestro del sistema (versión, forzar recarga, forzar logout)
+    match /vessel_system_control/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Denegación por defecto para cualquier otra ruta no declarada
     match /{document=**} {
       allow read, write: if false;

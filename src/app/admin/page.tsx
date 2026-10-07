@@ -50,6 +50,7 @@ import { AuditLogsTab } from "@/components/admin/tabs/AuditLogsTab";
 import { BetaManagementTab } from "@/components/admin/tabs/BetaManagementTab";
 import { KinksManagementTab } from "@/components/admin/tabs/KinksManagementTab";
 import { HotspotsManagementTab } from "@/components/admin/tabs/HotspotsManagementTab";
+import { SystemVersionTab } from "@/components/admin/tabs/SystemVersionTab";
 import { AdminAuthGuard } from "@/components/admin/AdminAuthGuard";
 import { useVessel } from "@/context/VesselContext";
 import { createVipInviteCode } from "@/lib/firebase/inviteService";
@@ -583,6 +584,10 @@ export default function AdminConsolePage() {
         )}
 
         {activeTab === "audit" && <AuditLogsTab logs={auditLogs} />}
+
+        {activeTab === "system" && (
+          <SystemVersionTab currentStaff={currentStaff} />
+        )}
           </main>
         </div>
       </div>

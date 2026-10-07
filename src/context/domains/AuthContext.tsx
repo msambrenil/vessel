@@ -30,6 +30,7 @@ import {
 import { saveFullUserDataToCloud, subscribeToFullUserData } from "@/lib/firebase/userDataService";
 import { loadFromStorage, saveToStorage, removeFromStorage, STORAGE_KEYS } from "@/lib/storage/localStorageSync";
 import { useSettings } from "./SettingsContext";
+import { subscribeToSystemControl } from "@/lib/version/systemControlService";
 
 export interface MyProfileState {
   codename: string;
@@ -384,6 +385,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
       setCurrentUserUid(uid);
       uidRef.current = uid;
 
+      if (user && typeof window !== "undefined") {
+        const storedStart = window.localStorage.getItem("vessel_session_start_timestamp");
+        if (!storedStart) {
+          window.localStorage.setItem("vessel_session_start_timestamp", Date.now().toString());
+        }
+      }
+
       if (!user) {
         const fallbackProfile = appMode === "real" ? CLEAN_UNAUTHENTICATED_PROFILE : INITIAL_MY_PROFILE;
         setMyProfile(fallbackProfile);
@@ -720,11 +728,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onLogoutCl
     removeFromStorage(STORAGE_KEYS.RECEIVED_PULSES);
 
     if (typeof window !== "undefined") {
+      window.localStorage.removeItem("vessel_session_start_timestamp");
       window.dispatchEvent(new CustomEvent("vessel:user-switched", { detail: { uid: null } }));
     }
 
     setAuthModalMode("login");
   }, [onLogoutCleanup, appMode, cleanupUserSessionData]);
+
+  // Escucha activa del Control Maestro para forzado de cierre de sesión
+  useEffect(() => {
+    const unsub = subscribeToSystemControl((state) => {
+      if (state.forceLogoutTimestamp && state.forceLogoutTimestamp > 0) {
+        if (typeof window !== "undefined") {
+          const sessionStartStr = window.localStorage.getItem("vessel_session_start_timestamp");
+          const sessionStart = sessionStartStr ? parseInt(sessionStartStr, 10) : 0;
+          if (authUser && sessionStart < state.forceLogoutTimestamp) {
+            console.warn(
+              "[VESSEL Auth] Sesión cerrada remotamente por comando de seguridad del Administrador"
+            );
+            logout();
+            window.sessionStorage.setItem("vessel_session_force_closed", "true");
+          }
+        }
+      }
+    }, appMode);
+
+    return () => unsub();
+  }, [authUser, logout, appMode]);
 
   const verifyIdentity = useCallback(
     (data: {

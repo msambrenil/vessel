@@ -9,9 +9,11 @@ export type TacticalBadgeVariant =
   | "emerald"
   | "purple"
   | "gold"
+  | "cyan"
+  | "pink"
   | "neutral";
 
-export type TacticalBadgeSize = "sm" | "default" | "lg";
+export type TacticalBadgeSize = "xs" | "sm" | "default" | "lg";
 
 export interface TacticalBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: TacticalBadgeVariant;
@@ -45,10 +47,15 @@ export const TacticalBadge: React.FC<TacticalBadgeProps> = ({
       "bg-emerald-950/70 text-emerald-400 border-emerald-500/40 shadow-[0_0_10px_rgba(52,211,153,0.15)]",
     purple:
       "bg-purple-950/70 text-purple-300 border-purple-500/40 shadow-[0_0_10px_rgba(192,132,252,0.15)]",
+    cyan:
+      "bg-cyan-950/70 text-cyan-300 border-cyan-400/40 shadow-[0_0_10px_rgba(6,182,212,0.15)]",
+    pink:
+      "bg-pink-950/70 text-pink-300 border-pink-500/40 shadow-[0_0_10px_rgba(236,72,153,0.15)]",
     neutral: "bg-obsidian-surface text-neutral-300 border-white/10",
   };
 
   const sizeClasses: Record<TacticalBadgeSize, string> = {
+    xs: "text-[8px] px-1 py-0.2 gap-0.5 rounded",
     sm: "text-[9px] px-2 py-0.5 gap-1",
     default: "text-[10px] px-2.5 py-1 gap-1.5",
     lg: "text-xs px-3 py-1.5 gap-2",
@@ -61,6 +68,8 @@ export const TacticalBadge: React.FC<TacticalBadgeProps> = ({
     blood: "bg-bloodNeon",
     emerald: "bg-emerald-400",
     purple: "bg-purple-400",
+    cyan: "bg-cyan-400",
+    pink: "bg-pink-400",
     neutral: "bg-neutral-400",
   };
 

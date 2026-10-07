@@ -19,6 +19,7 @@ import {
   Menu,
 } from "lucide-react";
 import { AdminTabId } from "@/components/admin/AdminNav";
+import { CURRENT_SYSTEM_VERSION } from "@/lib/version/systemVersion";
 
 interface AdminHeaderProps {
   currentStaff: StaffMember;
@@ -40,6 +41,7 @@ const TAB_TITLES: Record<AdminTabId, { module: string; title: string }> = {
   staff: { module: "GOBERNANZA", title: "Equipo Operativo & Roles RBAC" },
   audit: { module: "GOBERNANZA", title: "Registro de Auditoría Inmutable" },
   beta: { module: "GOBERNANZA", title: "Llaves VIP & Beta Testers" },
+  system: { module: "GOBERNANZA", title: "Versión del Sistema & Control Remoto" },
 };
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -157,6 +159,12 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             <div className="flex items-center gap-1.5 text-neutral-400">
               <Clock className="w-3.5 h-3.5 text-electricViolet-glow" />
               <span>{timeStr || "00:00:00"} LOC</span>
+            </div>
+
+            {/* Badge de Versión Activa */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider bg-electricViolet/15 text-electricViolet-glow border border-electricViolet/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-electricViolet-glow animate-pulse" />
+              <span>{CURRENT_SYSTEM_VERSION}</span>
             </div>
 
             {/* Badge nítido de Entorno Activo */}

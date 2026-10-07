@@ -21,7 +21,9 @@ import {
   Sparkles,
   AlertTriangle,
   UserCheck,
+  Rocket,
 } from "lucide-react";
+import { CURRENT_SYSTEM_VERSION } from "@/lib/version/systemVersion";
 
 export type AdminTabId =
   | "dashboard"
@@ -32,7 +34,8 @@ export type AdminTabId =
   | "moderation"
   | "beta"
   | "staff"
-  | "audit";
+  | "audit"
+  | "system";
 
 export interface AdminNavProps {
   activeTab: AdminTabId;
@@ -169,6 +172,14 @@ export const AdminNav: React.FC<AdminNavProps> = ({
           id: "beta",
           label: "Beta Testers",
           icon: Wrench,
+          roles: ["superadmin", "moderator", "support"],
+        },
+        {
+          id: "system",
+          label: "Versión & Despliegues",
+          icon: Rocket,
+          badge: CURRENT_SYSTEM_VERSION,
+          badgeColor: "bg-electricViolet/20 text-electricViolet-glow border border-electricViolet/40",
           roles: ["superadmin", "moderator", "support"],
         },
       ],

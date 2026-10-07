@@ -5,16 +5,7 @@ import { useRadarMatrix, useSettings } from "@/context/VesselContext";
 import { OperatingIntentMode } from "@/types/vessel";
 import { Zap, Moon, ShieldCheck, Flame } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-
-interface IntentTabConfig {
-  id: OperatingIntentMode;
-  labelKey: "now" | "nightlife" | "kink" | "stealth";
-  icon: React.ReactNode;
-  accentBorder: string;
-  accentText: string;
-  accentBg: string;
-  glowColor: string;
-}
+import { SegmentedTabGroup, SegmentedTabItem } from "@/components/ui/SegmentedTabGroup";
 
 export const IntentHubSelector: React.FC = () => {
   const {
@@ -24,36 +15,6 @@ export const IntentHubSelector: React.FC = () => {
     setMatrixTab,
   } = useRadarMatrix();
   const { language, t } = useSettings();
-
-  const peopleTabs: IntentTabConfig[] = [
-    {
-      id: "now",
-      labelKey: "now",
-      icon: <Zap className="w-3.5 h-3.5 text-amber-400" />,
-      accentBorder: "border-amber-400/80",
-      accentText: "text-amber-300",
-      accentBg: "bg-amber-400/15",
-      glowColor: "rgba(251, 191, 36, 0.25)",
-    },
-    {
-      id: "kink",
-      labelKey: "kink",
-      icon: <Flame className="w-3.5 h-3.5 text-bloodNeon" />,
-      accentBorder: "border-bloodNeon/80",
-      accentText: "text-bloodNeon",
-      accentBg: "bg-bloodNeon/15",
-      glowColor: "rgba(255, 0, 85, 0.25)",
-    },
-    {
-      id: "stealth",
-      labelKey: "stealth",
-      icon: <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />,
-      accentBorder: "border-cyan-400/80",
-      accentText: "text-cyan-300",
-      accentBg: "bg-cyan-400/15",
-      glowColor: "rgba(34, 211, 238, 0.25)",
-    },
-  ];
 
   const handleSelectPeopleIntent = (mode: OperatingIntentMode) => {
     audioEngine.playSubBass(60, 0.1);
@@ -66,8 +27,6 @@ export const IntentHubSelector: React.FC = () => {
     setMatrixTab("places");
     setOperatingIntent("nightlife");
   };
-
-  const isPlacesActive = matrixTab === "places";
 
   const getShortLabel = (key: string, fullLabel: string) => {
     if (language === "es") {
@@ -84,74 +43,117 @@ export const IntentHubSelector: React.FC = () => {
     return fullLabel;
   };
 
+  const currentTab: OperatingIntentMode =
+    matrixTab === "places" ? "nightlife" : operatingIntent;
+
+  const tabs: SegmentedTabItem<OperatingIntentMode>[] = [
+    {
+      id: "now",
+      label: (
+        <>
+          <span className="hidden sm:inline tracking-tight truncate max-w-full">
+            {t.intents.now}
+          </span>
+          <span className="sm:hidden tracking-tight truncate max-w-full">
+            {getShortLabel("now", t.intents.now)}
+          </span>
+        </>
+      ),
+      icon: <Zap className="w-3.5 h-3.5 text-amber-400" />,
+      title: t.intents.now,
+      testId: "intent-tab-now",
+      accentClass:
+        "bg-amber-400/15 border-amber-400/80 border text-amber-300 font-black shadow-lg",
+      glowColor: "rgba(251, 191, 36, 0.25)",
+    },
+    {
+      id: "kink",
+      label: (
+        <>
+          <span className="hidden sm:inline tracking-tight truncate max-w-full">
+            {t.intents.kink}
+          </span>
+          <span className="sm:hidden tracking-tight truncate max-w-full">
+            {getShortLabel("kink", t.intents.kink)}
+          </span>
+        </>
+      ),
+      icon: <Flame className="w-3.5 h-3.5 text-bloodNeon" />,
+      title: t.intents.kink,
+      testId: "intent-tab-kink",
+      accentClass:
+        "bg-bloodNeon/15 border-bloodNeon/80 border text-bloodNeon font-black shadow-lg",
+      glowColor: "rgba(255, 0, 85, 0.25)",
+    },
+    {
+      id: "stealth",
+      label: (
+        <>
+          <span className="hidden sm:inline tracking-tight truncate max-w-full">
+            {t.intents.stealth}
+          </span>
+          <span className="sm:hidden tracking-tight truncate max-w-full">
+            {getShortLabel("stealth", t.intents.stealth)}
+          </span>
+        </>
+      ),
+      icon: <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />,
+      title: t.intents.stealth,
+      testId: "intent-tab-stealth",
+      accentClass:
+        "bg-cyan-400/15 border-cyan-400/80 border text-cyan-300 font-black shadow-lg",
+      glowColor: "rgba(34, 211, 238, 0.25)",
+    },
+    {
+      id: "nightlife",
+      label: (
+        <>
+          <span className="hidden sm:inline tracking-tight truncate max-w-full font-black">
+            {t.intents.nightlife}
+          </span>
+          <span className="sm:hidden tracking-tight truncate max-w-full font-black">
+            {getShortLabel("nightlife", t.intents.nightlife)}
+          </span>
+        </>
+      ),
+      icon: (
+        <Moon
+          className={`w-3.5 h-3.5 flex-shrink-0 ${
+            currentTab === "nightlife"
+              ? "text-pink-300 animate-pulse"
+              : "text-pink-400"
+          }`}
+        />
+      ),
+      title: t.intents.nightlife,
+      testId: "intent-tab-nightlife",
+      accentClass:
+        "bg-gradient-to-r from-pink-600/30 to-purple-600/25 border border-pink-400 text-pink-100 font-black shadow-[0_0_14px_rgba(236,72,153,0.35)] ring-1 ring-pink-400/50",
+      glowColor: "rgba(236, 72, 153, 0.35)",
+    },
+  ];
+
+  const handleSelectTab = (tabId: OperatingIntentMode) => {
+    if (tabId === "nightlife") {
+      handleSelectPlaces();
+    } else {
+      handleSelectPeopleIntent(tabId);
+    }
+  };
+
   return (
     <nav
       aria-label="Selector de Sintonías e Intenciones"
       className="w-full px-2 sm:px-4 py-1 pb-1.5 border-t border-white/5 select-none"
     >
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-1 p-0.5 bg-black/60 border border-white/10 rounded-xl">
-          {/* Grupo 1: Sintonías de Gente (La Matriz) */}
-          <div className="grid grid-cols-3 gap-1 flex-[3] min-w-0">
-            {peopleTabs.map((tab) => {
-              const isActive = matrixTab === "people" && operatingIntent === tab.id;
-              const label = t.intents[tab.labelKey];
-              const shortLabel = getShortLabel(tab.labelKey, label);
-
-              return (
-                <button
-                  key={tab.id}
-                  data-testid={`intent-tab-${tab.id}`}
-                  onClick={() => handleSelectPeopleIntent(tab.id)}
-                  className={`min-h-[34px] sm:min-h-[36px] flex items-center justify-center gap-1 sm:gap-1.5 px-1 py-1 rounded-lg transition-all duration-150 cursor-pointer select-none text-[10px] sm:text-[11.5px] font-bold tracking-tight ${
-                    isActive
-                      ? `${tab.accentBg} ${tab.accentBorder} border shadow-lg ${tab.accentText} font-black`
-                      : "bg-transparent border border-transparent text-neutral-400 hover:text-white hover:bg-white/5 active:scale-95"
-                  }`}
-                  style={{
-                    boxShadow: isActive ? `0 0 10px ${tab.glowColor}` : "none",
-                  }}
-                  title={label}
-                  aria-pressed={isActive}
-                >
-                  {tab.icon}
-                  <span className="hidden sm:inline tracking-tight truncate max-w-full">
-                    {label}
-                  </span>
-                  <span className="sm:hidden tracking-tight truncate max-w-full">
-                    {shortLabel}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Divisor Visual Táctico: Separa Sintonías de Personas de Lugares & Fiestas */}
-          <div className="w-px h-5 bg-white/20 flex-shrink-0" />
-
-          {/* Grupo 2: Portal de Boliches, Lugares & Fiestas (Visualmente Diferenciado) */}
-          <div className="flex-1 min-w-0">
-            <button
-              data-testid="intent-tab-nightlife"
-              onClick={handleSelectPlaces}
-              className={`w-full min-h-[34px] sm:min-h-[36px] flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-1.5 py-1 rounded-lg transition-all duration-150 cursor-pointer select-none text-[10px] sm:text-[11.5px] font-bold tracking-tight ${
-                isPlacesActive
-                  ? "bg-gradient-to-r from-pink-600/30 to-purple-600/25 border border-pink-400 text-pink-100 font-black shadow-[0_0_14px_rgba(236,72,153,0.35)] ring-1 ring-pink-400/50"
-                  : "bg-pink-950/25 border border-pink-500/30 text-pink-300/90 hover:bg-pink-500/20 hover:border-pink-500/60 hover:text-pink-100 active:scale-95"
-              }`}
-              title={t.intents.nightlife}
-              aria-pressed={isPlacesActive}
-            >
-              <Moon className={`w-3.5 h-3.5 flex-shrink-0 ${isPlacesActive ? "text-pink-300 animate-pulse" : "text-pink-400"}`} />
-              <span className="hidden sm:inline tracking-tight truncate max-w-full font-black">
-                {t.intents.nightlife}
-              </span>
-              <span className="sm:hidden tracking-tight truncate max-w-full font-black">
-                {getShortLabel("nightlife", t.intents.nightlife)}
-              </span>
-            </button>
-          </div>
-        </div>
+        <SegmentedTabGroup<OperatingIntentMode>
+          tabs={tabs}
+          activeTab={currentTab}
+          onChange={handleSelectTab}
+          testId="intent-hub-segmented-group"
+          ariaLabel="Sintonías e Intención Operativa"
+        />
       </div>
     </nav>
   );
