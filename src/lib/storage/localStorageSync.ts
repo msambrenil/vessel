@@ -1,15 +1,18 @@
 import { ChatMessage, UserAlbum } from "@/types/vessel";
-import { setInIdb, removeFromIdb } from "./indexedDbSync";
+import { setInIdb, getFromIdb, removeFromIdb } from "./indexedDbSync";
 
 export type AppMode = "test" | "real";
 
 export const APP_MODE_STORAGE_KEY = "vessel_app_mode";
 
 const isUnitTestEnv = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
-let currentActiveAppMode: AppMode = isUnitTestEnv ? "test" : "real";
+const isDevEnv = typeof process !== "undefined" && process.env?.NODE_ENV === "development";
+let currentActiveAppMode: AppMode = isUnitTestEnv || isDevEnv ? "test" : "real";
 
 export const isLocalEnvironment = (): boolean => {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") {
+    return isDevEnv;
+  }
   const host = window.location.hostname;
   return host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
 };
@@ -126,7 +129,13 @@ export const saveToStorage = <T>(key: string, value: T, mode?: AppMode): void =>
   const scopedKey = getScopedStorageKey(key, mode);
 
   // Respaldo asíncrono permanente en IndexedDB (alta capacidad en GBs, sin límite de 5MB)
-  if (key === STORAGE_KEYS.ALBUMS || key === STORAGE_KEYS.CHAT_MESSAGES || key === STORAGE_KEYS.DIARY) {
+  if (
+    key === STORAGE_KEYS.ALBUMS ||
+    key === STORAGE_KEYS.CHAT_MESSAGES ||
+    key === STORAGE_KEYS.DIARY ||
+    key === STORAGE_KEYS.DOSSIERS ||
+    key === STORAGE_KEYS.KNOWN_PROFILES
+  ) {
     setInIdb(scopedKey, value).catch((err) =>
       console.warn(`[VESSEL Storage] Error al respaldar en IndexedDB '${scopedKey}':`, err)
     );
@@ -251,16 +260,35 @@ export const scheduleDeferredSave = <T>(key: string, value: T, delayMs: number =
 
   const timer = setTimeout(() => {
     deferredTimers.delete(timerKey);
-    // Ejecutar en momentos de inactividad del navegador si está soportado
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+
+    const executeTask = () => {
+      saveToStorage(key, value, mode);
+    };
+
+    // En entorno de tests unitarios, ejecutar directamente para respetar timers simulados de Vitest
+    if (isUnitTestEnv) {
+      executeTask();
+      return;
+    }
+
+    // Prioridad 1: Web Platform Prioritized Task Scheduling API (Chrome 94+, Edge, Safari 18+, Firefox 2026)
+    if (
+      typeof window !== "undefined" &&
+      "scheduler" in window &&
+      typeof (window as unknown as { scheduler?: { postTask: (cb: () => void, opts: { priority: string }) => Promise<void> } }).scheduler?.postTask === "function"
+    ) {
+      (window as unknown as { scheduler: { postTask: (cb: () => void, opts: { priority: string }) => Promise<void> } }).scheduler
+        .postTask(executeTask, { priority: "background" })
+        .catch(() => {
+          executeTask();
+        });
+    } else if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       (window as unknown as { requestIdleCallback: (cb: () => void, opts: { timeout: number }) => void }).requestIdleCallback(
-        () => {
-          saveToStorage(key, value, mode);
-        },
+        executeTask,
         { timeout: 1000 }
       );
     } else {
-      saveToStorage(key, value, mode);
+      executeTask();
     }
   }, delayMs);
 
@@ -271,6 +299,60 @@ export const flushDeferredSave = (key: string): void => {
   if (deferredTimers.has(key)) {
     clearTimeout(deferredTimers.get(key));
     deferredTimers.delete(key);
+  }
+};
+
+/**
+ * Carga asíncrona de colecciones voluminosas desde IndexedDB como fuente primaria.
+ * Si no existen aún en IndexedDB (ej. migración de versión previa), realiza fallback
+ * transparente a localStorage y las promueve a IndexedDB sin bloquear el render.
+ */
+export const loadHeavyCollection = async <T>(
+  key: string,
+  fallback: T,
+  mode?: AppMode
+): Promise<T> => {
+  if (typeof window === "undefined") return fallback;
+  const scopedKey = getScopedStorageKey(key, mode);
+
+  try {
+    const idbData = await getFromIdb<T | null>(scopedKey, null);
+    if (idbData !== null && idbData !== undefined) {
+      return idbData;
+    }
+
+    // Fallback de migración desde localStorage
+    const localData = loadFromStorage<T>(key, fallback, mode);
+    if (localData !== fallback) {
+      setInIdb(scopedKey, localData).catch(() => {});
+    }
+    return localData;
+  } catch (err) {
+    console.warn(`[VESSEL Storage] Fallo al cargar colección pesada "${scopedKey}":`, err);
+    return loadFromStorage<T>(key, fallback, mode);
+  }
+};
+
+/**
+ * Persiste colecciones de alta capacidad directamente en IndexedDB de forma asíncrona,
+ * protegiendo el Event Loop (métrica INP) y evitando el límite de 5MB de localStorage.
+ */
+export const saveHeavyCollection = async <T>(
+  key: string,
+  value: T,
+  mode?: AppMode
+): Promise<void> => {
+  if (typeof window === "undefined") return;
+  const scopedKey = getScopedStorageKey(key, mode);
+
+  // 1. Persistencia primaria asíncrona en IndexedDB
+  await setInIdb(scopedKey, value);
+
+  // 2. Respaldo en localStorage (inmediato en tests para happy-dom sin IDB, o diferido en navegador)
+  if (isUnitTestEnv) {
+    saveToStorage(key, value, mode);
+  } else {
+    scheduleDeferredSave(key, value, 100, mode);
   }
 };
 

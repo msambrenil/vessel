@@ -19,8 +19,8 @@ const mockSetActiveView = vi.fn();
 
 let mockCodename = "LUCAS_BA";
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     myProfile: {
       codename: mockCodename,
       age: 28,
@@ -46,8 +46,18 @@ vi.mock("@/context/VesselContext", () => ({
     setActiveView: mockSetActiveView,
     language: "es",
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {

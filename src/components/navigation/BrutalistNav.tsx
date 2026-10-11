@@ -1,21 +1,58 @@
 "use client";
 
-import React, { useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import React, { useMemo, useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  useSettings,
+  useChat,
+  useDiary,
+  useRadarMatrix,
+} from "@/context/VesselContext";
 import { LayoutGrid, Activity, MessageCircle, UserCheck, User } from "lucide-react";
 import { ActiveNavView } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 
-export const BrutalistNav: React.FC = () => {
-  const { activeView, setActiveView, chatMessages, diaryEntries, unreadPulsesCount, t, language } = useVessel();
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { safeStartViewTransition } from "@/lib/ui/viewTransitions";
 
-  const unreadMessagesCount = useMemo(() => {
-    return Object.values(chatMessages).reduce(
-      (acc, msgs) =>
-        acc + msgs.filter((m) => m.senderId !== "me" && m.senderId !== "system" && !m.isRead).length,
-      0
-    );
-  }, [chatMessages]);
+const MotionLink = motion.create(Link);
+
+const ROUTE_MAP: Record<ActiveNavView, string> = {
+  grid: "/radar",
+  pulses: "/pulses",
+  chat: "/chat",
+  diary: "/diary",
+  account: "/account",
+};
+
+export const BrutalistNav: React.FC = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { activeView, setActiveView, unreadPulsesCount } = useRadarMatrix();
+  const { t, language } = useSettings();
+  const { unreadMessagesCount } = useChat();
+  const { diaryEntries } = useDiary();
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const currentTab: ActiveNavView = useMemo(() => {
+    if (pathname === "/pulses") return "pulses";
+    if (pathname === "/chat") return "chat";
+    if (pathname === "/diary") return "diary";
+    if (pathname === "/account") return "account";
+    if (pathname === "/radar" || pathname === "/") return "grid";
+    return activeView;
+  }, [pathname, activeView]);
+
+  useEffect(() => {
+    if (currentTab !== activeView) {
+      setActiveView(currentTab);
+    }
+  }, [currentTab, activeView, setActiveView]);
 
   const upcomingDatesCount = useMemo(() => {
     return diaryEntries.filter((e) => e.isUpcoming).length;
@@ -65,77 +102,135 @@ export const BrutalistNav: React.FC = () => {
       <div className="w-full max-w-4xl mx-auto px-1.5 sm:px-3">
         <div className="grid grid-cols-5 pt-1 pb-1">
           {tabs.map((tab) => {
-            const isActive = activeView === tab.id;
+            const isActive = currentTab === tab.id;
             const IconComp = tab.icon;
 
+            const targetPath = ROUTE_MAP[tab.id];
+
             return (
-              <button
+              <MotionLink
                 key={tab.id}
-                type="button"
-                onClick={() => {
+                href={targetPath}
+                prefetch
+                whileTap={{ scale: 0.92 }}
+                onClick={(e) => {
                   if (!isActive) audioEngine.playPulse();
+
                   setActiveView(tab.id);
+
+                  if (pathname !== targetPath) {
+                    e.preventDefault();
+                    safeStartViewTransition(() => {
+                      router.push(targetPath);
+                    });
+                  }
                 }}
-                className={`relative flex flex-col items-center justify-center w-full py-1 h-[52px] sm:h-[54px] rounded-xl transition-all duration-150 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet/70 active:scale-90 ${
+                className={`relative flex flex-col items-center justify-center w-full py-1 h-[54px] sm:h-[56px] rounded-2xl transition-colors duration-200 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet/70 select-none ${
                   isActive
-                    ? "text-electricViolet-glow bg-electricViolet/[0.06]"
-                    : "text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.02]"
+                    ? "text-white"
+                    : "text-neutral-400 hover:text-neutral-200"
                 }`}
                 aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
               >
-                {/* Indicador Micro-Pill Superior Activa con Resplandor Violeta */}
-                <span
-                  className={`absolute -top-1 w-8 h-0.5 rounded-full transition-all duration-200 pointer-events-none ${
-                    isActive
-                      ? "bg-electricViolet shadow-violet-glow opacity-100 scale-100"
-                      : "opacity-0 scale-50"
-                  }`}
-                />
+                {/* Cápsula Activa Deslizante Gliding con Física de Resorte Fluida y Morphing (layoutId) */}
+                {isActive && (
+                  <motion.div
+                    layoutId="brutalist-nav-pill"
+                    className="absolute inset-1 rounded-2xl bg-gradient-to-b from-electricViolet/25 via-electricViolet/15 to-electricViolet/5 border border-electricViolet/50 shadow-[0_0_24px_rgba(139,92,246,0.35),inset_0_1px_4px_rgba(255,255,255,0.2)] pointer-events-none"
+                    transition={{
+                      type: "spring",
+                      stiffness: 340,
+                      damping: 28,
+                      mass: 0.75,
+                    }}
+                  />
+                )}
 
-                <div className="relative w-5 h-5 flex items-center justify-center flex-shrink-0">
+                {/* Contenedor del Icono con Elastic Pop, Halo Morfante y Badges */}
+                <motion.div
+                  className="relative z-10 w-7 h-7 flex items-center justify-center flex-shrink-0"
+                  animate={{
+                    scale: isActive ? 1.2 : 1,
+                    y: isActive ? -1 : 0,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 360,
+                    damping: 18,
+                    mass: 0.6,
+                  }}
+                >
+                  {/* Halo ambiental morphing detrás del ícono activo */}
+                  {isActive && (
+                    <motion.span
+                      layoutId="brutalist-nav-icon-halo"
+                      className="absolute inset-0 rounded-full bg-electricViolet/30 filter blur-xs pointer-events-none"
+                      transition={{
+                        type: "spring",
+                        stiffness: 320,
+                        damping: 26,
+                      }}
+                    />
+                  )}
+
                   <IconComp
-                    className={`w-5 h-5 transition-all duration-150 ${
+                    className={`w-5 h-5 transition-all duration-300 ${
                       isActive
-                        ? "text-electricViolet-glow stroke-[2.4] scale-105 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]"
+                        ? "text-electricViolet-glow stroke-[2.5] drop-shadow-[0_0_10px_rgba(167,139,250,0.95)]"
                         : "stroke-[1.8] text-neutral-400 group-hover:text-neutral-200"
                     }`}
                   />
-                  
+
                   {/* Badge Exclusivo de Pulsos Entrantes */}
-                  {tab.id === "pulses" && unreadPulsesCount > 0 && (
-                    <span
-                      className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-electricViolet shadow-violet-soft animate-pulse pointer-events-none"
+                  {isMounted && tab.id === "pulses" && unreadPulsesCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="absolute -top-1 -right-2.5 z-20 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-electricViolet shadow-violet-soft animate-pulse pointer-events-none"
                       title={language === "es" ? `${unreadPulsesCount} toques entrantes` : `${unreadPulsesCount} incoming taps`}
                     >
                       {unreadPulsesCount > 9 ? "9+" : unreadPulsesCount}
-                    </span>
+                    </motion.span>
                   )}
 
                   {/* Badge Exclusivo de Mensajes No Leídos */}
-                  {tab.id === "chat" && unreadMessagesCount > 0 && (
-                    <span
-                      className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-bloodNeon shadow-[0_0_8px_rgba(255,30,56,0.8)] animate-pulse pointer-events-none"
+                  {isMounted && tab.id === "chat" && unreadMessagesCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="absolute -top-1 -right-2.5 z-20 min-w-[16px] h-[16px] text-white text-[9px] font-mono font-black rounded-full flex items-center justify-center px-1 bg-bloodNeon shadow-[0_0_10px_rgba(255,30,56,0.9)] animate-pulse pointer-events-none"
                       title={`${unreadMessagesCount} mensajes sin leer`}
                     >
                       {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
-                    </span>
+                    </motion.span>
                   )}
 
                   {/* Pulso de Cita Próxima en Diario */}
-                  {tab.id === "diary" && upcomingDatesCount > 0 && (
-                    <span className="absolute -top-1 -right-1.5 w-2 h-2 bg-mintNeon rounded-full shadow-mint-glow animate-pulse pointer-events-none" />
+                  {isMounted && tab.id === "diary" && upcomingDatesCount > 0 && (
+                    <span className="absolute -top-0.5 -right-1 z-20 w-2 h-2 bg-mintNeon rounded-full shadow-mint-glow animate-pulse pointer-events-none" />
                   )}
-                </div>
+                </motion.div>
 
-                <span
-                  className={`text-[9px] sm:text-[10px] font-mono uppercase tracking-wider mt-1 truncate transition-colors ${
-                    isActive ? "text-electricViolet-glow font-black" : "text-neutral-400 font-bold group-hover:text-neutral-200"
+                {/* Etiqueta Tipográfica */}
+                <motion.span
+                  animate={{
+                    scale: isActive ? 1.05 : 1,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 24,
+                  }}
+                  className={`relative z-10 text-[9px] sm:text-[10px] font-mono uppercase tracking-wider mt-0.5 truncate transition-colors duration-200 ${
+                    isActive
+                      ? "text-electricViolet-glow font-black drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]"
+                      : "text-neutral-400 font-bold group-hover:text-neutral-200"
                   }`}
                 >
                   {tab.label}
-                </span>
-              </button>
+                </motion.span>
+              </MotionLink>
             );
           })}
         </div>
@@ -143,3 +238,4 @@ export const BrutalistNav: React.FC = () => {
     </nav>
   );
 };
+

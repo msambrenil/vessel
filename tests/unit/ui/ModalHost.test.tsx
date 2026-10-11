@@ -38,6 +38,13 @@ let mockVesselState: Record<string, any> = {};
 
 vi.mock("@/context/VesselContext", () => ({
   useVessel: () => mockVesselState,
+  useRadarMatrix: () => mockVesselState,
+  useChat: () => mockVesselState,
+  useAuth: () => mockVesselState,
+  useDiary: () => mockVesselState,
+  useSettings: () => mockVesselState,
+  useLogistics: () => mockVesselState,
+  useSafety: () => mockVesselState,
 }));
 
 // Import dinámico de ModalHost después de registrar los mocks
@@ -64,8 +71,6 @@ describe("ModalHost — Orquestador Desacoplado de Modales (Fase 4)", () => {
       isPreFlightModalOpen: false,
       isVoiceRecorderOpen: false,
       isEnRouteModalOpen: false,
-      isSafetyBeaconModalOpen: false,
-      isDuressPinSettingsOpen: false,
       isLivenessModalOpen: false,
       isDuoModalOpen: false,
       isUnlimitedModalOpen: false,
@@ -73,7 +78,6 @@ describe("ModalHost — Orquestador Desacoplado de Modales (Fase 4)", () => {
       isHarmReductionModalOpen: false,
       isItsExposureModalOpen: false,
       isNightlifeModalOpen: false,
-      isCoverScreenActive: false,
       stealthMode: false,
       isGenderOnboardingOpen: false,
     };

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useAuth, useSettings } from "@/context/VesselContext";
 import {
   TacticalHotspot,
   HotspotCategory,
@@ -37,6 +37,9 @@ import {
   FilterPill,
   SortSegmentedControl,
   BrutalistButton,
+  BrutalistInput,
+  BrutalistSelect,
+  BrutalistTextarea,
 } from "@/components/ui";
 
 export interface PlacesGridProps {
@@ -71,10 +74,9 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
     travelMode,
     openTravelModal,
     myCoordinates,
-    currentUserUid,
-    language,
-    t,
-  } = useVessel();
+  } = useLogistics();
+  const { currentUserUid } = useAuth();
+  const { language, t } = useSettings();
 
   const currentUserId = currentUserUid || "anon_user";
 
@@ -375,25 +377,27 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
             </div>
 
             {/* Botón Modo Viajero en la Fila de Opciones */}
-            <button
-              type="button"
+            <BrutalistButton
+              variant={travelMode.isActive ? "primary" : "ghost"}
+              size="compact"
+              soundEffect="none"
               onClick={() => {
                 audioEngine.playPulse();
                 openTravelModal();
               }}
               aria-label={travelMode.isActive ? `Modo Viajero Activo: ${travelMode.cityName}` : "Activar Modo Viajero"}
               title={travelMode.isActive ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country}) • Tocá para cambiar o volver` : "Simular ubicación en otra ciudad"}
-              className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-mono text-[9.5px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
+              className={`!px-2.5 !py-1 !rounded-lg !text-[9.5px] font-mono font-bold flex items-center gap-1.5 flex-shrink-0 ${
                 travelMode.isActive
-                  ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow animate-pulse"
-                  : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
+                  ? "!bg-electricViolet !text-white !border-electricViolet-glow shadow-violet-glow animate-pulse"
+                  : "!bg-white/5 !border-white/10 text-neutral-300 hover:text-white hover:!bg-white/10"
               }`}
             >
               <Plane className={`w-3 h-3 ${travelMode.isActive ? "text-white" : "text-electricViolet-glow"}`} />
               <span className="truncate max-w-[100px] sm:max-w-[130px]">
                 {travelMode.isActive ? `✈️ ${travelMode.cityName}` : "✈️ Viajero"}
               </span>
-            </button>
+            </BrutalistButton>
           </div>
         </div>
       )}
@@ -475,31 +479,35 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
 
                       <div className="flex items-center gap-2">
                         {onOpenNightlifeModal && (
-                          <button
-                            type="button"
+                          <BrutalistButton
+                            variant="ghost"
+                            size="compact"
+                            soundEffect="none"
                             onClick={() => {
                               audioEngine.playPulse();
                               onOpenNightlifeModal();
                             }}
-                            className="px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold bg-white/5 border border-white/10 text-neutral-300 hover:text-white cursor-pointer"
+                            className="!px-2.5 !py-1 !rounded-lg !text-[10.5px] font-mono font-bold !bg-white/5 !border-white/10 text-neutral-300 hover:text-white"
                           >
                             {language === "es" ? "Pista de Baile" : "Floor"}
-                          </button>
+                          </BrutalistButton>
                         )}
-                        <button
-                          type="button"
+                        <BrutalistButton
+                          variant={isGoing ? "mint" : "primary"}
+                          size="compact"
+                          soundEffect="none"
                           onClick={() => {
                             audioEngine.playPulse();
                             toggleEventRsvp(ev.id);
                           }}
-                          className={`px-3 py-1 rounded-lg text-[10.5px] font-mono font-bold transition-all cursor-pointer active:scale-95 ${
+                          className={`!px-3 !py-1 !rounded-lg !text-[10.5px] font-mono font-bold ${
                             isGoing
-                              ? "bg-mintNeon text-black font-black shadow-mint-glow"
-                              : "bg-electricViolet text-white border border-electricViolet-glow hover:bg-electricViolet/90"
+                              ? "!bg-mintNeon !text-black font-black shadow-mint-glow"
+                              : "!bg-electricViolet !text-white !border-electricViolet-glow hover:!bg-electricViolet/90"
                           }`}
                         >
                           {isGoing ? "Asistiré ✓" : "Voy"}
-                        </button>
+                        </BrutalistButton>
                       </div>
                     </div>
                   </div>
@@ -539,13 +547,15 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                   ? "¿Conocés un sauna, zona de cruising o bar que no figura? Podés proponerlo para que la comunidad lo confirme."
                   : "Know a sauna or cruising spot? Propose it to the community to verify."}
               </p>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="primary"
+                size="compact"
+                soundEffect="none"
                 onClick={() => setIsProposeOpen(true)}
-                className="px-4 py-2 rounded-xl bg-electricViolet text-white font-mono text-xs font-bold shadow-violet-glow cursor-pointer"
+                className="!px-4 !py-2 !rounded-xl !text-xs font-mono font-bold shadow-violet-glow"
               >
                 [ + Proponer Este Lugar ]
-              </button>
+              </BrutalistButton>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -583,7 +593,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                           <div>
                             <h4 className="font-bold text-white text-sm">{spot.name}</h4>
                             <p className="text-[10.5px] font-mono text-neutral-400">
-                              {spot.address} • ~{formatDistance((spot as any).computedDistance || 300)}
+                              {spot.address} • ~{formatDistance(spot.computedDistance || 300)}
                             </p>
                           </div>
                         </div>
@@ -634,17 +644,20 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                     {/* Acordeón de Alertas Preventivas Anónimas */}
                     {isUnderAlert && spot.reports && spot.reports.length > 0 && (
                       <div className="p-2.5 rounded-xl bg-bloodNeon/10 border border-bloodNeon/30 space-y-1.5 text-xs">
-                        <button
+                        <BrutalistButton
                           type="button"
+                          variant="ghost"
+                          size="compact"
+                          soundEffect="none"
                           onClick={() => setExpandedReportsId(isReportsExpanded ? null : spot.id)}
-                          className="w-full flex items-center justify-between text-[11px] font-mono font-bold text-bloodNeon cursor-pointer"
+                          className="w-full !justify-between !px-1 text-[11px] font-mono font-bold text-bloodNeon"
                         >
                           <span className="flex items-center gap-1.5">
                             <AlertTriangle className="w-3.5 h-3.5" />
                             <span>{spot.reports.length} advertencias comunitarias</span>
                           </span>
                           {isReportsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        </button>
+                        </BrutalistButton>
 
                         {isReportsExpanded && (
                           <div className="space-y-1.5 pt-1.5 border-t border-bloodNeon/20">
@@ -662,13 +675,16 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                     <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2 text-xs font-mono">
                       <div className="flex items-center gap-2.5">
                         {/* Rating con Estrellas */}
-                        <button
+                        <BrutalistButton
                           type="button"
+                          variant="ghost"
+                          size="compact"
+                          soundEffect="none"
                           onClick={() => {
                             audioEngine.playPulse();
                             setRatingSpot(spot);
                           }}
-                          className="flex items-center gap-1 text-amber-400 hover:text-amber-300 cursor-pointer font-bold"
+                          className="!px-1.5 !py-0.5 flex items-center gap-1 text-amber-400 hover:text-amber-300 font-bold"
                           title="Calificar este lugar"
                         >
                           <Star className="w-3.5 h-3.5 fill-current" />
@@ -676,7 +692,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                           <span className="text-neutral-500 text-[10px]">
                             ({spot.ratingsCount || 0})
                           </span>
-                        </button>
+                        </BrutalistButton>
 
                         {/* Concurrencia Activa */}
                         <div className="flex items-center gap-1 text-neutral-400 text-[11px]">
@@ -689,26 +705,30 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                       <div className="flex items-center gap-1.5">
                         {/* Botón de Confirmación para Lugares En Validación */}
                         {isProposed && (
-                          <button
-                            type="button"
+                          <BrutalistButton
+                            variant="ghost"
+                            size="compact"
+                            soundEffect="none"
                             disabled={hasAlreadyConfirmed}
                             onClick={async () => {
                               await confirmHotspot(spot.id);
                             }}
-                            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold flex items-center gap-1 transition-all ${
+                            className={`!px-2.5 !py-1 !rounded-lg !text-[10.5px] font-mono font-bold flex items-center gap-1 transition-all ${
                               hasAlreadyConfirmed
-                                ? "bg-white/5 text-neutral-500 border border-white/5 cursor-default"
-                                : "bg-electricViolet/20 border border-electricViolet text-electricViolet-glow hover:bg-electricViolet/30 cursor-pointer active:scale-95"
+                                ? "!bg-white/5 text-neutral-500 !border-white/5 cursor-default"
+                                : "!bg-electricViolet/20 !border-electricViolet !text-electricViolet-glow hover:!bg-electricViolet/30 cursor-pointer active:scale-95"
                             }`}
                           >
                             <ThumbsUp className="w-3 h-3" />
                             <span>{hasAlreadyConfirmed ? "Confirmaste ✓" : "Confirmar (3)"}</span>
-                          </button>
+                          </BrutalistButton>
                         )}
 
                         {/* Botón Check-in Táctico */}
-                        <button
-                          type="button"
+                        <BrutalistButton
+                          variant={isCheckedIn ? "mint" : "secondary"}
+                          size="compact"
+                          soundEffect="none"
                           onClick={() => {
                             if (isCheckedIn) {
                               checkOutHotspot(spot.id);
@@ -716,30 +736,32 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                               checkInHotspot(spot.id);
                             }
                           }}
-                          className={`px-2.5 py-1 rounded-lg text-[10.5px] font-mono font-bold transition-all cursor-pointer active:scale-95 ${
+                          className={`!px-2.5 !py-1 !rounded-lg !text-[10.5px] font-mono font-bold transition-all cursor-pointer active:scale-95 ${
                             isCheckedIn
-                              ? "bg-mintNeon text-black font-black shadow-mint-glow"
-                              : "bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                              ? "!bg-mintNeon !text-black font-black shadow-mint-glow"
+                              : "!bg-white/10 hover:!bg-white/20 !text-white !border-white/10"
                           }`}
                         >
                           {isCheckedIn
                             ? (language === "es" ? "Presente ✓" : "Checked in ✓")
                             : (language === "es" ? "Llegué" : "Check-in")}
-                        </button>
+                        </BrutalistButton>
 
                         {/* Botón de Denuncia */}
-                        <button
-                          type="button"
+                        <BrutalistButton
+                          variant="ghost"
+                          size="compact-icon"
+                          soundEffect="none"
                           onClick={() => {
                             audioEngine.playPulse();
                             setReportingSpot(spot);
                           }}
                           aria-label="Denunciar este lugar"
-                          className="p-1.5 rounded-lg text-neutral-400 hover:text-bloodNeon hover:bg-bloodNeon/10 border border-transparent hover:border-bloodNeon/30 cursor-pointer"
+                          className="!p-1.5 !rounded-lg text-neutral-400 hover:!text-bloodNeon hover:!bg-bloodNeon/10 !border-transparent hover:!border-bloodNeon/30 cursor-pointer"
                           title="Reportar peligro, redada o cierre"
                         >
                           <Flag className="w-3.5 h-3.5" />
-                        </button>
+                        </BrutalistButton>
                       </div>
                     </div>
                   </div>
@@ -754,7 +776,12 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
           SUB-MODAL: PROPONER NUEVO PUNTO TÁCTICO
           ========================================================= */}
       {isProposeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={language === "es" ? "Proponer Nuevo Punto Táctico" : "Propose Tactical Hotspot"}
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in"
+        >
           <div className="w-full max-w-lg bg-obsidian border border-white/15 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
@@ -763,13 +790,16 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                   {language === "es" ? "Proponer Nuevo Punto Táctico" : "Propose Tactical Hotspot"}
                 </h3>
               </div>
-              <button
+              <BrutalistButton
                 type="button"
+                variant="ghost"
+                size="compact-icon"
+                soundEffect="none"
                 onClick={() => setIsProposeOpen(false)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+                className="!p-1 !rounded-lg text-neutral-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </BrutalistButton>
             </div>
 
             {proposeError && (
@@ -780,106 +810,83 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
 
             <form onSubmit={handleProposeSubmit} className="space-y-3 font-sans text-xs">
               <div>
-                <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                  Nombre del Punto / Espacio *
-                </label>
-                <input
-                  type="text"
+                <BrutalistInput
+                  label="Nombre del Punto / Espacio *"
                   required
                   placeholder="Ej. Bosques de Palermo Cruising, Sauna Dédalo..."
                   value={proposeName}
                   onChange={(e) => setProposeName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                    Categoría *
-                  </label>
-                  <select
-                    value={proposeCategory}
-                    onChange={(e) => setProposeCategory(e.target.value as HotspotCategory)}
-                    className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
-                  >
-                    <option value="cruising_area">{language === "es" ? "Áreas de Cruising" : "Cruising Areas"}</option>
-                    <option value="darkroom_club">Darkroom / Club</option>
-                    <option value="sauna">Sauna Gay</option>
-                    <option value="queer_bar">Bar Queer</option>
-                  </select>
-                </div>
+                <BrutalistSelect
+                  label="Categoría *"
+                  value={proposeCategory}
+                  onChange={(val) => setProposeCategory(val as HotspotCategory)}
+                  options={[
+                    { value: "cruising_area", label: language === "es" ? "Áreas de Cruising" : "Cruising Areas" },
+                    { value: "darkroom_club", label: "Darkroom / Club" },
+                    { value: "sauna", label: "Sauna Gay" },
+                    { value: "queer_bar", label: "Bar Queer" },
+                  ]}
+                />
 
-                <div>
-                  <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                    Discreción Requerida
-                  </label>
-                  <select
-                    value={proposeDiscretion}
-                    onChange={(e) => setProposeDiscretion(e.target.value as "high" | "medium" | "low")}
-                    className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
-                  >
-                    <option value="high">Alta (Zona oculta)</option>
-                    <option value="medium">Media (Comercial)</option>
-                    <option value="low">Baja (Abierto)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                  Dirección o Zona Aproximada *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Av. Sarmiento & Av. Figueroa Alcorta, Palermo"
-                  value={proposeAddress}
-                  onChange={(e) => setProposeAddress(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
+                <BrutalistSelect
+                  label="Discreción Requerida"
+                  value={proposeDiscretion}
+                  onChange={(val) => setProposeDiscretion(val as "high" | "medium" | "low")}
+                  options={[
+                    { value: "high", label: "Alta (Zona oculta)" },
+                    { value: "medium", label: "Media (Comercial)" },
+                    { value: "low", label: "Baja (Abierto)" },
+                  ]}
                 />
               </div>
 
-              <div>
-                <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                  Descripción Táctica & Códigos
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Indicaciones para ingresar, poca luz, códigos de contacto..."
-                  value={proposeDescription}
-                  onChange={(e) => setProposeDescription(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
-                />
-              </div>
+              <BrutalistInput
+                label="Dirección o Zona Aproximada *"
+                required
+                placeholder="Ej. Av. Sarmiento & Av. Figueroa Alcorta, Palermo"
+                value={proposeAddress}
+                onChange={(e) => setProposeAddress(e.target.value)}
+              />
 
-              <div>
-                <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                  Mejores Horarios
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. 23:00 a 04:00 hs, fines de semana"
-                  value={proposeBestHours}
-                  onChange={(e) => setProposeBestHours(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-electricViolet"
-                />
-              </div>
+              <BrutalistTextarea
+                label="Descripción Táctica & Códigos"
+                rows={2}
+                placeholder="Indicaciones para ingresar, poca luz, códigos de contacto..."
+                value={proposeDescription}
+                onChange={(e) => setProposeDescription(e.target.value)}
+              />
+
+              <BrutalistInput
+                label="Mejores Horarios"
+                placeholder="Ej. 23:00 a 04:00 hs, fines de semana"
+                value={proposeBestHours}
+                onChange={(e) => setProposeBestHours(e.target.value)}
+              />
 
               <div className="pt-2 flex justify-end gap-2">
-                <button
+                <BrutalistButton
                   type="button"
+                  variant="ghost"
+                  size="compact"
+                  soundEffect="none"
                   onClick={() => setIsProposeOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-white/10 text-neutral-400 hover:text-white font-mono text-xs cursor-pointer"
+                  className="!px-4 !py-2 !rounded-xl !border-white/10 text-neutral-400 hover:text-white font-mono text-xs"
                 >
                   Cancelar
-                </button>
-                <button
+                </BrutalistButton>
+                <BrutalistButton
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-electricViolet text-white font-mono text-xs font-bold shadow-violet-glow cursor-pointer"
+                  variant="primary"
+                  size="compact"
+                  soundEffect="pulse"
+                  className="!px-5 !py-2 !rounded-xl font-mono text-xs font-bold shadow-violet-glow"
                 >
                   Enviar a Validación
-                </button>
+                </BrutalistButton>
               </div>
             </form>
           </div>
@@ -890,7 +897,12 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
           SUB-MODAL: DENUNCIAR LUGAR (CON COMENTARIO OBLIGATORIO)
           ========================================================= */}
       {reportingSpot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Denunciar Punto Táctico"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in"
+        >
           <div className="w-full max-w-md bg-obsidian border border-bloodNeon/30 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 text-bloodNeon">
@@ -899,13 +911,16 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                   Denunciar Punto Táctico
                 </h3>
               </div>
-              <button
+              <BrutalistButton
                 type="button"
+                variant="ghost"
+                size="compact-icon"
+                soundEffect="none"
                 onClick={() => setReportingSpot(null)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+                className="!p-1 !rounded-lg text-neutral-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </BrutalistButton>
             </div>
 
             <p className="text-xs text-neutral-300">
@@ -919,55 +934,47 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
             )}
 
             <form onSubmit={handleReportSubmit} className="space-y-3 font-sans text-xs">
-              <div>
-                <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                  Motivo de la Denuncia *
-                </label>
-                <select
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value as HotspotReportReason)}
-                  className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-bloodNeon"
-                >
-                  {reportReasons.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.icon} {r.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <BrutalistSelect
+                label="Motivo de la Denuncia *"
+                value={reportReason}
+                onChange={(val) => setReportReason(val as HotspotReportReason)}
+                options={reportReasons.map((r) => ({
+                  value: r.id,
+                  label: `${r.icon} ${r.label}`,
+                }))}
+              />
 
-              <div>
-                <label className="block text-neutral-400 font-mono text-[10.5px] uppercase mb-1">
-                  Explicación Detallada (Obligatorio, mín. 10 caracteres) *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Describí qué ocurrió (patrulleros frecuentes, zona peligrosa, candado puesto...)"
-                  value={reportComment}
-                  onChange={(e) => setReportComment(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-bloodNeon"
-                />
-                <span className="text-[10px] text-neutral-500 font-mono">
-                  Caracteres: {reportComment.length}/10 mínimo
-                </span>
-              </div>
+              <BrutalistTextarea
+                label="Explicación Detallada (Obligatorio, mín. 10 caracteres) *"
+                required
+                rows={3}
+                placeholder="Describí qué ocurrió (patrulleros frecuentes, zona peligrosa, candado puesto...)"
+                value={reportComment}
+                onChange={(e) => setReportComment(e.target.value)}
+                hint={`Caracteres: ${reportComment.length}/10 mínimo`}
+              />
 
               <div className="pt-2 flex justify-end gap-2">
-                <button
+                <BrutalistButton
                   type="button"
+                  variant="ghost"
+                  size="compact"
+                  soundEffect="none"
                   onClick={() => setReportingSpot(null)}
-                  className="px-4 py-2 rounded-xl border border-white/10 text-neutral-400 hover:text-white font-mono text-xs cursor-pointer"
+                  className="!px-4 !py-2 !rounded-xl !border-white/10 text-neutral-400 hover:text-white font-mono text-xs"
                 >
                   Cancelar
-                </button>
-                <button
+                </BrutalistButton>
+                <BrutalistButton
                   type="submit"
+                  variant="danger"
+                  size="compact"
+                  soundEffect="pulse"
                   disabled={reportComment.trim().length < 10}
-                  className="px-5 py-2 rounded-xl bg-bloodNeon text-white font-mono text-xs font-bold shadow-blood-glow disabled:opacity-50 cursor-pointer"
+                  className="!px-5 !py-2 !rounded-xl font-mono text-xs font-bold shadow-blood-glow disabled:opacity-50"
                 >
                   Enviar Denuncia
-                </button>
+                </BrutalistButton>
               </div>
             </form>
           </div>
@@ -978,7 +985,12 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
           SUB-MODAL: CALIFICAR CON ESTRELLAS Y TAGS
           ========================================================= */}
       {ratingSpot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Calificar Lugar"
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in"
+        >
           <div className="w-full max-w-md bg-obsidian border border-white/15 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 text-amber-400">
@@ -987,13 +999,16 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                   Calificar Lugar
                 </h3>
               </div>
-              <button
+              <BrutalistButton
                 type="button"
+                variant="ghost"
+                size="compact-icon"
+                soundEffect="none"
                 onClick={() => setRatingSpot(null)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-white"
+                className="!p-1 !rounded-lg text-neutral-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </BrutalistButton>
             </div>
 
             <p className="text-xs text-neutral-300">
@@ -1004,14 +1019,17 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
               {/* Estrellas 1 a 5 */}
               <div className="flex items-center justify-center gap-2 py-2">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <button
+                  <BrutalistButton
                     key={s}
                     type="button"
+                    variant="ghost"
+                    size="compact-icon"
+                    soundEffect="none"
                     onClick={() => {
                       audioEngine.playPulse();
                       setUserScore(s);
                     }}
-                    className="p-2 transition-transform hover:scale-125 active:scale-95 cursor-pointer"
+                    className="!p-2 transition-transform hover:scale-125 active:scale-95"
                   >
                     <Star
                       className={`w-7 h-7 ${
@@ -1020,7 +1038,7 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                           : "text-neutral-600"
                       }`}
                     />
-                  </button>
+                  </BrutalistButton>
                 ))}
               </div>
 
@@ -1033,42 +1051,42 @@ export const PlacesGrid: React.FC<PlacesGridProps> = ({
                   {ratingTagOptions.map((tag) => {
                     const isSelected = userRatingTags.includes(tag);
                     return (
-                      <button
+                      <FilterPill
                         key={tag}
-                        type="button"
+                        label={tag}
+                        active={isSelected}
+                        variant="violet"
                         onClick={() => {
-                          audioEngine.playPulse();
                           setUserRatingTags((prev) =>
                             isSelected ? prev.filter((t) => t !== tag) : [...prev, tag]
                           );
                         }}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
-                          isSelected
-                            ? "bg-electricViolet text-white border border-electricViolet-glow font-bold shadow-violet-soft"
-                            : "bg-white/5 border border-white/10 text-neutral-400 hover:text-white"
-                        }`}
-                      >
-                        {tag}
-                      </button>
+                      />
                     );
                   })}
                 </div>
               </div>
 
               <div className="pt-2 flex justify-end gap-2">
-                <button
+                <BrutalistButton
                   type="button"
+                  variant="ghost"
+                  size="compact"
+                  soundEffect="none"
                   onClick={() => setRatingSpot(null)}
-                  className="px-4 py-2 rounded-xl border border-white/10 text-neutral-400 hover:text-white font-mono text-xs cursor-pointer"
+                  className="!px-4 !py-2 !rounded-xl !border-white/10 text-neutral-400 hover:text-white font-mono text-xs"
                 >
                   Cancelar
-                </button>
-                <button
+                </BrutalistButton>
+                <BrutalistButton
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-electricViolet text-white font-mono text-xs font-bold shadow-violet-glow cursor-pointer"
+                  variant="primary"
+                  size="compact"
+                  soundEffect="pulse"
+                  className="!px-5 !py-2 !rounded-xl font-mono text-xs font-bold shadow-violet-glow"
                 >
                   Guardar Calificación
-                </button>
+                </BrutalistButton>
               </div>
             </form>
           </div>

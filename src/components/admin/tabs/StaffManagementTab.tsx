@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { StaffMember, StaffRole } from "@/types/admin";
+import { StaffMember, StaffRole, AuditActionType } from "@/types/admin";
 import {
   UserCog,
   UserPlus,
@@ -17,7 +17,7 @@ interface StaffManagementTabProps {
   staffList: StaffMember[];
   currentStaff: StaffMember;
   onSaveStaffList: (list: StaffMember[]) => void;
-  onLogAction: (action: string, details: string) => void;
+  onLogAction: (action: AuditActionType, details: string) => void;
 }
 
 export const StaffManagementTab: React.FC<StaffManagementTabProps> = ({

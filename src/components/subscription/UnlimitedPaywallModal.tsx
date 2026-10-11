@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useLogistics } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   X,
@@ -17,7 +17,7 @@ import {
   Smartphone,
   Check,
 } from "lucide-react";
-import { BrutalistButton } from "@/components/ui";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 import { VesselPaymentReceipt } from "@/types/vessel";
 import {
   saveToStorage,
@@ -37,12 +37,11 @@ export const UnlimitedPaywallModal: React.FC = () => {
     setUserPlan,
     weekendPass,
     activateWeekendPass,
-    partyPass,
-    activatePartyPass,
     appMode,
     t,
     language,
-  } = useVessel();
+  } = useSettings();
+  const { partyPass, activatePartyPass } = useLogistics();
 
   const [selectedTier, setSelectedTier] = useState<"annual" | "monthly" | "weekend" | "party">("party");
   const [step, setStep] = useState<CheckoutStep>("select");
@@ -295,20 +294,15 @@ export const UnlimitedPaywallModal: React.FC = () => {
   ];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in select-none [overscroll-behavior:contain]"
-      onClick={closeUnlimitedModal}
-    >
-      <div
-        className="relative w-full max-w-lg bg-[#0a0a0a] border-t sm:border border-electricViolet/40 rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-purple-950/40 overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-        {/* Header con gradiente nocturno refinado */}
-        <div className="p-5 border-b border-electricViolet/30 bg-gradient-to-r from-purple-950/50 via-neutral-900 to-purple-950/50 text-center relative">
+    <BrutalistModal
+      isOpen={isUnlimitedModalOpen}
+      onClose={closeUnlimitedModal}
+      maxWidth="lg"
+      ariaLabel="VESSEL UNLIMITED"
+      hideCloseButton={true}
+      contentClassName="p-0 flex flex-col"
+      customHeader={
+        <div className="p-5 border-b border-electricViolet/30 bg-gradient-to-r from-purple-950/50 via-neutral-900 to-purple-950/50 text-center relative shrink-0">
           {step === "checkout" ? (
             <button
               type="button"
@@ -344,6 +338,8 @@ export const UnlimitedPaywallModal: React.FC = () => {
               : '"Álbumes, bóvedas y señales ilimitadas."'}
           </p>
         </div>
+      }
+    >
 
         {/* CONTENIDO DEL MODAL SEGÚN PASO */}
         {step === "select" && (
@@ -800,7 +796,6 @@ export const UnlimitedPaywallModal: React.FC = () => {
             </BrutalistButton>
           </div>
         )}
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

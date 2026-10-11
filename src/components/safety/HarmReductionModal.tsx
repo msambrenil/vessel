@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSafety, useSettings } from "@/context/VesselContext";
 import {
   HeartPulse,
   Droplets,
@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { BrutalistButton, BrutalistModal, BrutalistInput } from "@/components/ui";
 
 export const HarmReductionModal: React.FC = () => {
   const {
@@ -25,13 +26,14 @@ export const HarmReductionModal: React.FC = () => {
     endHarmReductionSession,
     logHarmReductionDose,
     drinkWaterAck,
-    t,
-  } = useVessel();
+  } = useSafety();
+  const { t } = useSettings();
 
   const [activeTab, setActiveTab] = useState<"session" | "log" | "emergency">("session");
   const [selectedSubstance, setSelectedSubstance] = useState<string>("G");
   const [doseAmount, setDoseAmount] = useState<string>("");
   const [doseNotes, setDoseNotes] = useState<string>("");
+  const [isConfirmingEnd, setIsConfirmingEnd] = useState<boolean>(false);
 
   if (!isHarmReductionModalOpen) return null;
 
@@ -43,10 +45,9 @@ export const HarmReductionModal: React.FC = () => {
   };
 
   const handleEnd = () => {
-    if (window.confirm("¿Deseas finalizar la sesión de reducción de daños?")) {
-      audioEngine.playPulse();
-      endHarmReductionSession();
-    }
+    audioEngine.playPulse();
+    endHarmReductionSession();
+    setIsConfirmingEnd(false);
   };
 
   const handleDrinkWater = () => {
@@ -70,49 +71,41 @@ export const HarmReductionModal: React.FC = () => {
     : 0;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Asistente de Sesión"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
-      onClick={closeHarmReductionModal}
-    >
-      <div
-        className="relative w-full max-w-lg bg-[#0c0c0c] border-t sm:border border-emerald-500/50 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header Táctico */}
-        <div className="p-4 border-b border-emerald-500/30 bg-emerald-950/30 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <HeartPulse className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-white flex items-center gap-2">
-                <span>Asistente de Sesión</span>
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  REDUCCIÓN DE DAÑOS
-                </span>
-              </h2>
-              <p className="text-[10px] text-neutral-400 font-mono">
-                Cuidado mutuo, hidratación y registro temporal sin juicio
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={closeHarmReductionModal}
-            aria-label="Cerrar asistente de reducción de daños"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-mono transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-          >
-            ✕
-          </button>
+    <BrutalistModal
+      isOpen={isHarmReductionModalOpen}
+      onClose={closeHarmReductionModal}
+      icon={
+        <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+          <HeartPulse className="w-5 h-5 animate-pulse" />
         </div>
-
-        {/* Pestañas de Navegación */}
+      }
+      title={
+        <div className="flex items-center gap-2">
+          <span>Asistente de Sesión</span>
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            REDUCCIÓN DE DAÑOS
+          </span>
+        </div>
+      }
+      subtitle="Cuidado mutuo, hidratación y registro temporal sin juicio"
+      maxWidth="lg"
+      ariaLabel="Asistente de Sesión"
+      contentClassName="p-0 flex flex-col"
+      footer={
+        <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 w-full">
+          <span>VESSEL HARM REDUCTION PROTOCOL</span>
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
+            onClick={closeHarmReductionModal}
+            className="text-neutral-300 hover:text-white font-bold"
+          >
+            Cerrar
+          </BrutalistButton>
+        </div>
+      }
+    >
+      {/* Pestañas de Navegación */}
         <div className="grid grid-cols-3 border-b border-white/10 bg-black/40 font-mono text-xs">
           <button
             type="button"
@@ -221,42 +214,71 @@ export const HarmReductionModal: React.FC = () => {
 
                     {/* Input manual */}
                     <div className="flex items-center gap-2 pt-1">
-                      <input
+                      <BrutalistInput
                         type="text"
                         value={selectedSubstance}
                         onChange={(e) => setSelectedSubstance(e.target.value)}
                         placeholder="Sustancia"
-                        className="w-1/3 bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-emerald-400"
+                        containerClassName="w-1/3"
                       />
-                      <input
+                      <BrutalistInput
                         type="text"
                         value={doseAmount}
                         onChange={(e) => setDoseAmount(e.target.value)}
                         placeholder="Cantidad (ej: 0.5ml)"
-                        className="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-emerald-400"
+                        containerClassName="flex-1"
                       />
-                      <button
-                        type="button"
+                      <BrutalistButton
+                        variant="primary"
+                        size="compact-icon"
                         onClick={() => handleLogDose()}
-                        className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-all cursor-pointer"
                         title="Registrar dosis"
+                        className="!bg-emerald-600 hover:!bg-emerald-500 text-white min-w-[38px] min-h-[38px]"
                       >
                         <Plus className="w-4 h-4" />
-                      </button>
+                      </BrutalistButton>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleEnd}
-                    className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-red-500/30 text-red-400 font-mono text-xs font-bold rounded-xl transition-all cursor-pointer"
-                  >
-                    Finalizar Sesión de Cuidado
-                  </button>
+                  {isConfirmingEnd ? (
+                    <div className="p-3.5 rounded-2xl bg-bloodNeon/15 border border-bloodNeon/50 flex flex-col gap-2.5 animate-in fade-in duration-150">
+                      <p className="text-xs font-mono font-bold text-white uppercase tracking-wider text-center">
+                        ¿Finalizar sesión de reducción de daños?
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <BrutalistButton
+                          variant="ghost"
+                          size="compact"
+                          soundEffect="none"
+                          onClick={() => setIsConfirmingEnd(false)}
+                        >
+                          Continuar Cuidado
+                        </BrutalistButton>
+                        <BrutalistButton
+                          variant="danger"
+                          size="compact"
+                          soundEffect="pulse"
+                          onClick={handleEnd}
+                        >
+                          Confirmar Salida
+                        </BrutalistButton>
+                      </div>
+                    </div>
+                  ) : (
+                    <BrutalistButton
+                      variant="outline"
+                      size="default"
+                      soundEffect="none"
+                      onClick={() => setIsConfirmingEnd(true)}
+                      className="w-full !border-bloodNeon/40 !text-bloodNeon hover:!bg-bloodNeon/15 font-mono text-xs font-bold"
+                    >
+                      Finalizar Sesión de Cuidado
+                    </BrutalistButton>
+                  )}
                 </>
               ) : (
                 /* Estado Inactivo */
-                <div className="p-5 rounded-2xl bg-neutral-900/40 border border-neutral-800 space-y-4 text-center">
+                <div className="p-5 rounded-2xl bg-obsidian-card border border-white/10 space-y-4 text-center">
                   <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 mx-auto flex items-center justify-center">
                     <HeartPulse className="w-6 h-6" />
                   </div>
@@ -270,13 +292,15 @@ export const HarmReductionModal: React.FC = () => {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
+                  <BrutalistButton
+                    variant="mint"
+                    size="lg"
+                    soundEffect="pulse"
                     onClick={handleStart}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-black text-xs uppercase rounded-xl transition-all shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer"
+                    className="w-full text-xs font-black uppercase tracking-wider"
                   >
                     INICIAR ASISTENTE DE SESIÓN 🔥
-                  </button>
+                  </BrutalistButton>
                 </div>
               )}
             </div>
@@ -381,19 +405,6 @@ export const HarmReductionModal: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Footer */}
-        <div className="p-3 border-t border-white/10 bg-neutral-950 flex items-center justify-between text-[11px] font-mono text-neutral-400">
-          <span>VESSEL HARM REDUCTION PROTOCOL</span>
-          <button
-            type="button"
-            onClick={closeHarmReductionModal}
-            className="text-neutral-300 hover:text-white font-bold"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useLogistics,
+  useRadarMatrix,
+  useAuth,
+  useSettings,
+} from "@/context/VesselContext";
 import { VesselProfile } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -14,7 +19,12 @@ import {
   Star,
   Sparkles,
   ShieldCheck,
+  QrCode,
+  Copy,
+  Share2,
 } from "lucide-react";
+import { generateQrMatrix } from "@/lib/qr/tacticalQrEngine";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const DuoLinkModal: React.FC = () => {
   const {
@@ -23,15 +33,27 @@ export const DuoLinkModal: React.FC = () => {
     myDuoLink,
     linkDuoPartner,
     unlinkDuoPartner,
-    profiles,
-    favoriteProfileIds,
-    myProfile,
-    language,
-  } = useVessel();
+  } = useLogistics();
+  const { profiles, favoriteProfileIds } = useRadarMatrix();
+  const { myProfile } = useAuth();
+  const { language } = useSettings();
 
+  const [duoSubTab, setDuoSubTab] = useState<"link" | "qr">("link");
+  const [partnerCodeInput, setPartnerCodeInput] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPartner, setSelectedPartner] = useState<VesselProfile | null>(null);
   const [jointTitle, setJointTitle] = useState("");
+
+  const myDuoCode = useMemo(() => {
+    const prefix = (myProfile.codename || "VESSEL").slice(0, 4).toUpperCase();
+    return `DUO-${prefix}-7X`;
+  }, [myProfile.codename]);
+
+  const qrMatrix = useMemo(() => {
+    const payload = `vessel:duo:${myProfile.codename || "user"}:${myDuoCode}`;
+    return generateQrMatrix(payload);
+  }, [myProfile.codename, myDuoCode]);
 
   const favIds = favoriteProfileIds || [];
 
@@ -66,54 +88,32 @@ export const DuoLinkModal: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Modo Dúo"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none [overscroll-behavior:contain]"
-      onClick={closeDuoModal}
-    >
-      <div
-        className="relative w-full max-w-md bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-card-elevation overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header Táctico */}
-        <div className="p-4 border-b border-white/10 bg-black/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-mono text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
-                <span>{language === "es" ? "MODO DÚO // PAREJA VINCULADA" : "DUO MODE // PARTNER LINK"}</span>
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-electricViolet text-white font-extrabold shadow-violet-soft">
-                  {myDuoLink?.isLinked ? "ACTIVO" : "DISPONIBLE"}
-                </span>
-              </h3>
-              <p className="text-[10.5px] text-neutral-400 font-sans">
-                {language === "es"
-                  ? "Conexión transparente para parejas abiertas y vínculos éticos"
-                  : "Transparent connection for open couples and ethical dynamics"}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={closeDuoModal}
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            aria-label="Cerrar modal de pareja"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <BrutalistModal
+      isOpen={isDuoModalOpen}
+      onClose={closeDuoModal}
+      icon={
+        <div className="p-2 rounded-xl bg-electricViolet/20 border border-electricViolet/40 text-electricViolet-glow">
+          <Users className="w-5 h-5" />
         </div>
-
-        {/* Contenido del Modal */}
-        <div className="p-4 overflow-y-auto space-y-4 flex-1">
-          {myDuoLink?.isLinked ? (
+      }
+      title={
+        <div className="flex items-center gap-1.5">
+          <span>{language === "es" ? "MODO DÚO // PAREJA VINCULADA" : "DUO MODE // PARTNER LINK"}</span>
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-electricViolet text-white font-extrabold shadow-violet-soft">
+            {myDuoLink?.isLinked ? "ACTIVO" : "DISPONIBLE"}
+          </span>
+        </div>
+      }
+      subtitle={
+        language === "es"
+          ? "Conexión transparente para parejas abiertas y vínculos éticos"
+          : "Transparent connection for open couples and ethical dynamics"
+      }
+      maxWidth="md"
+      ariaLabel="Modo Dúo"
+      contentClassName="p-4 space-y-4"
+    >
+      {myDuoLink?.isLinked ? (
             /* ESTADO 1: PAREJA ACTUALMENTE VINCULADA */
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-black/60 border border-electricViolet/40 space-y-3">
@@ -186,23 +186,154 @@ export const DuoLinkModal: React.FC = () => {
                   : "Link your profile with your partner to find mutual dates, couples or threesomes."}
               </p>
 
-              {/* Título de Pareja */}
-              <div className="space-y-1.5">
-                <label className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block">
-                  {language === "es" ? "Nombre o Título Conjunto" : "Joint Title"}
-                </label>
-                <input
-                  type="text"
-                  value={jointTitle}
-                  onChange={(e) => setJointTitle(e.target.value)}
-                  placeholder={
-                    selectedPartner
-                      ? `${myProfile.codename} & ${selectedPartner.codename}`
-                      : "Ej: Santi & Nico // Pareja Abierta"
-                  }
-                  className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white font-mono text-xs placeholder:text-neutral-600 focus:outline-none focus:border-electricViolet focus:ring-1 focus:ring-electricViolet"
-                />
+              {/* Selector de Modo: Vincular por Perfil/Código vs Generar Mi QR */}
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-black/60 border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playPulse();
+                    setDuoSubTab("link");
+                  }}
+                  className={`py-2 px-3 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    duoSubTab === "link"
+                      ? "bg-electricViolet text-white shadow-violet-soft"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  <LinkIcon className="w-3.5 h-3.5" />
+                  <span>{language === "es" ? "Vincular Pareja" : "Link Partner"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playPulse();
+                    setDuoSubTab("qr");
+                  }}
+                  className={`py-2 px-3 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    duoSubTab === "qr"
+                      ? "bg-electricViolet text-white shadow-violet-soft"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>{language === "es" ? "Mi Código QR" : "My QR Code"}</span>
+                </button>
               </div>
+
+              {duoSubTab === "qr" ? (
+                /* SUB-PESTAÑA QR: MOSTRAR MI QR Y CÓDIGO DE PAREJA */
+                <div className="space-y-3.5 text-center animate-fade-in">
+                  <div className="p-4 rounded-3xl bg-white text-neutral-950 flex flex-col items-center justify-center border-4 border-electricViolet shadow-violet-soft">
+                    <div className="w-48 h-48 flex items-center justify-center bg-white p-1">
+                      <svg
+                        viewBox="-2 -2 33 33"
+                        className="w-full h-full"
+                        role="img"
+                        aria-label="Código QR de Modo Dúo"
+                      >
+                        <rect x="-2" y="-2" width="33" height="33" fill="#FFFFFF" />
+                        {qrMatrix.map((row, rIdx) =>
+                          row.map((cell, cIdx) => {
+                            if (!cell) return null;
+                            return (
+                              <rect
+                                key={`${rIdx}-${cIdx}`}
+                                x={cIdx}
+                                y={rIdx}
+                                width={1}
+                                height={1}
+                                fill="#09090B"
+                              />
+                            );
+                          })
+                        )}
+                      </svg>
+                    </div>
+                    <div className="pt-2 border-t border-neutral-200 w-full">
+                      <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider block">
+                        Tu Código de Pareja
+                      </span>
+                      <span className="text-base font-mono font-black text-neutral-950 tracking-wider">
+                        {myDuoCode}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        audioEngine.playPulse();
+                        if (navigator.clipboard) {
+                          await navigator.clipboard.writeText(myDuoCode);
+                          setCopiedCode(true);
+                          setTimeout(() => setCopiedCode(false), 2000);
+                        }
+                      }}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-mono text-xs font-bold flex items-center justify-center gap-1.5 border border-white/15 cursor-pointer transition-all active:scale-95"
+                    >
+                      {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                      <span>
+                        {copiedCode
+                          ? (language === "es" ? "¡Copiado!" : "Copied!")
+                          : (language === "es" ? "Copiar Código" : "Copy Code")}
+                      </span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 font-sans leading-relaxed">
+                    {language === "es"
+                      ? "Mostrale este código o QR a tu pareja. Al ingresarlo en su VESSEL, ambos perfiles quedarán enlazados automáticamente en la Matriz con tarjeta doble."
+                      : "Show this QR code to your partner to link both profiles on the Matrix."}
+                  </p>
+                </div>
+              ) : (
+                /* SUB-PESTAÑA LINK: SELECCIONAR O INGRESAR CÓDIGO */
+                <>
+                  {/* Ingreso Rápido de Código de Pareja */}
+                  <div className="space-y-1.5">
+                    <label className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block">
+                      {language === "es" ? "Código de Pareja (Opcional)" : "Partner Code"}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={partnerCodeInput}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase();
+                          setPartnerCodeInput(val);
+                          // Auto match candidate
+                          const found = candidateProfiles.find(
+                            (c) =>
+                              c.codename.toUpperCase() === val ||
+                              val.includes(c.codename.slice(0, 4).toUpperCase())
+                          );
+                          if (found) {
+                            setSelectedPartner(found);
+                          }
+                        }}
+                        placeholder="Ej: DUO-SANT-7X o @CODENAME"
+                        className="flex-1 p-2.5 rounded-xl bg-black/60 border border-white/10 text-white font-mono text-xs placeholder:text-neutral-600 focus:outline-none focus:border-electricViolet"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Título de Pareja */}
+                  <div className="space-y-1.5">
+                    <label className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block">
+                      {language === "es" ? "Nombre o Título Conjunto" : "Joint Title"}
+                    </label>
+                    <input
+                      type="text"
+                      value={jointTitle}
+                      onChange={(e) => setJointTitle(e.target.value)}
+                      placeholder={
+                        selectedPartner
+                          ? `${myProfile.codename} & ${selectedPartner.codename}`
+                          : "Ej: Santi & Nico // Pareja Abierta"
+                      }
+                      className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white font-mono text-xs placeholder:text-neutral-600 focus:outline-none focus:border-electricViolet focus:ring-1 focus:ring-electricViolet"
+                    />
+                  </div>
 
               {/* Selector de Pareja */}
               <div className="space-y-2">
@@ -315,10 +446,10 @@ export const DuoLinkModal: React.FC = () => {
                     : "Seleccioná una pareja para vincular"}
                 </span>
               </button>
-            </div>
+            </>
           )}
         </div>
-      </div>
-    </div>
+      )}
+    </BrutalistModal>
   );
 };

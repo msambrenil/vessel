@@ -3,13 +3,8 @@
 import React, { useState, useRef } from "react";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { DiaryEntry } from "@/types/vessel";
-import {
-  encryptDiaryBackup,
-  decryptDiaryBackup,
-  downloadBackupFile,
-  EncryptedBackupEnvelope,
-} from "@/lib/security/diaryBackupCrypto";
+import { DiaryEntry, ProfileDossier } from "@/types/vessel";
+import { DiaryBackupModal } from "./DiaryBackupModal";
 import {
   Flame,
   Zap,
@@ -17,13 +12,10 @@ import {
   Sparkles,
   Download,
   Upload,
-  ShieldCheck,
-  Check,
-  AlertCircle,
-  X,
 } from "lucide-react";
 import { formatDiaryDateDisplay, getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import { VaultEncryptedImage } from "@/lib/security/encryptedPhotoService";
+import { TranslationType } from "@/lib/i18n/translations";
 
 export interface LoverVaultItem {
   profileId: string;
@@ -41,12 +33,12 @@ export interface LoverVaultItem {
 interface DiaryLoversVaultSectionProps {
   lovers: LoverVaultItem[];
   diaryEntries?: DiaryEntry[];
-  profileDossiers?: Record<string, any>;
-  onRestoreBackup?: (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, any> }) => void;
+  profileDossiers?: Record<string, Partial<ProfileDossier>>;
+  onRestoreBackup?: (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, Partial<ProfileDossier>> }) => void;
   onOpenDossier: (profileId: string) => void;
   onSendRevancha: (lover: { profileId: string; codename: string }) => void;
   language: "es" | "en";
-  t: any;
+  t: TranslationType;
 }
 
 export const DiaryLoversVaultSection: React.FC<DiaryLoversVaultSectionProps> = ({
@@ -61,112 +53,13 @@ export const DiaryLoversVaultSection: React.FC<DiaryLoversVaultSectionProps> = (
 }) => {
   const [revanchaSentIds, setRevanchaSentIds] = useState<Record<string, boolean>>({});
 
-  // Estados del Modal de Respaldo Cifrado
-  const [backupModalMode, setBackupModalMode] = useState<"none" | "export" | "import">("none");
-  const [backupPassword, setBackupPassword] = useState("");
-  const [backupStatusMessage, setBackupStatusMessage] = useState<string | null>(null);
-  const [backupErrorMessage, setBackupErrorMessage] = useState<string | null>(null);
-  const [importFileContent, setImportFileContent] = useState<string | null>(null);
-  const [isProcessingBackup, setIsProcessingBackup] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [backupModalMode, setBackupModalMode] = useState<"export" | "import">("export");
 
   const handleRevanchaClick = (lover: LoverVaultItem) => {
     audioEngine.playSubBass(55);
     setRevanchaSentIds((prev) => ({ ...prev, [lover.profileId]: true }));
     onSendRevancha({ profileId: lover.profileId, codename: lover.codename });
-  };
-
-  // Manejar exportación cifrada
-  const handleExportBackup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!backupPassword || backupPassword.trim().length === 0) {
-      setBackupErrorMessage(language === "es" ? "Ingresá una contraseña para proteger el archivo." : "Enter a password to protect the file.");
-      return;
-    }
-
-    try {
-      setIsProcessingBackup(true);
-      setBackupErrorMessage(null);
-
-      const payload = {
-        entries: diaryEntries,
-        dossiers: profileDossiers,
-        lovers,
-      };
-
-      const envelope = await encryptDiaryBackup(payload, backupPassword);
-      const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
-      const filename = `vessel-agenda-respaldo-${getLocalTodayIso()}.json`;
-      downloadBackupFile(blob, filename);
-
-      audioEngine.playSubBass(65);
-      setBackupStatusMessage(t.diary.backupSuccess || (language === "es" ? "Respaldo exportado exitosamente" : "Backup exported successfully"));
-
-      setTimeout(() => {
-        setBackupModalMode("none");
-        setBackupPassword("");
-        setBackupStatusMessage(null);
-      }, 1400);
-    } catch (err: any) {
-      setBackupErrorMessage(err.message || (language === "es" ? "Error al cifrar el respaldo" : "Error encrypting backup"));
-    } finally {
-      setIsProcessingBackup(false);
-    }
-  };
-
-  // Manejar selección de archivo para importar
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      setImportFileContent(content);
-      setBackupPassword("");
-      setBackupErrorMessage(null);
-      setBackupStatusMessage(null);
-      setBackupModalMode("import");
-      audioEngine.playPulse();
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  // Manejar importación y descifrado
-  const handleImportBackup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!importFileContent) return;
-    if (!backupPassword || backupPassword.trim().length === 0) {
-      setBackupErrorMessage(language === "es" ? "Ingresá la contraseña del archivo." : "Enter file password.");
-      return;
-    }
-
-    try {
-      setIsProcessingBackup(true);
-      setBackupErrorMessage(null);
-
-      const parsedEnvelope = JSON.parse(importFileContent);
-      const restored = await decryptDiaryBackup(parsedEnvelope, backupPassword);
-
-      if (onRestoreBackup) {
-        onRestoreBackup(restored as any);
-      }
-
-      audioEngine.playSubBass(75);
-      setBackupStatusMessage(t.diary.backupRestoreSuccess || (language === "es" ? "Respaldo restaurado exitosamente" : "Backup restored successfully"));
-
-      setTimeout(() => {
-        setBackupModalMode("none");
-        setBackupPassword("");
-        setImportFileContent(null);
-        setBackupStatusMessage(null);
-      }, 1400);
-    } catch (err: any) {
-      setBackupErrorMessage(err.message || (language === "es" ? "Contraseña incorrecta o archivo inválido" : "Invalid password or corrupted file"));
-    } finally {
-      setIsProcessingBackup(false);
-    }
   };
 
   return (
@@ -201,10 +94,8 @@ export const DiaryLoversVaultSection: React.FC<DiaryLoversVaultSectionProps> = (
             type="button"
             data-testid="diary-export-backup-btn"
             onClick={() => {
-              setBackupPassword("");
-              setBackupErrorMessage(null);
-              setBackupStatusMessage(null);
               setBackupModalMode("export");
+              setIsBackupModalOpen(true);
               audioEngine.playPulse();
             }}
             className="px-3 py-1.5 min-h-[38px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/40 text-xs font-mono font-bold text-neutral-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
@@ -216,23 +107,15 @@ export const DiaryLoversVaultSection: React.FC<DiaryLoversVaultSectionProps> = (
             type="button"
             data-testid="diary-import-backup-btn"
             onClick={() => {
-              setBackupPassword("");
-              setBackupErrorMessage(null);
-              setBackupStatusMessage(null);
-              fileInputRef.current?.click();
+              setBackupModalMode("import");
+              setIsBackupModalOpen(true);
+              audioEngine.playPulse();
             }}
             className="px-3 py-1.5 min-h-[38px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-electricViolet/40 text-xs font-mono font-bold text-neutral-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
           >
             <Upload className="w-3.5 h-3.5 text-electricViolet-glow" />
             <span>{t.diary.backupImportBtn || (language === "es" ? "Restaurar Respaldo 📥" : "Restore Backup 📥")}</span>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
         </div>
       </div>
 
@@ -367,107 +250,19 @@ export const DiaryLoversVaultSection: React.FC<DiaryLoversVaultSectionProps> = (
       )}
 
       {/* MODAL DE RESPALDO CIFRADO (EXPORTAR / IMPORTAR) */}
-      {backupModalMode !== "none" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-obsidian-surface border border-white/15 rounded-3xl p-6 shadow-2xl space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-mintNeon" />
-                <h3 className="font-mono font-black text-sm uppercase text-white tracking-wider">
-                  {backupModalMode === "export"
-                    ? (language === "es" ? "Exportar Respaldo Cifrado" : "Export Encrypted Backup")
-                    : (language === "es" ? "Restaurar Respaldo Cifrado" : "Restore Encrypted Backup")}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setBackupModalMode("none")}
-                className="p-1.5 rounded-lg text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-neutral-400 font-mono leading-relaxed">
-              {backupModalMode === "export"
-                ? (language === "es"
-                    ? "Tus datos (citas, notas íntimas de amantes y fotos) se cifrarán con AES-GCM 256 bits antes de descargarse. Solo quien conozca la contraseña podrá descifrarlos."
-                    : "Your data (encounters, lovers' notes and photos) will be encrypted with AES-GCM 256-bit before downloading. Only those with the password can decrypt it.")
-                : (language === "es"
-                    ? "Ingresá la contraseña con la que protegiste el archivo para restaurar tus registros en este dispositivo."
-                    : "Enter the password you used to protect the file to restore your records on this device.")}
-            </p>
-
-            <form onSubmit={backupModalMode === "export" ? handleExportBackup : handleImportBackup} className="space-y-4">
-              <div>
-                <label className="block text-[11px] font-mono text-neutral-300 uppercase mb-1.5 font-bold">
-                  {language === "es" ? "Contraseña del Archivo" : "File Password"}
-                </label>
-                <input
-                  type="password"
-                  required
-                  autoFocus
-                  data-testid="diary-backup-password-input"
-                  placeholder={language === "es" ? "Ingresá contraseña segura" : "Enter secure password"}
-                  value={backupPassword}
-                  onChange={(e) => setBackupPassword(e.target.value)}
-                  className="w-full bg-black/60 border border-white/20 focus:border-mintNeon rounded-xl px-3.5 py-2.5 text-xs text-white font-mono placeholder:text-neutral-600 focus-visible:outline-none"
-                />
-              </div>
-
-              {backupErrorMessage && (
-                <div
-                  data-testid="diary-backup-error-msg"
-                  className="flex items-center gap-2 p-2.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-400 text-xs font-mono"
-                >
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{backupErrorMessage}</span>
-                </div>
-              )}
-
-              {backupStatusMessage && (
-                <div
-                  data-testid="diary-backup-success-msg"
-                  className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-xs font-mono"
-                >
-                  <Check className="w-4 h-4 flex-shrink-0" />
-                  <span>{backupStatusMessage}</span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setBackupModalMode("none")}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 font-mono text-xs font-bold cursor-pointer transition-all"
-                >
-                  {language === "es" ? "Cancelar" : "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isProcessingBackup}
-                  data-testid="diary-backup-submit-btn"
-                  className="px-5 py-2 rounded-xl bg-mintNeon hover:bg-emerald-400 text-black font-mono text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-mint-soft cursor-pointer transition-all disabled:opacity-50"
-                >
-                  {isProcessingBackup ? (
-                    <span>{language === "es" ? "Procesando..." : "Processing..."}</span>
-                  ) : backupModalMode === "export" ? (
-                    <>
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{language === "es" ? "Descargar .json" : "Download .json"}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{language === "es" ? "Descifrar e Importar" : "Decrypt & Import"}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <DiaryBackupModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+        initialMode={backupModalMode}
+        exportPayload={{
+          entries: diaryEntries,
+          dossiers: profileDossiers,
+          lovers,
+        }}
+        onRestoreBackup={onRestoreBackup}
+        language={language}
+        t={t}
+      />
     </div>
   );
 };

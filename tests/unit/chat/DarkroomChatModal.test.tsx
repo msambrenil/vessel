@@ -60,8 +60,8 @@ vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: mockAudioEngine,
 }));
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     myProfile: { codename: "TEST_USER", id: "user-me" },
     profiles: [mockTestState.partner],
     getProfileById: (id: string) => (id === mockTestState.partner.id ? mockTestState.partner : undefined),
@@ -105,8 +105,18 @@ vi.mock("@/context/VesselContext", () => ({
     updateEncounterTicketStatus: vi.fn(),
     confirmH2Ticket: vi.fn(),
     hasMutualPulse: (id: string) => (id === "partner-99" ? mockTestState.hasMutual : false),
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 describe("DarkroomChatModal — Pinned Pre-Flight Agreement Banner (Fase 4)", () => {
   const onClose = vi.fn();

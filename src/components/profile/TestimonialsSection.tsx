@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { VesselProfile } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary } from "@/context/VesselContext";
 import { WriteTestimonialModal } from "./WriteTestimonialModal";
 import {
   MessageSquareHeart,
@@ -24,7 +24,7 @@ interface TestimonialsSectionProps {
 export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   profile,
 }) => {
-  const { validatedEncounters, validateEncounter } = useVessel();
+  const { validatedEncounters, validateEncounter } = useDiary();
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [showInfoBanner, setShowInfoBanner] = useState(false);
 

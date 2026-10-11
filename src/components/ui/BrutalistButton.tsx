@@ -83,7 +83,7 @@ export const BrutalistButton = React.forwardRef<
 
     // 1. Clases base comunes para todos los botones brutalistas
     const baseClasses =
-      "inline-flex items-center justify-center rounded-2xl font-mono uppercase tracking-wider font-bold transition-all duration-200 cursor-pointer select-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100";
+      "relative overflow-hidden inline-flex items-center justify-center rounded-2xl font-mono uppercase tracking-wider font-bold transition-all duration-200 cursor-pointer select-none active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100";
 
     // 2. Variantes semánticas
     const variantClasses: Record<BrutalistButtonVariant, string> = {
@@ -107,21 +107,21 @@ export const BrutalistButton = React.forwardRef<
         "border border-white/15 bg-black/60 text-neutral-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-black/90 focus-visible:ring-amber-400 aria-pressed:border-amber-400 aria-pressed:bg-amber-950/80 aria-pressed:text-amber-400 aria-pressed:shadow-[0_0_10px_rgba(251,191,36,0.4)]",
     };
 
-    // 3. Tamaños ergonómicos (cumpliendo 44px mínimo para touch-targets de pulgar)
+    // 3. Tamaños ergonómicos (cumpliendo 44px mínimo para touch-targets de pulgar según WCAG 2.5.5)
     const sizeClasses: Record<BrutalistButtonSize, string> = {
       default: "min-h-[44px] px-4 py-2.5 text-xs gap-2",
-      sm: "min-h-[36px] px-3 py-1.5 text-[11px] gap-1.5",
+      sm: "min-h-[36px] px-3 py-1.5 text-[11px] gap-1.5 after:absolute after:-inset-1 after:content-['']",
       lg: "min-h-[50px] px-6 py-3 text-sm gap-2.5",
       icon: "w-11 h-11 min-w-[44px] min-h-[44px] p-0 flex items-center justify-center text-sm",
-      compact: "min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 text-[10px] sm:text-[10.5px] gap-1.5",
-      "compact-icon": "w-8 h-8 sm:w-9 sm:h-9 min-w-0 min-h-0 p-0 flex items-center justify-center text-xs",
+      compact: "min-h-[34px] sm:min-h-[36px] px-2.5 sm:px-3 py-1 text-[10px] sm:text-[10.5px] gap-1.5 after:absolute after:-inset-1.5 after:content-['']",
+      "compact-icon": "w-8 h-8 sm:w-9 sm:h-9 min-w-0 min-h-0 p-0 flex items-center justify-center text-xs after:absolute after:-inset-2 after:content-['']",
     };
 
     const savingClasses = isSaving
-      ? "!bg-electricViolet/80 !border-electricViolet-glow shadow-violet-soft cursor-wait"
+      ? "!bg-electricViolet/85 !border-electricViolet-glow shadow-violet-soft shadow-[0_0_22px_rgba(139,92,246,0.55)] cursor-wait transition-all duration-500 ease-out"
       : "";
     const successClasses = isSuccess
-      ? "!bg-mintNeon !text-obsidian-deep !border-mintNeon shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black"
+      ? "!bg-mintNeon !text-obsidian-deep !border-mintNeon shadow-[0_0_25px_rgba(52,211,153,0.65)] font-black transition-all duration-500 ease-out"
       : "";
 
     const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${savingClasses} ${successClasses} ${className}`;
@@ -131,22 +131,39 @@ export const BrutalistButton = React.forwardRef<
         ref={ref}
         type={type}
         disabled={disabled || isLoading || isSaving}
+        aria-busy={isLoading || isSaving ? "true" : undefined}
         onClick={handleClick}
         className={combinedClasses}
         {...props}
       >
+        {/* Shimmer cinemático activo durante el proceso de guardado */}
+        {isSaving && (
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-tactical-shimmer pointer-events-none"
+          />
+        )}
+
+        {/* Flash microinteractivo al confirmar éxito */}
+        {isSuccess && (
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 bg-white/35 pointer-events-none animate-out fade-out duration-500"
+          />
+        )}
+
         {isSuccess ? (
-          <span className="inline-flex items-center gap-1.5 animate-in zoom-in-95 duration-150">
-            <CheckCircle2 className="w-4 h-4 stroke-[3] text-obsidian-deep" />
+          <span className="relative z-10 inline-flex items-center gap-1.5 animate-in zoom-in-90 duration-300">
+            <CheckCircle2 className="w-4 h-4 stroke-[3] text-obsidian-deep animate-success-pop" />
             <span>{successText}</span>
           </span>
         ) : isSaving ? (
-          <span className="inline-flex items-center gap-1.5 animate-in fade-in duration-150">
+          <span className="relative z-10 inline-flex items-center gap-1.5 animate-in fade-in duration-300">
             <Loader2 className="w-4 h-4 animate-spin text-white" />
             <span>{savingText}</span>
           </span>
         ) : isLoading ? (
-          <span className="inline-flex items-center gap-2">
+          <span className="relative z-10 inline-flex items-center gap-2">
             <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
             <span>{children}</span>
           </span>
@@ -155,6 +172,8 @@ export const BrutalistButton = React.forwardRef<
         )}
       </button>
     );
+
+
   }
 );
 

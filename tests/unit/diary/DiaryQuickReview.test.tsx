@@ -5,15 +5,25 @@ import { DiaryEntryCard } from "@/components/diary/DiaryEntryCard";
 import { DiaryEntry, DiaryLocation } from "@/types/vessel";
 import { TRANSLATIONS } from "@/lib/i18n/translations";
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     updateDiaryEntry: vi.fn(),
     deleteDiaryEntry: vi.fn(),
     sendChatMessage: vi.fn(),
     language: "es",
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {

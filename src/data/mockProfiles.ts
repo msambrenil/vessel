@@ -1,49 +1,4 @@
-import { VesselProfile, StyledAvatar, EnergyVibe } from "@/types/vessel";
-
-export const STYLED_AVATARS_CATALOG: StyledAvatar[] = [
-  {
-    id: "avatar-leather-01",
-    name: "Máscara de Cuero - Crux",
-    category: "leather",
-    url: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80",
-    description: "Silueta táctica con arnés de cuero y protección facial completa.",
-  },
-  {
-    id: "avatar-neon-02",
-    name: "Vórtice Neón - Cuarto Oscuro",
-    category: "neon",
-    url: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=800&auto=format&fit=crop&q=80",
-    description: "Gradiente de luz ámbar y roja profunda con atmósfera cinematográfica.",
-  },
-  {
-    id: "avatar-silhouette-03",
-    name: "Sombra Dorsal - Anatómico",
-    category: "silhouette",
-    url: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80",
-    description: "Líneas musculares en alto contraste sin exposición de facciones faciales.",
-  },
-  {
-    id: "avatar-cyber-04",
-    name: "Monolito Brutalista - Vacío",
-    category: "cyber",
-    url: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
-    description: "Textura de hormigón y geometría angular oscura.",
-  },
-  {
-    id: "avatar-darkroom-05",
-    name: "Humo y Luces Bajas - Berlín",
-    category: "darkroom",
-    url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80",
-    description: "Vapor de club nocturno y misterio industrial.",
-  },
-  {
-    id: "avatar-tactical-06",
-    name: "Capucha Sigilo - Modo Furtivo",
-    category: "leather",
-    url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
-    description: "Perfil táctico de alta discreción para cruising.",
-  },
-];
+import { VesselProfile, EnergyVibe } from "@/types/vessel";
 
 export const YO_SOY_OPTIONS = [
   "Musculoso / Gym",
@@ -368,7 +323,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       "En sesión activa por 45 min en depto propio en Alberdi. Disponible después para segundo turno. Morbo pesado, arnés de cuero crudo y control total.",
     avatarUrl:
       "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&auto=format&fit=crop&q=80",
-    isStylizedAvatar: true, // Avatar estilizado para privacidad facial
+    isStylizedAvatar: false,
     isFogMode: true, // Modo Niebla activado para máxima discreción
     verification: {
       isVerified: true,
@@ -521,7 +476,7 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       "En modo discreto por Banda Norte. Tirame un toque para reactivarme si estás cerca con lugar y ganas.",
     avatarUrl:
       "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=800&auto=format&fit=crop&q=80",
-    isStylizedAvatar: true, // Avatar estilizado
+    isStylizedAvatar: false,
     isFogMode: true, // Modo Niebla activado para sigilo
     verification: {
       isVerified: true,
@@ -582,8 +537,8 @@ export const BASE_MOCK_PROFILES: VesselProfile[] = [
       "Por la zona de Costanera y Parque Sarmiento. Listo para atención directa e inmediata sin caretas.",
     avatarUrl:
       "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&auto=format&fit=crop&q=80",
-    isStylizedAvatar: true, // Avatar estilizado
-    isFogMode: false,
+    isStylizedAvatar: false,
+    isFogMode: true,
     verification: {
       isVerified: true,
       method: "biometric_liveness",

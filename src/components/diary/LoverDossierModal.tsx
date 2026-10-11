@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useDiary,
+  useRadarMatrix,
+  useAuth,
+  useChat,
+  useSettings,
+} from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { uploadAndEncryptVaultPhoto, VaultEncryptedImage } from "@/lib/security/encryptedPhotoService";
 import {
@@ -20,6 +26,7 @@ import {
   Loader2,
   ShieldCheck,
 } from "lucide-react";
+import { BrutalistTextarea } from "@/components/ui";
 
 const INTIMATE_BADGES = [
   { id: "chem_nuclear", label: "🔥 Química Nuclear", desc: "Atracción animal fuera de serie" },
@@ -40,18 +47,14 @@ export const LoverDossierModal: React.FC = () => {
     saveProfileDossier,
     archivePhotosToDossier,
     removePhotoFromDossier,
-    profiles,
-    getProfileById,
-    myProfile,
-    chatMessages,
-    userAlbums,
     unlockedVaults,
-    setActiveChatProfileId,
     openCreateDiaryModal,
     diaryEntries,
-    language,
-    t,
-  } = useVessel();
+  } = useDiary();
+  const { profiles, getProfileById } = useRadarMatrix();
+  const { myProfile } = useAuth();
+  const { chatMessages, setActiveChatProfileId } = useChat();
+  const { userAlbums, language, t } = useSettings();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -246,7 +249,7 @@ export const LoverDossierModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="lover-dossier-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none [overscroll-behavior:contain]"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in select-none [overscroll-behavior:contain]"
       onClick={closeLoverDossierModal}
     >
       <div
@@ -736,10 +739,8 @@ export const LoverDossierModal: React.FC = () => {
 
           {/* 3. NOTAS PRIVADAS CONFIDENCIALES */}
           <div className="bg-black/50 border border-white/10 rounded-3xl p-4 sm:p-5 space-y-3">
-            <h3 className="text-xs sm:text-sm font-bold font-mono text-white uppercase tracking-wider">
-              Notas Tácticas Secretas (Solo para vos)
-            </h3>
-            <textarea
+            <BrutalistTextarea
+              label="Notas Tácticas Secretas (Solo para vos)"
               rows={3}
               value={privateNotes}
               onChange={(e) => {
@@ -747,7 +748,6 @@ export const LoverDossierModal: React.FC = () => {
                 persistChanges({ privateNotes: e.target.value });
               }}
               placeholder="Ej: Le gusta el juego con arnés, perfume Tom Ford, piso 14 en Palermo..."
-              className="w-full p-3 rounded-2xl bg-black/60 border border-white/10 text-neutral-200 font-mono text-xs focus:outline-none focus:border-electricViolet resize-none"
             />
           </div>
 

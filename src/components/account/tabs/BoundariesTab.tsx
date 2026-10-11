@@ -1,36 +1,47 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
-import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { useChat, useRadarMatrix, useSettings } from "@/context/VesselContext";
 import { LocationPrivacySection } from "../LocationPrivacySection";
 import { BoundaryManagerModal } from "@/components/chat/BoundaryManagerModal";
 import { BOUNDARY_PROTOCOLS_CATALOG } from "@/data/energyCatalog";
-import { ShieldCheck, SlidersHorizontal, RotateCcw } from "lucide-react";
-import { TacticalBadge, BrutalistButton, SectionHeroHeader } from "@/components/ui";
+import {
+  ShieldCheck,
+  SlidersHorizontal,
+  RotateCcw,
+} from "lucide-react";
+import {
+  BrutalistButton,
+  SectionHeroHeader,
+} from "@/components/ui";
 
 export const BoundariesTab: React.FC = () => {
   const {
     boundaries: connectionBoundaries,
     removeBoundaryProtocol,
-    profiles,
-  } = useVessel();
+  } = useChat();
+  const { profiles } = useRadarMatrix();
+  const { language } = useSettings();
 
   const [editingBoundaryProfileId, setEditingBoundaryProfileId] = useState<string | null>(null);
 
   const activeBoundariesCount = Object.keys(connectionBoundaries).length;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Sección de Privacidad de Ubicación, Anti-Triangulación y Batería */}
+    <div className="space-y-4 animate-fade-in select-none">
+      {/* 1. SECCIÓN DE PRIVACIDAD DE UBICACIÓN, ANTI-TRIANGULACIÓN Y BATERÍA */}
       <LocationPrivacySection />
 
-      {/* Sección de Límites y Desconexión Gradual */}
+      {/* 2. SECCIÓN DE LÍMITES Y DESPEDIDA SIN DRAMA */}
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-purple-500/30 space-y-4 shadow-card-elevation backdrop-blur-md">
         <SectionHeroHeader
-          title="LÍMITES & DESCONEXIÓN GRADUAL"
-          tag={`${activeBoundariesCount} ACTIVOS`}
-          subtitle="Protocolos activos sin bloqueos abruptos ni hostilidad digital"
+          title={language === "es" ? "LÍMITES Y DESPEDIDA SIN DRAMA" : "BOUNDARIES & GRADUAL FADE"}
+          tag={`${activeBoundariesCount} ${language === "es" ? "ACTIVOS" : "ACTIVE"}`}
+          subtitle={
+            language === "es"
+              ? "Protocolos activos sin bloqueos hostiles ni escenas digitales"
+              : "Active protocols with zero harsh blocks or digital hostility"
+          }
           variant="violet"
           icon={<ShieldCheck className="w-4 h-4 text-electricViolet-glow" />}
         />
@@ -42,10 +53,10 @@ export const BoundariesTab: React.FC = () => {
               const protoDef = BOUNDARY_PROTOCOLS_CATALOG.find((b) => b.id === bound.protocol);
 
               const chatStatusLabel: Record<string, string> = {
-                active: "Activo",
-                muted: "Silenciado",
-                readonly: "Solo Lectura",
-                disconnected: "Desconectado",
+                active: language === "es" ? "Activo" : "Active",
+                muted: language === "es" ? "Silenciado" : "Muted",
+                readonly: language === "es" ? "Solo Lectura" : "Read-only",
+                disconnected: language === "es" ? "Desconectado" : "Disconnected",
               };
 
               const protocolLabelFallback: Record<string, string> = {
@@ -77,7 +88,7 @@ export const BoundariesTab: React.FC = () => {
                         </span>
                       </div>
                       <span className="text-[10px] font-mono text-neutral-400 block truncate mt-0.5">
-                        Chat: <strong className="text-neutral-200">{chatStatusLabel[bound.chatStatus] || bound.chatStatus}</strong> • Álbumes: <strong className="text-neutral-200">{bound.publicAlbumsVisible ? "Públicos" : "Ocultos"}</strong>
+                        Chat: <strong className="text-neutral-200">{chatStatusLabel[bound.chatStatus] || bound.chatStatus}</strong> • Álbumes: <strong className="text-neutral-200">{bound.publicAlbumsVisible ? (language === "es" ? "Públicos" : "Public") : (language === "es" ? "Ocultos" : "Hidden")}</strong>
                       </span>
                     </div>
                   </div>
@@ -111,10 +122,12 @@ export const BoundariesTab: React.FC = () => {
         ) : (
           <div className="p-4 bg-black/40 rounded-2xl border border-white/5 text-center space-y-1">
             <p className="text-xs font-mono text-neutral-300 font-bold">
-              No tienes conexiones limitadas activas.
+              {language === "es" ? "No tenés conexiones limitadas activas." : "No limited connections active."}
             </p>
             <span className="text-[10px] font-mono text-neutral-500 block">
-              Puedes configurar la desconexión gradual de cualquier usuario desde su chat o perfil en la matriz.
+              {language === "es"
+                ? "Podés activar la despedida sin drama o soft-block de cualquier usuario directamente desde su chat o tarjeta en el radar."
+                : "You can configure gradual disconnect for any profile directly from chat or radar."}
             </span>
           </div>
         )}

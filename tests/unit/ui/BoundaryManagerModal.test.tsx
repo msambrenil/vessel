@@ -8,8 +8,8 @@ const mockRemoveBoundaryProtocol = vi.fn();
 const mockOnClose = vi.fn();
 let mockExistingBoundary: any = null;
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     profiles: [
       {
         id: "target-1",
@@ -30,8 +30,18 @@ vi.mock("@/context/VesselContext", () => ({
         tabCustom: "A Medida",
       },
     },
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 describe("BoundaryManagerModal — Desconexión Gradual y Humanización en Español", () => {
   beforeEach(() => {

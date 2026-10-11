@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useAuth, useSettings } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { uploadMediaFile, compressImage } from "@/lib/firebase/storageService";
 import {
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Image as ImageIcon,
 } from "lucide-react";
+import { BrutalistButton } from "@/components/ui";
 
 interface CoverPhotoSelectorModalProps {
   onClose: () => void;
@@ -27,18 +29,37 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
 }) => {
   const {
     myProfile,
+    updateUserAvatar,
+    currentUserUid,
+  } = useAuth();
+  const {
     userAlbums,
     setProfileCoverPhoto,
-    updateUserAvatar,
     createAlbum,
     addPhotoToAlbum,
-    currentUserUid,
+    language,
     t,
-  } = useVessel();
+  } = useSettings();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   // Obtener todas las fotos disponibles en los álbumes del usuario
   const albumPhotos = userAlbums
@@ -125,16 +146,16 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
     }
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Foto Principal de Portada"
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-obsidian-deep border-t sm:border border-electricViolet/40 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[92vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
+        className="w-full max-w-lg md:max-w-2xl lg:max-w-3xl bg-obsidian-deep border-t sm:border border-electricViolet/40 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[92vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Tactical Drag Handle */}
@@ -160,14 +181,15 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
             </div>
           </div>
 
-          <button
-            type="button"
+          <BrutalistButton
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Cerrar selector de portada"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            className="text-neutral-400 hover:text-white"
           >
             <X className="w-4 h-4" />
-          </button>
+          </BrutalistButton>
         </div>
 
         {/* Cuerpo */}
@@ -179,8 +201,8 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
             </div>
           )}
 
-          {/* Botón Subir Foto Directa desde Dispositivo */}
-          <div>
+          {/* Opciones 1-Tap: Sacar Foto Directa o Elegir del Carrete */}
+          <div className="space-y-2">
             <input
               type="file"
               ref={fileInputRef}
@@ -188,28 +210,64 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
               accept="image/*"
               className="hidden"
             />
-            <button
-              type="button"
-              disabled={isUploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full p-4 bg-purple-950/20 hover:bg-purple-950/40 border-2 border-dashed border-electricViolet/50 hover:border-electricViolet rounded-2xl flex items-center justify-center gap-3 transition-all cursor-pointer group active:scale-98 disabled:opacity-50 disabled:cursor-wait"
-            >
-              <div className="p-2.5 rounded-xl bg-electricViolet text-white font-bold group-hover:scale-110 transition-transform shadow-violet-soft">
-                {isUploading ? (
-                  <Sparkles className="w-5 h-5 animate-spin" />
-                ) : (
-                  <UploadCloud className="w-5 h-5 stroke-[2.5]" />
-                )}
-              </div>
-              <div className="text-left">
-                <span className="text-xs font-bold font-mono text-white group-hover:text-electricViolet-glow transition-colors block uppercase">
-                  {isUploading ? "Optimizando y Subiendo en Alta Definición..." : "Subir Nueva Foto desde tu Dispositivo"}
-                </span>
-                <span className="text-[10px] text-neutral-400 font-mono block">
-                  {isUploading ? "Generando WebP HD (1080×1080) y sincronizando..." : "JPG, PNG o WEBP • Se agrega a tu álbum y se define como portada"}
-                </span>
-              </div>
-            </button>
+            <input
+              type="file"
+              ref={cameraInputRef}
+              onChange={(e) => handleFileUpload(e.target.files)}
+              accept="image/*"
+              capture="user"
+              className="hidden"
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <BrutalistButton
+                variant="primary"
+                size="default"
+                disabled={isUploading}
+                onClick={() => cameraInputRef.current?.click()}
+                className="w-full min-h-[52px] justify-start text-left px-3.5"
+              >
+                <div className="p-2 rounded-xl bg-white/20 text-white mr-2 flex-shrink-0">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="block font-bold text-xs uppercase font-mono truncate">
+                    {isUploading
+                      ? language === "es" ? "Subiendo..." : "Uploading..."
+                      : language === "es" ? "Sacar Foto Ya" : "Take Photo Now"}
+                  </span>
+                  <span className="block text-[10px] opacity-80 font-normal truncate">
+                    {language === "es" ? "1 toque con tu cámara" : "1 tap with camera"}
+                  </span>
+                </div>
+              </BrutalistButton>
+
+              <BrutalistButton
+                variant="tactical"
+                size="default"
+                disabled={isUploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full min-h-[52px] justify-start text-left px-3.5"
+              >
+                <div className="p-2 rounded-xl bg-electricViolet/20 text-electricViolet-glow mr-2 flex-shrink-0">
+                  {isUploading ? (
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="block font-bold text-xs uppercase font-mono truncate text-white">
+                    {isUploading
+                      ? language === "es" ? "Optimizando..." : "Optimizing..."
+                      : language === "es" ? "Elegir de Galería" : "Choose from Gallery"}
+                  </span>
+                  <span className="block text-[10px] text-neutral-400 font-normal truncate">
+                    {language === "es" ? "JPG, PNG o WebP en HD" : "JPG, PNG or WebP in HD"}
+                  </span>
+                </div>
+              </BrutalistButton>
+            </div>
           </div>
 
           {/* Sección 1: Fotos de tus Álbumes */}
@@ -218,33 +276,40 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
               <div className="flex items-center gap-1.5">
                 <FolderLock className="w-3.5 h-3.5 text-electricViolet-glow" />
                 <span className="text-xs font-bold text-white uppercase font-mono tracking-wider">
-                  Fotos en tus Álbumes ({albumPhotos.length})
+                  {language === "es"
+                    ? `Fotos de tus Álbumes (${albumPhotos.length})`
+                    : `Photos in Albums (${albumPhotos.length})`}
                 </span>
               </div>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="ghost"
+                size="compact"
                 onClick={() => {
                   onClose();
                   onGoToAlbums();
                 }}
-                className="text-[10px] font-mono text-electricViolet-glow hover:underline font-bold cursor-pointer"
+                className="text-[10px] text-electricViolet-glow font-bold"
               >
-                + Gestionar Álbumes
-              </button>
+                {language === "es" ? "+ Ver Todos los Álbumes" : "+ View All Albums"}
+              </BrutalistButton>
             </div>
 
             {albumPhotos.length === 0 ? (
               <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-center space-y-1">
                 <ImageIcon className="w-6 h-6 text-neutral-400 mx-auto" />
                 <p className="text-[11px] text-neutral-300">
-                  No tenés fotos en tus álbumes todavía.
+                  {language === "es"
+                    ? "No tenés fotos en tus álbumes todavía."
+                    : "No photos in your albums yet."}
                 </p>
                 <p className="text-[10px] text-neutral-400">
-                  Subí una foto real desde tu dispositivo con el botón superior para establecer tu portada.
+                  {language === "es"
+                    ? "Sacate una foto o subí una desde tu galería con los botones de arriba."
+                    : "Take a photo or upload from gallery with the buttons above."}
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
                 {albumPhotos.map((photo) => {
                   const isCurrent = myProfile.avatarUrl === photo.url;
                   return (
@@ -285,4 +350,8 @@ export const CoverPhotoSelectorModal: React.FC<CoverPhotoSelectorModalProps> = (
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };

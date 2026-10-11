@@ -22,7 +22,7 @@ export interface QuickShareQrPayload {
   avatarUrl?: string;
   /** Si cuenta con verificación de identidad Liveness */
   verified?: boolean;
-  /** Si al escanear debe agendar en Favoritos y enviar Zumbido mutuo */
+  /** Si al escanear debe agendar en Favoritos y enviar Toque mutuo */
   autoPulse: boolean;
   /** Código corto alfanumérico de 6 caracteres (ej. VSL-8F4K) para ingreso manual si la cámara está empañada */
   partyCode: string;

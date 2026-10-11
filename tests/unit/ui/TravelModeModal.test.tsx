@@ -7,8 +7,8 @@ const mockCloseTravelModal = vi.fn();
 const mockSetTravelModeCity = vi.fn();
 const mockResetTravelMode = vi.fn();
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const ctx = () => ({
     isTravelModalOpen: true,
     closeTravelModal: mockCloseTravelModal,
     travelMode: {
@@ -27,8 +27,18 @@ vi.mock("@/context/VesselContext", () => ({
         },
       },
     },
-  }),
-}));
+  });
+  return {
+    useVessel: ctx,
+    useLogistics: ctx,
+    useSettings: ctx,
+    useAuth: ctx,
+    useRadarMatrix: ctx,
+    useChat: ctx,
+    useDiary: ctx,
+    useSafety: ctx,
+  };
+});
 
 describe("TravelModeModal — Modo Viajero y Destinos Argentinos", () => {
   beforeEach(() => {

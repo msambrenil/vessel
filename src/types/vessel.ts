@@ -31,6 +31,13 @@ export type RoleType =
   | "Submissive"
   | "Oral Focus";
 
+export type CanonicalMobilityKey =
+  | "host_only"
+  | "travel_only"
+  | "host_and_travel"
+  | "club_cruising"
+  | "unspecified";
+
 export type MobilityType =
   | "Pongo casa 🏠"
   | "Voy a la tuya / Viajo 🚗"
@@ -44,7 +51,8 @@ export type MobilityType =
   | "Tengo sitio"
   | "Me muevo"
   | "Tengo sitio/me desplazo"
-  | "En club / darkroom";
+  | "En club / darkroom"
+  | CanonicalMobilityKey;
 
 export type HivStatusType =
   | "VIH Negativo"
@@ -192,12 +200,16 @@ export interface VesselProfile {
   age: number;
   showAge: boolean; // Control para mostrar/ocultar edad
   twitterHandle?: string; // Nickname de X (opcional)
+  instagramHandle?: string; // Usuario de Instagram (@usuario)
+  telegramHandle?: string; // Usuario de Telegram (@usuario)
+  phone?: string; // Número de teléfono verificado
   yoSoy: YoSoyType; // Opción Yo Soy
   mobility: MobilityType; // Movilidad
   hivStatus: HivStatusType; // Estado VIH
   genderIdentity?: string; // Identidad de género (ej: "Hombre Cis", "No Binarie", "Queer", etc.)
   orientation?: string; // Orientación sexual / Colectivo (ej: "Gay", "Bisexual", "Queer", etc.)
   genderInterests?: GenderInterest[]; // Intereses de encuentro definidos por el usuario
+  seekingRoles?: RoleType[]; // Roles que busca para encuentros
   pronouns?: string; // Pronombres (ej: "Él / He", "Elle / They", etc.)
   desires?: string[]; // Deseos y fantasías (ej: "Conexión carnal intensa", "Sensualidad pausada")
   intentions?: string[]; // Intenciones (ej: "Ahora mismo", "Solo esta noche", "Follamigos")
@@ -333,6 +345,8 @@ export interface ChatMessage {
   isEnRouteAlert?: boolean;
   enRouteData?: { etaMinutes: number; status: "started" | "arrived" | "cancelled" };
   isRead?: boolean;
+  isFailed?: boolean; // True si falló el envío por corte de red o timeout
+  deliveryStatus?: "sending" | "sent" | "delivered" | "read" | "failed";
   isSecureWaypoint?: boolean;
   waypointData?: SecureWaypoint;
   isItsExposureAlert?: boolean;
@@ -862,6 +876,7 @@ export interface TacticalHotspot {
     lng: number;
   };
   geohash: string;
+  computedDistance?: number;
   description: string;
   isCheckedIn: boolean;
   status: HotspotStatus;

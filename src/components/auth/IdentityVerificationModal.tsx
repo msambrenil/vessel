@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useVessel } from "@/context/VesselContext";
-import { STYLED_AVATARS_CATALOG } from "@/data/mockProfiles";
-import { VerificationMethod, StyledAvatar } from "@/types/vessel";
+import { useAuth, useSettings } from "@/context/VesselContext";
+import { VerificationMethod } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { VesselLogo } from "@/components/brand/VesselLogo";
 import { registerUniqueIdentity } from "@/lib/firebase/identityDeduplicationService";
@@ -24,6 +23,7 @@ import {
   UserCheck,
   AlertCircle,
 } from "lucide-react";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 interface IdentityVerificationModalProps {
   onClose: () => void;
@@ -42,9 +42,8 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
     linkAccountWithGoogle,
     isAnonymous,
     openAuthModal,
-    t,
-    language,
-  } = useVessel();
+  } = useAuth();
+  const { t, language } = useSettings();
 
   const [step, setStep] = useState<StepType>("oauth");
   const [selectedMethod, setSelectedMethod] = useState<VerificationMethod>("oauth_google");
@@ -65,11 +64,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
   const streamRef = useRef<MediaStream | null>(null);
 
   // Estados de avatar y privacidad
-  const [isStylizedChoice, setIsStylizedChoice] = useState(true);
   const [isFogChoice, setIsFogChoice] = useState(false);
-  const [selectedStyledAvatar, setSelectedStyledAvatar] = useState<StyledAvatar>(
-    STYLED_AVATARS_CATALOG[0]
-  );
   const [customPhotoUrl, setCustomPhotoUrl] = useState(
     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80"
   );
@@ -128,46 +123,50 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
 
   // Escáner biométrico en paso 2 con cámara real
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isScanning && scanProgress < 100) {
-      interval = setInterval(() => {
-        setScanProgress((prev) => {
-          const next = prev + 5;
-          if (next === 25) setScanMessage("Detectando geometría facial en vivo...");
-          if (next === 55) setScanMessage("Analizando prueba de vida anti-spoofing...");
-          if (next === 85) setScanMessage("Cifrando hash Zero-Knowledge...");
-          if (next >= 100) {
-            setIsScanning(false);
-            setScanMessage("¡Verificación biométrica completada!");
-            audioEngine.playVaultUnlock();
-
-            // Capturar fotograma real de la cámara
-            if (videoRef.current && canvasRef.current) {
-              const video = videoRef.current;
-              const canvas = canvasRef.current;
-              canvas.width = video.videoWidth || 320;
-              canvas.height = video.videoHeight || 400;
-              const ctx = canvas.getContext("2d");
-              if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                try {
-                  const snapshotUrl = canvas.toDataURL("image/webp", 0.85);
-                  if (snapshotUrl && snapshotUrl.startsWith("data:image")) {
-                    setCustomPhotoUrl(snapshotUrl);
-                  }
-                } catch {}
-              }
-            }
-
-            stopCamera();
-            setTimeout(() => setStep("avatar"), 800);
-            return 100;
-          }
-          return next;
-        });
-      }, 100);
-    }
+    if (!isScanning) return;
+    const interval = setInterval(() => {
+      setScanProgress((prev) => {
+        if (prev >= 100) return 100;
+        return prev + 5;
+      });
+    }, 100);
     return () => clearInterval(interval);
+  }, [isScanning]);
+
+  useEffect(() => {
+    if (!isScanning) return;
+    if (scanProgress === 25) {
+      setScanMessage("Detectando geometría facial en vivo...");
+    } else if (scanProgress === 55) {
+      setScanMessage("Analizando prueba de vida anti-spoofing...");
+    } else if (scanProgress === 85) {
+      setScanMessage("Cifrando hash Zero-Knowledge...");
+    } else if (scanProgress >= 100) {
+      setIsScanning(false);
+      setScanMessage("¡Verificación biométrica completada!");
+      audioEngine.playVaultUnlock();
+
+      // Capturar fotograma real de la cámara
+      if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 400;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          try {
+            const snapshotUrl = canvas.toDataURL("image/webp", 0.85);
+            if (snapshotUrl && snapshotUrl.startsWith("data:image")) {
+              setCustomPhotoUrl(snapshotUrl);
+            }
+          } catch {}
+        }
+      }
+
+      stopCamera();
+      setTimeout(() => setStep("avatar"), 800);
+    }
   }, [isScanning, scanProgress]);
 
   const handleGoogleVerification = async () => {
@@ -185,7 +184,6 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
         }
         if (res.user.photoURL) {
           setCustomPhotoUrl(res.user.photoURL);
-          setIsStylizedChoice(false);
         }
         audioEngine.playVaultUnlock();
         setStep("avatar");
@@ -193,7 +191,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
         setAuthError(res.error);
         audioEngine.playSubBass(35, 0.4);
       }
-    } catch (err: any) {
+    } catch {
       setAuthError("Error de conexión durante la autenticación de Google.");
       audioEngine.playSubBass(35, 0.4);
     } finally {
@@ -217,17 +215,11 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
   };
 
   const handleFinalize = () => {
-    const finalAvatarUrl = isStylizedChoice
-      ? selectedStyledAvatar.url
-      : customPhotoUrl;
-
-    const isFog = !isStylizedChoice && isFogChoice;
-
     verifyIdentity({
       method: selectedMethod,
-      avatarUrl: finalAvatarUrl,
-      isStylizedAvatar: isStylizedChoice,
-      isFogMode: isFog,
+      avatarUrl: customPhotoUrl,
+      isStylizedAvatar: false,
+      isFogMode: isFogChoice,
       authProvider,
       codename: codenameInput,
     });
@@ -243,46 +235,26 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.auth.modalTitle}
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg bg-obsidian-deep border-t sm:border border-electricViolet/30 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[92vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-        {/* Cabecera Brutalista */}
-        <div className="p-4 bg-obsidian-surface border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-mintNeon text-obsidian-deep shadow-mint-glow">
-              <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
-            </div>
-            <div>
-              <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                {t.auth.modalTitle}
-              </h2>
-              <p className="text-[10px] text-mintNeon font-mono font-semibold">
-                {t.auth.modalSub}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal de verificación"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <BrutalistModal
+      isOpen={true}
+      onClose={onClose}
+      icon={
+        <div className="p-2.5 rounded-2xl bg-mintNeon text-obsidian-deep shadow-mint-glow">
+          <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
         </div>
-
-        {/* Barra de Pasos */}
-        <div className="px-4 py-2.5 bg-black/60 border-b border-white/5 grid grid-cols-4 gap-1.5 text-[10px] font-mono">
+      }
+      title={t.auth.modalTitle}
+      subtitle={
+        <span className="text-[10px] text-mintNeon font-mono font-semibold">
+          {t.auth.modalSub}
+        </span>
+      }
+      maxWidth="lg"
+      ariaLabel={t.auth.modalTitle}
+      contentClassName="p-0 flex flex-col"
+    >
+      {/* Barra de Pasos */}
+      <div className="px-4 py-2.5 bg-black/60 border-b border-white/5 grid grid-cols-4 gap-1.5 text-[10px] font-mono">
           <div
             className={`py-1.5 min-h-[30px] flex items-center justify-center text-center rounded-lg font-bold transition-all ${
               step === "oauth"
@@ -537,179 +509,86 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
             <div className="space-y-4 animate-in fade-in">
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Identidad Visual & Privacidad
+                  Foto de Perfil & Privacidad Facial
                 </h3>
                 <p className="text-neutral-400 text-[11px] leading-relaxed">
-                  VESSEL te permite mantener tu estatus de <strong>Usuario Verificado por ID</strong> protegiendo tu rostro público mediante un avatar estilizado.
+                  VESSEL requiere una foto real obligatoria para garantizar usuarios 100% humanos. Si querés discreción, podés activar el <strong>Modo Niebla</strong> (desenfoque suave calibrado).
                 </p>
               </div>
 
-              {/* Selector de Modo: Avatar Estilizado vs Foto Real */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsStylizedChoice(true)}
-                  aria-pressed={isStylizedChoice}
-                  className={`p-3.5 min-h-[80px] rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                    isStylizedChoice
-                      ? "bg-purple-950/50 border-electricViolet text-white shadow-violet-soft font-bold"
-                      : "bg-white/5 border-white/10 text-neutral-400 hover:border-white/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div
-                      className={`p-2 rounded-xl ${
-                        isStylizedChoice ? "bg-electricViolet text-white" : "bg-white/10 text-neutral-300"
-                      }`}
-                    >
-                      <EyeOff className="w-4 h-4" />
-                    </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-mintNeon/20 text-mintNeon uppercase font-mono">
-                      Recomendado
-                    </span>
+              {/* Entrada de Foto Real */}
+              <div className="space-y-3 pt-2 border-t border-white/10">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-white uppercase tracking-wider block">
+                    URL de Fotografía Validada (Obligatoria)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customPhotoUrl}
+                      onChange={(e) => setCustomPhotoUrl(e.target.value)}
+                      placeholder="https://ejemplo.com/mifoto.jpg"
+                      className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3 py-2.5 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 font-mono"
+                    />
                   </div>
-                  <div>
-                    <div className="font-bold text-xs text-white">Avatar Estilizado</div>
-                    <div className="text-[10px] text-neutral-400 mt-0.5 font-normal">
-                      Máxima privacidad facial con insignia de verificado.
-                    </div>
-                  </div>
-                </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsStylizedChoice(false)}
-                  aria-pressed={!isStylizedChoice}
-                  className={`p-3.5 min-h-[80px] rounded-2xl border text-left transition-all flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                    !isStylizedChoice
-                      ? "bg-purple-950/50 border-electricViolet text-white shadow-violet-soft font-bold"
-                      : "bg-white/5 border-white/10 text-neutral-400 hover:border-white/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div
-                      className={`p-2 rounded-xl ${
-                        !isStylizedChoice ? "bg-electricViolet text-white" : "bg-white/10 text-neutral-300"
+                {/* Previsualización en Vivo de la Foto */}
+                <div className="flex items-center gap-3 p-3 bg-black/40 border border-white/10 rounded-2xl">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/20 flex-shrink-0 bg-black">
+                    <img
+                      src={customPhotoUrl}
+                      alt="Preview"
+                      className={`w-full h-full object-cover ${
+                        isFogChoice ? "filter blur-[3.5px] scale-105" : ""
                       }`}
-                    >
-                      <Camera className="w-4 h-4" />
-                    </div>
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 uppercase font-mono">
-                      Foto Real
-                    </span>
+                    />
                   </div>
-                  <div>
-                    <div className="font-bold text-xs text-white">Foto Real Pública</div>
-                    <div className="text-[10px] text-neutral-400 mt-0.5 font-normal">
-                      Muestra tu fotografía validada en la cuadrícula.
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-white">
+                      {isFogChoice ? "🌫️ Modo Niebla Activo" : "📸 Foto Pública Nítida"}
+                    </div>
+                    <div className="text-[10px] text-neutral-400 mt-0.5">
+                      {isFogChoice
+                        ? "Tus facciones quedan protegidas en el radar sin perder la forma de tu cuerpo."
+                        : "Tu foto se verá nítida para todos los miembros verificados."}
                     </div>
                   </div>
-                </button>
+                </div>
+
+                {/* Switch Modo Niebla */}
+                <div className="p-3 bg-black/60 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sm flex-shrink-0">
+                      🌫️
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white truncate">
+                        {t.auth.fogOptionTitle}
+                      </div>
+                      <div className="text-[10px] text-neutral-400 line-clamp-1">
+                        {t.auth.fogOptionDesc}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsFogChoice(!isFogChoice)}
+                    aria-pressed={isFogChoice}
+                    aria-label="Activar o desactivar difuminado de rostro"
+                    className={`w-12 h-6 rounded-full transition-colors relative p-0.5 flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                      isFogChoice ? "bg-electricViolet" : "bg-neutral-700"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
+                        isFogChoice ? "translate-x-6" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
-
-              {/* Catálogo de Avatares Estilizados si está en modo privado */}
-              {isStylizedChoice ? (
-                <div className="space-y-2 pt-2 border-t border-white/10">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
-                      Elige tu Avatar Brutalista
-                    </span>
-                    <span className="text-[10px] text-electricViolet-glow font-mono font-bold">
-                      {selectedStyledAvatar.name}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {STYLED_AVATARS_CATALOG.map((avatar) => {
-                      const isSelected = selectedStyledAvatar.id === avatar.id;
-
-                      return (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setSelectedStyledAvatar(avatar)}
-                          aria-label={`Seleccionar avatar ${avatar.name}`}
-                          className={`relative aspect-square rounded-2xl overflow-hidden border transition-all group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                            isSelected
-                              ? "border-electricViolet shadow-violet-soft ring-2 ring-electricViolet/50 scale-95"
-                              : "border-white/10 hover:border-white/30 opacity-70 hover:opacity-100"
-                          }`}
-                        >
-                          <img
-                            src={avatar.url}
-                            alt={avatar.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2">
-                            <span className="text-[9px] font-bold text-white truncate">
-                              {(avatar.name.split(" - ")[0] || avatar.name).trim()}
-                            </span>
-                          </div>
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-electricViolet text-white flex items-center justify-center shadow-md">
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-neutral-400 italic">
-                    "{selectedStyledAvatar.description}"
-                  </p>
-                </div>
-              ) : (
-                /* Entrada de Foto Real */
-                <div className="space-y-3 pt-2 border-t border-white/10">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-white uppercase tracking-wider block">
-                      URL de Fotografía Validada (Obligatoria)
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={customPhotoUrl}
-                        onChange={(e) => setCustomPhotoUrl(e.target.value)}
-                        placeholder="https://ejemplo.com/mifoto.jpg"
-                        className="flex-1 min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3 py-2.5 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Switch Modo Niebla */}
-                  <div className="p-3 bg-black/60 border border-white/10 rounded-2xl flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sm flex-shrink-0">
-                        🌫️
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-white truncate">
-                          {t.auth.fogOptionTitle}
-                        </div>
-                        <div className="text-[10px] text-neutral-400 line-clamp-1">
-                          {t.auth.fogOptionDesc}
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsFogChoice(!isFogChoice)}
-                      aria-pressed={isFogChoice}
-                      aria-label="Activar o desactivar difuminado de rostro"
-                      className={`w-12 h-6 rounded-full transition-colors relative p-0.5 flex-shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                        isFogChoice ? "bg-electricViolet" : "bg-neutral-700"
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
-                          isFogChoice ? "translate-x-6" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Botón de Confirmación */}
               <button
@@ -756,10 +635,10 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-2xl overflow-hidden border border-mintNeon/40 flex-shrink-0 bg-black">
                     <img
-                      src={isStylizedChoice ? selectedStyledAvatar.url : customPhotoUrl}
+                      src={customPhotoUrl}
                       alt="Avatar"
                       className={`w-full h-full object-cover ${
-                        !isStylizedChoice && isFogChoice ? "filter blur-[3.5px] scale-105" : ""
+                        isFogChoice ? "filter blur-[3.5px] scale-105" : ""
                       }`}
                     />
                   </div>
@@ -770,7 +649,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                     <div className="text-[11px] text-mintNeon font-medium flex items-center gap-1 mt-0.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>
-                        {language === "es" ? "Verificado // " : "ID Verified // "}{isStylizedChoice ? "Avatar Estilizado" : isFogChoice ? "Modo Niebla" : "Público"}
+                        {language === "es" ? "Verificado // " : "ID Verified // "}{isFogChoice ? "Modo Niebla" : "Público"}
                       </span>
                     </div>
                     <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
@@ -781,17 +660,16 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
               </div>
 
               {/* Botón de Cierre y Regreso */}
-              <button
-                type="button"
+              <BrutalistButton
+                variant="primary"
                 onClick={onClose}
-                className="w-full py-3.5 min-h-[48px] bg-electricViolet text-white hover:bg-electricViolet-glow rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-violet-soft cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                className="w-full min-h-[48px] text-xs font-extrabold uppercase tracking-wider"
               >
                 Comenzar a Usar VESSEL
-              </button>
+              </BrutalistButton>
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

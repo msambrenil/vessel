@@ -43,7 +43,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey>
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: salt as any,
+      salt: salt as BufferSource,
       iterations: 100000,
       hash: "SHA-256",
     },
@@ -112,9 +112,9 @@ export async function decryptDiaryBackup(
 
   try {
     const decryptedBuffer = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: iv as any },
+      { name: "AES-GCM", iv: iv as BufferSource },
       key,
-      ciphertext as any
+      ciphertext as BufferSource
     );
 
     const dec = new TextDecoder();

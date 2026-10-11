@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useRadarMatrix, useSettings } from "@/context/VesselContext";
 import { HostCardInfo, HostLivingArrangement, HostSpaceType, HostPets, AmbientSoundVibeType } from "@/types/vessel";
 import { Play, Pause, Music } from "lucide-react";
+import { BrutalistTextarea, BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const HostCardModal: React.FC = () => {
   const {
@@ -12,12 +13,13 @@ export const HostCardModal: React.FC = () => {
     selectedHostCardProfile,
     myHostCard,
     updateMyHostCard,
+  } = useLogistics();
+  const {
     playAmbientTonePreview,
     stopAmbientTonePreview,
     isPlayingAmbientTone,
-    t,
-    language,
-  } = useVessel();
+  } = useRadarMatrix();
+  const { t, language } = useSettings();
 
   const isEditingSelf = !selectedHostCardProfile;
   const currentCard = isEditingSelf ? myHostCard : selectedHostCardProfile.hostCard || myHostCard;
@@ -64,48 +66,43 @@ export const HostCardModal: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.tacticalSuite.hostCard.title}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none"
-      onClick={closeHostCardModal}
-    >
-      <div
-        className="relative w-full max-w-lg bg-[#0c0c0c] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Drag Handle táctico para mobile */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header Táctico */}
-        <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🏠</span>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-neutral-100">
-                {t.tacticalSuite.hostCard.title}
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                {isEditingSelf
-                  ? "Configuración logística de tu espacio"
-                  : `Espacio de ${selectedHostCardProfile.codename}`}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
+    <BrutalistModal
+      isOpen={isHostCardModalOpen}
+      onClose={closeHostCardModal}
+      icon="🏠"
+      title={t.tacticalSuite.hostCard.title}
+      subtitle={
+        isEditingSelf
+          ? "Configuración logística de tu espacio"
+          : `Espacio de ${selectedHostCardProfile?.codename || ""}`
+      }
+      maxWidth="lg"
+      ariaLabel={t.tacticalSuite.hostCard.title}
+      contentClassName="p-4 space-y-4 text-xs"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
             onClick={closeHostCardModal}
-            aria-label="Cerrar ficha de casa"
-            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100 flex items-center justify-center text-sm font-mono transition-all cursor-pointer"
+            className="text-xs font-mono"
           >
-            ✕
-          </button>
+            {isEditingSelf ? t.common.cancel : t.common.close}
+          </BrutalistButton>
+          {isEditingSelf && (
+            <BrutalistButton
+              variant="primary"
+              size="compact"
+              onClick={handleSave}
+              className="font-mono text-xs font-bold uppercase tracking-wider"
+            >
+              {t.common.save}
+            </BrutalistButton>
+          )}
         </div>
-
-        {/* Contenido scrolleable */}
-        <div className="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
-          {/* Disponibilidad de Lugar */}
+      }
+    >
+      {/* Disponibilidad de Lugar */}
           <div className="p-3 bg-neutral-900/60 rounded-xl border border-neutral-800/60 flex items-center justify-between">
             <div>
               <span className="font-mono text-neutral-300 font-bold block">
@@ -344,45 +341,25 @@ export const HostCardModal: React.FC = () => {
 
           {/* Notas Tácticas de Hospedaje */}
           <div>
-            <label className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block mb-1">
-              Instrucciones & Notas del Lugar
-            </label>
             {isEditingSelf ? (
-              <textarea
+              <BrutalistTextarea
+                label="Instrucciones & Notas del Lugar"
                 value={formData.notes || ""}
                 onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder={t.tacticalSuite.hostCard.notesPlaceholder}
                 rows={2}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none focus:border-electricViolet transition-colors"
               />
             ) : (
-              <p className="p-2.5 bg-neutral-900/50 border border-neutral-800/80 rounded-lg text-neutral-300 text-xs italic">
-                {formData.notes || "Sin instrucciones especiales registradas."}
-              </p>
+              <div className="space-y-1">
+                <label className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block mb-1">
+                  Instrucciones & Notas del Lugar
+                </label>
+                <p className="p-2.5 bg-neutral-900/50 border border-neutral-800/80 rounded-lg text-neutral-300 text-xs italic">
+                  {formData.notes || "Sin instrucciones especiales registradas."}
+                </p>
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="p-3 border-t border-neutral-800/80 bg-neutral-900/40 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={closeHostCardModal}
-            className="px-4 py-2 rounded-lg font-mono text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
-          >
-            {isEditingSelf ? t.common.cancel : t.common.close}
-          </button>
-          {isEditingSelf && (
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-4 py-2 bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider rounded-lg shadow-violet-soft transition-all active:scale-95"
-            >
-              {t.common.save}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

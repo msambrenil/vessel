@@ -8,6 +8,7 @@ import { SectionHeroHeader } from "@/components/ui/SectionHeroHeader";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getLocalTodayIso, getDaysUntilDate, formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { Plus, ShieldCheck, ShieldAlert, Sparkles, CheckCircle2 } from "lucide-react";
+import { TranslationType } from "@/lib/i18n/translations";
 
 interface DiaryHealthSectionProps {
   doxyPepTrackers: DoxyPepTracker[];
@@ -17,7 +18,7 @@ interface DiaryHealthSectionProps {
   diaryEntries?: DiaryEntry[];
   toggleHealthReminderResolved?: (id: string) => void;
   language: "es" | "en";
-  t: any;
+  t: TranslationType;
 }
 
 /**
@@ -192,14 +193,14 @@ export const DiaryHealthSection: React.FC<DiaryHealthSectionProps> = ({
         </div>
       </div>
 
-      {/* ALERTA ANÓNIMA DE EXPOSICIÓN A ITS */}
+      {/* ALERTA ANÓNIMA DE EXPOSICIÓN A ETS */}
       <div className="bg-obsidian-surface/90 rounded-3xl p-4 sm:p-5 border border-red-500/30 space-y-3.5 shadow-card-elevation backdrop-blur-md relative overflow-hidden">
         <div className="absolute top-0 right-0 w-36 h-36 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <SectionHeroHeader
           variant="blood"
           icon={<ShieldAlert className="w-5 h-5 text-red-400" />}
-          title={language === "es" ? "Alerta de Exposición a ITS • 100% Anónima" : "Anonymous STI Exposure Alert"}
+          title={language === "es" ? "ALERTA DE EXPOSICIÓN A ETS - 100% ANÓNIMA" : "Anonymous STI Exposure Alert"}
           tag={language === "es" ? "PROTECCIÓN COLECTIVA" : "COMMUNITY CARE"}
           subtitle={
             language === "es"

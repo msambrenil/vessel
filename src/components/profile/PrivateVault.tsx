@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { PrivateVaultItem } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary } from "@/context/VesselContext";
 import { Lock, Eye, Clock, ShieldAlert, X, Film, Volume2, VolumeX } from "lucide-react";
+import { TacticalMorphingLock } from "@/components/ui/TacticalMorphingLock";
 import { DrmBlackoutProtector } from "@/components/security/DrmBlackoutProtector";
 
 interface PrivateVaultProps {
@@ -17,7 +18,7 @@ export const PrivateVault: React.FC<PrivateVaultProps> = ({
   profileCodename,
   isOwner = false,
 }) => {
-  const { unlockedVaults, unlockVault } = useVessel();
+  const { unlockedVaults, unlockVault } = useDiary();
   const [activeItem, setActiveItem] = useState<PrivateVaultItem | null>(null);
   const [countdown, setCountdown] = useState<number>(10);
   const [isViewing, setIsViewing] = useState(false);
@@ -91,10 +92,11 @@ export const PrivateVault: React.FC<PrivateVaultProps> = ({
     <div className="bg-obsidian-surface rounded-2xl p-4 border border-white/10 select-none space-y-3 shadow-card-elevation">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-bloodNeon/15 text-bloodNeon">
-            <Lock className="w-4 h-4" />
+          <div className="p-1.5 rounded-lg bg-bloodNeon/15 text-bloodNeon flex items-center justify-center">
+            <TacticalMorphingLock isLocked={true} size="sm" variant="blood" soundEffect={false} />
           </div>
           <div>
+
             <div className="text-xs font-bold text-white uppercase tracking-wider font-mono">
               Álbum Privado ({items.length})
             </div>
@@ -174,9 +176,10 @@ export const PrivateVault: React.FC<PrivateVaultProps> = ({
                     aria-label="Desbloquear foto o video de bóveda privada"
                     className="px-4 py-2.5 min-h-[40px] bg-white/10 hover:bg-bloodNeon text-white border border-white/20 hover:border-bloodNeon rounded-full font-extrabold text-xs tracking-wider uppercase flex items-center gap-1.5 transition-all shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-95"
                   >
-                    <Lock className="w-4 h-4 text-bloodNeon group-hover:text-white" />
+                    <TacticalMorphingLock isLocked={true} size="sm" variant="blood" soundEffect={false} />
                     <span>Desbloquear</span>
                   </button>
+
                 )}
                 <span className="text-[10px] text-neutral-400 mt-2 line-clamp-1">
                   {item.caption}

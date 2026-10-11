@@ -3,7 +3,16 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { VesselProfile } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useRadarMatrix,
+  useChat,
+  useDiary,
+  useLogistics,
+  useAuth,
+  useSettings,
+} from "@/context/VesselContext";
+
+import { hasHostingCapability } from "@/lib/geo/mobility";
 
 const RendezvousSheet = dynamic(
   () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
@@ -38,7 +47,6 @@ import { VerificationBadge } from "@/components/auth/VerificationBadge";
 import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
 import { ENERGY_VIBE_CATALOG } from "@/data/energyCatalog";
 import { BoundaryManagerModal } from "@/components/chat/BoundaryManagerModal";
-import { EditMockProfileModal } from "./EditMockProfileModal";
 import { getRoleDisplayLabel, getRoleActionMeta } from "@/data/roleActionCatalog";
 import { ProfileDossierSection } from "./ProfileDossierSection";
 import { ProfileGlanceHero } from "./ProfileGlanceHero";
@@ -48,6 +56,11 @@ import { ExitProtocolBadge } from "@/components/profile/ExitProtocolBadge";
 import { SubstanceAtmosphereBadge } from "@/components/profile/SubstanceAtmosphereBadge";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
+import {
+  BrutalistButton,
+  SegmentedTabGroup,
+  TacticalBadge,
+} from "@/components/ui";
 
 import {
   getAllKinks,
@@ -68,30 +81,23 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
 }) => {
   const {
     transmitSignal,
-    sendRendezvousPin,
     transmissions,
-    openCreateDiaryModal,
-    getBoundaryForProfile,
-    getProfileDossier,
     setActiveView,
-    openHostCardModal,
-    openLivenessModal,
-    openVoiceRecorder,
     getMutualKinkMatches,
-    t,
-    language,
-    isUnlimited,
-    openUnlimitedModal,
     hasMutualPulse,
     isFavoriteProfile: isFavProp,
     toggleFavoriteProfile: toggleFavProp,
-  } = useVessel();
+  } = useRadarMatrix();
+  const { sendRendezvousPin, getBoundaryForProfile } = useChat();
+  const { openCreateDiaryModal, getProfileDossier } = useDiary();
+  const { openHostCardModal, openVoiceRecorder } = useLogistics();
+  const { openLivenessModal } = useAuth();
+  const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
 
   const isFavoriteProfile = isFavProp || (() => false);
   const toggleFavoriteProfile = toggleFavProp || (() => {});
 
   const [currentProfile, setCurrentProfile] = useState<VesselProfile>(profile);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
   const [isBoundaryModalOpen, setIsBoundaryModalOpen] = useState(false);
   const [isRendezvousOpen, setIsRendezvousOpen] = useState(false);
@@ -121,16 +127,7 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
   const dossier = getProfileDossier(currentProfile.id);
   const roleAction = getRoleActionMeta(currentProfile.role, language, currentProfile.codename);
 
-  const isImmediateHost =
-    Boolean(
-      currentProfile.mobility?.toLowerCase().includes("casa") ||
-      currentProfile.mobility === "Tengo depto / lugar" ||
-      currentProfile.mobility === "Tengo sitio" ||
-      currentProfile.mobility === "Tengo lugar y me muevo" ||
-      currentProfile.mobility === "Tengo sitio/me desplazo" ||
-      currentProfile.mobility?.toLowerCase().includes("lugar") ||
-      currentProfile.mobility?.toLowerCase().includes("depto")
-    );
+  const isImmediateHost = hasHostingCapability(currentProfile.mobility);
 
   const nextPhoto = () => {
     setSelectedPhotoIdx((prev) => (prev + 1) % photos.length);
@@ -144,25 +141,26 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
     <div
       role="region"
       aria-label={`Detalle del perfil de ${profile.codename}`}
-      className="fixed inset-0 z-40 bg-obsidian-deep flex flex-col w-full h-[100dvh] overflow-hidden select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] bg-obsidian-deep flex flex-col w-full h-[100dvh] overflow-hidden select-none animate-in fade-in duration-200"
     >
       <div className="w-full max-w-5xl mx-auto h-full bg-obsidian-deep md:border-x md:border-white/10 flex flex-col relative overflow-hidden shadow-2xl">
         
         {/* =========================================================
             HEADER APP-BAR (Fijo y con fondo sólido difuminado)
             ========================================================= */}
-        <header className="flex-shrink-0 z-30 bg-obsidian-deep/95 backdrop-blur-xl border-b border-white/10 px-3.5 md:px-6 py-2.5 md:py-3 flex items-center justify-between shadow-md">
-          <button
-            type="button"
+        <header className="flex-shrink-0 z-30 bg-obsidian-deep/95 backdrop-blur-xl border-b border-white/10 px-3.5 md:px-6 py-2.5 md:py-3 pt-[max(env(safe-area-inset-top,0px),0.625rem)] md:pt-3 flex items-center justify-between shadow-md">
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
             onClick={onClose}
             aria-label="Cerrar detalles del perfil"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center gap-1.5 rounded-full bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white transition-all border border-white/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center gap-1.5 rounded-full border border-white/10"
           >
             <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
             <span className="font-mono text-xs font-bold uppercase tracking-wider hidden sm:inline">
               {language === "es" ? "Radar" : "Back"}
             </span>
-          </button>
+          </BrutalistButton>
 
           {/* Identidad Central */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1 justify-center">
@@ -201,15 +199,16 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
           <div className="flex items-center gap-1.5">
             {/* Botón Favorito (★) */}
             {!currentProfile.isCurrentUser && (
-              <button
-                type="button"
+              <BrutalistButton
+                variant="favorite"
+                size="compact-icon"
                 data-testid={`detail-modal-favorite-toggle-${currentProfile.id}`}
                 onClick={() => toggleFavoriteProfile(currentProfile.id)}
                 aria-label={isFavoriteProfile(currentProfile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
                 aria-pressed={isFavoriteProfile(currentProfile.id)}
-                className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 active:scale-95 ${
+                className={`p-2 min-w-[44px] min-h-[44px] rounded-full border ${
                   isFavoriteProfile(currentProfile.id)
-                    ? "bg-amber-950/80 border-amber-400 text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
+                    ? "!bg-amber-950/80 !border-amber-400 !text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
                     : "bg-white/5 border-white/10 text-neutral-400 hover:text-amber-300 hover:bg-white/15"
                 }`}
                 title={isFavoriteProfile(currentProfile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
@@ -219,56 +218,46 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     isFavoriteProfile(currentProfile.id) ? "fill-amber-400 text-amber-400 scale-110" : ""
                   }`}
                 />
-              </button>
+              </BrutalistButton>
             )}
 
             {/* Botón Agenda / Libreta Íntima */}
             {!currentProfile.isCurrentUser && (
-              <button
-                type="button"
+              <BrutalistButton
+                variant="ghost"
+                size="compact-icon"
                 onClick={() => openCreateDiaryModal(currentProfile.id)}
                 aria-label="Documentar o agendar encuentro en la Agenda"
                 title="Documentar o agendar encuentro en la Agenda"
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:bg-white/15 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+                className="p-2 min-w-[44px] min-h-[44px] rounded-full bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:bg-white/15"
               >
                 <BookOpen className="w-4 h-4 text-electricViolet stroke-[2.2]" />
-              </button>
+              </BrutalistButton>
             )}
 
-            {/* Botón de Edición del Perfil de Prueba (Solo Dev) */}
-            {process.env.NODE_ENV === "development" && (
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(true)}
-                aria-label="Editar este perfil de prueba"
-                title="Editar datos de este perfil (Dev / Preset)"
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-electricViolet/15 hover:bg-electricViolet text-electricViolet-glow hover:text-white transition-all border border-electricViolet/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-violet-soft"
-              >
-                <Edit3 className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            )}
-
-            <button
-              type="button"
+            <BrutalistButton
+              variant="ghost"
+              size="compact-icon"
               onClick={() => setIsBoundaryModalOpen(true)}
               aria-label="Gestionar límites y acuerdos de este perfil"
-              className={`p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 active:scale-95 ${
+              className={`p-2 min-w-[44px] min-h-[44px] rounded-full border ${
                 boundary
-                  ? "bg-purple-900/50 border-purple-500/70 text-purple-300 shadow-sm"
+                  ? "!bg-purple-900/50 !border-purple-500/70 !text-purple-300 shadow-sm"
                   : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/15"
               }`}
             >
               <ShieldAlert className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            </BrutalistButton>
 
-            <button
-              type="button"
+            <BrutalistButton
+              variant="ghost"
+              size="compact-icon"
               onClick={onClose}
               aria-label="Cerrar ventana"
-              className="hidden md:flex p-2 min-w-[40px] min-h-[40px] items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white transition-all border border-white/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+              className="hidden md:flex p-2 min-w-[40px] min-h-[40px] rounded-full bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white border border-white/10"
             >
               <X className="w-5 h-5" />
-            </button>
+            </BrutalistButton>
           </div>
         </header>
 
@@ -327,13 +316,14 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     : (t.card.distantSignalDesc || "Mandá un toque para activar onda mutua o chateá ya con VESSEL UNLIMITED.")}
                 </p>
                 {!isMutualPulseActive && (
-                  <button
-                    type="button"
+                  <BrutalistButton
+                    variant="primary"
+                    size="sm"
                     onClick={() => openUnlimitedModal()}
-                    className="self-start mt-0.5 px-3 py-1.5 bg-electricViolet text-white hover:bg-electricViolet-glow text-[10.5px] font-mono font-bold rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-violet-soft active:scale-95"
+                    className="self-start mt-0.5 text-[10.5px]"
                   >
                     {t.card.openUnlimitedChatBtn || (language === "es" ? "Desbloquear Conversación Inmediata ⚡" : "Unlock Instant Chat ⚡")}
-                  </button>
+                  </BrutalistButton>
                 )}
               </div>
             )}
@@ -341,69 +331,53 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             {/* =========================================================
                 SELECTOR DE 3 PESTAÑAS TÁCTICAS (≥44px TOUCH-FIRST)
                 ========================================================= */}
-            <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-obsidian-surface rounded-2xl border border-white/10 shadow-inner sticky top-0 z-20 backdrop-blur-md">
-              <button
-                type="button"
-                role="tab"
-                data-testid="tab-profile-trigger"
-                aria-selected={activeTab === "profile"}
-                onClick={() => {
-                  audioEngine.playSubBass(70);
-                  setActiveTab("profile");
-                }}
-                className={`flex-1 min-w-0 min-h-[44px] py-2 px-1.5 sm:px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  activeTab === "profile"
-                    ? "bg-electricViolet text-white shadow-violet-soft"
-                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <User className="w-4 h-4 flex-shrink-0" />
-                <span className="truncate">{t.card?.tabProfile || "Perfil"}</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                data-testid="tab-chemistry-trigger"
-                aria-selected={activeTab === "chemistry"}
-                onClick={() => {
-                  audioEngine.playSubBass(70);
-                  setActiveTab("chemistry");
-                }}
-                className={`flex-1 min-w-0 min-h-[44px] py-2 px-1.5 sm:px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet relative active:scale-95 ${
-                  activeTab === "chemistry"
-                    ? "bg-electricViolet text-white shadow-violet-soft"
-                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Flame className={`w-4 h-4 flex-shrink-0 ${mutualKinks.length > 0 ? "text-bloodNeon fill-current animate-pulse" : ""}`} />
-                <span className="truncate sm:hidden">{language === "es" ? "Química" : "Chemistry"}</span>
-                <span className="truncate hidden sm:inline">{t.card?.tabChemistry || (language === "es" ? "Química & Morbo" : "Chemistry & Kinks")}</span>
-                {mutualKinks.length > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow flex-shrink-0 animate-ping" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                data-testid="tab-trust-trigger"
-                aria-selected={activeTab === "trust"}
-                onClick={() => {
-                  audioEngine.playSubBass(70);
-                  setActiveTab("trust");
-                }}
-                className={`flex-1 min-w-0 min-h-[44px] py-2 px-1.5 sm:px-2 rounded-xl font-mono text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  activeTab === "trust"
-                    ? "bg-electricViolet text-white shadow-violet-soft"
-                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4 flex-shrink-0 text-mintNeon" />
-                <span className="truncate sm:hidden">{language === "es" ? "Confianza" : "Trust"}</span>
-                <span className="truncate hidden sm:inline">{t.card?.tabTrust || (language === "es" ? "Confianza & Salud" : "Trust")}</span>
-              </button>
-            </div>
+            <SegmentedTabGroup<DetailTab>
+              testId="profile-detail-tab-group"
+              ariaLabel="Pestañas tácticas de detalle de perfil"
+              variant="obsidian"
+              activeTab={activeTab}
+              onChange={(newTab) => {
+                audioEngine.playSubBass(70);
+                setActiveTab(newTab);
+              }}
+              className="sticky top-0 z-20 backdrop-blur-md rounded-2xl border border-white/10 p-1 shadow-inner"
+              tabs={[
+                {
+                  id: "profile",
+                  testId: "tab-profile-trigger",
+                  icon: <User className="w-4 h-4 flex-shrink-0" />,
+                  label: <span className="truncate">{t.card?.tabProfile || "Perfil"}</span>,
+                  title: t.card?.tabProfile || "Perfil",
+                },
+                {
+                  id: "chemistry",
+                  testId: "tab-chemistry-trigger",
+                  icon: <Flame className={`w-4 h-4 flex-shrink-0 ${mutualKinks.length > 0 ? "text-bloodNeon fill-current animate-pulse" : ""}`} />,
+                  label: (
+                    <>
+                      <span className="truncate sm:hidden">{language === "es" ? "Química" : "Chemistry"}</span>
+                      <span className="truncate hidden sm:inline">{t.card?.tabChemistry || (language === "es" ? "Química & Morbo" : "Chemistry & Kinks")}</span>
+                    </>
+                  ),
+                  badge: mutualKinks.length > 0 ? (
+                    <span className="w-2 h-2 rounded-full bg-bloodNeon shadow-blood-glow flex-shrink-0 animate-ping" />
+                  ) : undefined,
+                  title: t.card?.tabChemistry || "Química & Morbo",
+                },
+                {
+                  id: "trust",
+                  testId: "tab-trust-trigger",
+                  icon: <ShieldCheck className="w-4 h-4 flex-shrink-0 text-mintNeon" />,
+                  label: (
+                    <>
+                      <span className="truncate sm:hidden">{language === "es" ? "Confianza" : "Trust"}</span>
+                      <span className="truncate hidden sm:inline">{t.card?.tabTrust || (language === "es" ? "Confianza & Salud" : "Trust")}</span>
+                    </>
+                  ),
+                  title: t.card?.tabTrust || "Confianza",
+                },
+              ]}
+            />
 
             {/* =========================================================
                 CONTENIDO DINÁMICO DE PESTAÑAS (SEGMENTED DECK)
@@ -524,14 +498,15 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                       {currentProfile.voiceVibe ? (
                         <VoiceVibePlayer voice={currentProfile.voiceVibe} />
                       ) : currentProfile.isCurrentUser ? (
-                        <button
-                          type="button"
+                        <BrutalistButton
+                          variant="outline"
+                          size="sm"
                           onClick={() => openVoiceRecorder()}
-                          className="w-full p-2.5 rounded-xl border border-dashed border-electricViolet/40 bg-electricViolet/10 hover:bg-electricViolet/20 text-electricViolet-glow text-xs font-mono flex items-center justify-center gap-2 transition-all cursor-pointer"
+                          className="w-full text-xs font-mono border-dashed border-electricViolet/40 bg-electricViolet/10 hover:bg-electricViolet/20 text-electricViolet-glow"
                         >
                           <span>🎙️</span>
                           <span>{language === "es" ? "Grabar nota de voz de saludo para tu perfil" : "Record a voice greeting for your profile"}</span>
-                        </button>
+                        </BrutalistButton>
                       ) : null}
                     </div>
                   )}
@@ -584,16 +559,17 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                         <span className="text-xs font-mono font-bold text-white uppercase">
                           {language === "es" ? "Verificación 3D" : "3D Face Verification"}
                         </span>
-                        <button
-                          type="button"
+                        <BrutalistButton
+                          variant="primary"
+                          size="compact"
                           onClick={() => {
                             onClose();
                             openLivenessModal();
                           }}
-                          className="px-2.5 py-1 bg-electricViolet text-white font-mono text-[10px] font-bold uppercase rounded-xl hover:bg-electricViolet-glow shadow-violet-soft cursor-pointer transition-all active:scale-95"
+                          className="text-[10px] uppercase font-bold"
                         >
                           {language === "es" ? "Verificar" : "Verify"}
-                        </button>
+                        </BrutalistButton>
                       </div>
                     ) : null}
 
@@ -878,32 +854,34 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
             ========================================================= */}
         <footer className="flex-shrink-0 bg-obsidian-surface/95 backdrop-blur-xl border-t border-white/10 p-3 md:px-6 md:py-3.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:pb-3.5 flex items-center gap-2 md:gap-3 z-30 shadow-[0_-8px_30px_rgba(0,0,0,0.9)]">
           {profile.isCurrentUser ? (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
+              size="lg"
               onClick={() => {
                 onClose();
                 setActiveView("account");
               }}
-              className="flex-1 min-h-[48px] py-3 px-4 bg-electricViolet text-white text-xs font-extrabold rounded-2xl hover:bg-electricViolet-glow shadow-violet-soft flex items-center justify-center gap-2 transition-all uppercase tracking-wider font-mono cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+              className="flex-1 min-h-[48px]"
             >
               <User className="w-4 h-4" />
               <span>Editar Mi Perfil & Modo Niebla</span>
-            </button>
+            </BrutalistButton>
           ) : (
             <>
               {/* Botón 1: Toque Cinético de Rol (1-Tap Kinetic Reaction Instantáneo) */}
-              <button
-                type="button"
+              <BrutalistButton
+                variant="tactical"
+                size="icon"
+                soundEffect="pulse"
                 onClick={() => {
-                  audioEngine.playPulse();
                   transmitSignal(currentProfile.id);
                 }}
                 aria-label={`Enviar toque a ${currentProfile.codename}`}
                 title={signalCount > 0 ? roleAction.sentLabel : roleAction.tooltipTemplate}
-                className={`p-3 min-h-[48px] min-w-[48px] rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-75 shadow-md flex-shrink-0 ${
+                className={`min-h-[48px] min-w-[48px] rounded-2xl flex-shrink-0 ${
                   signalCount > 0
-                    ? `bg-electricViolet text-white border-electricViolet ${roleAction.glowClass} scale-105`
-                    : "bg-white/5 border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white"
+                    ? "!bg-electricViolet !text-white !border-electricViolet " + roleAction.glowClass + " scale-105"
+                    : ""
                 }`}
               >
                 <span className="text-lg leading-none select-none">
@@ -914,64 +892,67 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
                     +{signalCount}
                   </span>
                 )}
-              </button>
+              </BrutalistButton>
 
               {/* Botón 2: Acción Primaria Contextual (Chat Directo / Coordinar Cita / Desbloqueo Unlimited) */}
               {canChatDirectly ? (
                 isMutualPulseActive ? (
-                  <button
-                    type="button"
+                  <BrutalistButton
+                    variant="mint"
+                    size="lg"
                     onClick={() => {
                       onClose();
                       onOpenChat(currentProfile.id);
                     }}
                     aria-label="Abrir chat efímero"
-                    className="flex-1 min-h-[48px] py-3 px-4 text-xs font-black rounded-2xl bg-mintNeon hover:bg-emerald-400 text-obsidian-deep shadow-mint-glow flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                    className="flex-1 min-h-[48px]"
                   >
                     <MessageSquare className="w-4 h-4 fill-current" />
                     <span>{t.card.mutualPulseChat || "Chatear · Onda Mutua 🔥"}</span>
-                  </button>
+                  </BrutalistButton>
                 ) : (
                   <div className="flex-1 flex items-center gap-2 min-w-0">
-                    <button
-                      type="button"
+                    <BrutalistButton
+                      variant="primary"
+                      size="lg"
+                      soundEffect="none"
                       onClick={() => {
                         audioEngine.playSubBass(60);
                         setIsRendezvousOpen(true);
                       }}
                       aria-label={language === "es" ? "Coordinar Cita" : "Coordinate Date"}
-                      className="flex-1 min-h-[48px] py-3 px-3.5 bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft text-xs font-black rounded-2xl flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                      className="flex-1 min-h-[48px]"
                     >
                       <Zap className="w-4 h-4 fill-current text-white flex-shrink-0" />
                       <span className="truncate">{language === "es" ? "Coordinar Cita ⚡" : "Coordinate Date ⚡"}</span>
-                    </button>
-                    <button
-                      type="button"
+                    </BrutalistButton>
+                    <BrutalistButton
+                      variant="secondary"
+                      size="icon"
                       onClick={() => {
                         onClose();
                         onOpenChat(currentProfile.id);
                       }}
                       aria-label="Abrir chat efímero"
                       title={t.card.openChat || "Abrir chat efímero"}
-                      className="p-3 min-h-[48px] min-w-[48px] bg-white/5 border border-white/10 hover:border-electricViolet/50 hover:bg-white/10 text-white rounded-2xl flex items-center justify-center transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 shadow-sm flex-shrink-0"
+                      className="min-h-[48px] min-w-[48px] rounded-2xl flex-shrink-0"
                     >
                       <MessageSquare className="w-4 h-4 text-electricViolet" />
-                    </button>
+                    </BrutalistButton>
                   </div>
                 )
               ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    openUnlimitedModal();
-                  }}
+                <BrutalistButton
+                  variant="primary"
+                  size="lg"
+                  soundEffect="pulse"
+                  onClick={() => openUnlimitedModal()}
                   aria-label="Desbloquear chat inmediato con VESSEL UNLIMITED"
-                  className="flex-1 min-h-[48px] py-3 px-3.5 bg-gradient-to-r from-electricViolet to-purple-600 text-white text-xs font-extrabold rounded-2xl hover:brightness-110 shadow-[0_0_20px_rgba(139,92,246,0.4)] flex items-center justify-center gap-2 transition-all uppercase tracking-wider cursor-pointer font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+                  className="flex-1 min-h-[48px] bg-gradient-to-r from-electricViolet to-purple-600 shadow-[0_0_20px_rgba(139,92,246,0.4)]"
                 >
                   <Lock className="w-4 h-4 text-white stroke-[2.5]" />
                   <span>{t.card.openUnlimitedChatBtn || "Desbloquear Chat (VESSEL UNLIMITED)"}</span>
-                </button>
+                </BrutalistButton>
               )}
             </>
           )}
@@ -982,15 +963,6 @@ export const ProfileDetailModal: React.FC<ProfileDetailModalProps> = ({
           <BoundaryManagerModal
             profileId={currentProfile.id}
             onClose={() => setIsBoundaryModalOpen(false)}
-          />
-        )}
-
-        {/* Modal de Edición de Perfil de Prueba */}
-        {isEditModalOpen && (
-          <EditMockProfileModal
-            profile={currentProfile}
-            onClose={() => setIsEditModalOpen(false)}
-            onSaved={(updated) => setCurrentProfile(updated)}
           />
         )}
 

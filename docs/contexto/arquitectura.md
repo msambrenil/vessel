@@ -38,20 +38,20 @@
 
 ---
 
-## 4. Router SPA y Arquitectura de Vistas
+## 4. Arquitectura de Rutas Next.js 16 App Router, AppShell y Hooks Atómicos
 
-VESSEL funciona como una **Single Page Application (SPA)** responsiva fluida dentro de `src/app/page.tsx`, envuelta en un contenedor centralizado `max-w-4xl mx-auto` estructurado bajo la arquitectura **App Shell 2.0**:
+VESSEL opera sobre el **App Router de Next.js 16** con rutas dedicadas que comparten el layout y shell unificado `AppShell.tsx` (`src/components/shell/AppShell.tsx`), integrado con la API de `View Transitions` del navegador y los hooks nativos `useRouter()` y `usePathname()`:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │  BrutalistHeader (Logo, Batería, Audio Sub-bass, Pase QR, Menú Usuario) │
 ├────────────────────────────────────────────────────────────────────────┤
-│  VISTA PRINCIPAL ACTIVA:                                               │
-│  • grid    -> Radar 100% Pantalla Completa (Inmersión total sin asfixia)│
-│  • pulses  -> Toques (Toques recibidos, onda mutua 🔥 y enviados)       │
-│  • chat    -> Mensajes (Darkroom efímero & salidas amables Anti-Ghost) │
-│  • diary   -> Citas (Agenda íntima de encuentros y botiquín de salud)  │
-│  • account -> Perfil (Ficha, Modo Niebla, gestión de álbumes y límites)│
+│  RUTAS DEDICADAS DEL APP ROUTER:                                       │
+│  • /radar   (o /) -> Matriz Radar (ProfileGrid)                        │
+│  • /pulses        -> Toques (Toques recibidos, onda mutua 🔥 y enviados)│
+│  • /chat          -> Darkroom ListView & Chats efímeros Anti-Ghost     │
+│  • /diary         -> Citas (Agenda íntima & botiquín de salud sexual)  │
+│  • /account       -> ProtocolView / Perfil, Niebla y Álbumes           │
 ├────────────────────────────────────────────────────────────────────────┤
 │  TacticalBottomSheet / RadarBottomCommandBar (Sintonías & Filtros)     │
 │  • Peeking: Barra compacta flotante al alcance del pulgar (Thumb-Zone) │
@@ -95,3 +95,26 @@ VESSEL funciona como una **Single Page Application (SPA)** responsiva fluida den
 4. **No hay telemetría ni tracking de terceros**: Cero trackers invasivos (Google Analytics, Facebook Pixel, etc.).
 5. **No hay coordenadas GPS brutas en cliente**: Las coordenadas exactas nunca se transmiten ni renderizan; se utiliza discretización espacial en celdas Geohash 7 / Google S2.
 6. **No se permiten perfiles sin fotografía**: La imagen de perfil es obligatoria; quienes requieran privacidad visual utilizan el **Modo Niebla** o **Avatares Estilizados**.
+7. **No hay contextos monolíticos (`useVessel` prohibido)**: El estado global se organiza exclusivamente en hooks atómicos por dominio (`useAuth`, `useRadarMatrix`, etc.) o micro-stores granulares.
+
+---
+
+## 6. Tríada de Rendimiento & Arquitectura Moderna 2026 (Invariantes Obligatorias)
+
+Todo cambio arquitectónico o feature funcional en VESSEL debe honrar los siguientes tres pilares:
+
+1. **Hooks Atómicos & Cascada Cero de Re-renders**:
+   - `useVessel()` está formalmente prohibido.
+   - Las vistas consumen exclusivamente el hook del dominio correspondiente (`useRadarMatrix`, `useChat`, etc.).
+   - Tarjetas de alta densidad (`ProfileCard`) desacopladas de eventos parásitos de alta frecuencia mediante componentes puros (`PureProfileCard`) con props memorizadas.
+
+2. **Next.js 16 App Router Real & View Transitions**:
+   - Cada sección principal corresponde a una ruta real (`/radar`, `/pulses`, `/chat`, `/diary`, `/account`) bajo `AppShell.tsx`.
+   - Navegación cliente a través de `useRouter().push(targetPath)` y `usePathname()` con soporte nativo de `document.startViewTransition`.
+   - Soporte pleno de deep-linking, marcadores e historial del navegador (Back/Forward).
+
+3. **Protección del Main Thread, Assets & I/O Asíncrona**:
+   - Fotos remotas optimizadas con Next Image (WebP/AVIF, `w=400`) y fallback seguro (`unoptimized={true}`) en desarrollo local.
+   - Cálculos intensivos de geometría y proximidad delegados a Web Workers (`proximityWorkerClient.ts`).
+   - I/O pesada y mutaciones offline migradas de `localStorage` a IndexedDB (`offlineMutationQueue.ts`), protegiendo la métrica INP y el audio de `SubBassAudioEngine`.
+

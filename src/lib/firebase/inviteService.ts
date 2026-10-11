@@ -281,12 +281,16 @@ export async function createVipInviteCode(params: {
       { merge: true }
     );
     return { success: true, code, shareUrl };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg =
+      err instanceof Error
+        ? err.message
+        : "No se pudo guardar en Firestore, pero podés usar VESSEL-VIP-01..99.";
     return {
       success: false,
       code,
       shareUrl,
-      error: err?.message || "No se pudo guardar en Firestore, pero podés usar VESSEL-VIP-01..99.",
+      error: errorMsg,
     };
   }
 }

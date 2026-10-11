@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary, useRadarMatrix, useSettings } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   Star,
@@ -27,11 +27,9 @@ export const DiaryInsights: React.FC = () => {
     myReceivedTestimonials = [],
     toggleTestimonialVisibility,
     openWrappedModal,
-    profiles,
-    setSelectedProfile,
-    language,
-    t,
-  } = useVessel();
+  } = useDiary();
+  const { profiles, setSelectedProfile } = useRadarMatrix();
+  const { language, t } = useSettings();
 
   const [isReviewsExpanded, setIsReviewsExpanded] = useState(true);
 
@@ -92,7 +90,7 @@ export const DiaryInsights: React.FC = () => {
 
   return (
     <div className="space-y-4 pb-12 select-none animate-fade-in">
-      {/* 1. TARJETA VIP: RETROSPECTIVA DE PLACER */}
+      {/* 1. TARJETA VIP: RESUMEN ANUAL */}
       <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-purple-950/60 via-obsidian-surface to-obsidian-deep border border-electricViolet/40 shadow-card-elevation flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-electricViolet/20 border border-electricViolet/50 flex items-center justify-center text-2xl shadow-violet-soft flex-shrink-0">
@@ -101,10 +99,10 @@ export const DiaryInsights: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="font-mono font-black text-white text-xs sm:text-sm uppercase tracking-wider">
-                {t.diary.vesselWrappedTitle || (language === "es" ? "Retrospectiva de Placer" : "Pleasure Retrospective")}
+                {t.diary.vesselWrappedTitle || (language === "es" ? "Resumen Anual" : "Annual Summary")}
               </h4>
               <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-champagneGold border border-amber-500/40 font-bold">
-                {language === "es" ? "RESUMEN ANUAL" : "ANNUAL SUMMARY"}
+                {language === "es" ? "Retrospectiva anual de tus encuentros" : "Annual retrospective of your encounters"}
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 font-sans mt-0.5">
@@ -125,7 +123,7 @@ export const DiaryInsights: React.FC = () => {
           className="px-4 py-2.5 min-h-[44px] bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-black text-xs rounded-2xl uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-violet-soft cursor-pointer flex-shrink-0 active:scale-95"
         >
           <Sparkles className="w-4 h-4 text-champagneGold" />
-          <span>{t.diary.vesselWrappedBtn || (language === "es" ? "Ver Retrospectiva" : "Open Retrospective")}</span>
+          <span>{t.diary.vesselWrappedBtn || (language === "es" ? "Ver Resumen Anual" : "View Annual Summary")}</span>
         </button>
       </div>
 
@@ -386,7 +384,6 @@ export const DiaryInsights: React.FC = () => {
                               alt={testimonial.authorCodename}
                               width={36}
                               height={36}
-                              unoptimized
                               className="w-9 h-9 rounded-xl object-cover border border-white/10 group-hover:border-electricViolet transition-colors"
                             />
                             <div>

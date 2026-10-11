@@ -68,12 +68,11 @@ describe("RadarBottomCommandBar — Barra Táctica Inferior Deslizable", () => {
     mockMatrixTab = "people";
   });
 
-  it("en pestaña 'people', renderiza los controles de búsqueda de personas, modo viajero y filtros", () => {
+  it("en pestaña 'people', renderiza los controles de búsqueda de personas, modo viajero y preferencias", () => {
     render(<RadarBottomCommandBar />);
 
     expect(screen.getByTestId("people-search-input")).toBeInTheDocument();
     expect(screen.getByTestId("people-travel-mode-button")).toBeInTheDocument();
-    expect(screen.getByTestId("filter-toggle-button")).toBeInTheDocument();
     expect(screen.getByTestId("filter-pill-favorites")).toBeInTheDocument();
   });
 
@@ -85,12 +84,13 @@ describe("RadarBottomCommandBar — Barra Táctica Inferior Deslizable", () => {
     expect(mockOpenTravelModal).toHaveBeenCalled();
   });
 
-  it("al tocar el botón de Filtros Avanzados, abre el Drawer de filtros", () => {
+  it("permite desplegar el buscador de morbos y fetiches en el bloque colapsable", () => {
     render(<RadarBottomCommandBar />);
 
-    const filterBtn = screen.getByTestId("filter-toggle-button");
-    fireEvent.click(filterBtn);
-    expect(mockSetIsFilterDrawerOpen).toHaveBeenCalledWith(true);
+    const kinkHeader = screen.getByText(/5\. Fetiches y morbos/i);
+    fireEvent.click(kinkHeader);
+
+    expect(screen.getByTestId("kink-search-bottom-bar")).toBeInTheDocument();
   });
 
   it("en pestaña 'places', renderiza búsqueda de lugares, botón de viaje y proponer lugar", () => {
@@ -119,14 +119,13 @@ describe("RadarBottomCommandBar — Barra Táctica Inferior Deslizable", () => {
   it("renderiza los bloques estructurados de filtros sin scroll horizontal en orden y preferencias", () => {
     render(<RadarBottomCommandBar />);
 
-    // Verificar presencia de los bloques lógicos
-    expect(screen.getByText(/1\. Sintonía Activa/i)).toBeInTheDocument();
-    expect(screen.getByText(/2\. Búsqueda Táctica/i)).toBeInTheDocument();
-    expect(screen.getByText(/3\. Criterio de Orden/i)).toBeInTheDocument();
-    expect(screen.getByText(/4\. Confianza & Logística Rápida/i)).toBeInTheDocument();
-    expect(screen.getByText(/5\. Rol & Posición/i)).toBeInTheDocument();
-    expect(screen.getByText(/6\. ¿Qué onda buscás hoy\?/i)).toBeInTheDocument();
-    expect(screen.getByText(/7\. Morbos, Sustancias & Distancia/i)).toBeInTheDocument();
+    // Verificar presencia de los bloques lógicos Bento organizados por prioridad
+    expect(screen.getByText(/1\. Rol y posición/i)).toBeInTheDocument();
+    expect(screen.getByText(/2\. Distancia y viaje/i)).toBeInTheDocument();
+    expect(screen.getByText(/3\. Preferencias y logística/i)).toBeInTheDocument();
+    expect(screen.getByText(/4\. Ordenar perfiles por/i)).toBeInTheDocument();
+    expect(screen.getByText(/5\. Fetiches y morbos/i)).toBeInTheDocument();
+    expect(screen.getByText(/6\. Onda y sustancias/i)).toBeInTheDocument();
 
     // Filtros de logística rápida presentes
     expect(screen.getByText(/Con lugar ya/i)).toBeInTheDocument();
@@ -146,6 +145,15 @@ describe("RadarBottomCommandBar — Barra Táctica Inferior Deslizable", () => {
     fireEvent.click(hostBtn!);
 
     expect(mockSetFilters).toHaveBeenCalled();
+  });
+
+  it("al presionar 'Aplicar Filtros' en el footer, cierra el drawer llamando a setIsFilterDrawerOpen(false)", () => {
+    render(<RadarBottomCommandBar />);
+
+    const applyBtn = screen.getByRole("button", { name: /Aplicar Filtros/i });
+    fireEvent.click(applyBtn);
+
+    expect(mockSetIsFilterDrawerOpen).toHaveBeenCalledWith(false);
   });
 });
 

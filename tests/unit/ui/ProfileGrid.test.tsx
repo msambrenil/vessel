@@ -137,7 +137,6 @@ describe("ProfileGrid — División en Personas/Lugares y Modo Viajero", () => {
     );
 
     expect(screen.getByTestId("people-search-input")).toBeInTheDocument();
-    expect(screen.getByTestId("filter-toggle-button")).toBeInTheDocument();
 
     const travelBtn = screen.getByTestId("people-travel-mode-button");
     expect(travelBtn).toBeInTheDocument();

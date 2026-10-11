@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { ProfileDossier, ProfileRankingTier } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary, useSettings } from "@/context/VesselContext";
 import {
   PRESET_RED_FLAGS,
   PRESET_GREEN_FLAGS,
@@ -27,6 +27,7 @@ import {
   Sparkles,
   Info,
 } from "lucide-react";
+import { BrutalistTextarea } from "@/components/ui";
 
 interface ProfileDossierSectionProps {
   profileId: string;
@@ -37,7 +38,8 @@ export const ProfileDossierSection: React.FC<ProfileDossierSectionProps> = ({
   profileId,
   profileCodename,
 }) => {
-  const { getProfileDossier, saveProfileDossier, deleteProfileDossier, t, language } = useVessel();
+  const { getProfileDossier, saveProfileDossier, deleteProfileDossier } = useDiary();
+  const { t, language } = useSettings();
 
   const dossier = getProfileDossier(profileId);
 
@@ -475,26 +477,15 @@ export const ProfileDossierSection: React.FC<ProfileDossierSectionProps> = ({
 
           {/* 5. NOTAS PRIVADAS & AGENDA */}
           <div className="space-y-1.5 pt-1 border-t border-white/5">
-            <label
-              htmlFor={`notes-${profileId}`}
-              className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center justify-between font-mono"
-            >
-              <span>{t.dossier.privateNotesLabel}</span>
-              {showSavedFeedback && (
-                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 animate-pulse">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>{t.dossier.savedToast}</span>
-                </span>
-              )}
-            </label>
-            <textarea
+            <BrutalistTextarea
               id={`notes-${profileId}`}
+              label={t.dossier.privateNotesLabel}
               rows={4}
               value={privateNotes}
               onChange={(e) => setPrivateNotes(e.target.value)}
               onBlur={() => handleSave()}
               placeholder={t.dossier.privateNotesPlaceholder}
-              className="w-full bg-black/50 border border-white/10 focus:border-electricViolet rounded-xl p-3 text-xs text-white placeholder-neutral-500 font-sans focus:outline-none focus:ring-1 focus:ring-electricViolet transition-all resize-y leading-relaxed"
+              hint={showSavedFeedback ? `✓ ${t.dossier.savedToast}` : undefined}
             />
           </div>
 

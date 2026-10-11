@@ -8,7 +8,6 @@ import type { VesselProfile } from "@/types/vessel";
 const mockSendPreFlightChecklist = vi.fn();
 const mockSendSecureWaypoint = vi.fn();
 const mockSendRendezvousPin = vi.fn();
-const mockStartSafetyBeacon = vi.fn();
 const mockStartEnRoute = vi.fn();
 
 const mockTargetProfile = {
@@ -24,17 +23,26 @@ const mockTargetProfile = {
   hosting: "Tengo depto / lugar" as const,
 } as unknown as VesselProfile;
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     sendPreFlightChecklist: mockSendPreFlightChecklist,
     sendSecureWaypoint: mockSendSecureWaypoint,
     sendRendezvousPin: mockSendRendezvousPin,
-    startSafetyBeacon: mockStartSafetyBeacon,
     startEnRoute: mockStartEnRoute,
     language: "es",
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {
@@ -76,7 +84,7 @@ describe("RendezvousSheet — Asistente Unificado de Cita (Fase 2)", () => {
     expect(screen.getByText("Penetración")).toBeInTheDocument();
   });
 
-  it("debe avanzar a través de los pasos 1 -> 2 -> 3 correctamente", () => {
+  it("debe renderizar todos los módulos Bento en pantalla única (Dónde, Cuándo, Puntos Claros, Telemetría)", () => {
     render(
       <RendezvousSheet
         isOpen={true}
@@ -85,44 +93,25 @@ describe("RendezvousSheet — Asistente Unificado de Cita (Fase 2)", () => {
       />
     );
 
-    // En paso 1, hacer click en Continuar
-    const nextBtn1 = screen.getByRole("button", { name: /Continuar/i });
-    fireEvent.click(nextBtn1);
-
-    // Debe mostrar paso 2: Lugar & Logística
-    expect(screen.getByText("¿Quién Pone el Lugar o Punto de Encuentro?")).toBeInTheDocument();
+    // Módulo 1: Lugar & Logística
+    expect(screen.getByText(/1\. ¿Quién Pone el Lugar o Punto de Encuentro\?/i)).toBeInTheDocument();
     expect(screen.getByText("Recibo en mi lugar")).toBeInTheDocument();
     expect(screen.getByText(/PIN de Encuentro/i)).toBeInTheDocument();
 
-    // En paso 2, hacer click en Continuar
-    const nextBtn2 = screen.getByRole("button", { name: /Continuar/i });
-    fireEvent.click(nextBtn2);
+    // Módulo 2: Fecha & Hora
+    expect(screen.getByText(/2\. Fecha & Hora del Encuentro/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ahora \(\+30m\)/i)).toBeInTheDocument();
 
-    // Debe mostrar paso 3: Blindaje Guardián SOS & ETA
-    expect(screen.getByText("Guardián Silencioso")).toBeInTheDocument();
-    expect(screen.getByText(/Compartir Telemetría/i)).toBeInTheDocument();
-  });
-
-  it("debe permitir retroceder con el botón 'Atrás'", () => {
-    render(
-      <RendezvousSheet
-        isOpen={true}
-        onClose={vi.fn()}
-        targetProfile={mockTargetProfile}
-      />
-    );
-
-    // Avanzar a paso 2
-    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
-    expect(screen.getByText("¿Quién Pone el Lugar o Punto de Encuentro?")).toBeInTheDocument();
-
-    // Retroceder a paso 1
-    const backBtn = screen.getByRole("button", { name: /Atrás/i });
-    fireEvent.click(backBtn);
+    // Módulo 3: Puntos Claros
+    expect(screen.getByText(/3\. Puntos Claros \(Ritmo y Cuidados\)/i)).toBeInTheDocument();
     expect(screen.getByText("Ritmo y Duración del Encuentro")).toBeInTheDocument();
+    expect(screen.getByText("Solo Oral")).toBeInTheDocument();
+
+    // Módulo 4: Telemetría En Camino
+    expect(screen.getByText(/4\. Telemetría "Voy en Camino"/i)).toBeInTheDocument();
   });
 
-  it("debe ejecutar las acciones atómicas y cerrar el sheet al confirmar", async () => {
+  it("debe ejecutar las acciones atómicas y cerrar el sheet al confirmar en un solo click", async () => {
     const handleClose = vi.fn();
     render(
       <RendezvousSheet
@@ -132,13 +121,7 @@ describe("RendezvousSheet — Asistente Unificado de Cita (Fase 2)", () => {
       />
     );
 
-    // Avanzar paso 1 -> paso 2
-    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
-
-    // Avanzar paso 2 -> paso 3
-    fireEvent.click(screen.getByRole("button", { name: /Continuar/i }));
-
-    // Confirmar en paso 3
+    // Confirmar directamente en la vista Bento (sin pasos intermedios)
     const confirmBtn = screen.getByRole("button", { name: /Confirmar y Blindar Encuentro/i });
     fireEvent.click(confirmBtn);
 
@@ -153,9 +136,6 @@ describe("RendezvousSheet — Asistente Unificado de Cita (Fase 2)", () => {
       expect.any(String),
       undefined
     );
-
-    // Guardián activado (default 60 min)
-    expect(mockStartSafetyBeacon).toHaveBeenCalledTimes(1);
 
     // Cierre asíncrono
     await waitFor(() => {
@@ -176,5 +156,53 @@ describe("RendezvousSheet — Asistente Unificado de Cita (Fase 2)", () => {
     const closeBtn = screen.getByLabelText("Cerrar asistente");
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("debe permitir pactar en 1 toque con 'Pactar Express' sin recorrer los 3 pasos", async () => {
+    const handleClose = vi.fn();
+    render(
+      <RendezvousSheet
+        isOpen={true}
+        onClose={handleClose}
+        targetProfile={mockTargetProfile}
+      />
+    );
+
+    expect(screen.getByText(/Pactar Express \(1 Toque\)/i)).toBeInTheDocument();
+    const expressBtn = screen.getByRole("button", { name: /Mandar Ya/i });
+    fireEvent.click(expressBtn);
+
+    await waitFor(() => {
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+    expect(mockSendRendezvousPin).toHaveBeenCalledTimes(1);
+  });
+
+  it("debe activar En Route al confirmar si la telemetría está activa", async () => {
+    const handleClose = vi.fn();
+    render(
+      <RendezvousSheet
+        isOpen={true}
+        onClose={handleClose}
+        targetProfile={mockTargetProfile}
+      />
+    );
+
+    // Activar telemetría En Camino
+    const toggleTelemetryBtn = screen.getByRole("button", { name: /APAGADO/i });
+    fireEvent.click(toggleTelemetryBtn);
+
+    // Confirmar
+    const confirmBtn = screen.getByRole("button", { name: /Confirmar y Blindar Encuentro/i });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(handleClose).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockStartEnRoute).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "target-42", codename: "NEON_VIPER" }),
+      20
+    );
   });
 });

@@ -7,6 +7,8 @@ import { AntiGhostBadge } from "@/components/auth/AntiGhostBadge";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
+import { isOptimizableImageUrl } from "@/lib/images/imageUtils";
+import { TranslationType } from "@/lib/i18n/translations";
 
 interface ProfileGlanceHeroProps {
   profile: VesselProfile;
@@ -17,7 +19,7 @@ interface ProfileGlanceHeroProps {
   nextPhoto: () => void;
   dossier?: ProfileDossier | null;
   language: "es" | "en";
-  t: any;
+  t: TranslationType;
 }
 
 /**
@@ -44,7 +46,7 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
           alt={profile.codename}
           fill
           sizes="(max-width: 768px) 100vw, 42vw"
-          unoptimized
+          unoptimized={!isOptimizableImageUrl(photos[selectedPhotoIdx] || profile.avatarUrl)}
           priority
           className={`w-full h-full object-cover select-none transition-all duration-300 ${
             profile.isFogMode ? "blur-[8px] scale-105" : ""
@@ -229,7 +231,7 @@ export const ProfileGlanceHero: React.FC<ProfileGlanceHeroProps> = ({
                 alt=""
                 fill
                 sizes="48px"
-                unoptimized
+                unoptimized={!isOptimizableImageUrl(photoUrl || profile.avatarUrl)}
                 className="w-full h-full object-cover"
               />
             </button>

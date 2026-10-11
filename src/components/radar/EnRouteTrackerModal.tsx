@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useRadarMatrix, useSettings } from "@/context/VesselContext";
+
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const EnRouteTrackerModal: React.FC = () => {
   const {
@@ -11,13 +13,11 @@ export const EnRouteTrackerModal: React.FC = () => {
     startEnRoute,
     cancelEnRoute,
     arrivedEnRoute,
-    profiles,
-    t,
-  } = useVessel();
+  } = useLogistics();
+  const { profiles } = useRadarMatrix();
+  const { t } = useSettings();
 
   const [selectedEta, setSelectedEta] = useState<number>(15);
-
-  if (!isEnRouteModalOpen) return null;
 
   const targetProfile = profiles.find((p) => p.id === enRouteState.targetProfileId);
   const targetCodename = targetProfile?.codename || enRouteState.targetCodename || "VESSEL";
@@ -29,45 +29,16 @@ export const EnRouteTrackerModal: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.tacticalSuite.enRoute.title}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
-      onClick={closeEnRouteModal}
+    <BrutalistModal
+      isOpen={isEnRouteModalOpen}
+      onClose={closeEnRouteModal}
+      icon="🚗"
+      title={t.tacticalSuite.enRoute.title}
+      subtitle="Telemetría de viaje anónima sin compartir WhatsApp ni número"
+      maxWidth="md"
+      ariaLabel={t.tacticalSuite.enRoute.title}
+      contentClassName="p-5 space-y-5 text-xs"
     >
-      <div
-        className="relative w-full max-w-md bg-[#0c0c0c] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header */}
-        <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🚗</span>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-neutral-100">
-                {t.tacticalSuite.enRoute.title}
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                Telemetría de viaje anónima sin compartir WhatsApp ni número
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={closeEnRouteModal}
-            aria-label="Cerrar rastreador de trayecto"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100 flex items-center justify-center text-sm font-mono transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Contenido */}
-        <div className="p-5 space-y-5 text-xs">
           {enRouteState.isActive ? (
             /* Estado Activo: Viaje en curso */
             <div className="space-y-4 text-center">
@@ -89,20 +60,26 @@ export const EnRouteTrackerModal: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <BrutalistButton
                   type="button"
+                  variant="primary"
+                  size="default"
+                  soundEffect="pulse"
                   onClick={arrivedEnRoute}
-                  className="p-3 bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-violet-soft active:scale-95 transition-all"
+                  className="w-full min-h-[48px] text-xs font-mono font-bold uppercase tracking-wider !rounded-xl shadow-violet-soft"
                 >
                   {t.tacticalSuite.enRoute.notifyBtn}
-                </button>
-                <button
+                </BrutalistButton>
+                <BrutalistButton
                   type="button"
+                  variant="ghost"
+                  size="default"
+                  soundEffect="none"
                   onClick={cancelEnRoute}
-                  className="p-3 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-200 font-mono text-xs uppercase tracking-wider rounded-xl transition-all"
+                  className="w-full min-h-[48px] !bg-neutral-900 hover:!bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-200 font-mono text-xs uppercase tracking-wider !rounded-xl"
                 >
                   {t.tacticalSuite.enRoute.cancelBtn}
-                </button>
+                </BrutalistButton>
               </div>
             </div>
           ) : (
@@ -134,19 +111,21 @@ export const EnRouteTrackerModal: React.FC = () => {
                     { mins: 15, icon: "⏱️" },
                     { mins: 30, icon: "📍" },
                   ].map(({ mins, icon }) => (
-                    <button
+                    <BrutalistButton
                       key={mins}
                       type="button"
+                      variant="ghost"
+                      soundEffect="pulse"
                       onClick={() => setSelectedEta(mins)}
-                      className={`p-3 min-h-[48px] rounded-xl border text-center font-mono transition-all cursor-pointer active:scale-95 ${
+                      className={`!p-3 min-h-[48px] !rounded-xl border !text-center !font-mono flex-col !justify-center ${
                         selectedEta === mins
-                          ? "bg-purple-950/50 border-electricViolet text-white font-bold shadow-violet-soft"
-                          : "bg-neutral-900 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                          ? "!bg-purple-950/50 !border-electricViolet text-white font-bold shadow-violet-soft"
+                          : "!bg-neutral-900 !border-neutral-800 text-neutral-400 hover:!border-neutral-700"
                       }`}
                     >
-                      <div className="text-xs mb-0.5">{icon}</div>
-                      <div className="text-sm font-bold">{mins} min</div>
-                    </button>
+                      <span className="text-xs mb-0.5">{icon}</span>
+                      <span className="text-sm font-bold">{mins} min</span>
+                    </BrutalistButton>
                   ))}
                 </div>
               </div>
@@ -161,17 +140,18 @@ export const EnRouteTrackerModal: React.FC = () => {
                 </p>
               </div>
 
-              <button
+              <BrutalistButton
                 type="button"
+                variant="primary"
+                size="lg"
+                soundEffect="pulse"
                 onClick={handleStart}
-                className="w-full py-3 bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-violet-soft active:scale-95 transition-all"
+                className="w-full min-h-[48px] text-xs font-mono font-bold uppercase tracking-wider !rounded-xl shadow-violet-soft"
               >
                 Iniciar Modo &quot;Voy en Camino&quot; 🚗
-              </button>
-            </div>
-          )}
+              </BrutalistButton>
         </div>
-      </div>
-    </div>
+      )}
+    </BrutalistModal>
   );
 };

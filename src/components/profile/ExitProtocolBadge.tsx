@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ExitProtocol } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 
 interface ExitProtocolBadgeProps {
   protocol?: ExitProtocol;
@@ -17,7 +17,7 @@ export const ExitProtocolBadge: React.FC<ExitProtocolBadgeProps> = ({
   variant = "default",
   onClick,
 }) => {
-  const { t } = useVessel();
+  const { t } = useSettings();
 
   const labels: Record<ExitProtocol, { label: string; icon: string; desc: string }> = {
     fast_encounter: {

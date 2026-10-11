@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings } from "@/context/VesselContext";
 import { ExitProtocol } from "@/types/vessel";
 
 export const ExitProtocolSelector: React.FC = () => {
-  const { myExitProtocol, setMyExitProtocol, t } = useVessel();
+  const { myExitProtocol, setMyExitProtocol } = useLogistics();
+  const { t } = useSettings();
 
   const options: { protocol: ExitProtocol; icon: string; title: string; subtitle: string }[] = [
     {
@@ -33,7 +34,7 @@ export const ExitProtocolSelector: React.FC = () => {
       <label className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block">
         {t.tacticalSuite.exitProtocol.title}:
       </label>
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-2.5">
         {options.map((opt) => {
           const isSelected = myExitProtocol === opt.protocol;
           return (
@@ -41,21 +42,30 @@ export const ExitProtocolSelector: React.FC = () => {
               key={opt.protocol}
               type="button"
               onClick={() => setMyExitProtocol(opt.protocol)}
-              className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+              className={`w-full p-2.5 sm:p-3 rounded-xl border text-left flex sm:flex-col items-center sm:items-start justify-between transition-all cursor-pointer select-none ${
                 isSelected
-                  ? "bg-purple-950/40 border-electricViolet text-white font-bold shadow-violet-soft"
-                  : "bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                  ? "bg-purple-950/40 border-electricViolet text-white font-bold shadow-violet-soft ring-1 ring-electricViolet/50"
+                  : "bg-neutral-900/40 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200"
               }`}
             >
-              <div className="flex items-center gap-2.5">
-                <span className="text-base">{opt.icon}</span>
-                <div>
-                  <span className="font-mono text-xs block">{opt.title}</span>
-                  <p className="text-[10px] text-neutral-500 font-normal">{opt.subtitle}</p>
+              <div className="flex sm:flex-col items-center sm:items-start gap-2.5 sm:w-full min-w-0">
+                <div className="flex items-center justify-between sm:w-full">
+                  <span className="text-base sm:text-xl">{opt.icon}</span>
+                  <span
+                    className={`hidden sm:flex w-3.5 h-3.5 rounded-full border items-center justify-center shrink-0 ${
+                      isSelected ? "border-electricViolet bg-electricViolet shadow-violet-soft" : "border-neutral-600"
+                    }`}
+                  >
+                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <span className="font-mono text-xs block text-white font-bold">{opt.title}</span>
+                  <p className="text-[10px] text-neutral-400 font-normal leading-tight mt-0.5 line-clamp-2">{opt.subtitle}</p>
                 </div>
               </div>
               <span
-                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                className={`sm:hidden w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
                   isSelected ? "border-electricViolet bg-electricViolet shadow-violet-soft" : "border-neutral-600"
                 }`}
               >

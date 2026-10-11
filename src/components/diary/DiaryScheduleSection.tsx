@@ -1,35 +1,34 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
-import { DiaryEntry, VesselProfile, DiarySatisfaction } from "@/types/vessel";
-import { DiaryEntryCard } from "./DiaryEntryCard";
+import React, { useState, useMemo } from "react";
+import {
+  DiaryEntry,
+  VesselProfile,
+  DiarySatisfaction,
+  ProfileDossier,
+} from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { getLocalDaysOffsetIso, getLocalTodayIso } from "@/lib/calendar/dateLocale";
+import { TranslationType } from "@/lib/i18n/translations";
+import { getLocalDaysOffsetIso } from "@/lib/calendar/dateLocale";
+import { DiaryEntryCard } from "./DiaryEntryCard";
 import {
-  encryptDiaryBackup,
-  decryptDiaryBackup,
-  downloadBackupFile,
-} from "@/lib/security/diaryBackupCrypto";
+  TacticalSearchInput,
+  FilterPill,
+  BrutalistButton,
+} from "@/components/ui";
 import {
-  Search,
-  X,
+  Clock,
+  CheckCircle2,
   Calendar,
   Star,
-  CheckCircle2,
-  Users,
-  Clock,
   RotateCcw,
-  Download,
-  Upload,
-  ShieldCheck,
-  Check,
-  AlertCircle,
+  Users,
 } from "lucide-react";
 
-interface DiaryScheduleSectionProps {
+export interface DiaryScheduleSectionProps {
   diaryEntries: DiaryEntry[];
   profiles: VesselProfile[];
-  profileDossiers?: Record<string, any>;
+  profileDossiers?: Record<string, Partial<ProfileDossier> | any>;
   favoriteProfileIds: string[];
   isFavoriteProfile: (id: string) => boolean;
   onSelectProfile: (profile: VesselProfile) => void;
@@ -42,14 +41,32 @@ interface DiaryScheduleSectionProps {
   onQuickReview?: (entry: DiaryEntry, satisfaction: DiarySatisfaction) => void;
   onStartDoxyPep?: (entry: DiaryEntry) => void;
   onSendRevancha?: (lover: { profileId: string; codename: string }) => void;
-  onRestoreBackup?: (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, any> }) => void;
+  onRestoreBackup?: (backup: {
+    entries?: DiaryEntry[];
+    dossiers?: Record<string, Partial<ProfileDossier>>;
+  }) => void;
   onScheduleNew: () => void;
   onNavigateToInsights?: () => void;
   averageRating: number;
   respectScore: number;
   language: "es" | "en";
-  t: any;
+  t: TranslationType;
+  defaultStatusFilter?: "all" | "upcoming" | "completed";
 }
+
+const getMonthHeader = (dateStr: string, lang: "es" | "en"): string => {
+  try {
+    const [year, month] = dateStr.split("-").map(Number);
+    const d = new Date(year, month - 1, 1);
+    const raw = d.toLocaleDateString(lang === "es" ? "es-AR" : "en-US", {
+      month: "long",
+      year: "numeric",
+    });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  } catch {
+    return dateStr;
+  }
+};
 
 export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
   diaryEntries,
@@ -74,8 +91,8 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
   respectScore,
   language,
   t,
+  defaultStatusFilter = "all",
 }) => {
-  // Estados de Búsqueda y Filtrado
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilterPreset, setDateFilterPreset] = useState<
     "all" | "7days" | "30days" | "thisYear" | "custom" | "today" | "tomorrow" | "next7days"
@@ -83,129 +100,12 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
   const [customFromDate, setCustomFromDate] = useState("");
   const [customToDate, setCustomToDate] = useState("");
   const [isCustomRangeOpen, setIsCustomRangeOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "completed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "completed">(defaultStatusFilter);
   const [onlyFavoritesFilter, setOnlyFavoritesFilter] = useState<boolean>(false);
   const [minRatingFilter, setMinRatingFilter] = useState<number>(0);
   const [revealedNotes, setRevealedNotes] = useState<Record<string, boolean>>({});
 
-  // Estados del Modal de Respaldo Cifrado Local
-  const [backupModalMode, setBackupModalMode] = useState<"none" | "export" | "import">("none");
-  const [backupPassword, setBackupPassword] = useState("");
-  const [backupStatusMessage, setBackupStatusMessage] = useState<string | null>(null);
-  const [backupErrorMessage, setBackupErrorMessage] = useState<string | null>(null);
-  const [importFileContent, setImportFileContent] = useState<string | null>(null);
-  const [isProcessingBackup, setIsProcessingBackup] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleExportBackup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!backupPassword || backupPassword.trim().length === 0) {
-      setBackupErrorMessage(
-        language === "es"
-          ? "Ingresá una contraseña para proteger el archivo."
-          : "Enter a password to protect the file."
-      );
-      return;
-    }
-
-    try {
-      setIsProcessingBackup(true);
-      setBackupErrorMessage(null);
-
-      const payload = {
-        entries: diaryEntries,
-        dossiers: profileDossiers || {},
-      };
-
-      const envelope = await encryptDiaryBackup(payload, backupPassword);
-      const blob = new Blob([JSON.stringify(envelope, null, 2)], { type: "application/json" });
-      const filename = `vessel-agenda-respaldo-${getLocalTodayIso()}.json`;
-      downloadBackupFile(blob, filename);
-
-      audioEngine.playSubBass(65);
-      setBackupStatusMessage(
-        t.diary.backupSuccess ||
-          (language === "es" ? "Respaldo exportado exitosamente" : "Backup exported successfully")
-      );
-
-      setTimeout(() => {
-        setBackupModalMode("none");
-        setBackupPassword("");
-        setBackupStatusMessage(null);
-      }, 1400);
-    } catch (err: any) {
-      setBackupErrorMessage(
-        err.message || (language === "es" ? "Error al cifrar el respaldo" : "Error encrypting backup")
-      );
-    } finally {
-      setIsProcessingBackup(false);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      setImportFileContent(content);
-      setBackupPassword("");
-      setBackupErrorMessage(null);
-      setBackupStatusMessage(null);
-      setBackupModalMode("import");
-      audioEngine.playPulse();
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  const handleImportBackup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!importFileContent) return;
-    if (!backupPassword || backupPassword.trim().length === 0) {
-      setBackupErrorMessage(
-        language === "es" ? "Ingresá la contraseña del archivo." : "Enter file password."
-      );
-      return;
-    }
-
-    try {
-      setIsProcessingBackup(true);
-      setBackupErrorMessage(null);
-
-      const parsedEnvelope = JSON.parse(importFileContent);
-      const restored = await decryptDiaryBackup(parsedEnvelope, backupPassword);
-
-      if (onRestoreBackup) {
-        onRestoreBackup(restored as any);
-      }
-
-      audioEngine.playSubBass(75);
-      setBackupStatusMessage(
-        t.diary.backupRestoreSuccess ||
-          (language === "es" ? "Respaldo restaurado exitosamente" : "Backup restored successfully")
-      );
-
-      setTimeout(() => {
-        setBackupModalMode("none");
-        setBackupPassword("");
-        setImportFileContent(null);
-        setBackupStatusMessage(null);
-      }, 1400);
-    } catch (err: any) {
-      setBackupErrorMessage(
-        err.message ||
-          (language === "es"
-            ? "Contraseña incorrecta o archivo inválido"
-            : "Invalid password or corrupted file")
-      );
-    } finally {
-      setIsProcessingBackup(false);
-    }
-  };
-
-  // Conteo de sesiones concretadas por persona (para mostrar en cada tarjeta)
+  // Conteo de sesiones concretadas por persona
   const encounterCountByPerson = useMemo(() => {
     const counts: Record<string, number> = {};
     diaryEntries.forEach((entry) => {
@@ -247,7 +147,7 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
     );
   };
 
-  // Filtrado y ordenamiento cronológico inteligente (ascendente en Próximas, descendente en Concretadas)
+  // Filtrado y ordenamiento cronológico
   const filteredAndSortedEntries = useMemo(() => {
     const todayIso = getLocalDaysOffsetIso(0);
     const tomorrowIso = getLocalDaysOffsetIso(1);
@@ -269,7 +169,7 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
           }
         }
 
-        // Filtro por Fechas Locales (UTC-3 seguro: histórico + prospectivo)
+        // Filtro por Fechas Locales
         if (dateFilterPreset === "today") {
           if (entry.date !== todayIso) return false;
         } else if (dateFilterPreset === "tomorrow") {
@@ -298,10 +198,10 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
           const q = searchQuery.toLowerCase();
           const matchCodename = entry.person.codename.toLowerCase().includes(q);
           const matchLocation =
-            entry.location.name.toLowerCase().includes(q) ||
-            (entry.location.address && entry.location.address.toLowerCase().includes(q));
-          const matchNotes = entry.privateNotes.toLowerCase().includes(q);
-          const matchTags = entry.tags.some((t) => t.toLowerCase().includes(q));
+            entry.location?.name?.toLowerCase().includes(q) ||
+            (entry.location?.address && entry.location.address.toLowerCase().includes(q));
+          const matchNotes = entry.privateNotes?.toLowerCase().includes(q);
+          const matchTags = entry.tags?.some((t) => t.toLowerCase().includes(q));
           if (!matchCodename && !matchLocation && !matchNotes && !matchTags) return false;
         }
 
@@ -327,19 +227,84 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
     isFavoriteProfile,
   ]);
 
+  // Agrupamiento cronológico por mes para feed continuo
+  const groupedEntries = useMemo(() => {
+    const groups: { month: string; entries: DiaryEntry[] }[] = [];
+    filteredAndSortedEntries.forEach((entry) => {
+      const monthHeader = getMonthHeader(entry.date, language);
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.month === monthHeader) {
+        lastGroup.entries.push(entry);
+      } else {
+        groups.push({ month: monthHeader, entries: [entry] });
+      }
+    });
+    return groups;
+  }, [filteredAndSortedEntries, language]);
+
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* 1. SELECTOR PRINCIPAL: PRÓXIMAS VS CONCRETADAS & RESUMEN DE REPUTACIÓN */}
-      <div className="bg-obsidian-surface/90 p-2 sm:p-2.5 rounded-2xl border border-white/10 backdrop-blur-md shadow-card-elevation flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-        {/* Interruptor segmentado de Estado (44px Touch Targets) */}
-        <div className="grid grid-cols-3 gap-1 bg-black/60 p-1 rounded-xl border border-white/5">
+      {/* CABECERA UNIFICADA TÁCTICA DEL FEED: TÍTULO, SELECTORES, BUSCADOR Y FILTROS */}
+      <div className="bg-obsidian-surface/90 p-4 sm:p-5 rounded-3xl border border-white/10 backdrop-blur-md shadow-card-elevation space-y-3.5">
+        {/* 1. Fila Superior: Título con Icono + Badge de Conteo + Acceso a Fuego/Karma */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-2xl bg-electricViolet/15 text-electricViolet-glow border border-electricViolet/40 shadow-violet-soft shrink-0">
+              <Clock className="w-4 h-4 text-electricViolet-glow" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-mono font-black text-xs sm:text-sm uppercase tracking-wider text-white">
+                  {t.diary?.tabTimeline || (language === "es" ? "Feed Cronológico" : "Timeline Feed")}
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-electricViolet/20 text-electricViolet-glow border border-electricViolet/40 font-bold">
+                  {filteredAndSortedEntries.length}
+                </span>
+              </div>
+              <p className="text-[10px] text-neutral-400 font-mono truncate">
+                {language === "es"
+                  ? "Historial de encuentros ordenados por mes, con notas y valoraciones"
+                  : "Encounters history grouped by month, with notes & ratings"}
+              </p>
+            </div>
+          </div>
+
+          {/* Acceso Táctico a Fuego / Karma */}
+          {onNavigateToInsights && (
+            <button
+              type="button"
+              onClick={() => {
+                onNavigateToInsights();
+                audioEngine.playPulse();
+              }}
+              title={language === "es" ? "Ver telemetría y valoraciones en Fuego" : "View chemistry and reviews in Fire"}
+              className="flex items-center justify-center gap-2 px-3 py-1.5 min-h-[38px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-electricViolet/30 text-[11px] font-mono transition-all cursor-pointer group shrink-0 active:scale-95"
+            >
+              <div className="flex items-center gap-1 text-amber-300 font-bold">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span>{averageRating.toFixed(1)}</span>
+              </div>
+              <span className="text-neutral-600">//</span>
+              <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{respectScore}% Karma</span>
+              </div>
+              <span className="text-[10px] text-electricViolet-glow font-bold group-hover:underline hidden sm:inline">
+                {language === "es" ? "Fuego ➔" : "Fire ➔"}
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* 2. Fila Intermedia: Selector Segmentado de Estado (Próximas / Concretadas / Todas) */}
+        <div className="grid grid-cols-3 gap-1 bg-black/60 p-1 rounded-2xl border border-white/5">
           <button
             type="button"
             onClick={() => {
               setStatusFilter("upcoming");
               audioEngine.playPulse();
             }}
-            className={`py-2 px-3 min-h-[44px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-2.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               statusFilter === "upcoming"
                 ? "bg-electricViolet text-white shadow-violet-soft font-black"
                 : "text-neutral-400 hover:text-white"
@@ -362,7 +327,7 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
               setStatusFilter("completed");
               audioEngine.playPulse();
             }}
-            className={`py-2 px-3 min-h-[44px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-2.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               statusFilter === "completed"
                 ? "bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] font-black"
                 : "text-neutral-400 hover:text-white"
@@ -385,7 +350,7 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
               setStatusFilter("all");
               audioEngine.playPulse();
             }}
-            className={`py-2 px-3 min-h-[44px] rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`py-2 px-2.5 min-h-[44px] rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               statusFilter === "all"
                 ? "bg-electricViolet text-white shadow-violet-soft font-black"
                 : "text-neutral-400 hover:text-white"
@@ -403,275 +368,97 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
           </button>
         </div>
 
-        {/* Resumen Compacto de Reputación y Respaldo Local Cifrado */}
-        <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-          <button
-            type="button"
-            data-testid="diary-export-backup-btn"
-            onClick={() => {
-              setBackupPassword("");
-              setBackupErrorMessage(null);
-              setBackupStatusMessage(null);
-              setBackupModalMode("export");
-              audioEngine.playPulse();
-            }}
-            className="px-3 py-2 min-h-[40px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-500/40 text-[11px] font-mono font-bold text-neutral-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-            title={language === "es" ? "Exportar respaldo cifrado AES-GCM" : "Export AES-GCM encrypted backup"}
-          >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{t.diary.backupExportBtn || (language === "es" ? "Exportar Respaldo 🔒" : "Export Backup 🔒")}</span>
-          </button>
+        {/* 3. Fila de Buscador Táctico */}
+        <TacticalSearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t.diary.filterSearchPlaceholder}
+          ariaLabel={t.diary.filterSearchPlaceholder}
+        />
 
-          <button
-            type="button"
-            data-testid="diary-import-backup-btn"
-            onClick={() => {
-              setBackupPassword("");
-              setBackupErrorMessage(null);
-              setBackupStatusMessage(null);
-              fileInputRef.current?.click();
-            }}
-            className="px-3 py-2 min-h-[40px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-electricViolet/40 text-[11px] font-mono font-bold text-neutral-300 hover:text-white flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
-            title={language === "es" ? "Restaurar respaldo cifrado" : "Restore encrypted backup"}
-          >
-            <Upload className="w-3.5 h-3.5 text-electricViolet-glow" />
-            <span>{t.diary.backupImportBtn || (language === "es" ? "Restaurar Respaldo 📥" : "Restore Backup 📥")}</span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={handleFileSelect}
-          />
-
-          {onNavigateToInsights && (
-            <button
-              type="button"
-              onClick={() => {
-                onNavigateToInsights();
-                audioEngine.playPulse();
-              }}
-              title={language === "es" ? "Ver telemetría y valoraciones en Métricas" : "View telemetry and reviews in Insights"}
-              className="flex items-center justify-center sm:justify-end gap-2 px-3 py-2 min-h-[40px] rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-electricViolet/30 text-[11px] font-mono transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-1 text-amber-300 font-bold">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                <span>{averageRating.toFixed(1)}</span>
-              </div>
-              <span className="text-neutral-600">//</span>
-              <div className="flex items-center gap-1 text-emerald-400 font-bold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{respectScore}% Karma</span>
-              </div>
-              <span className="text-[10px] text-electricViolet-glow font-bold group-hover:underline">
-                {language === "es" ? "Métricas ➔" : "Insights ➔"}
-              </span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 2. BARRA DE BÚSQUEDA Y FILTROS TÁCTICOS */}
-      <div className="space-y-3 bg-obsidian-surface/80 p-3 sm:p-4 rounded-3xl border border-white/10 backdrop-blur-md shadow-card-elevation">
-        {/* Buscador */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t.diary.filterSearchPlaceholder}
-            className="w-full pl-11 pr-10 py-2.5 rounded-2xl bg-black/60 border border-white/10 text-white text-xs placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus:ring-1 focus:ring-electricViolet font-mono"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Chips de Filtro Rápido (Ergonomía 44px: Prospectivos en Próximas / Históricos en Concretadas y Todas) */}
+        {/* 4. Chips de Filtro Rápido con FilterPill */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          <button
-            type="button"
-            onClick={() => {
-              setDateFilterPreset("all");
-              audioEngine.playPulse();
-            }}
-            className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-              dateFilterPreset === "all"
-                ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            {t.diary.filterAll}
-          </button>
+          <FilterPill
+            label={t.diary.filterAll}
+            active={dateFilterPreset === "all"}
+            variant="violet"
+            onClick={() => setDateFilterPreset("all")}
+          />
 
           {statusFilter === "upcoming" ? (
             <>
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("today");
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "today"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                ⚡ {language === "es" ? "Hoy" : "Today"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("tomorrow");
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "tomorrow"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                📅 {language === "es" ? "Mañana" : "Tomorrow"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("next7days");
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "next7days"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                🗓️ {language === "es" ? "Próximos 7 días" : "Next 7 Days"}
-              </button>
+              <FilterPill
+                label={`⚡ ${language === "es" ? "Hoy" : "Today"}`}
+                active={dateFilterPreset === "today"}
+                variant="violet"
+                onClick={() => setDateFilterPreset("today")}
+              />
+              <FilterPill
+                label={`📅 ${language === "es" ? "Mañana" : "Tomorrow"}`}
+                active={dateFilterPreset === "tomorrow"}
+                variant="violet"
+                onClick={() => setDateFilterPreset("tomorrow")}
+              />
+              <FilterPill
+                label={`🗓️ ${language === "es" ? "Próximos 7 días" : "Next 7 Days"}`}
+                active={dateFilterPreset === "next7days"}
+                variant="violet"
+                onClick={() => setDateFilterPreset("next7days")}
+              />
             </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("7days");
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "7days"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {t.diary.filter7Days}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("30days");
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "30days"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {t.diary.filter30Days}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("thisYear");
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "thisYear"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {t.diary.filterThisYear}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setDateFilterPreset("custom");
-                  setIsCustomRangeOpen(!isCustomRangeOpen);
-                  audioEngine.playPulse();
-                }}
-                className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-                  dateFilterPreset === "custom"
-                    ? "bg-electricViolet text-white border-electricViolet shadow-violet-soft font-bold"
-                    : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{t.diary.filterCustomRange}</span>
-              </button>
+              <FilterPill
+                label={t.diary.filter7Days}
+                active={dateFilterPreset === "7days"}
+                variant="violet"
+                onClick={() => setDateFilterPreset("7days")}
+              />
+              <FilterPill
+                label={t.diary.filter30Days}
+                active={dateFilterPreset === "30days"}
+                variant="violet"
+                onClick={() => setDateFilterPreset("30days")}
+              />
+              <FilterPill
+                label={t.diary.filterThisYear}
+                active={dateFilterPreset === "thisYear"}
+                variant="violet"
+                onClick={() => setDateFilterPreset("thisYear")}
+              />
             </>
           )}
 
-          <div className="h-5 w-px bg-white/10 mx-0.5 flex-shrink-0" />
+          <FilterPill
+            label={t.diary.filterCustomRange}
+            active={dateFilterPreset === "custom" || isCustomRangeOpen}
+            variant="violet"
+            onClick={() => {
+              setIsCustomRangeOpen(!isCustomRangeOpen);
+              setDateFilterPreset("custom");
+            }}
+          />
 
-          {/* Filtro Solo Favoritos */}
-          <button
-            type="button"
-            data-testid="diary-filter-only-favorites"
+          <FilterPill
+            label={language === "es" ? "Solo Favoritos" : "Favorites Only"}
+            active={onlyFavoritesFilter}
+            variant="amber"
             aria-pressed={onlyFavoritesFilter}
-            onClick={() => {
-              setOnlyFavoritesFilter(!onlyFavoritesFilter);
-              audioEngine.playPulse();
-            }}
-            className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border flex items-center gap-1.5 cursor-pointer active:scale-95 ${
-              onlyFavoritesFilter
-                ? "bg-amber-500/25 border-amber-400 text-amber-300 font-black shadow-[0_0_12px_rgba(251,191,36,0.3)]"
-                : "bg-black/40 border-white/10 text-neutral-400 hover:text-amber-300 hover:bg-white/5"
-            }`}
-          >
-            <Star className={`w-3.5 h-3.5 ${onlyFavoritesFilter ? "fill-amber-400 text-amber-400" : "text-amber-400/80"}`} />
-            <span>{t.diary.filterFavoritesOnly || (language === "es" ? "Solo Favoritos" : "Favorites Only")}</span>
-            {favoriteProfileIds.length > 0 && (
-              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono bg-white/10 text-neutral-300">
-                {favoriteProfileIds.length}
-              </span>
-            )}
-          </button>
+            data-testid="diary-filter-only-favorites"
+            onClick={() => setOnlyFavoritesFilter(!onlyFavoritesFilter)}
+          />
 
-          {/* Filtro Mejor Valorados 5★ */}
-          <button
-            type="button"
-            onClick={() => {
-              setMinRatingFilter(minRatingFilter === 5 ? 0 : 5);
-              audioEngine.playPulse();
-            }}
-            className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-mono font-bold whitespace-nowrap transition-all border flex items-center gap-1 cursor-pointer active:scale-95 ${
-              minRatingFilter === 5
-                ? "bg-purple-950/50 border-purple-500/50 text-white font-bold shadow-violet-soft"
-                : "bg-black/40 border-white/10 text-neutral-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-            <span>{t.diary.filterTopRated}</span>
-          </button>
+          <FilterPill
+            label="5★"
+            active={minRatingFilter === 5}
+            variant="amber"
+            onClick={() => setMinRatingFilter(minRatingFilter === 5 ? 0 : 5)}
+          />
         </div>
 
-        {/* Expander de Fechas Personalizadas */}
-        {(dateFilterPreset === "custom" || isCustomRangeOpen) && (
-          <div className="pt-2 border-t border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end animate-in fade-in">
+        {/* Panel de Rango Personalizado */}
+        {isCustomRangeOpen && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 bg-black/50 rounded-2xl border border-white/5 animate-in fade-in">
             <div className="space-y-1">
               <label className="text-[10px] font-mono text-neutral-400 uppercase font-bold">
                 {t.diary.filterFromDate}:
@@ -697,40 +484,43 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
             </div>
 
             {(customFromDate || customToDate) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomFromDate("");
-                  setCustomToDate("");
-                  setDateFilterPreset("all");
-                  audioEngine.playPulse();
-                }}
-                className="py-2 px-3 min-h-[44px] bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/10 rounded-xl text-xs font-mono font-bold transition-colors cursor-pointer"
-              >
-                {t.diary.filterClearRange}
-              </button>
+              <div className="flex items-end">
+                <BrutalistButton
+                  variant="ghost"
+                  size="default"
+                  onClick={() => {
+                    setCustomFromDate("");
+                    setCustomToDate("");
+                    setDateFilterPreset("all");
+                    audioEngine.playPulse();
+                  }}
+                  className="w-full"
+                >
+                  {t.diary.filterClearRange}
+                </BrutalistButton>
+              </div>
             )}
           </div>
         )}
 
-        {/* Contador de Resultados */}
-        <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-0.5">
+        {/* 5. Contador de Resultados */}
+        <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-1 border-t border-white/5">
           <span>
-            {t.diary.showingResults} <strong className="text-white">{filteredAndSortedEntries.length}</strong> {t.diary.ofTotal} {diaryEntries.length} {t.diary.encountersLabel}
+            {t.diary.showingResults} <strong className="text-white font-black">{filteredAndSortedEntries.length}</strong> {t.diary.ofTotal} {diaryEntries.length} {t.diary.encountersLabel}
           </span>
-          <span className="text-[10px] text-neutral-500 uppercase tracking-wider">
+          <span className="text-[10px] text-neutral-500 uppercase tracking-wider hidden sm:inline">
             {statusFilter === "upcoming"
               ? language === "es"
                 ? "Orden: Próximas más cercanas primero"
                 : "Sort: Soonest first"
               : language === "es"
-              ? "Orden: Más recientes primero"
-              : "Sort: Newest first"}
+              ? "Orden: Cronológico continuo agrupado por mes"
+              : "Sort: Chronological feed by month"}
           </span>
         </div>
       </div>
 
-      {/* 3. LISTADO DE CITAS (EMPTY STATES DIFERENCIADOS) */}
+      {/* 3. FEED CRONOLÓGICO CONTINUO DE CITAS */}
       {filteredAndSortedEntries.length === 0 ? (
         <div className="bg-obsidian-surface/80 p-8 sm:p-12 rounded-3xl border border-white/10 text-center space-y-4 shadow-card-elevation backdrop-blur-md">
           <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-electricViolet-glow mx-auto">
@@ -750,13 +540,14 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
                     : "Schedule an upcoming appointment or log a past encounter with encrypted notes and photos."}
                 </p>
               </div>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="primary"
+                size="default"
                 onClick={onScheduleNew}
-                className="px-5 py-2.5 min-h-[44px] bg-electricViolet text-white hover:bg-electricViolet-glow font-bold rounded-2xl text-xs font-mono shadow-violet-soft transition-all cursor-pointer active:scale-95"
+                className="mx-auto"
               >
                 + {t.diary.scheduleBtn}
-              </button>
+              </BrutalistButton>
             </>
           ) : (
             <>
@@ -769,177 +560,94 @@ export const DiaryScheduleSection: React.FC<DiaryScheduleSectionProps> = ({
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2.5 flex-wrap">
-                <button
-                  type="button"
+                <BrutalistButton
+                  variant="ghost"
+                  size="default"
                   onClick={resetAllFilters}
-                  className="px-4 py-2.5 min-h-[44px] bg-white/10 hover:bg-white/15 text-white border border-white/15 font-bold rounded-2xl text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{language === "es" ? `Restablecer filtros (${diaryEntries.length})` : `Reset filters (${diaryEntries.length})`}</span>
-                </button>
-                <button
-                  type="button"
+                  <span>
+                    {language === "es"
+                      ? `Restablecer filtros (${diaryEntries.length})`
+                      : `Reset filters (${diaryEntries.length})`}
+                  </span>
+                </BrutalistButton>
+                <BrutalistButton
+                  variant="primary"
+                  size="default"
                   onClick={onScheduleNew}
-                  className="px-5 py-2.5 min-h-[44px] bg-electricViolet text-white hover:bg-electricViolet-glow font-bold rounded-2xl text-xs font-mono shadow-violet-soft transition-all cursor-pointer active:scale-95"
                 >
                   + {t.diary.scheduleBtn}
-                </button>
+                </BrutalistButton>
               </div>
             </>
           )}
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredAndSortedEntries.map((entry) => {
-            const linkedProfile = getLinkedProfile(entry);
-            const isRevealed = !!revealedNotes[entry.id];
-            const pid = entry.person.profileId || `ext-${entry.person.codename.toLowerCase()}`;
-            const dossier = profileDossiers?.[pid];
-            const photosCount =
-              dossier?.sharedPhotos?.length ||
-              entry.person.sharedPhotos?.length ||
-              entry.attachedPhotos?.length ||
-              0;
-            const primaryPhotoUrl =
-              dossier?.sharedPhotos?.[0] ||
-              entry.person.avatarUrl ||
-              linkedProfile?.avatarUrl;
-            const intimateBadges: string[] = dossier?.badges || [];
-            const encounterCount = encounterCountByPerson[pid] || 0;
-
-            return (
-              <DiaryEntryCard
-                key={entry.id}
-                entry={entry}
-                linkedProfile={linkedProfile}
-                isRevealed={isRevealed}
-                onToggleReveal={toggleNoteReveal}
-                onInspectExternal={onInspectExternal}
-                onOpenDossier={onOpenDossier}
-                onSelectProfile={onSelectProfile}
-                onOpenChat={onOpenChat}
-                onEdit={onEditEntry}
-                onDelete={onDeleteEntry}
-                onCompleteDate={onCompleteEntry}
-                onQuickReview={onQuickReview}
-                onStartDoxyPep={onStartDoxyPep}
-                onSendRevancha={onSendRevancha}
-                language={language}
-                t={t}
-                photosCount={photosCount}
-                intimateBadges={intimateBadges}
-                encounterCount={encounterCount}
-                primaryPhotoUrl={primaryPhotoUrl}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {/* MODAL DE RESPALDO CIFRADO AES-GCM */}
-      {backupModalMode !== "none" && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
-        >
-          <div className="bg-obsidian-surface border border-white/15 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-electricViolet/15 text-electricViolet-glow">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <h3 className="font-mono font-bold text-white text-sm uppercase">
-                  {backupModalMode === "export"
-                    ? language === "es"
-                      ? "Exportar Respaldo Cifrado"
-                      : "Export Encrypted Backup"
-                    : language === "es"
-                    ? "Restaurar Respaldo Cifrado"
-                    : "Restore Encrypted Backup"}
-                </h3>
+        <div className="space-y-6">
+          {groupedEntries.map((group) => (
+            <div key={group.month} className="space-y-3">
+              {/* Encabezado del mes para feed cronológico continuo */}
+              <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="font-mono text-xs font-bold uppercase tracking-wider text-neutral-300 px-3 py-1 rounded-full bg-black/80 border border-white/15 flex items-center gap-1.5 shadow-sm">
+                  <Calendar className="w-3.5 h-3.5 text-electricViolet-glow" />
+                  <span>{group.month}</span>
+                  <span className="text-[10px] text-neutral-500 font-mono">
+                    ({group.entries.length})
+                  </span>
+                </span>
+                <div className="h-px flex-1 bg-white/10" />
               </div>
-              <button
-                type="button"
-                onClick={() => setBackupModalMode("none")}
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+
+              {/* Tarjetas del mes */}
+              <div className="space-y-3">
+                {group.entries.map((entry) => {
+                  const linkedProfile = getLinkedProfile(entry);
+                  const isRevealed = !!revealedNotes[entry.id];
+                  const pid = entry.person.profileId || `ext-${entry.person.codename.toLowerCase()}`;
+                  const dossier = profileDossiers?.[pid];
+                  const photosCount =
+                    dossier?.sharedPhotos?.length ||
+                    entry.person.sharedPhotos?.length ||
+                    entry.attachedPhotos?.length ||
+                    0;
+                  const primaryPhotoUrl =
+                    dossier?.sharedPhotos?.[0] ||
+                    entry.person.avatarUrl ||
+                    linkedProfile?.avatarUrl;
+                  const intimateBadges: string[] = dossier?.badges || [];
+                  const encounterCount = encounterCountByPerson[pid] || 0;
+
+                  return (
+                    <DiaryEntryCard
+                      key={entry.id}
+                      entry={entry}
+                      linkedProfile={linkedProfile}
+                      isRevealed={isRevealed}
+                      onToggleReveal={toggleNoteReveal}
+                      onInspectExternal={onInspectExternal}
+                      onOpenDossier={onOpenDossier}
+                      onSelectProfile={onSelectProfile}
+                      onOpenChat={onOpenChat}
+                      onEdit={onEditEntry}
+                      onDelete={onDeleteEntry}
+                      onCompleteDate={onCompleteEntry}
+                      onQuickReview={onQuickReview}
+                      onStartDoxyPep={onStartDoxyPep}
+                      onSendRevancha={onSendRevancha}
+                      language={language}
+                      t={t}
+                      photosCount={photosCount}
+                      intimateBadges={intimateBadges}
+                      encounterCount={encounterCount}
+                      primaryPhotoUrl={primaryPhotoUrl}
+                    />
+                  );
+                })}
+              </div>
             </div>
-
-            <form
-              onSubmit={backupModalMode === "export" ? handleExportBackup : handleImportBackup}
-              className="space-y-4"
-            >
-              <p className="text-xs text-neutral-400 font-sans leading-relaxed">
-                {backupModalMode === "export"
-                  ? language === "es"
-                    ? "Tu agenda, fichas íntimas y fotos se cifrarán localmente con AES-GCM 256-bit usando la clave que elijas."
-                    : "Your appointments, lover files, and photos will be encrypted locally with 256-bit AES-GCM using your password."
-                  : language === "es"
-                  ? "Ingresá la contraseña con la que protegiste tu archivo de respaldo para descifrarlo y restaurar tus registros."
-                  : "Enter the password used to protect your backup file to decrypt and restore your entries."}
-              </p>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-mono font-bold text-neutral-300 uppercase">
-                  {language === "es" ? "Contraseña de Cifrado" : "Encryption Password"}
-                </label>
-                <input
-                  type="password"
-                  data-testid="diary-backup-password-input"
-                  value={backupPassword}
-                  onChange={(e) => setBackupPassword(e.target.value)}
-                  placeholder={language === "es" ? "Mínimo 4 caracteres..." : "Enter password..."}
-                  className="w-full px-4 py-3 rounded-2xl bg-black/80 border border-white/15 text-white font-mono text-xs focus:border-electricViolet focus:outline-none"
-                  autoFocus
-                />
-              </div>
-
-              {backupErrorMessage && (
-                <div className="p-3 rounded-2xl bg-red-950/60 border border-red-500/40 text-red-300 text-xs font-mono flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{backupErrorMessage}</span>
-                </div>
-              )}
-
-              {backupStatusMessage && (
-                <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-mono flex items-center gap-2">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span>{backupStatusMessage}</span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setBackupModalMode("none")}
-                  className="flex-1 py-2.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 font-mono font-bold text-xs uppercase cursor-pointer"
-                >
-                  {language === "es" ? "Cancelar" : "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  data-testid="diary-backup-submit-btn"
-                  disabled={isProcessingBackup}
-                  className="flex-1 py-2.5 min-h-[44px] rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase cursor-pointer shadow-violet-soft disabled:opacity-50"
-                >
-                  {isProcessingBackup
-                    ? language === "es"
-                      ? "Procesando..."
-                      : "Processing..."
-                    : backupModalMode === "export"
-                    ? language === "es"
-                      ? "Cifrar y Descargar"
-                      : "Encrypt & Download"
-                    : language === "es"
-                    ? "Descifrar y Restaurar"
-                    : "Decrypt & Restore"}
-                </button>
-              </div>
-            </form>
-          </div>
+          ))}
         </div>
       )}
     </div>

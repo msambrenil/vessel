@@ -28,8 +28,8 @@ const mockProfiles = [
   },
 ];
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     profiles: mockProfiles,
     myProfile: {
       id: "my-user",
@@ -46,8 +46,18 @@ vi.mock("@/context/VesselContext", () => ({
     favoriteProfileIds: ["vessel-01"],
     isFavoriteProfile: (id: string) => id === "vessel-01",
     chatMessages: {},
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {

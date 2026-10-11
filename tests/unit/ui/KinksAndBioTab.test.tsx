@@ -33,8 +33,8 @@ const mockMyProfile = {
   energyVibes: ["fogoso" as const],
 };
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     myProfile: mockMyProfile,
     myOnTheClock: { isActive: false },
     myKinkMatrix: mockKinkMatrix,
@@ -42,8 +42,18 @@ vi.mock("@/context/VesselContext", () => ({
     updateMyProfile: mockUpdateMyProfile,
     language: "es",
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {
@@ -69,19 +79,53 @@ describe("BioTab — Barra Flotante de Guardado Reactivo (Single Source of Truth
     expect(screen.queryByRole("button", { name: /descartar/i })).not.toBeInTheDocument();
   });
 
-  it("la barra flotante ('Guardar Ahora' / 'Descartar') se activa automáticamente al modificar un campo (isDirty: true)", () => {
+  it("la barra flotante ('Guardar cambios' / 'Descartar') se activa automáticamente al modificar un campo (isDirty: true)", () => {
     render(<BioTab />);
-    expect(screen.queryByRole("button", { name: /guardar ahora/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /guardar cambios/i })).not.toBeInTheDocument();
 
     // Modificar usuario de X / Twitter
     const twitterInput = screen.getByDisplayValue("lucas_ba");
     fireEvent.change(twitterInput, { target: { value: "lucas_night" } });
 
-    const saveNowBtn = screen.getByRole("button", { name: /guardar ahora/i });
+    const saveNowBtn = screen.getByRole("button", { name: /guardar cambios/i });
     const discardBtn = screen.getByRole("button", { name: /descartar/i });
     expect(saveNowBtn).toBeInTheDocument();
     expect(discardBtn).toBeInTheDocument();
     expect(saveNowBtn.className).toContain("shadow-violet-soft");
+  });
+
+  it("renderiza el bloque de roles que busca para encuentros con opción de limpiar filtro", () => {
+    render(<BioTab />);
+    expect(screen.getByText(/roles que buscás para encuentros/i)).toBeInTheDocument();
+    expect(screen.getByText(/✓ abierto a todos/i)).toBeInTheDocument();
+  });
+
+  it("renderiza el campo de teléfono celular y aísla preferencias de sistema fuera de la ficha", () => {
+    render(<BioTab />);
+    expect(screen.getByLabelText(/teléfono celular/i)).toBeInTheDocument();
+    expect(screen.queryByText(/preferencias de la aplicación/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/idioma de interfaz/i)).not.toBeInTheDocument();
+  });
+
+  it("renderiza chips 1-tap de contextura física completa sin dropdown duplicado", () => {
+    render(<BioTab />);
+    expect(screen.getByText(/contextura física \(1-tap\)/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🏃 Atlético/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /💪 Grandote/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /⚡ Flaco/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🐻 Oso/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🐺 Peludo/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🧔 Maduro/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/contextura general/i)).not.toBeInTheDocument();
+  });
+
+  it("renderiza micro-pills con íconos para roles, intenciones y fantasías", () => {
+    render(<BioTab />);
+    expect(screen.getByRole("button", { name: /⚡ Activo/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🔄 Versa/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🔥 Coger ya/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🍻 Birra \/ Chill/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /🔥 Al palo/i })).toBeInTheDocument();
   });
 });
 

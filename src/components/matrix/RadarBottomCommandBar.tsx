@@ -16,7 +16,6 @@ import {
 import { IntentHubSelector } from "./IntentHubSelector";
 import {
   Search,
-  SlidersHorizontal,
   RotateCcw,
   Home,
   ShieldCheck,
@@ -39,7 +38,6 @@ import {
 import {
   ROLE_OPTIONS,
   KINK_CATALOG,
-  INTENSITY_LABELS,
 } from "@/data/kinkCatalog";
 import { ENERGY_VIBE_CATALOG } from "@/data/energyCatalog";
 import { SUBSTANCE_ATMOSPHERE_CATALOG } from "@/data/substanceCatalog";
@@ -57,6 +55,7 @@ export interface RadarBottomCommandBarProps {
   placesSortBy?: "distance" | "rating" | "activity";
   onPlacesSortByChange?: (sort: "distance" | "rating" | "activity") => void;
   className?: string;
+  hidePeekBar?: boolean;
 }
 
 export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
@@ -70,6 +69,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
   placesSortBy: propPlacesSortBy = "distance",
   onPlacesSortByChange,
   className = "",
+  hidePeekBar = false,
 }) => {
   const radarContext = useRadarMatrix();
   const {
@@ -91,8 +91,8 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>(filters.searchQuery);
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState<boolean>(false);
   const [kinkSearchQuery, setKinkSearchQuery] = useState<string>("");
+  const [isKinksExpanded, setIsKinksExpanded] = useState<boolean>(filters.selectedKinks.length > 0);
   const [, startTransition] = useTransition();
 
   // Sort state handling (prop with local fallback)
@@ -213,14 +213,14 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
   };
 
   const getIntentTitle = () => {
-    if (matrixTab === "places") return language === "es" ? "Boliches & Lugares" : "Hotspots & Places";
+    if (matrixTab === "places") return language === "es" ? "Boliches & Joda" : "Spots & Parties";
     if (operatingIntent === "now") return language === "es" ? "Pinta ya" : "Ready Now";
     if (operatingIntent === "kink") return language === "es" ? "Morbos" : "Kinks";
     if (operatingIntent === "stealth") return language === "es" ? "Discreto" : "Stealth";
     return language === "es" ? "Radar Activo" : "Active Radar";
   };
 
-  // Group kinks into 3 tribes for advanced section
+  // Group kinks into 3 tribes for direct kinks section
   const gearKinks = KINK_CATALOG.filter((k) => k.category === "gear");
   const dynamicKinks = KINK_CATALOG.filter(
     (k) => k.category === "dynamic" || k.category === "intensity"
@@ -229,24 +229,20 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
     (k) => k.category === "fetish" || k.category === "scene"
   );
 
-  const advancedCount =
-    filters.selectedKinks.length +
-    (filters.substanceAtmospheres?.length || 0) +
-    (filters.maxDistanceKm < 20 ? 1 : 0) +
-    (filters.minIntensity > 1 ? 1 : 0);
-
-  const tempoList = [
-    { lvl: 1, emoji: "☕", label: INTENSITY_LABELS[1]?.label || "Tranqui" },
-    { lvl: 2, emoji: "⚡", label: INTENSITY_LABELS[2]?.label || "Al hueso" },
-    { lvl: 3, emoji: "🔥", label: INTENSITY_LABELS[3]?.label || "Picante" },
-    { lvl: 4, emoji: "⛓️", label: INTENSITY_LABELS[4]?.label || "Extremo" },
-  ];
+  const isSheetOpen = isExpanded || Boolean(radarContext.isFilterDrawerOpen);
+  const handleSheetChange = (nextState: boolean) => {
+    setIsExpanded(nextState);
+    if (setIsFilterDrawerOpen) {
+      setIsFilterDrawerOpen(nextState);
+    }
+  };
 
   return (
     <TacticalBottomSheet
-      isExpanded={isExpanded}
-      onExpandedChange={setIsExpanded}
+      isExpanded={isSheetOpen}
+      onExpandedChange={handleSheetChange}
       fullscreen={true}
+      hidePeekBar={hidePeekBar}
       title={getIntentTitle()}
       badge={
         activeFiltersCount > 0 && matrixTab === "people" ? (
@@ -285,7 +281,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
             size="default"
             onClick={() => {
               audioEngine.playPulse();
-              setIsExpanded(false);
+              handleSheetChange(false);
             }}
             className="w-full text-xs uppercase tracking-wider"
           >
@@ -306,17 +302,20 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
         </div>
       }
     >
-      <div className="space-y-5 pb-6 overflow-x-hidden">
+      <div className="space-y-4 pb-8 overflow-x-hidden">
         {/* =========================================================
-            BLOQUE 1: SINTONÍA & INTENCIÓN OPERATIVA
+            BLOQUE SINTONÍA: ¿QUÉ PINTA HOY? (Sintonía e Intención)
             ========================================================= */}
-        <section aria-label="Sintonía e Intención Operativa" className="space-y-1.5">
+        <section
+          aria-label="Sintonía e Intención"
+          className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+        >
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-              <span>⚡</span>
-              <span>{language === "es" ? "1. Sintonía Activa" : "1. Active Intent"}</span>
+            <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+              <span className="text-sm">⚡</span>
+              <span>{language === "es" ? "Sintonía // ¿Qué pinta hoy?" : "Operating Intent"}</span>
             </span>
-            <span className="text-[9.5px] font-mono text-neutral-500">
+            <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
               {language === "es" ? "Modo del radar" : "Radar mode"}
             </span>
           </div>
@@ -324,123 +323,142 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
         </section>
 
         {/* =========================================================
-            PESTAÑA PERSONAS: BLOQUES 2 A 7
+            PESTAÑA PERSONAS: BLOQUES 1 A 6
             ========================================================= */}
         {matrixTab === "people" ? (
           <>
-            {/* BLOQUE 2: BÚSQUEDA RÁPIDA & MODO VIAJERO */}
-            <section aria-label="Búsqueda Rápida" className="space-y-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <Search className="w-3 h-3 text-electricViolet" />
-                <span>{language === "es" ? "2. Búsqueda Táctica" : "2. Tactical Search"}</span>
-              </span>
+            {/* BÚSQUEDA RÁPIDA POR ALIAS, ROL O MORBOS */}
+            <div className="w-full">
+              <TacticalSearchInput
+                testId="people-search-input"
+                value={searchValue}
+                onChange={handleSearchChange}
+                placeholder={t.filters?.searchPlaceholder || (language === "es" ? "Buscar por rol, morbos, alias..." : "Search by role, kinks, alias...")}
+                ariaLabel={t.filters?.searchPlaceholder || "Buscar por rol, morbos, alias..."}
+                onClear={() => {
+                  startTransition(() => {
+                    setFilters((prev) => ({ ...prev, searchQuery: "" }));
+                  });
+                }}
+              />
+            </div>
 
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <TacticalSearchInput
-                    testId="people-search-input"
-                    value={searchValue}
-                    onChange={handleSearchChange}
-                    placeholder={t.filters?.searchPlaceholder || "Buscar por rol, morbos, alias..."}
-                    ariaLabel={t.filters?.searchPlaceholder || "Buscar por rol, morbos, alias..."}
-                    onClear={() => {
-                      startTransition(() => {
-                        setFilters((prev) => ({ ...prev, searchQuery: "" }));
-                      });
-                    }}
-                  />
-                </div>
-
-                {/* Modo Viajero */}
-                <button
-                  type="button"
-                  data-testid="people-travel-mode-button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    openTravelModal();
-                  }}
-                  aria-label={travelMode.isActive ? `Modo Viajero: ${travelMode.cityName}` : "Modo Viajero"}
-                  title={
-                    travelMode.isActive
-                      ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country})`
-                      : "Simular ubicación en otra ciudad"
-                  }
-                  className={`px-3 min-h-[38px] rounded-xl flex items-center justify-center gap-1.5 font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
-                    travelMode.isActive
-                      ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow animate-pulse font-black"
-                      : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <Plane className={`w-3.5 h-3.5 ${travelMode.isActive ? "text-white" : "text-electricViolet-glow"}`} />
-                  <span className="truncate max-w-[76px]">
-                    {travelMode.isActive ? travelMode.cityName : (language === "es" ? "Viajero" : "Travel")}
-                  </span>
-                </button>
-
-                {/* Botón de acceso / sincronización a Filtros Avanzados */}
-                <button
-                  type="button"
-                  data-testid="filter-toggle-button"
-                  onClick={() => {
-                    audioEngine.playPulse();
-                    setIsFilterDrawerOpen(true);
-                    setIsAdvancedOpen(true);
-                  }}
-                  aria-label={t.filters?.title || "Filtros Avanzados"}
-                  title="Afinar fetiches y parámetros avanzados"
-                  className={`px-3 min-h-[38px] flex items-center justify-center gap-1.5 rounded-xl border transition-all cursor-pointer text-xs font-mono font-bold active:scale-95 flex-shrink-0 ${
-                    advancedCount > 0
-                      ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow"
-                      : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10"
-                  }`}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5 stroke-[2.2]" />
-                  <span className="hidden sm:inline uppercase text-[10px]">
-                    {language === "es" ? "Avanzados" : "Advanced"}
-                  </span>
-                  {advancedCount > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-bloodNeon text-white text-[9px] font-mono font-black flex items-center justify-center shadow-blood-glow">
-                      {advancedCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </section>
-
-            {/* BLOQUE 3: ORDEN DE VISUALIZACIÓN (Cero scroll horizontal) */}
-            <section aria-label="Criterio de Ordenamiento" className="space-y-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <span>📍</span>
-                <span>{language === "es" ? "3. Criterio de Orden" : "3. Sort Priority"}</span>
-              </span>
-              <div className="w-full">
-                <SortSegmentedControl
-                  value={sortBy}
-                  onChange={setSortBy}
-                  className="w-full justify-between"
-                  options={[
-                    { id: "distance", label: language === "es" ? "Cerca" : "Dist", icon: "📍" },
-                    { id: "recent", label: language === "es" ? "On-Line" : "Online", icon: "⚡" },
-                    { id: "affinity", label: language === "es" ? "Afinidad" : "Match", icon: "🔥" },
-                  ]}
-                />
-              </div>
-            </section>
-
-            {/* BLOQUE 4: CONFIANZA & LOGÍSTICA RÁPIDA (Grid 2-col, Cero scroll horizontal) */}
-            <section aria-label="Confianza y Logística Rápida" className="space-y-2">
+            {/* =========================================================
+                BLOQUE 1: ROL & POSICIÓN
+                ========================================================= */}
+            <section
+              aria-label="Rol Táctico"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{language === "es" ? "4. Confianza & Logística Rápida" : "4. Trust & Quick Logistics"}</span>
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <span>👥</span>
+                  <span>{language === "es" ? "1. Rol y posición" : "1. Role & Position"}</span>
                 </span>
-                <span className="text-[9.5px] font-mono text-neutral-500">
-                  {language === "es" ? "Opciones directas" : "Direct options"}
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
+                  {language === "es" ? "Dinámica sexual" : "Sexual dynamic"}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {ROLE_OPTIONS.map((role) => (
+                  <FilterPill
+                    key={role}
+                    label={getRoleDisplayLabel(role as RoleType, language)}
+                    active={filters.roles.includes(role as RoleType)}
+                    variant="violet"
+                    onClick={() => toggleRole(role as RoleType)}
+                    className="min-h-[44px] px-3.5 py-2.5 text-xs font-bold"
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* =========================================================
+                BLOQUE 2: DISTANCIA MÁXIMA & MODO VIAJERO
+                ========================================================= */}
+            <section
+              aria-label="Distancia y Modo Viajero"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <span>📏</span>
+                  <span>{language === "es" ? "2. Distancia y viaje" : "2. Distance & Travel"}</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-electricViolet-glow font-mono px-2 py-0.5 rounded-full bg-electricViolet/15 border border-electricViolet/30">
+                    {filters.maxDistanceKm} km
+                  </span>
+                  <BrutalistButton
+                    variant={travelMode.isActive ? "primary" : "ghost"}
+                    size="compact"
+                    soundEffect="none"
+                    data-testid="people-travel-mode-button"
+                    onClick={() => {
+                      audioEngine.playPulse();
+                      openTravelModal();
+                    }}
+                    aria-label={travelMode.isActive ? `Modo Viajero: ${travelMode.cityName}` : "Modo Viajero"}
+                    title={
+                      travelMode.isActive
+                        ? `Modo Viajero: ${travelMode.cityName} (${travelMode.country})`
+                        : "Simular ubicación en otra ciudad"
+                    }
+                    className={`min-h-[36px] flex-shrink-0 !rounded-xl !text-xs !font-bold ${
+                      travelMode.isActive
+                        ? "!bg-electricViolet !text-white !border-electricViolet-glow shadow-violet-glow animate-pulse font-black"
+                        : "!bg-white/5 !border-white/10 text-neutral-300 hover:text-white hover:!bg-white/10"
+                    }`}
+                  >
+                    <Plane className={`w-3.5 h-3.5 ${travelMode.isActive ? "text-white" : "text-electricViolet-glow"}`} />
+                    <span className="truncate max-w-[85px]">
+                      {travelMode.isActive ? travelMode.cityName : (language === "es" ? "Viajero" : "Travel")}
+                    </span>
+                  </BrutalistButton>
+                </div>
+              </div>
+
+              <input
+                type="range"
+                min="0.5"
+                max="20"
+                step="0.5"
+                value={filters.maxDistanceKm}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    maxDistanceKm: parseFloat(e.target.value),
+                  }))
+                }
+                className="w-full accent-electricViolet bg-neutral-800 h-2 rounded-lg cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
+                <span>0.5 km</span>
+                <span>10 km</span>
+                <span>20 km</span>
+              </div>
+            </section>
+
+            {/* =========================================================
+                BLOQUE 3: PREFERENCIAS & LOGÍSTICA RÁPIDA
+                ========================================================= */}
+            <section
+              aria-label="Preferencias y Logística"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{language === "es" ? "3. Preferencias y logística" : "3. Quick Logistics"}</span>
+                </span>
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
+                  {language === "es" ? "Filtros directos" : "Direct filters"}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                {/* 4.1 Favoritos */}
+                {/* 3.1 Favoritos */}
                 <FilterPill
                   data-testid="filter-pill-favorites"
                   label={t.filters?.quickFavorites || (language === "es" ? "Favoritos" : "Favorites")}
@@ -455,7 +473,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
                   className="w-full justify-start py-2.5 px-3 min-h-[44px]"
                 />
 
-                {/* 4.2 Con lugar */}
+                {/* 3.2 Con lugar */}
                 <FilterPill
                   label={language === "es" ? "Con lugar ya" : "Has place now"}
                   icon={<Home className="w-3.5 h-3.5 text-emerald-400" />}
@@ -468,7 +486,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
                   className="w-full justify-start py-2.5 px-3 min-h-[44px]"
                 />
 
-                {/* 4.3 Verificados 3D */}
+                {/* 3.3 Verificados 3D */}
                 <FilterPill
                   label={language === "es" ? "Verificados 3D" : "3D Verified"}
                   icon={<ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />}
@@ -481,7 +499,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
                   className="w-full justify-start py-2.5 px-3 min-h-[44px]"
                 />
 
-                {/* 4.4 Cero plantones (Anti-ghost) */}
+                {/* 3.4 Cero plantones (Anti-ghost) */}
                 <FilterPill
                   label={language === "es" ? "Cero plantones" : "Anti-ghost"}
                   icon={<Ghost className="w-3.5 h-3.5 text-emerald-400" />}
@@ -494,7 +512,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
                   className="w-full justify-start py-2.5 px-3 min-h-[44px]"
                 />
 
-                {/* 4.5 Deseos mutuos */}
+                {/* 3.5 Deseos mutuos */}
                 <FilterPill
                   label={language === "es" ? "Deseos mutuos" : "Mutual kinks"}
                   icon={<Sparkles className="w-3.5 h-3.5 text-bloodNeon" />}
@@ -509,335 +527,291 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
               </div>
             </section>
 
-            {/* BLOQUE 5: ROL & POSICIÓN (Flex-wrap, Cero scroll horizontal) */}
-            <section aria-label="Rol Táctico" className="space-y-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <span>🛡️</span>
-                <span>{language === "es" ? "5. Rol & Posición" : "5. Role & Position"}</span>
-              </span>
-
-              <div className="flex flex-wrap gap-1.5">
-                {ROLE_OPTIONS.map((role) => (
-                  <FilterPill
-                    key={role}
-                    label={getRoleDisplayLabel(role as RoleType, language)}
-                    active={filters.roles.includes(role as RoleType)}
-                    variant="violet"
-                    onClick={() => toggleRole(role as RoleType)}
-                  />
-                ))}
-              </div>
-            </section>
-
-            {/* BLOQUE 6: ONDA & RITMO DE HOY (2-col grid, Cero scroll horizontal) */}
-            <section aria-label="Onda y Ritmo de Hoy" className="space-y-1.5">
+            {/* =========================================================
+                BLOQUE 4: ORDENAR PERFILES POR
+                ========================================================= */}
+            <section
+              aria-label="Criterio de Ordenamiento"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-electricViolet" />
-                  <span>{language === "es" ? "6. ¿Qué onda buscás hoy?" : "6. Desired Vibe"}</span>
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <span>📍</span>
+                  <span>{language === "es" ? "4. Ordenar perfiles por" : "4. Sort Profiles"}</span>
                 </span>
-                {filters.energyVibes && filters.energyVibes.length > 0 && (
-                  <span className="text-[10px] font-mono text-electricViolet-glow font-bold">
-                    {filters.energyVibes.length} {t.filters?.selectedCount || "sel."}
-                  </span>
-                )}
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
+                  {language === "es" ? "Prioridad de visualización" : "List priority"}
+                </span>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                {ENERGY_VIBE_CATALOG.map((vibe) => {
-                  const isSelected = (filters.energyVibes || []).includes(vibe.id);
-                  return (
-                    <button
-                      key={vibe.id}
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => toggleEnergyVibe(vibe.id)}
-                      className={`p-2.5 min-h-[48px] rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer active:scale-[0.98] ${
-                        isSelected
-                          ? `${vibe.tagColor} border-current font-bold shadow-sm ring-1 ring-white/20`
-                          : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                      }`}
-                    >
-                      <span className="text-base shrink-0">{vibe.emoji}</span>
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold block truncate">{vibe.label}</span>
-                        <span className="text-[9px] text-neutral-400 block truncate leading-tight opacity-80">
-                          {vibe.description.split(",")[0]}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+              <div className="w-full">
+                <SortSegmentedControl
+                  value={sortBy}
+                  onChange={setSortBy}
+                  className="w-full"
+                  options={[
+                    { id: "distance", label: language === "es" ? "Cerca" : "Nearby", icon: "📍" },
+                    { id: "recent", label: language === "es" ? "Activos" : "Online", icon: "⚡" },
+                    { id: "affinity", label: language === "es" ? "Afinidad" : "Match", icon: "🔥" },
+                  ]}
+                />
               </div>
             </section>
 
-            {/* BLOQUE 7: FILTROS AVANZADOS (Acordeón Plegable: Morbos, Sustancias & Distancia) */}
-            <section aria-label="Filtros Avanzados y Morbos" className="pt-2 border-t border-white/10 space-y-3">
-              <button
-                type="button"
+            {/* =========================================================
+                BLOQUE 5: FETICHES & MORBOS (COLAPSABLE ERGONÓMICO)
+                ========================================================= */}
+            <section
+              aria-label="Fetiches y Morbos"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+            >
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   audioEngine.playPulse();
-                  setIsAdvancedOpen((prev) => !prev);
+                  setIsKinksExpanded((prev) => !prev);
                 }}
-                className="w-full p-3 rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-white flex items-center justify-between transition-all cursor-pointer group active:scale-[0.99]"
-                aria-expanded={isAdvancedOpen}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setIsKinksExpanded((prev) => !prev);
+                  }
+                }}
+                className="flex items-center justify-between cursor-pointer select-none"
               >
-                <div className="flex items-center gap-2.5 text-left">
-                  <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-neutral-300 group-hover:text-white transition-colors">
-                    <SlidersHorizontal className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white block">
-                        {language === "es" ? "7. Morbos, Sustancias & Distancia" : "7. Kinks, Substances & Distance"}
-                      </span>
-                      {advancedCount > 0 && (
-                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-electricViolet text-white">
-                          {advancedCount}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[9.5px] text-neutral-400 block">
-                      {language === "es" ? "Afinar preferencias sensoriales" : "Fine-tune sensory preferences"}
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <span>⛓️</span>
+                  <span>{language === "es" ? "5. Fetiches y morbos" : "5. Kinks & Fetishes"}</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  {filters.selectedKinks.length > 0 && (
+                    <span className="text-[10px] sm:text-xs font-mono text-bloodNeon font-bold px-2 py-0.5 rounded-full bg-bloodNeon/15 border border-bloodNeon/30">
+                      {filters.selectedKinks.length} {t.filters?.selectedCount || "sel."}
                     </span>
+                  )}
+                  <div className="p-1 rounded-lg bg-white/5 border border-white/10 text-neutral-400">
+                    {isKinksExpanded ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
                   </div>
                 </div>
-                <ChevronDown
-                  className={`w-4 h-4 text-neutral-400 group-hover:text-white transition-transform duration-200 ${
-                    isAdvancedOpen ? "rotate-180 text-electricViolet" : ""
-                  }`}
-                />
-              </button>
+              </div>
 
-              {isAdvancedOpen && (
-                <div className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* 7.1 Morbos por Tribu */}
-                  <div className="space-y-3 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10.5px] font-bold text-neutral-300 uppercase tracking-wider block">
-                        {t.filters?.kinksSection || (language === "es" ? "Morbos & Fetiches" : "Kinks & Fetishes")}
-                      </label>
-                      {filters.selectedKinks.length > 0 && (
-                        <span className="text-[10px] font-mono text-bloodNeon font-bold">
-                          {filters.selectedKinks.length} {t.filters?.selectedCount || "sel."}
-                        </span>
-                      )}
-                    </div>
+              {!isKinksExpanded && filters.selectedKinks.length === 0 && (
+                <p className="text-[11px] text-neutral-400 font-sans">
+                  {language === "es"
+                    ? "Tocar para explorar cuero, dynamic, BDSM y prácticas..."
+                    : "Tap to explore leather, power dynamics, BDSM & practices..."}
+                </p>
+              )}
 
-                    <TacticalSearchInput
-                      value={kinkSearchQuery}
-                      onChange={setKinkSearchQuery}
-                      placeholder={language === "es" ? "Buscar fetiche, cuero, bdsm..." : "Search kink..."}
-                      ariaLabel="Buscar fetiche o morbo"
-                      onClear={() => setKinkSearchQuery("")}
-                      testId="kink-search-bottom-bar"
-                    />
+              {/* Si está expandido o hay filtros activos de morbos, mostrar buscador y tribus */}
+              {isKinksExpanded && (
+                <div className="space-y-3 pt-1 border-t border-white/5 animate-fadeIn">
+                  <TacticalSearchInput
+                    value={kinkSearchQuery}
+                    onChange={setKinkSearchQuery}
+                    placeholder={language === "es" ? "Buscar fetiche, cuero, bdsm..." : "Search kink..."}
+                    ariaLabel="Buscar fetiche o morbo"
+                    onClear={() => setKinkSearchQuery("")}
+                    testId="kink-search-bottom-bar"
+                  />
 
-                    {/* Grupo 1: Cuero & Gear */}
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-semibold text-neutral-400 flex items-center gap-1">
-                        <span>⛓️</span>
-                        <span>{t.filters?.kinkCategoryGear || (language === "es" ? "Cuero & Gear" : "Leather & Gear")}</span>
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {gearKinks
-                          .filter((k) =>
-                            !kinkSearchQuery.trim()
-                              ? true
-                              : getKinkLocalizedLabel(k.id, t)
-                                  .toLowerCase()
-                                  .includes(kinkSearchQuery.toLowerCase()) ||
-                                k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
-                          )
-                          .map((kink) => (
-                            <FilterPill
-                              key={kink.id}
-                              label={getKinkLocalizedLabel(kink.id, t)}
-                              active={filters.selectedKinks.includes(kink.id)}
-                              variant="blood"
-                              onClick={() => toggleKink(kink.id)}
-                            />
-                          ))}
-                      </div>
-                    </div>
-
-                    {/* Grupo 2: Dinámicas de Poder */}
-                    <div className="space-y-1.5 pt-2 border-t border-white/5">
-                      <span className="text-[10px] font-semibold text-neutral-400 flex items-center gap-1">
-                        <span>⚡</span>
-                        <span>{t.filters?.kinkCategoryDynamic || (language === "es" ? "Dinámicas de Poder" : "Power Dynamics")}</span>
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {dynamicKinks
-                          .filter((k) =>
-                            !kinkSearchQuery.trim()
-                              ? true
-                              : getKinkLocalizedLabel(k.id, t)
-                                  .toLowerCase()
-                                  .includes(kinkSearchQuery.toLowerCase()) ||
-                                k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
-                          )
-                          .map((kink) => (
-                            <FilterPill
-                              key={kink.id}
-                              label={getKinkLocalizedLabel(kink.id, t)}
-                              active={filters.selectedKinks.includes(kink.id)}
-                              variant="blood"
-                              onClick={() => toggleKink(kink.id)}
-                            />
-                          ))}
-                      </div>
-                    </div>
-
-                    {/* Grupo 3: Morbos & Prácticas */}
-                    <div className="space-y-1.5 pt-2 border-t border-white/5">
-                      <span className="text-[10px] font-semibold text-neutral-400 flex items-center gap-1">
-                        <span>🔥</span>
-                        <span>{t.filters?.kinkCategoryPractices || (language === "es" ? "Morbos & Prácticas" : "Practices & Kinks")}</span>
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {practicesKinks
-                          .filter((k) =>
-                            !kinkSearchQuery.trim()
-                              ? true
-                              : getKinkLocalizedLabel(k.id, t)
-                                  .toLowerCase()
-                                  .includes(kinkSearchQuery.toLowerCase()) ||
-                                k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
-                          )
-                          .map((kink) => (
-                            <FilterPill
-                              key={kink.id}
-                              label={getKinkLocalizedLabel(kink.id, t)}
-                              active={filters.selectedKinks.includes(kink.id)}
-                              variant="blood"
-                              onClick={() => toggleKink(kink.id)}
-                            />
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 7.2 Atmósfera de Sustancias */}
+                  {/* Tribu 1: Cuero & Gear */}
                   <div className="space-y-1.5">
-                    <label className="text-[10.5px] font-bold text-neutral-400 uppercase tracking-wider block">
-                      {t.filters?.substanceSectionTitle || (language === "es" ? "Atmósfera de Sustancias" : "Substance Atmosphere")}
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(
-                        Object.keys(SUBSTANCE_ATMOSPHERE_CATALOG) as SubstanceAtmosphere[]
-                      ).map((key) => {
-                        const item = SUBSTANCE_ATMOSPHERE_CATALOG[key];
-                        const isSelected = filters.substanceAtmospheres?.includes(key);
-                        const langKey = language === "en" ? "en" : "es";
-
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            aria-pressed={!!isSelected}
-                            onClick={() => toggleSubstanceAtmosphere(key)}
-                            className={`p-2 min-h-[42px] rounded-xl border text-left text-xs transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
-                              isSelected
-                                ? `${item.badgeClass} ring-1 ring-white/30 font-bold shadow-md`
-                                : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            <span className="text-sm shrink-0">{item.icon}</span>
-                            <span className="truncate text-[11px]">{item.title[langKey]}</span>
-                          </button>
-                        );
-                      })}
+                    <span className="text-[10px] sm:text-xs font-semibold text-neutral-400 flex items-center gap-1">
+                      <span>⛓️</span>
+                      <span>{t.filters?.kinkCategoryGear || (language === "es" ? "Cuero & Gear" : "Leather & Gear")}</span>
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {gearKinks
+                        .filter((k) =>
+                          !kinkSearchQuery.trim()
+                            ? true
+                            : getKinkLocalizedLabel(k.id, t)
+                                .toLowerCase()
+                                .includes(kinkSearchQuery.toLowerCase()) ||
+                              k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
+                        )
+                        .map((kink) => (
+                          <FilterPill
+                            key={kink.id}
+                            label={getKinkLocalizedLabel(kink.id, t)}
+                            active={filters.selectedKinks.includes(kink.id)}
+                            variant="blood"
+                            onClick={() => toggleKink(kink.id)}
+                          />
+                        ))}
                     </div>
                   </div>
 
-                  {/* 7.3 Intensidad Corporal Mínima */}
-                  <div className="space-y-2 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10.5px] font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>🌶️</span>
-                        <span>{t.filters?.intensitySection || (language === "es" ? "Intensidad Corporal Mínima" : "Minimum Intensity")}</span>
-                      </label>
-                      <span className="text-xs font-bold text-electricViolet-glow font-mono">
-                        {INTENSITY_LABELS[filters.minIntensity]?.label}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {tempoList.map((tempo) => {
-                        const isSelected = filters.minIntensity === tempo.lvl;
-                        return (
-                          <button
-                            key={tempo.lvl}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => {
-                              audioEngine.playPulse();
-                              setFilters((prev) => ({ ...prev, minIntensity: tempo.lvl }));
-                            }}
-                            className={`py-2 px-1 min-h-[42px] rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer active:scale-95 ${
-                              isSelected
-                                ? tempo.lvl === 4
-                                  ? "bg-bloodNeon border-bloodNeon text-white shadow-blood-glow"
-                                  : "bg-electricViolet border-electricViolet text-white shadow-violet-soft font-bold"
-                                : "bg-white/5 border-white/10 text-neutral-300 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
-                            <span className="text-sm leading-none">{tempo.emoji}</span>
-                            <span className="text-[10px] font-bold tracking-tight block truncate w-full">
-                              {tempo.label}
-                            </span>
-                          </button>
-                        );
-                      })}
+                  {/* Tribu 2: Dinámicas de Poder */}
+                  <div className="space-y-1.5 pt-2 border-t border-white/5">
+                    <span className="text-[10px] sm:text-xs font-semibold text-neutral-400 flex items-center gap-1">
+                      <span>⚡</span>
+                      <span>{t.filters?.kinkCategoryDynamic || (language === "es" ? "Dinámicas de Poder" : "Power Dynamics")}</span>
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {dynamicKinks
+                        .filter((k) =>
+                          !kinkSearchQuery.trim()
+                            ? true
+                            : getKinkLocalizedLabel(k.id, t)
+                                .toLowerCase()
+                                .includes(kinkSearchQuery.toLowerCase()) ||
+                              k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
+                        )
+                        .map((kink) => (
+                          <FilterPill
+                            key={kink.id}
+                            label={getKinkLocalizedLabel(kink.id, t)}
+                            active={filters.selectedKinks.includes(kink.id)}
+                            variant="blood"
+                            onClick={() => toggleKink(kink.id)}
+                          />
+                        ))}
                     </div>
                   </div>
 
-                  {/* 7.4 Rango de Distancia Máxima */}
-                  <div className="space-y-2 bg-white/[0.02] p-3 rounded-2xl border border-white/5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10.5px] font-bold text-neutral-400 uppercase tracking-wider">
-                        📍 {t.filters?.maxDistanceLabel || (language === "es" ? "Distancia Máxima" : "Max Distance")}
-                      </label>
-                      <span className="text-xs font-bold text-white font-mono">
-                        {filters.maxDistanceKm} km
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="20"
-                      step="0.5"
-                      value={filters.maxDistanceKm}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          maxDistanceKm: parseFloat(e.target.value),
-                        }))
-                      }
-                      className="w-full accent-electricViolet bg-neutral-800 h-2 rounded-lg cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-neutral-500 font-mono">
-                      <span>0.5 km</span>
-                      <span>10 km</span>
-                      <span>20 km</span>
+                  {/* Tribu 3: Morbos & Prácticas */}
+                  <div className="space-y-1.5 pt-2 border-t border-white/5">
+                    <span className="text-[10px] sm:text-xs font-semibold text-neutral-400 flex items-center gap-1">
+                      <span>🔥</span>
+                      <span>{t.filters?.kinkCategoryPractices || (language === "es" ? "Morbos & Prácticas" : "Practices & Kinks")}</span>
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {practicesKinks
+                        .filter((k) =>
+                          !kinkSearchQuery.trim()
+                            ? true
+                            : getKinkLocalizedLabel(k.id, t)
+                                .toLowerCase()
+                                .includes(kinkSearchQuery.toLowerCase()) ||
+                              k.id.toLowerCase().includes(kinkSearchQuery.toLowerCase())
+                        )
+                        .map((kink) => (
+                          <FilterPill
+                            key={kink.id}
+                            label={getKinkLocalizedLabel(kink.id, t)}
+                            active={filters.selectedKinks.includes(kink.id)}
+                            variant="blood"
+                            onClick={() => toggleKink(kink.id)}
+                          />
+                        ))}
                     </div>
                   </div>
                 </div>
               )}
             </section>
-          </>
-        ) : (
+
+            {/* =========================================================
+                BLOQUE 6: ONDA & SUSTANCIAS
+                ========================================================= */}
+            <section
+              aria-label="Onda y Sustancias"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <Flame className="w-3.5 h-3.5 text-electricViolet" />
+                  <span>{language === "es" ? "6. Onda y sustancias" : "6. Vibe & Atmosphere"}</span>
+                </span>
+                {((filters.energyVibes?.length || 0) + (filters.substanceAtmospheres?.length || 0)) > 0 && (
+                  <span className="text-[10px] sm:text-xs font-mono text-electricViolet-glow font-bold">
+                    {(filters.energyVibes?.length || 0) + (filters.substanceAtmospheres?.length || 0)} {t.filters?.selectedCount || "sel."}
+                  </span>
+                )}
+              </div>
+
+              {/* 6.1 ¿Qué onda buscás hoy? */}
+              <div className="space-y-2">
+                <span className="text-[10px] sm:text-xs font-semibold text-neutral-400 block">
+                  {language === "es" ? "¿Qué onda buscás hoy?" : "Desired Vibe"}
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {ENERGY_VIBE_CATALOG.map((vibe) => {
+                    const isSelected = (filters.energyVibes || []).includes(vibe.id);
+                    return (
+                      <BrutalistButton
+                        key={vibe.id}
+                        variant="ghost"
+                        soundEffect="none"
+                        aria-pressed={isSelected}
+                        onClick={() => toggleEnergyVibe(vibe.id)}
+                        className={`p-2.5 min-h-[48px] !rounded-xl !justify-start !font-normal !normal-case text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? `${vibe.tagColor} !border-current font-bold shadow-sm ring-1 ring-white/20`
+                            : "!bg-white/5 !border-white/10 text-neutral-300 hover:!bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{vibe.emoji}</span>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold block truncate">{vibe.label}</span>
+                          <span className="text-[9px] text-neutral-400 block truncate leading-tight opacity-80">
+                            {vibe.description.split(",")[0]}
+                          </span>
+                        </div>
+                      </BrutalistButton>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 6.2 Clima y Sustancias */}
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <span className="text-[10px] sm:text-xs font-semibold text-neutral-400 block">
+                  {language === "es" ? "Ambiente y sustancias" : "Substance Atmosphere"}
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    Object.keys(SUBSTANCE_ATMOSPHERE_CATALOG) as SubstanceAtmosphere[]
+                  ).map((key) => {
+                    const item = SUBSTANCE_ATMOSPHERE_CATALOG[key];
+                    const isSelected = filters.substanceAtmospheres?.includes(key);
+                    const langKey = language === "en" ? "en" : "es";
+
+                    return (
+                      <BrutalistButton
+                        key={key}
+                        variant="ghost"
+                        soundEffect="none"
+                        aria-pressed={!!isSelected}
+                        onClick={() => toggleSubstanceAtmosphere(key)}
+                        className={`p-2.5 min-h-[44px] !rounded-xl !justify-start !font-normal !normal-case border text-left text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                          isSelected
+                            ? `${item.badgeClass} ring-1 ring-white/30 font-bold shadow-md`
+                            : "!bg-white/5 !border-white/10 text-neutral-300 hover:!bg-white/10 hover:text-white"
+                        }`}
+                      >
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        <span className="truncate text-xs font-semibold">{item.title[langKey]}</span>
+                      </BrutalistButton>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          </>) : (
           /* =========================================================
              PESTAÑA LUGARES & BOLICHES: BLOQUES 2 A 4
              ========================================================= */
           <>
             {/* BLOQUE 2: BÚSQUEDA DE LUGARES & ACCIONES */}
-            <section aria-label="Búsqueda de Lugares" className="space-y-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <Search className="w-3 h-3 text-electricViolet" />
-                <span>{language === "es" ? "2. Búsqueda de Lugares & Puntos" : "2. Search Spots"}</span>
-              </span>
+            <section
+              aria-label="Búsqueda de Lugares"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <Search className="w-3.5 h-3.5 text-electricViolet" />
+                  <span>{language === "es" ? "2. Buscar lugares o eventos" : "2. Search Spots"}</span>
+                </span>
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
+                  {language === "es" ? "Saunas, boliches, cruising" : "Spots & parties"}
+                </span>
+              </div>
 
               <div className="flex items-center gap-2">
                 <div className="flex-1 min-w-0">
@@ -852,56 +826,68 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
                 </div>
 
                 {/* Modo Viajero para Lugares */}
-                <button
-                  type="button"
+                <BrutalistButton
+                  variant={travelMode.isActive ? "primary" : "ghost"}
+                  size="compact"
+                  soundEffect="none"
                   data-testid="places-travel-mode-button"
                   onClick={() => {
                     audioEngine.playPulse();
                     openTravelModal();
                   }}
                   aria-label={travelMode.isActive ? `Modo Viajero: ${travelMode.cityName}` : "Modo Viajero"}
-                  className={`px-3 min-h-[38px] rounded-xl flex items-center justify-center gap-1.5 font-mono text-[10px] font-bold border transition-all cursor-pointer active:scale-95 flex-shrink-0 ${
+                  className={`min-h-[44px] flex-shrink-0 !rounded-xl !text-xs !font-bold ${
                     travelMode.isActive
-                      ? "bg-electricViolet text-white border-electricViolet-glow shadow-violet-glow animate-pulse font-black"
-                      : "bg-white/5 border-white/10 text-neutral-300 hover:text-white hover:bg-white/10"
+                      ? "!bg-electricViolet !text-white !border-electricViolet-glow shadow-violet-glow animate-pulse font-black"
+                      : "!bg-white/5 !border-white/10 text-neutral-300 hover:text-white hover:!bg-white/10"
                   }`}
                 >
                   <Plane className={`w-3.5 h-3.5 ${travelMode.isActive ? "text-white" : "text-electricViolet-glow"}`} />
-                  <span className="truncate max-w-[76px]">
+                  <span className="truncate max-w-[85px]">
                     {travelMode.isActive ? travelMode.cityName : (language === "es" ? "Viajero" : "Travel")}
                   </span>
-                </button>
+                </BrutalistButton>
 
                 {/* Botón Proponer Lugar */}
-                <button
-                  type="button"
+                <BrutalistButton
+                  variant="primary"
+                  size="compact"
+                  soundEffect="none"
                   data-testid="propose-place-header-button"
                   onClick={() => {
                     audioEngine.playPulse();
                     if (onProposePlace) onProposePlace();
                   }}
                   aria-label="Proponer nuevo punto táctico"
-                  className="px-3 min-h-[38px] rounded-xl bg-electricViolet text-white border border-electricViolet-glow font-bold shadow-violet-glow hover:bg-electricViolet/90 flex items-center justify-center gap-1.5 cursor-pointer text-xs font-mono active:scale-95 transition-all flex-shrink-0"
+                  className="min-h-[44px] flex-shrink-0 !rounded-xl !text-xs"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span className="hidden sm:inline uppercase text-[10px]">
+                  <span className="hidden sm:inline uppercase text-xs">
                     {t.filters?.proposePlaceBtn || (language === "es" ? "Proponer" : "Propose")}
                   </span>
-                </button>
+                </BrutalistButton>
               </div>
             </section>
 
             {/* BLOQUE 3: ORDEN DE LUGARES */}
-            <section aria-label="Criterio de Orden de Lugares" className="space-y-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <span>📍</span>
-                <span>{language === "es" ? "3. Criterio de Orden" : "3. Sort Priority"}</span>
-              </span>
+            <section
+              aria-label="Criterio de Orden de Lugares"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <span>📍</span>
+                  <span>{language === "es" ? "3. Ordenar lugares por" : "3. Sort Spots"}</span>
+                </span>
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
+                  {language === "es" ? "Cerca, calificados o concurrencia" : "Distance, rating, activity"}
+                </span>
+              </div>
               <div className="w-full">
                 <SortSegmentedControl
                   value={propPlacesSortBy}
                   onChange={(val) => onPlacesSortByChange && onPlacesSortByChange(val as "distance" | "rating" | "activity")}
-                  className="w-full justify-between"
+                  className="w-full"
                   options={[
                     { id: "distance", label: language === "es" ? "Cerca" : "Dist", icon: "📍" },
                     { id: "rating", label: language === "es" ? "Calificados" : "Rating", icon: "⭐" },
@@ -911,12 +897,20 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
               </div>
             </section>
 
-            {/* BLOQUE 4: CATEGORÍAS DE LUGARES (Grid 2-col, Cero scroll horizontal) */}
-            <section aria-label="Categorías de Lugares" className="space-y-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                <span>🏙️</span>
-                <span>{language === "es" ? "4. Categorías de Espacios" : "4. Space Categories"}</span>
-              </span>
+            {/* BLOQUE 4: CATEGORÍAS DE LUGARES */}
+            <section
+              aria-label="Categorías de Lugares"
+              className="bg-obsidian-surface/60 border border-white/10 rounded-2xl p-3.5 sm:p-4 space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-mono font-bold uppercase tracking-wider text-neutral-100 flex items-center gap-2">
+                  <span>🏙️</span>
+                  <span>{language === "es" ? "4. Tipo de espacio" : "4. Space Type"}</span>
+                </span>
+                <span className="text-[10px] sm:text-xs font-mono text-neutral-400">
+                  {language === "es" ? "Filtrar por rubro" : "By category"}
+                </span>
+              </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {placesCategories.map((cat) => (
@@ -927,7 +921,7 @@ export const RadarBottomCommandBar: React.FC<RadarBottomCommandBarProps> = ({
                     active={propPlacesCategory === cat.id}
                     variant="violet"
                     onClick={() => onPlacesCategoryChange && onPlacesCategoryChange(cat.id)}
-                    className="w-full justify-start py-2 px-3 min-h-[40px]"
+                    className="w-full justify-start py-2.5 px-3 min-h-[44px]"
                   />
                 ))}
               </div>

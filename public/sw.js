@@ -1,5 +1,5 @@
 // VESSEL // Core Service Worker - Offline Shell, Guaranteed Latest Version & Tactical Caching
-const VESSEL_VERSION = "v2.5.0-20261006-1930";
+const VESSEL_VERSION = "v2.7.0-20261010-0102";
 const CACHE_NAME = `vessel-shell-${VESSEL_VERSION}`;
 const PRECACHE_ASSETS = [
   "/manifest.json",

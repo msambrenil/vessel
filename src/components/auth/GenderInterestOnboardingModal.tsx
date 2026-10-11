@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useAuth, useSettings } from "@/context/VesselContext";
 import { BrutalistModal } from "@/components/ui/BrutalistModal";
 import { BrutalistButton } from "@/components/ui/BrutalistButton";
 import { GENDER_INTEREST_OPTIONS } from "@/data/genderCatalog";
@@ -15,8 +15,8 @@ export const GenderInterestOnboardingModal: React.FC = () => {
     closeGenderOnboarding,
     myProfile,
     updateMyProfile,
-    language,
-  } = useVessel();
+  } = useAuth();
+  const { language } = useSettings();
 
   const [selectedInterests, setSelectedInterests] = useState<GenderInterest[]>(() => {
     return myProfile.genderInterests && myProfile.genderInterests.length > 0

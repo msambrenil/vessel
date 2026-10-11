@@ -3,7 +3,7 @@
 import React from "react";
 import { SubstanceAtmosphere } from "@/types/vessel";
 import { SUBSTANCE_ATMOSPHERE_CATALOG } from "@/data/substanceCatalog";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 
 interface Props {
   vibe?: SubstanceAtmosphere;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const SubstanceAtmosphereBadge: React.FC<Props> = ({ vibe, compact = false }) => {
-  const { language } = useVessel();
+  const { language } = useSettings();
   if (!vibe) return null;
 
   const meta = SUBSTANCE_ATMOSPHERE_CATALOG[vibe] || SUBSTANCE_ATMOSPHERE_CATALOG.sober;

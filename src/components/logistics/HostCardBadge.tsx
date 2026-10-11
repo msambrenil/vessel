@@ -2,7 +2,7 @@
 
 import React from "react";
 import { HostCardInfo } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 
 interface HostCardBadgeProps {
   hostCard?: HostCardInfo;
@@ -15,7 +15,7 @@ export const HostCardBadge: React.FC<HostCardBadgeProps> = ({
   onClick,
   compact = false,
 }) => {
-  const { t } = useVessel();
+  const { t } = useSettings();
 
   if (!hostCard) return null;
 

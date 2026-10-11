@@ -207,7 +207,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   // Hidratar appSettings y userPlan desde el documento de Firestore del usuario logueado
   useEffect(() => {
     const handleCloudHydrated = (e: Event) => {
-      const detail = (e as CustomEvent<{ uid: string; cloudData: any }>).detail;
+      const detail = (e as CustomEvent<{ uid: string; cloudData: Record<string, unknown> }>).detail;
       if (!detail || !detail.cloudData) return;
       const { cloudData } = detail;
 
@@ -220,8 +220,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
       }
 
       if (cloudData.userPlan) {
-        setUserPlanState(cloudData.userPlan);
-        saveToStorage(STORAGE_KEYS.PLAN, cloudData.userPlan, appMode);
+        setUserPlanState(cloudData.userPlan as UserSubscriptionTier);
+        saveToStorage(STORAGE_KEYS.PLAN, cloudData.userPlan as UserSubscriptionTier, appMode);
       } else if (appMode === "real") {
         setUserPlanState("free");
       }

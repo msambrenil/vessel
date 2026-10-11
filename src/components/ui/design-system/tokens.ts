@@ -58,13 +58,14 @@ export const VESSEL_TOKENS = {
   },
   zIndex: {
     radarGrid: 10,
-    stickyHeader: 30,
+    stickyInPage: 20,
     bottomSheetPeek: 35,
     bottomNavigation: 40,
     bottomSheetExpanded: 45,
-    modalBackdrop: 50,
-    modalHost: 60,
-    toastNotification: 70,
+    stickyHeader: 50,
+    modalBackdrop: 60,
+    modalHost: 70,
+    toastNotification: 80,
   },
   motion: {
     springFast: "transition-all duration-200 ease-out",

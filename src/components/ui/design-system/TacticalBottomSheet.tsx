@@ -16,6 +16,7 @@ export interface TacticalBottomSheetProps {
   testId?: string;
   fullscreen?: boolean;
   footer?: React.ReactNode;
+  hidePeekBar?: boolean;
 }
 
 export const TacticalBottomSheet: React.FC<TacticalBottomSheetProps> = ({
@@ -29,6 +30,7 @@ export const TacticalBottomSheet: React.FC<TacticalBottomSheetProps> = ({
   testId = "tactical-bottom-sheet",
   fullscreen = true,
   footer,
+  hidePeekBar = false,
 }) => {
   const [internalExpanded, setInternalExpanded] = useState<boolean>(false);
   const isExpanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
@@ -58,24 +60,34 @@ export const TacticalBottomSheet: React.FC<TacticalBottomSheetProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isExpanded, setExpanded]);
 
-  // Touch gesture handler para deslizar hacia arriba o abajo
-  const touchStartYRef = useRef<number | null>(null);
+  // Touch gesture handlers aislados para evitar colisiones con el scroll del contenido
+  const peekTouchStartYRef = useRef<number | null>(null);
+  const handleTouchStartYRef = useRef<number | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartYRef.current = e.touches[0].clientY;
+  const handlePeekTouchStart = (e: React.TouchEvent) => {
+    peekTouchStartYRef.current = e.touches[0].clientY;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartYRef.current === null) return;
-    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
-    touchStartYRef.current = null;
-
-    // Deslizar arriba (delta negativo significativo)
-    if (deltaY < -40 && !isExpanded) {
+  const handlePeekTouchEnd = (e: React.TouchEvent) => {
+    if (peekTouchStartYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - peekTouchStartYRef.current;
+    peekTouchStartYRef.current = null;
+    // Deslizar arriba para expandir
+    if (deltaY < -35 && !isExpanded) {
       setExpanded(true);
     }
-    // Deslizar abajo (delta positivo significativo)
-    if (deltaY > 50 && isExpanded) {
+  };
+
+  const handleHandleTouchStart = (e: React.TouchEvent) => {
+    handleTouchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleHandleTouchEnd = (e: React.TouchEvent) => {
+    if (handleTouchStartYRef.current === null) return;
+    const deltaY = e.changedTouches[0].clientY - handleTouchStartYRef.current;
+    handleTouchStartYRef.current = null;
+    // Deslizar abajo desde la manija para colapsar
+    if (deltaY > 35 && isExpanded) {
       setExpanded(false);
     }
   };
@@ -98,8 +110,6 @@ export const TacticalBottomSheet: React.FC<TacticalBottomSheetProps> = ({
         role="region"
         aria-label="Panel Táctico de Exploración y Filtros"
         aria-expanded={isExpanded}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
         className={`fixed left-0 right-0 max-w-4xl mx-auto transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1) ${
           isExpanded
             ? fullscreen
@@ -111,10 +121,12 @@ export const TacticalBottomSheet: React.FC<TacticalBottomSheetProps> = ({
         {/* =========================================================
             MODO PEEKING: BARRA FLOTANTE COMPACTA (100% THUMB ZONE)
            ========================================================= */}
-        {!isExpanded && (
+        {!isExpanded && !hidePeekBar && (
           <div
             data-testid="bottom-sheet-peek-bar"
             onClick={() => setExpanded(true)}
+            onTouchStart={handlePeekTouchStart}
+            onTouchEnd={handlePeekTouchEnd}
             className="pointer-events-auto w-full bg-obsidian-surface/95 hover:bg-obsidian-deep border border-white/20 hover:border-electricViolet/50 rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.9)] backdrop-blur-xl px-3.5 py-2.5 cursor-pointer transition-all duration-200 active:scale-[0.99] select-none group ring-1 ring-white/5"
           >
             {peekContent ? (
@@ -147,11 +159,13 @@ export const TacticalBottomSheet: React.FC<TacticalBottomSheetProps> = ({
               : "hidden"
           }
         >
-          {/* Manija táctil de arrastre (Handle) + Cabecera */}
+          {/* Manija táctil de arrastre (Handle) + Cabecera con gesto swipe down exclusivo */}
           <div
             data-testid="bottom-sheet-drag-handle"
             onClick={() => setExpanded(false)}
-            className="pt-2.5 pb-2 px-4 flex flex-col items-center justify-center cursor-pointer select-none border-b border-white/5 active:opacity-75"
+            onTouchStart={handleHandleTouchStart}
+            onTouchEnd={handleHandleTouchEnd}
+            className="pt-2.5 pb-2 px-4 flex flex-col items-center justify-center cursor-pointer select-none border-b border-white/10 bg-obsidian-deep/90 active:opacity-75 touch-none"
           >
             <div className="w-10 h-1.2 rounded-full bg-white/25 hover:bg-white/40 transition-colors mb-2" />
             <div className="w-full flex items-center justify-between">

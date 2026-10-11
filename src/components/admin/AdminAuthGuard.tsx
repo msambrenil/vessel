@@ -2,23 +2,46 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useAuth } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { ShieldAlert, Lock, KeyRound, ArrowRight, ArrowLeft, Terminal, ShieldCheck } from "lucide-react";
-import { checkIsAdminAuthorized } from "@/lib/admin/adminService";
+import { checkIsAdminAuthorized, verifyAdminPasscodeSecurely } from "@/lib/admin/adminService";
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
 }
 
-const ADMIN_SESSION_STORAGE_KEY = "vessel_admin_authorized_session";
+const ADMIN_SESSION_STORAGE_KEY = "vessel_admin_authorized_session_v2";
+const ADMIN_SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 horas de validez máxima
+
+interface AdminSessionPayload {
+  authorized: boolean;
+  timestamp: number;
+  expiresAt: number;
+}
+
+function isValidStoredSession(raw: string | null): boolean {
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw) as AdminSessionPayload;
+    if (!data.authorized || typeof data.timestamp !== "number" || typeof data.expiresAt !== "number") {
+      return false;
+    }
+    const now = Date.now();
+    return now < data.expiresAt && data.timestamp <= now;
+  } catch {
+    return false;
+  }
+}
 
 export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
-  const { appMode, authUser, isAuthenticated, openAuthModal, language } = useVessel();
+  const { appMode, language } = useSettings();
+  const { authUser, isAuthenticated, openAuthModal } = useAuth();
   const isEs = language === "es";
 
   const [passcodeInput, setPasscodeInput] = useState<string>("");
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [isSessionAuthorized, setIsSessionAuthorized] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
@@ -26,8 +49,10 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
     setIsMounted(true);
     if (typeof window !== "undefined") {
       const savedAuth = window.sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
-      if (savedAuth === "authorized") {
+      if (isValidStoredSession(savedAuth)) {
         setIsSessionAuthorized(true);
+      } else if (savedAuth) {
+        window.sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
       }
     }
   }, []);
@@ -53,25 +78,40 @@ export const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  const handleValidatePasscode = (e: React.FormEvent) => {
+  const handleValidatePasscode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isVerifying) return;
     setPasscodeError(null);
+    setIsVerifying(true);
     audioEngine.triggerTacticalPulse();
 
-    const isMatch = checkIsAdminAuthorized(authUser?.email, passcodeInput);
-    if (isMatch) {
-      audioEngine.playVaultUnlock();
-      setIsSessionAuthorized(true);
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem(ADMIN_SESSION_STORAGE_KEY, "authorized");
+    try {
+      const isMatch = await verifyAdminPasscodeSecurely(passcodeInput);
+      if (isMatch) {
+        audioEngine.playVaultUnlock();
+        setIsSessionAuthorized(true);
+        if (typeof window !== "undefined") {
+          const now = Date.now();
+          const sessionPayload: AdminSessionPayload = {
+            authorized: true,
+            timestamp: now,
+            expiresAt: now + ADMIN_SESSION_MAX_AGE_MS,
+          };
+          window.sessionStorage.setItem(
+            ADMIN_SESSION_STORAGE_KEY,
+            JSON.stringify(sessionPayload)
+          );
+        }
+      } else {
+        audioEngine.playError();
+        setPasscodeError(
+          isEs
+            ? "Código de comando maestro inválido. Intento registrado en auditoría."
+            : "Invalid master command code. Attempt logged to audit."
+        );
       }
-    } else {
-      audioEngine.playError();
-      setPasscodeError(
-        isEs
-          ? "Código de comando maestro inválido. Intento registrado en auditoría."
-          : "Invalid master command code. Attempt logged to audit."
-      );
+    } finally {
+      setIsVerifying(false);
     }
   };
 

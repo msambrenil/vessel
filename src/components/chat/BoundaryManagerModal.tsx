@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useChat, useRadarMatrix, useSettings } from "@/context/VesselContext";
 import {
   X,
   ShieldCheck,
@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Sliders,
 } from "lucide-react";
+import { BrutalistSelect, BrutalistSwitch, BrutalistButton } from "@/components/ui";
 import {
   BOUNDARY_PROTOCOLS_CATALOG,
   BoundaryProtocolItem,
@@ -86,13 +87,12 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
   onClose,
 }) => {
   const {
-    profiles,
     getBoundaryForProfile,
     applyBoundaryProtocol,
     removeBoundaryProtocol,
-    t,
-    language,
-  } = useVessel();
+  } = useChat();
+  const { profiles } = useRadarMatrix();
+  const { t, language } = useSettings();
   const lang = language === "en" ? "en" : "es";
 
   const profile = profiles.find((p) => p.id === profileId);
@@ -184,7 +184,7 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={t.boundaries.modalTitle}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div
@@ -341,28 +341,23 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
                       <div className="mt-3 pt-3 border-t border-white/10 pl-7 space-y-2">
                         <div className="flex items-center justify-between text-[11px] text-neutral-300">
                           <span>Enviar mensaje de salida amable:</span>
-                          <input
-                            type="checkbox"
+                          <BrutalistSwitch
                             checked={includeClosureMessage}
-                            onChange={(e) => setIncludeClosureMessage(e.target.checked)}
-                            className="rounded accent-electricViolet"
+                            onChange={(checked) => setIncludeClosureMessage(checked)}
+                            size="sm"
+                            aria-label="Enviar mensaje de salida amable"
                           />
                         </div>
 
                         {includeClosureMessage && (
-                          <div className="space-y-1">
-                            <select
-                              value={selectedClosureMessage}
-                              onChange={(e) => setSelectedClosureMessage(e.target.value)}
-                              className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-[11px] p-2 focus:border-electricViolet"
-                            >
-                              {KIND_CLOSURE_MESSAGES.map((msg) => (
-                                <option key={msg.id} value={msg.text} className="bg-obsidian">
-                                  {msg.emoji} {msg.title}: "{msg.text.slice(0, 45)}..."
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                          <BrutalistSelect
+                            value={selectedClosureMessage}
+                            onChange={(val) => setSelectedClosureMessage(val)}
+                            options={KIND_CLOSURE_MESSAGES.map((msg) => ({
+                              value: msg.text,
+                              label: `${msg.emoji} ${msg.title}: "${msg.text.slice(0, 45)}..."`,
+                            }))}
+                          />
                         )}
                       </div>
                     )}
@@ -430,21 +425,21 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
             <div className="space-y-2">
               <label className="text-xs font-bold text-white flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5 text-electricViolet-glow" />
-                <span>Privacidad de Galería & Bóveda</span>
+                <span>{language === "es" ? "Privacidad de Fotos y Álbumes" : "Photo & Album Privacy"}</span>
               </label>
 
               <div className="bg-black/50 p-3 rounded-xl border border-white/10 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="font-bold text-white block">Álbumes Públicos</span>
+                    <span className="font-bold text-white block">{t.boundaries.publicAlbumsLabel}</span>
                     <span className="text-[10px] text-neutral-400 block">
-                      Permitir que siga viendo tus fotos públicas
+                      {language === "es" ? "Permitir que siga viendo tus fotos públicas" : "Allow viewing your public photos"}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setCustomPublicAlbums(!customPublicAlbums)}
-                    aria-label={`Álbumes públicos: ${customPublicAlbums ? "Visibles" : "Ocultos"}`}
+                    aria-label={`${t.boundaries.publicAlbumsLabel}: ${customPublicAlbums ? (language === "es" ? "Visibles" : "Visible") : (language === "es" ? "Ocultos" : "Hidden")}`}
                     aria-pressed={customPublicAlbums}
                     className={`px-3 py-1.5 min-h-[36px] rounded-full text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 active:scale-95 ${
                       customPublicAlbums
@@ -452,21 +447,21 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
                         : "bg-white/10 text-neutral-400 border border-white/10"
                     }`}
                   >
-                    {customPublicAlbums ? "Visibles" : "Ocultos"}
+                    {customPublicAlbums ? (language === "es" ? "Visibles" : "Visible") : (language === "es" ? "Ocultos" : "Hidden")}
                   </button>
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
                   <div>
-                    <span className="font-bold text-white block">Bóveda Privada</span>
+                    <span className="font-bold text-white block">{t.boundaries.vaultKeyLabel}</span>
                     <span className="text-[10px] text-neutral-400 block">
-                      Revocar acceso y destruir llaves privadas
+                      {language === "es" ? "Revocar acceso y destruir llaves privadas" : "Revoke access and destroy private keys"}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setCustomPrivateVaultRevoked(!customPrivateVaultRevoked)}
-                    aria-label={`Bóveda privada: ${customPrivateVaultRevoked ? "Revocada" : "Conservar Llave"}`}
+                    aria-label={`${t.boundaries.vaultKeyLabel}: ${customPrivateVaultRevoked ? (language === "es" ? "Revocada" : "Revoked") : (language === "es" ? "Conservar Llave" : "Keep Key")}`}
                     aria-pressed={customPrivateVaultRevoked}
                     className={`px-3 py-1.5 min-h-[36px] rounded-full text-xs font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 ${
                       customPrivateVaultRevoked
@@ -474,7 +469,7 @@ export const BoundaryManagerModal: React.FC<BoundaryManagerModalProps> = ({
                         : "bg-white/10 text-neutral-400 border border-white/10"
                     }`}
                   >
-                    {customPrivateVaultRevoked ? "Revocada" : "Conservar Llave"}
+                    {customPrivateVaultRevoked ? (language === "es" ? "Revocada" : "Revoked") : (language === "es" ? "Conservar Llave" : "Keep Key")}
                   </button>
                 </div>
               </div>

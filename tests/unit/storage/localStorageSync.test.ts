@@ -89,4 +89,14 @@ describe("localStorageSync — Persistencia Local y Tareas Diferidas", () => {
     expect(loadFromStorage(STORAGE_KEYS.PROFILE, null, "test")).toEqual(testProfile);
     expect(loadFromStorage(STORAGE_KEYS.PROFILE, null, "real")).toEqual(realProfile);
   });
+
+  it("debe guardar y cargar colecciones pesadas con loadHeavyCollection y saveHeavyCollection", async () => {
+    const { loadHeavyCollection, saveHeavyCollection } = await import("@/lib/storage/localStorageSync");
+
+    const heavyData = [{ id: "album_1", name: "DARKROOM_VAULT", photos: ["photo_1", "photo_2"] }];
+    await saveHeavyCollection("test_heavy_album", heavyData);
+
+    const loaded = await loadHeavyCollection("test_heavy_album", []);
+    expect(loaded).toEqual(heavyData);
+  });
 });

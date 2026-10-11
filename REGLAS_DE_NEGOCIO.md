@@ -77,7 +77,7 @@ Este documento establece las reglas de negocio, políticas de producto y restric
   * Si el usuario desea resguardar sus facciones faciales o mantener alta discreción, puede activar el *Modo Niebla*.
   * El nivel de desenfoque suave y calibrado (`blur: 6px-7px` en tarjetas y modal; `blur: 3px-4px` en radar y chat) atenúa los rasgos faciales directos sin ser excesivamente opaco ni perder la nitidez de la silueta, sonrisa, contextura muscular, tono, vestimenta y atmósfera luminosa.
   * Los perfiles en Modo Niebla conservan su verificación de identidad y se distinguen con la insignia `🌫️ Niebla`.
-* **Avatares Estilizados**: Como alternativa conceptual adicional, los usuarios verificados pueden optar por un avatar brutalista de catálogo.
+* **Exclusión de Avatares Ficticios de Catálogo**: Se eliminaron los avatares ilustrados/estilizados de catálogo para erradicar cuentas genéricas y asegurar que todos los miembros sean personas reales con fotografía validada biométricamente (nítida o con Modo Niebla).
 
 ---
 
@@ -124,18 +124,14 @@ Este documento establece las reglas de negocio, políticas de producto y restric
 
 ---
 
-## 10. Seguridad Física, Guardián Silencioso & Coacción (Local-First Guard)
+## 10. Seguridad Física & Telemetría en Camino (Simplified Safety Model)
 
-* **Guardián Silencioso (Dead-Man Switch)**:
-  * El usuario fija un temporizador de encuentro (45, 90, 120 min).
-  * Un widget persistente en la cabecera muestra la cuenta regresiva en vivo y entra en estado de alerta parpadeante en los últimos 10 minutos.
-  * Si el temporizador expira sin desactivarse por PIN, el sistema emite una alarma de resonancia grave a 45 Hz y activa el protocolo de emergencia local.
-* **Política Estricta Local-First para Emergencias**:
-  * **Cero Servidores Centrales**: Los datos del contacto de confianza (nombre, teléfono) y la dirección del encuentro se almacenan **exclusivamente en el dispositivo del usuario** (localStorage cliente).
-  * En caso de activación o pánico, se generan enlaces de auxilio directos del dispositivo (SMS/Llamada/Telegram) sin almacenar datos en la nube para proteger la privacidad absoluta del usuario ante cualquier brecha.
-* **PIN de Coacción & Pantalla Señuelo (Flip-to-Cover)**:
-  * Si el usuario es coaccionado físicamente para desbloquear la app, ingresar el PIN de coacción (ej. `9999`) aparenta desactivar el sistema, salta de inmediato a la pantalla señuelo (**Bloc de Notas Brutalista**) y alerta silenciosamente al contacto local.
-  * El camuflaje cuenta con **Flip-to-Cover**: colocar el teléfono boca abajo sobre la superficie activa automáticamente el Bloc de Notas.
+* **Derogación de Guardián Silencioso (Dead-Man Switch) & PIN de Coacción**:
+  * Para erradicar la sobrecarga cognitiva, complejidad innecesaria y falsos positivos de temporizadores, el Dead-Man switch intrusivo, la pantalla señuelo y el PIN de coacción fueron eliminados del sistema central.
+* **Seguridad Ligera & Respeto por el Flujo**:
+  * **Modo Sigilo Inmediato**: Activación con un toque para suspender emisiones y ocultar la presencia sin fricción.
+  * **Telemetría "Voy en Camino"**: Coordinación precisa en el pacto de cita que notifica al anfitrión en vivo cuando el visitante sale y envía una alerta discreta de arribo sin compartir la ubicación exacta por GPS continuo.
+  * **Waypoints en 2 Fases**: Se comparte primero la esquina pública neutra; la dirección exacta con piso y timbre se revela únicamente cuando la persona arriba a la zona.
 
 ---
 

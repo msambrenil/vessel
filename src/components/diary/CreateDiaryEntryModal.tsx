@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useRadarMatrix,
+  useAuth,
+  useDiary,
+  useSettings,
+  useChat,
+} from "@/context/VesselContext";
 import {
   DiaryLocationCategory,
   DiaryEncounterType,
@@ -38,6 +44,12 @@ import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { ALL_ROLE_TYPES, getRoleDisplayLabel } from "@/data/roleActionCatalog";
 import { getLocalTodayIso, getLocalDaysOffsetIso } from "@/lib/calendar/dateLocale";
 import { uploadAndEncryptVaultPhoto } from "@/lib/security/encryptedPhotoService";
+import {
+  BrutalistButton,
+  BrutalistInput,
+  BrutalistSelect,
+  BrutalistTextarea,
+} from "@/components/ui";
 
 interface CreateDiaryEntryModalProps {
   onClose: () => void;
@@ -114,18 +126,19 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
   const {
     profiles,
     knownProfiles,
-    myProfile,
+    favoriteProfileIds: favIdsProp,
+    isFavoriteProfile: isFavProp,
+  } = useRadarMatrix();
+  const { myProfile } = useAuth();
+  const {
     diaryModalPreselectedProfileId,
     editingDiaryEntry,
     addDiaryEntry,
     updateDiaryEntry,
-    language,
-    t,
-    favoriteProfileIds: favIdsProp,
-    isFavoriteProfile: isFavProp,
-    chatMessages,
     archivePhotosToDossier,
-  } = useVessel();
+  } = useDiary();
+  const { language, t } = useSettings();
+  const { chatMessages } = useChat();
 
   const favoriteProfileIds = favIdsProp || [];
   const isFavoriteProfile = isFavProp || (() => false);
@@ -265,6 +278,8 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
   );
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
 
   // Inicialización de perfiles
   useEffect(() => {
@@ -469,9 +484,13 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
 
     setTimeout(() => {
       setIsSaving(false);
-      onClose();
-    }, 350);
+      setIsSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 700);
+    }, 450);
   };
+
 
   const getExpectationLabel = (val: number) => {
     switch (val) {
@@ -506,7 +525,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
       role="dialog"
       aria-modal="true"
       aria-label="Cita Agendada"
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex justify-center items-end sm:items-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-2xl flex justify-center items-end sm:items-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div
@@ -549,14 +568,14 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
               </div>
             </div>
 
-            <button
-              type="button"
+            <BrutalistButton
+              variant="ghost"
+              size="icon"
               onClick={onClose}
               aria-label="Cerrar modal"
-              className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
             >
               <X className="w-5 h-5" />
-            </button>
+            </BrutalistButton>
           </div>
 
           {/* Switch de Intención Superior (Agendar vs Pasar en Limpio) */}
@@ -685,16 +704,13 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                       </div>
 
                       {/* Toggle Solo Favoritos */}
-                      <button
-                        type="button"
+                      <BrutalistButton
+                        variant="favorite"
+                        size="sm"
                         data-testid="diary-modal-toggle-only-favorites"
                         onClick={() => setShowOnlyFavorites((prev) => !prev)}
                         aria-pressed={showOnlyFavorites}
-                        className={`px-3 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
-                          showOnlyFavorites
-                            ? "bg-amber-500/25 border-amber-400 text-amber-300 font-black shadow-[0_0_10px_rgba(251,191,36,0.3)]"
-                            : "bg-white/5 border-white/10 text-neutral-400 hover:text-amber-300"
-                        }`}
+                        className={showOnlyFavorites ? "!bg-amber-500/25 !border-amber-400 !text-amber-300 font-black shadow-[0_0_10px_rgba(251,191,36,0.3)]" : ""}
                       >
                         <Star className={`w-3.5 h-3.5 ${showOnlyFavorites ? "fill-amber-400 text-amber-400" : "text-amber-400/70"}`} />
                         <span>{t.diary?.filterFavoritesOnly || "Favoritos"}</span>
@@ -703,7 +719,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                             {favoriteProfileIds.length}
                           </span>
                         )}
-                      </button>
+                      </BrutalistButton>
                     </div>
 
                     {/* Lista táctil de perfiles */}
@@ -775,51 +791,34 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                 ) : (
                   /* Formulario de Contacto Externo */
                   <div className="space-y-3 bg-obsidian-card p-3.5 rounded-2xl border border-white/5">
-                    <div>
-                      <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                        {t.diary?.modalExternalNameLabel || "Nombre o apodo del contacto"}
-                      </label>
-                      <input
+                      <BrutalistInput
+                        label={t.diary?.modalExternalNameLabel || "Nombre o apodo del contacto"}
                         type="text"
                         value={customCodename}
                         onChange={(e) => setCustomCodename(e.target.value)}
                         placeholder={t.diary?.modalExternalNamePlaceholder || "Ej: Lucas del gym, Facu after..."}
-                        className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet"
                       />
-                    </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                          {t.diary?.modalExternalRoleLabel || "Rol en la cama"}
-                        </label>
-                        <select
-                          value={customRole}
-                          onChange={(e) => setCustomRole(e.target.value as RoleType)}
-                          className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet cursor-pointer"
-                        >
-                          {ALL_ROLE_TYPES.map((r) => (
-                            <option key={r} value={r}>
-                              {getRoleDisplayLabel(r, language, t)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <BrutalistSelect
+                        label={t.diary?.modalExternalRoleLabel || "Rol en la cama"}
+                        value={customRole}
+                        onChange={(val) => setCustomRole(val as RoleType)}
+                        options={ALL_ROLE_TYPES.map((r) => ({
+                          value: r,
+                          label: getRoleDisplayLabel(r, language, t),
+                        }))}
+                      />
 
-                      <div>
-                        <label className="text-xs font-semibold text-neutral-300 block mb-1">
-                          {t.diary?.modalExternalAgeLabel || "Edad (opcional)"}
-                        </label>
-                        <input
-                          type="number"
-                          min={18}
-                          max={99}
-                          value={customAge}
-                          onChange={(e) => setCustomAge(e.target.value)}
-                          placeholder="Ej: 28"
-                          className="w-full px-3 py-2.5 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet font-mono"
-                        />
-                      </div>
+                      <BrutalistInput
+                        label={t.diary?.modalExternalAgeLabel || "Edad (opcional)"}
+                        type="number"
+                        min={18}
+                        max={99}
+                        value={customAge}
+                        onChange={(e) => setCustomAge(e.target.value)}
+                        placeholder="Ej: 28"
+                      />
                     </div>
 
                     {/* Presets rápidos de avatar para contacto de afuera */}
@@ -859,16 +858,12 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
 
                 {/* Notas privadas de la persona (solo para tus ojos) */}
                 <div className="bg-obsidian-card p-3 rounded-2xl border border-white/5">
-                  <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5 mb-1.5">
-                    <Lock className="w-3.5 h-3.5 text-mintNeon" />
-                    <span>{t.diary?.modalCustomNotesLabel || "Notas privadas sobre la persona (solo para vos)"}</span>
-                  </label>
-                  <textarea
+                  <BrutalistTextarea
+                    label={t.diary?.modalCustomNotesLabel || "Notas privadas sobre la persona (solo para vos)"}
                     value={personPrivateNotes}
                     onChange={(e) => setPersonPrivateNotes(e.target.value)}
                     rows={2}
                     placeholder={t.diary?.modalCustomNotesPlaceholder || "Preferencias, gustos, cosas a tener en cuenta..."}
-                    className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-neutral-200 text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet resize-none"
                   />
                 </div>
               </div>
@@ -1071,18 +1066,13 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                     })}
                   </div>
 
-                  <div>
-                    <label className="text-[11px] font-semibold text-neutral-400 block mb-1">
-                      {t.diary?.modalUpcomingNotesLabel || "Notas de preparación (timbre, cosas a llevar, acuerdos):"}
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={privateNotes}
-                      onChange={(e) => setPrivateNotes(e.target.value)}
-                      placeholder={t.diary?.modalUpcomingNotesPlaceholder || "Timbre, cosas que llevar (forros, toalla), indicaciones..."}
-                      className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-white text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet resize-none font-mono"
-                    />
-                  </div>
+                  <BrutalistTextarea
+                    label={t.diary?.modalUpcomingNotesLabel || "Notas de preparación (timbre, cosas a llevar, acuerdos):"}
+                    rows={2}
+                    value={privateNotes}
+                    onChange={(e) => setPrivateNotes(e.target.value)}
+                    placeholder={t.diary?.modalUpcomingNotesPlaceholder || "Timbre, cosas que llevar (forros, toalla), indicaciones..."}
+                  />
                 </div>
               </div>
             )
@@ -1416,15 +1406,12 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                     <div className="p-3.5 pt-0 space-y-3.5 border-t border-white/5">
                       {/* Notas Íntimas Cifradas */}
                       <div className="pt-2">
-                        <label className="text-[11px] font-semibold text-neutral-300 block mb-1">
-                          Notas íntimas confidenciales (solo para tus ojos):
-                        </label>
-                        <textarea
+                        <BrutalistTextarea
+                          label="Notas íntimas confidenciales (solo para tus ojos):"
                           rows={3}
                           value={privateNotes}
                           onChange={(e) => setPrivateNotes(e.target.value)}
                           placeholder={t.diary?.modalPrivateNotesPlaceholder || "Escribí libremente lo que quieras recordar de este encuentro..."}
-                          className="w-full px-3 py-2 rounded-xl bg-obsidian border border-white/10 text-neutral-200 text-xs focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet resize-none"
                         />
                       </div>
 
@@ -1531,49 +1518,52 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
             ======================================================== */}
         <div className="p-3.5 sm:p-4 border-t border-white/10 bg-obsidian-deep/95 backdrop-blur-md flex items-center justify-between gap-3">
           {currentStep === 2 ? (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="secondary"
               data-testid="diary-modal-back-btn"
               onClick={() => {
                 setCurrentStep(1);
                 audioEngine.playPulse();
               }}
-              className="px-4 py-2.5 min-h-[44px] rounded-2xl border border-white/10 bg-white/5 text-white hover:bg-white/10 text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>{t.diary?.modalBtnBack || "Volver"}</span>
-            </button>
+            </BrutalistButton>
           ) : (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="ghost"
               onClick={onClose}
-              className="px-4 py-2.5 min-h-[44px] rounded-2xl border border-white/10 bg-white/5 text-neutral-400 hover:text-white text-xs font-mono font-bold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
             >
               {t.diary?.modalBtnCancel || "Cancelar"}
-            </button>
+            </BrutalistButton>
           )}
 
           {currentStep === 1 ? (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
               data-testid="diary-modal-next-btn"
               onClick={() => {
                 setCurrentStep(2);
                 audioEngine.playPulse();
               }}
-              className="px-5 py-2.5 min-h-[44px] rounded-2xl bg-electricViolet text-white hover:bg-electricViolet-glow text-xs font-mono font-bold flex items-center gap-1.5 shadow-violet-soft transition-all ml-auto cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+              className="ml-auto"
             >
               <span>{t.diary?.modalBtnNext || "Continuar"}</span>
               <ChevronRight className="w-4 h-4" />
-            </button>
+            </BrutalistButton>
           ) : (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
               data-testid="diary-modal-submit-btn"
-              disabled={isSaving}
+              disabled={isSaving || isSuccess}
+              isSaving={isSaving}
+              isSuccess={isSuccess}
+              savingText={t.diary?.modalBtnSaving || "Guardando..."}
+              successText="¡Guardado con Éxito!"
               onClick={handleSave}
-              className="px-6 py-2.5 min-h-[44px] rounded-2xl bg-gradient-to-r from-electricViolet to-purple-600 text-white hover:opacity-95 text-xs font-mono font-bold flex items-center gap-2 shadow-violet-soft transition-all ml-auto disabled:opacity-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+              className="ml-auto !bg-gradient-to-r !from-electricViolet !to-purple-600"
             >
+
               <CheckCircle2 className="w-4 h-4" />
               <span>
                 {isSaving
@@ -1584,7 +1574,7 @@ export const CreateDiaryEntryModal: React.FC<CreateDiaryEntryModalProps> = ({ on
                   ? t.diary?.modalBtnScheduleNow || "📅 Agendar Salida"
                   : t.diary?.modalBtnSaveLog || "✓ Guardar en la Libreta"}
               </span>
-            </button>
+            </BrutalistButton>
           )}
         </div>
       </div>

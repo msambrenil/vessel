@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useVessel } from "@/context/VesselContext";
+import { useAuth, useSettings, useLogistics } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { submitBetaFeedbackReport } from "@/lib/firebase/betaFeedbackService";
 import { BetaReportType } from "@/types/vessel";
@@ -18,6 +18,7 @@ import {
   Smartphone,
   Cpu,
 } from "lucide-react";
+import { BrutalistInput, BrutalistTextarea, BrutalistButton } from "@/components/ui";
 
 interface BetaFeedbackModalProps {
   isOpen: boolean;
@@ -26,7 +27,9 @@ interface BetaFeedbackModalProps {
 
 export const BetaFeedbackModal: React.FC<BetaFeedbackModalProps> = ({ isOpen, onClose }) => {
   const pathname = usePathname();
-  const { myProfile, currentUserUid, language, batteryEngineState } = useVessel();
+  const { myProfile, currentUserUid } = useAuth();
+  const { language } = useSettings();
+  const { batteryEngineState } = useLogistics();
 
   const [reportType, setReportType] = useState<BetaReportType>("bug");
   const [title, setTitle] = useState("");
@@ -179,41 +182,31 @@ export const BetaFeedbackModal: React.FC<BetaFeedbackModalProps> = ({ isOpen, on
             </div>
 
             {/* Título opcional */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-neutral-400 font-bold">
-                {language === "es" ? "Título Breve" : "Short Title"}
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder={
-                  language === "es"
-                    ? "Ej: El audio sub-bass no sonó al enviar pulso"
-                    : "e.g.: Sub-bass audio did not play on pulse"
-                }
-                className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-electricViolet"
-              />
-            </div>
+            <BrutalistInput
+              label={language === "es" ? "Título Breve" : "Short Title"}
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={
+                language === "es"
+                  ? "Ej: El audio sub-bass no sonó al enviar pulso"
+                  : "e.g.: Sub-bass audio did not play on pulse"
+              }
+            />
 
             {/* Descripción detallada */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono uppercase text-neutral-400 font-bold">
-                {language === "es" ? "¿Qué sucedió? (Detalles)" : "What happened? (Details)"} *
-              </label>
-              <textarea
-                required
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={
-                  language === "es"
-                    ? "Describí qué estabas haciendo, qué esperabas y qué ocurrió..."
-                    : "Describe what you were doing, what you expected, and what happened..."
-                }
-                className="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-white font-sans text-xs placeholder:text-neutral-600 focus:outline-none focus:border-electricViolet leading-relaxed"
-              />
-            </div>
+            <BrutalistTextarea
+              label={`${language === "es" ? "¿Qué sucedió? (Detalles)" : "What happened? (Details)"} *`}
+              required
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={
+                language === "es"
+                  ? "Describí qué estabas haciendo, qué esperabas y qué ocurrió..."
+                  : "Describe what you were doing, what you expected, and what happened..."
+              }
+            />
 
             {/* Metadatos capturados automáticamente */}
             <div className="p-3 bg-black/40 border border-white/10 rounded-xl space-y-2 text-[10px] font-mono text-neutral-400">

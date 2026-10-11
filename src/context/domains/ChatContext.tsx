@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ChatMessage,
   ChatMediaAttachment,
@@ -21,19 +21,32 @@ import {
   syncBoundarySetting,
   markCloudMessagesAsRead,
 } from "@/lib/firebase/chatService";
-import { loadFromStorage, saveToStorage, STORAGE_KEYS } from "@/lib/storage/localStorageSync";
+import {
+  loadFromStorage,
+  saveToStorage,
+  scheduleDeferredSave,
+  loadHeavyCollection,
+  STORAGE_KEYS,
+} from "@/lib/storage/localStorageSync";
 import { BOUNDARY_PROTOCOLS_CATALOG } from "@/data/energyCatalog";
+import { fetchPublicProfileById } from "@/lib/firebase/profileService";
 import { useAuth } from "./AuthContext";
 
 const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {};
 const INITIAL_BOUNDARIES: Record<string, UserBoundarySetting> = {};
 
+const persistChatMessages = (next: Record<string, ChatMessage[]>) => {
+  scheduleDeferredSave(STORAGE_KEYS.CHAT_MESSAGES, next, 100);
+};
+
 export interface ChatContextType {
   chatMessages: Record<string, ChatMessage[]>;
+  unreadMessagesCount: number;
   activeChatProfileId: string | null;
   setActiveChatProfileId: (id: string | null) => void;
   markMessagesAsRead: (profileId: string) => void;
   sendChatMessage: (profileId: string, text: string, isBurnOnView?: boolean) => void;
+  retryChatMessage: (profileId: string, messageId: string) => void;
   sendVoiceMessage: (profileId: string, audioDataUri: string, durationSeconds: number, waveform: number[], isBurnOnView?: boolean) => void;
   sendMediaChatMessage: (profileId: string, media: ChatMediaAttachment, text?: string) => void;
   sendKindClosureMessage: (profileId: string, messageText: string) => void;
@@ -102,9 +115,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 }) => {
   const { authUser, currentUserUid, myProfile } = useAuth();
 
-  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(() => {
-    return loadFromStorage<Record<string, ChatMessage[]>>(STORAGE_KEYS.CHAT_MESSAGES, INITIAL_MESSAGES);
-  });
+  const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>(INITIAL_MESSAGES);
+  const chatMessagesRef = useRef(chatMessages);
+  useEffect(() => {
+    chatMessagesRef.current = chatMessages;
+  }, [chatMessages]);
   const [activeChatProfileId, setActiveChatProfileId] = useState<string | null>(null);
   const [discoveredPartnerIds, setDiscoveredPartnerIds] = useState<string[]>([]);
   const [chatRetentionMode, setChatRetentionMode] = useState<"ephemeral" | "persistent">("persistent");
@@ -123,10 +138,34 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
 
   const [secureWaypoints, setSecureWaypoints] = useState<Record<string, SecureWaypoint>>({});
 
+  const unreadMessagesCount = useMemo(() => {
+    let count = 0;
+    const allMsgs = Object.values(chatMessages);
+    for (let i = 0; i < allMsgs.length; i++) {
+      const thread = allMsgs[i];
+      for (let j = 0; j < thread.length; j++) {
+        const m = thread[j];
+        if (m.senderId !== "me" && m.senderId !== "system" && !m.isRead) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }, [chatMessages]);
+
   // Hidratación local-first
   useEffect(() => {
     const localChatMessages = loadFromStorage<Record<string, ChatMessage[]>>(STORAGE_KEYS.CHAT_MESSAGES, INITIAL_MESSAGES);
     if (localChatMessages && Object.keys(localChatMessages).length > 0) setChatMessages(localChatMessages);
+
+    // Hidratación profunda asíncrona desde IndexedDB para colecciones voluminosas (>5MB)
+    loadHeavyCollection<Record<string, ChatMessage[]>>(STORAGE_KEYS.CHAT_MESSAGES, INITIAL_MESSAGES)
+      .then((idbMessages) => {
+        if (idbMessages && Object.keys(idbMessages).length > 0) {
+          setChatMessages((prev) => ({ ...idbMessages, ...prev }));
+        }
+      })
+      .catch(() => {});
 
     const localChatRetention = loadFromStorage<"ephemeral" | "persistent">(STORAGE_KEYS.CHAT_RETENTION, "persistent");
     if (localChatRetention) setChatRetentionMode(localChatRetention);
@@ -152,6 +191,28 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
     };
   }, [authUser]);
 
+  // Hidratar perfiles públicos de interlocutores descubiertos en almacenamiento conocido
+  useEffect(() => {
+    if (!authUser || authUser.uid === "local-user" || discoveredPartnerIds.length === 0) return;
+    discoveredPartnerIds.forEach((pid) => {
+      if (pid === "me" || pid === "system") return;
+      fetchPublicProfileById(pid)
+        .then((fetched) => {
+          if (fetched) {
+            const current = loadFromStorage<Record<string, VesselProfile>>(STORAGE_KEYS.KNOWN_PROFILES, {});
+            if (
+              !current[pid] ||
+              current[pid].avatarUrl !== fetched.avatarUrl ||
+              current[pid].codename !== fetched.codename
+            ) {
+              saveToStorage(STORAGE_KEYS.KNOWN_PROFILES, { ...current, [pid]: fetched });
+            }
+          }
+        })
+        .catch(() => {});
+    });
+  }, [discoveredPartnerIds, authUser]);
+
   // Suscripción en tiempo real a mensajes para todos los chats activos descubiertos y el chat abierto
   useEffect(() => {
     if (!authUser || authUser.uid === "local-user") return;
@@ -169,19 +230,21 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       const unsub = subscribeToChatMessages(chatId, (cloudMsgs) => {
         if (!cloudMsgs || cloudMsgs.length === 0) return;
         const unreadCloudIdsToMark: string[] = [];
+
+        const currentLocal = chatMessagesRef.current[targetUid] || [];
+        const existingIds = new Set(currentLocal.map((m) => m.id));
+        const hasNewIncoming = cloudMsgs.some((m) => {
+          const isFromMe = m.senderId === myUid || m.senderId === "me";
+          return !existingIds.has(m.id) && !isFromMe;
+        });
+
         setChatMessages((prev) => {
           const localList = prev[targetUid] || [];
-          const existingIds = new Set(localList.map((m) => m.id));
-          let hasNewIncoming = false;
-
           const mergedMap = new Map<string, ChatMessage>();
           localList.forEach((m) => mergedMap.set(m.id, m));
           cloudMsgs.forEach((m) => {
             const existing = mergedMap.get(m.id);
             const isFromMe = m.senderId === myUid || m.senderId === "me";
-            if (!existingIds.has(m.id) && !isFromMe) {
-              hasNewIncoming = true;
-            }
             const isRead = Boolean(
               existing?.isRead || m.isRead || isFromMe || activeChatProfileId === targetUid
             );
@@ -195,15 +258,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
             });
           });
 
-          if (hasNewIncoming) {
-            audioEngine.playChatMessageSound();
-          }
-
           const mergedList = Array.from(mergedMap.values());
           const next = { ...prev, [targetUid]: mergedList };
-          saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+          persistChatMessages(next);
           return next;
         });
+
+        if (hasNewIncoming) {
+          audioEngine.playChatMessageSound();
+        }
 
         if (unreadCloudIdsToMark.length > 0 && authUser && authUser.uid !== "local-user") {
           markCloudMessagesAsRead(chatId, unreadCloudIdsToMark).catch(() => {});
@@ -238,7 +301,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       });
       if (!hasUnread) return prev;
       const next = { ...prev, [profileId]: updated };
-      saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+      persistChatMessages(next);
       return next;
     });
 
@@ -267,7 +330,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), newMsg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -284,12 +347,83 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
             timestamp: newMsg.timestamp,
           },
           newMsg.id
-        ).catch((err) => console.warn("Sync cloud message error:", err));
+        ).catch((err) => {
+          console.warn("[ChatContext] Sync cloud message error, marking failed:", err);
+          setChatMessages((prev) => {
+            const list = prev[profileId] || [];
+            const updated = list.map((m) => (m.id === newMsg.id ? { ...m, isFailed: true, deliveryStatus: "failed" as const } : m));
+            const next = { ...prev, [profileId]: updated };
+            persistChatMessages(next);
+            return next;
+          });
+        });
       }
 
       audioEngine.playChatMessageSound();
     },
     [authUser, getChatChannelId]
+  );
+
+  const retryChatMessage = useCallback(
+    (profileId: string, messageId: string) => {
+      const msg = (chatMessages[profileId] || []).find((m) => m.id === messageId);
+      if (!msg) return;
+
+      setChatMessages((prev) => {
+        const list = prev[profileId] || [];
+        const updated = list.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                isFailed: false,
+                deliveryStatus: "sending" as const,
+                timestamp: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false }),
+              }
+            : m
+        );
+        const next = { ...prev, [profileId]: updated };
+        persistChatMessages(next);
+        return next;
+      });
+
+      if (authUser && authUser.uid !== "local-user") {
+        const chatId = getChatChannelId(profileId);
+        sendCloudMessage(
+          chatId,
+          {
+            senderId: authUser.uid,
+            text: msg.text ?? "",
+            isBurnOnView: msg.isBurnOnView || false,
+            isBurned: false,
+            isRead: false,
+            timestamp: msg.timestamp,
+          },
+          msg.id
+        )
+          .then(() => {
+            setChatMessages((prev) => {
+              const list = prev[profileId] || [];
+              const updated = list.map((m) => (m.id === messageId ? { ...m, isFailed: false, deliveryStatus: "sent" as const } : m));
+              const next = { ...prev, [profileId]: updated };
+              persistChatMessages(next);
+              return next;
+            });
+          })
+          .catch((err) => {
+            console.warn("[ChatContext] Retry cloud message error:", err);
+            setChatMessages((prev) => {
+              const list = prev[profileId] || [];
+              const updated = list.map((m) => (m.id === messageId ? { ...m, isFailed: true, deliveryStatus: "failed" as const } : m));
+              const next = { ...prev, [profileId]: updated };
+              persistChatMessages(next);
+              return next;
+            });
+          });
+      } else {
+        audioEngine.playChatMessageSound();
+      }
+    },
+    [chatMessages, authUser, getChatChannelId]
   );
 
   const sendVoiceMessage = useCallback(
@@ -310,7 +444,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), newMsg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -362,7 +496,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), newMsg, sysMsg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -421,7 +555,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), newMsg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -456,7 +590,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           m.id === messageId ? { ...m, isBurned: true, text: "[CONTENIDO AUTODESTRUIDO TRAS LECTURA]" } : m
         );
         const next = { ...prev, [profileId]: updated };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -489,7 +623,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), newMsg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -537,7 +671,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           return m;
         });
         const next = { ...prev, [profileId]: updated };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -564,7 +698,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         return m;
       });
       const next = { ...prev, [profileId]: updated };
-      saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+      persistChatMessages(next);
       return next;
     });
   }, []);
@@ -594,7 +728,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           return m;
         });
         const next = { ...prev, [profileId]: updated };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -646,7 +780,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           return m;
         });
         const next = { ...prev, [profileId]: updated };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -714,7 +848,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         });
 
         if (hasChanges) {
-          saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+          persistChatMessages(next);
           return next;
         }
         return prev;
@@ -775,7 +909,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const clearChatHistory = useCallback((profileId: string) => {
     setChatMessages((prev) => {
       const next = { ...prev, [profileId]: [] };
-      saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+      persistChatMessages(next);
       return next;
     });
     audioEngine.playError();
@@ -813,7 +947,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...updated, cancelMsg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -872,6 +1006,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           [targetProfileId]: fullSetting,
         };
         saveToStorage(STORAGE_KEYS.BOUNDARIES, next);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("vessel_boundaries_changed", { detail: next }));
+        }
         return next;
       });
 
@@ -899,6 +1036,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       const next = { ...prev };
       delete next[targetProfileId];
       saveToStorage(STORAGE_KEYS.BOUNDARIES, next);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("vessel_boundaries_changed", { detail: next }));
+      }
       return next;
     });
     audioEngine.playPulse();
@@ -949,7 +1089,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), msg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -976,7 +1116,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
           ...prev,
           [profileId]: [...(prev[profileId] || []), msg],
         };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -1031,7 +1171,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
       setChatMessages((prev) => {
         const existing = prev[targetProfileId] || [];
         const next = { ...prev, [targetProfileId]: [...existing, chatMsg] };
-        saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+        persistChatMessages(next);
         return next;
       });
 
@@ -1067,7 +1207,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         return msg;
       });
       const next = { ...prev, [targetProfileId]: updatedChat };
-      saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+      persistChatMessages(next);
       return next;
     });
 
@@ -1097,7 +1237,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
         return msg;
       });
       const next = { ...prev, [targetProfileId]: updatedChat };
-      saveToStorage(STORAGE_KEYS.CHAT_MESSAGES, next);
+      persistChatMessages(next);
       return next;
     });
 
@@ -1107,10 +1247,12 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   const value = useMemo<ChatContextType>(
     () => ({
       chatMessages,
+      unreadMessagesCount,
       activeChatProfileId,
       setActiveChatProfileId,
       markMessagesAsRead,
       sendChatMessage,
+      retryChatMessage,
       sendVoiceMessage,
       sendMediaChatMessage,
       sendKindClosureMessage,
@@ -1157,9 +1299,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
     }),
     [
       chatMessages,
+      unreadMessagesCount,
       activeChatProfileId,
       markMessagesAsRead,
       sendChatMessage,
+      retryChatMessage,
       sendVoiceMessage,
       sendMediaChatMessage,
       sendKindClosureMessage,

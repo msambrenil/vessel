@@ -34,7 +34,7 @@ describe("VESSEL // Sistema de Versión y Control Remoto", () => {
   describe("Constantes de Versión y Changelog Oficial", () => {
     it("debe tener una versión válida semver que comience con 'v'", () => {
       expect(CURRENT_SYSTEM_VERSION).toMatch(/^v\d+\.\d+\.\d+/);
-      expect(CURRENT_SYSTEM_VERSION).toBe("v2.5.0");
+      expect(CURRENT_SYSTEM_VERSION).toBe("v2.7.0");
     });
 
     it("debe contener la fecha de build en formato ISO y localizado ART", () => {

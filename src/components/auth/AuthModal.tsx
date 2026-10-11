@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useAuth, useSettings, useRadarMatrix } from "@/context/VesselContext";
 import { VesselLogo } from "@/components/brand/VesselLogo";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { RoleType } from "@/types/vessel";
@@ -33,6 +33,7 @@ import {
   LogOut,
   UserCheck,
 } from "lucide-react";
+import { BrutalistButton, BrutalistSelect, BrutalistInput, BrutalistModal } from "@/components/ui";
 
 interface AuthModalProps {
   onClose: () => void;
@@ -96,8 +97,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialMode = "login",
 }) => {
   const {
-    t,
-    language,
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
@@ -113,10 +112,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     updateMyProfile,
     currentUserUid,
     openAuthModal,
-    appMode,
-    filters,
-    setFilters,
-  } = useVessel();
+  } = useAuth();
+  const { t, language, appMode } = useSettings();
+  const { filters, setFilters } = useRadarMatrix();
 
   const [mode, setMode] = useState<"login" | "register" | "forgot_password" | "link" | "session">(
     isAuthenticated
@@ -313,7 +311,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setTimeout(() => {
         onClose();
       }, 450);
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Error al guardar tu perfil. Intentá nuevamente.");
     } finally {
       setIsLoading(false);
@@ -347,7 +345,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setErrorMessage(result.error);
         audioEngine.playSubBass(35, 0.4);
       }
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Error de conexión durante el login.");
     } finally {
       setIsLoading(false);
@@ -387,7 +385,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setErrorMessage(result.error);
         audioEngine.playSubBass(35, 0.4);
       }
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Error al conectar cuenta de prueba.");
     } finally {
       setIsLoading(false);
@@ -486,7 +484,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           audioEngine.playSubBass(35, 0.4);
         }
       }
-    } catch (err: any) {
+    } catch {
       setErrorMessage("Error de conexión. Reintentá.");
     } finally {
       setIsLoading(false);
@@ -521,7 +519,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           ? "Sesión cerrada correctamente."
           : "Signed out successfully."
       );
-    } catch (err: any) {
+    } catch {
       setErrorMessage(
         language === "es"
           ? "Error al cerrar sesión. Reintentá."
@@ -533,69 +531,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={
-        isAuthenticated || mode === "session"
-          ? "Configurar Mi Perfil en VESSEL"
-          : mode === "link"
-          ? t.auth.linkAccountTitle
-          : t.auth.loginTitle
-      }
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md bg-obsidian-deep border-t sm:border border-electricViolet/30 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[94vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-        {/* Cabecera Brutalista */}
-        <div className="p-4 bg-obsidian-surface border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-              <VesselLogo size={20} showWordmark={false} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                  {isAuthenticated || mode === "session"
-                    ? "MI PERFIL OPERATIVO"
-                    : mode === "link"
-                    ? t.auth.linkAccountTitle
-                    : t.auth.loginTitle}
-                </h2>
-                <span
-                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold border ${
-                    isAuthenticated || mode === "session"
-                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                      : "bg-electricViolet/15 text-electricViolet-glow border-electricViolet/30"
-                  }`}
-                >
-                  {isAuthenticated || mode === "session"
-                    ? (language === "es" ? "GOOGLE OAUTH ACTIVO" : "ACTIVE SESSION")
-                    : (language === "es" ? "ACCESO VESSEL" : "AUTH CORE")}
-                </span>
-              </div>
-              <p className="text-[10px] text-neutral-400 font-mono">
-                {isAuthenticated || mode === "session"
-                  ? "Datos principales de tu cuenta y qué buscás en la Matrix"
-                  : t.auth.loginSub}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar ventana de autenticación"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+    <BrutalistModal
+      isOpen={true}
+      onClose={onClose}
+      maxWidth="md"
+      className="bg-obsidian-deep border-electricViolet/30"
+      contentClassName="p-0 flex flex-col"
+      closeButtonAriaLabel="Cerrar ventana de autenticación"
+      icon={<VesselLogo size={20} showWordmark={false} />}
+      title={
+        <div className="flex items-center gap-2">
+          <span>
+            {isAuthenticated || mode === "session"
+              ? "MI PERFIL OPERATIVO"
+              : mode === "link"
+              ? t.auth.linkAccountTitle
+              : t.auth.loginTitle}
+          </span>
+          <span
+            className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold border ${
+              isAuthenticated || mode === "session"
+                ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                : "bg-electricViolet/15 text-electricViolet-glow border-electricViolet/30"
+            }`}
           >
-            <X className="w-4 h-4" />
-          </button>
+            {isAuthenticated || mode === "session"
+              ? (language === "es" ? "GOOGLE OAUTH ACTIVO" : "ACTIVE SESSION")
+              : (language === "es" ? "ACCESO VESSEL" : "AUTH CORE")}
+          </span>
         </div>
+      }
+      subtitle={
+        isAuthenticated || mode === "session"
+          ? "Datos principales de tu cuenta y qué buscás en la Matrix"
+          : t.auth.loginSub
+      }
+    >
 
         {/* Selector de Pestañas: SOLO visible cuando el usuario NO está autenticado (evita confusión de "Crear Cuenta" ya logueado) */}
         {!isAuthenticated && mode !== "forgot_password" && (
@@ -699,7 +670,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {/* 1. NOMBRE DE USUARIO / ALIAS EN VESSEL */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-neutral-200 uppercase tracking-wider block">
+                  <label htmlFor="auth-codename-input" className="text-[10px] font-bold text-neutral-200 uppercase tracking-wider block">
                     1. Nombre de Usuario / Alias en VESSEL <span className="text-electricViolet-glow">*</span>
                   </label>
                   {codename.trim().length >= 3 && (
@@ -719,8 +690,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <User className="w-4 h-4" />
                   </div>
                   <input
+                    id="auth-codename-input"
                     type="text"
                     required
+                    aria-invalid={codenameStatus.isAvailable === false}
                     value={codename}
                     onChange={(e) => setCodename(e.target.value)}
                     placeholder="Ej: OJITOS"
@@ -851,20 +824,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {/* BOTÓN PRINCIPAL: GUARDAR DATOS Y ENTRAR A LA MATRIX */}
-              <button
+              <BrutalistButton
                 type="submit"
+                variant="primary"
+                size="lg"
                 disabled={isLoading}
-                className="w-full py-3.5 min-h-[50px] bg-electricViolet text-white hover:bg-electricViolet-glow font-black rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer disabled:opacity-50 active:scale-98"
+                isLoading={isLoading}
+                className="w-full"
               >
-                {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-                    <span>GUARDAR MI PERFIL Y ENTRAR A LA MATRIX</span>
-                  </>
-                )}
-              </button>
+                <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                <span>GUARDAR MI PERFIL Y ENTRAR A LA MATRIX</span>
+              </BrutalistButton>
             </form>
           ) : (
             <>
@@ -1009,20 +979,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-mono text-neutral-300">Rol Corporal</label>
-                    <select
-                      value={editPersonaRole}
-                      onChange={(e) => setEditPersonaRole(e.target.value as RoleType)}
-                      className="w-full bg-neutral-900 border border-white/15 rounded-lg px-2 py-1.5 text-[11px] text-white font-mono focus:outline-none focus:border-electricViolet cursor-pointer"
-                    >
-                      {ROLE_OPTIONS.map((opt) => (
-                        <option key={opt.id} value={opt.id}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <BrutalistSelect
+                    label="Rol Corporal"
+                    value={editPersonaRole}
+                    onChange={(val) => setEditPersonaRole(val as RoleType)}
+                    options={ROLE_OPTIONS.map((opt) => ({
+                      value: opt.id,
+                      label: opt.label,
+                    }))}
+                  />
 
                   <div className="flex items-center gap-1.5 pt-1">
                     <button
@@ -1127,22 +1092,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {/* Selector de Rol Corporal y Qué Posición Busco (Solo en Registro) */}
             {mode === "register" && (
               <>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider block">
-                    {t.auth.roleLabel}
-                  </label>
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value as RoleType)}
-                    className="w-full min-h-[44px] bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-colors font-sans cursor-pointer"
-                  >
-                    {ROLE_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id} className="bg-neutral-900 text-white">
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <BrutalistSelect
+                  label={t.auth.roleLabel}
+                  value={selectedRole}
+                  onChange={(val) => setSelectedRole(val as RoleType)}
+                  options={ROLE_OPTIONS.map((opt) => ({
+                    value: opt.id,
+                    label: opt.label,
+                  }))}
+                />
 
                 <div className="space-y-1.5 p-3 rounded-2xl bg-electricViolet/10 border border-electricViolet/30">
                   <div className="flex items-center justify-between">
@@ -1277,14 +1235,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {/* Botón de Acción Principal */}
-            <button
+            <BrutalistButton
               type="submit"
+              variant="primary"
+              size="lg"
               disabled={isLoading}
-              className="w-full py-3.5 min-h-[48px] bg-electricViolet text-white hover:bg-electricViolet-glow font-extrabold rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-violet-soft cursor-pointer disabled:opacity-50 mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98"
+              isLoading={isLoading}
+              className="w-full mt-2"
             >
-              {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : mode === "login" ? (
+              {mode === "login" ? (
                 <span>{t.auth.loginBtn}</span>
               ) : mode === "register" ? (
                 <span>{t.auth.registerBtn}</span>
@@ -1293,22 +1252,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               ) : (
                 <span>{t.auth.sendResetBtn}</span>
               )}
-            </button>
+            </BrutalistButton>
           </form>
 
           {/* Volver al Login si está en Forgot Password */}
           {mode === "forgot_password" && (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="ghost"
               onClick={() => {
                 setMode("login");
                 clearMessages();
               }}
-              className="w-full py-2.5 min-h-[40px] text-center text-xs text-neutral-400 hover:text-white flex items-center justify-center gap-1.5 pt-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+              className="w-full mt-2"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Volver a Iniciar Sesión</span>
-            </button>
+            </BrutalistButton>
           )}
 
           {/* Acceso como Invitado (Solo en Modo Prueba) */}
@@ -1326,7 +1285,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </>
           )}
         </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

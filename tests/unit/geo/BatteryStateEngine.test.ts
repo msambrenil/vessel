@@ -101,5 +101,21 @@ describe("BatteryStateEngine — Motor Adaptativo de Batería y Muestreo de Geop
       // Desuscripción idempotente
       expect(() => unsubscribe()).not.toThrow();
     });
+
+    it("debe despachar el estado actual a los suscriptores al notificar", () => {
+      let receivedState: unknown = null;
+      const unsubscribe = engine.subscribe((state) => {
+        receivedState = state;
+      });
+
+      // @ts-expect-error invocar método privado para prueba unitaria
+      engine.notifyListeners();
+
+      expect(receivedState).not.toBeNull();
+      expect((receivedState as { mode: string }).mode).toBe("foreground_active");
+      expect((receivedState as { level: number }).level).toBe(85);
+
+      unsubscribe();
+    });
   });
 });

@@ -21,6 +21,7 @@ import {
 } from "@/lib/storage/localStorageSync";
 import { VesselProfile } from "@/types/vessel";
 import { isGhostOrMockProfile } from "@/lib/firebase/matrixService";
+import { DEFAULT_FALLBACK_COORDINATES } from "@/lib/geo/GeospatialEngine";
 import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot, Unsubscribe } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/firestoreSanitizer";
@@ -137,8 +138,9 @@ export const checkIsAdminAuthorized = (
   userEmail?: string | null,
   passcode?: string | null
 ): boolean => {
-  const configuredPasscode = process.env.NEXT_PUBLIC_ADMIN_PASSCODE?.trim();
-  // Si se provee passcode y coincide con la clave maestra configurada, autorizar inmediatamente
+  const configuredPasscode = (process.env.ADMIN_MASTER_PASSCODE)?.trim();
+
+  // Si se provee passcode y coincide con la clave maestra configurada (entornos de servidor o tests), autorizar
   if (passcode && configuredPasscode && passcode.trim() === configuredPasscode) {
     return true;
   }
@@ -151,6 +153,36 @@ export const checkIsAdminAuthorized = (
   return Boolean(
     userEmail && allowedEmails.includes(userEmail.trim().toLowerCase())
   );
+};
+
+/**
+ * Verificación asíncrona segura de clave maestra delegada al Route Handler del servidor (P0).
+ * Previene la fuga de credenciales en el bundle JavaScript del navegador cliente.
+ */
+export const verifyAdminPasscodeSecurely = async (passcode: string): Promise<boolean> => {
+  if (!passcode || !passcode.trim()) return false;
+
+  // En entornos de testing/SSR sin endpoint activo o en Node:
+  if (typeof window === "undefined" || typeof fetch === "undefined") {
+    return checkIsAdminAuthorized(null, passcode);
+  }
+
+  try {
+    const res = await fetch("/api/admin/verify-passcode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passcode: passcode.trim() }),
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      return Boolean(data?.authorized);
+    }
+    return false;
+  } catch (err) {
+    console.warn("[adminService] Fallback de verificación segura:", err);
+    return checkIsAdminAuthorized(null, passcode);
+  }
 };
 
 export const STAFF_COLLECTION = "vessel_staff";
@@ -563,7 +595,7 @@ export const fetchRealUsersFromCloud = async (): Promise<ManagedUserProfile[]> =
           distanceMeters: data.distanceMeters ?? override?.distanceMeters ?? 0,
           intensity: data.intensity ?? override?.intensity ?? 2,
           kinks: data.kinks || override?.kinks || [],
-          coordinates: data.coordinates || override?.coordinates || { lat: -34.588, lng: -58.43 },
+          coordinates: data.coordinates || override?.coordinates || DEFAULT_FALLBACK_COORDINATES,
           avatarUrl: data.avatarUrl || override?.avatarUrl || "",
           moderationStatus: override?.moderationStatus || "active",
           moderationNotes: override?.moderationNotes || [],
@@ -623,7 +655,7 @@ export const subscribeToRealUsersForAdmin = (
           distanceMeters: data.distanceMeters ?? override?.distanceMeters ?? 0,
           intensity: data.intensity ?? override?.intensity ?? 2,
           kinks: data.kinks || override?.kinks || [],
-          coordinates: data.coordinates || override?.coordinates || { lat: -34.588, lng: -58.43 },
+          coordinates: data.coordinates || override?.coordinates || DEFAULT_FALLBACK_COORDINATES,
           avatarUrl: data.avatarUrl || override?.avatarUrl || "",
           moderationStatus: override?.moderationStatus || "active",
           moderationNotes: override?.moderationNotes || [],

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary, useSettings } from "@/context/VesselContext";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ItsExposureType } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const ItsExposureModal: React.FC = () => {
   const {
@@ -22,9 +23,8 @@ export const ItsExposureModal: React.FC = () => {
     closeItsExposureModal,
     sendAnonymousItsAlert,
     diaryEntries,
-    language,
-    t,
-  } = useVessel();
+  } = useDiary();
+  const { language, t } = useSettings();
 
   const [itsType, setItsType] = useState<ItsExposureType>("gonorrhea");
   const [daysWindow, setDaysWindow] = useState<number>(14);
@@ -44,7 +44,7 @@ export const ItsExposureModal: React.FC = () => {
     { id: "syphilis", name: language === "es" ? "Sífilis" : "Syphilis", icon: "🩸" },
     { id: "mpox", name: "MPOX", icon: "🛡️" },
     { id: "hepatitis_a", name: language === "es" ? "Hepatitis A" : "Hepatitis A", icon: "💉" },
-    { id: "other", name: language === "es" ? "Otra ITS / Infección" : "Other STI / Infection", icon: "⚠️" },
+    { id: "other", name: language === "es" ? "Otra ETS / Infección" : "Other STI / Infection", icon: "⚠️" },
   ];
 
   const handleSend = () => {
@@ -71,53 +71,55 @@ export const ItsExposureModal: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={language === "es" ? "Alerta Clínica Anónima" : "Anonymous Health Alert"}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
-      onClick={closeItsExposureModal}
-    >
-      <div
-        className="relative w-full max-w-lg bg-[#0c0c0c] border-t sm:border border-red-500/50 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header Táctico */}
-        <div className="p-4 border-b border-red-500/30 bg-red-950/30 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30">
-              <ShieldAlert className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-white flex items-center gap-2">
-                <span>{language === "es" ? "Alerta Clínica Anónima" : "Anonymous Health Alert"}</span>
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">
-                  {language === "es" ? "100% ANÓNIMO" : "100% ANONYMOUS"}
-                </span>
-              </h2>
-              <p className="text-[10px] text-neutral-400 font-mono">
-                {language === "es"
-                  ? "Cuidado colectivo de salud sexual sin revelar tu identidad"
-                  : "Collective sexual health care without disclosing your identity"}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={closeItsExposureModal}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-mono transition-all cursor-pointer min-h-[44px] min-w-[44px]"
-            aria-label={language === "es" ? "Cerrar modal" : "Close modal"}
-          >
-            ✕
-          </button>
+    <BrutalistModal
+      isOpen={isItsExposureModalOpen}
+      onClose={closeItsExposureModal}
+      icon={
+        <div className="p-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30">
+          <ShieldAlert className="w-5 h-5 animate-pulse" />
         </div>
-
-        {/* Contenido */}
-        <div className="p-4 overflow-y-auto space-y-4 flex-1 text-xs">
-          {sentSuccess ? (
+      }
+      title={
+        <div className="flex items-center gap-2">
+          <span>{language === "es" ? "Alerta Clínica Anónima" : "Anonymous Health Alert"}</span>
+          <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">
+            {language === "es" ? "100% ANÓNIMO" : "100% ANONYMOUS"}
+          </span>
+        </div>
+      }
+      subtitle={
+        language === "es"
+          ? "Cuidado colectivo de salud sexual sin revelar tu identidad"
+          : "Collective sexual health care without disclosing your identity"
+      }
+      maxWidth="lg"
+      ariaLabel={language === "es" ? "Alerta Clínica Anónima" : "Anonymous Health Alert"}
+      contentClassName="p-4 space-y-4 text-xs"
+      footer={
+        !sentSuccess ? (
+          <div className="flex items-center justify-end gap-2">
+            <BrutalistButton
+              variant="ghost"
+              size="compact"
+              onClick={closeItsExposureModal}
+              className="text-xs font-mono"
+            >
+              {language === "es" ? "Cancelar" : "Cancel"}
+            </BrutalistButton>
+            <BrutalistButton
+              variant="danger"
+              size="compact"
+              onClick={handleSend}
+              className="font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{language === "es" ? "ENVIAR ALERTA ANÓNIMA" : "SEND ANONYMOUS ALERT"}</span>
+            </BrutalistButton>
+          </div>
+        ) : undefined
+      }
+    >
+      {sentSuccess ? (
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 animate-fadeIn">
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <CheckCircle2 className="w-8 h-8" />
@@ -145,12 +147,12 @@ export const ItsExposureModal: React.FC = () => {
                 </div>
                 <p className="text-[10px] text-neutral-400 leading-relaxed">
                   {language === "es"
-                    ? "Las infecciones de transmisión sexual son parte de la vida sexual activa. Este sistema permite avisar a quienes compartieron encuentros con vos para que se revisen a tiempo, sin que nadie sepa jamás quién envió la alerta."
+                    ? "Las enfermedades de transmisión sexual son parte de la vida sexual activa. Este sistema permite avisar a quienes compartieron encuentros con vos para que se revisen a tiempo, sin que nadie sepa jamás quién envió la alerta."
                     : "Sexually transmitted infections can happen with active sex lives. This protocol allows you to notify past partners so they can get tested early, without anyone ever knowing who sent the alert."}
                 </p>
               </div>
 
-              {/* Selector de ITS */}
+              {/* Selector de ETS */}
               <div>
                 <label className="font-mono text-[11px] font-bold text-red-300 uppercase tracking-wider block mb-2">
                   {language === "es" ? "1. Diagnóstico o Sospecha Clínica:" : "1. Clinical Diagnosis or Suspicion:"}
@@ -249,29 +251,6 @@ export const ItsExposureModal: React.FC = () => {
               </div>
             </>
           )}
-        </div>
-
-        {/* Footer */}
-        {!sentSuccess && (
-          <div className="p-3 border-t border-white/10 bg-neutral-950 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={closeItsExposureModal}
-              className="px-4 py-2 min-h-[44px] rounded-xl font-mono text-xs text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            >
-              {language === "es" ? "Cancelar" : "Cancel"}
-            </button>
-            <button
-              type="button"
-              onClick={handleSend}
-              className="px-4 py-2 min-h-[44px] bg-red-600 hover:bg-red-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{language === "es" ? "ENVIAR ALERTA ANÓNIMA" : "SEND ANONYMOUS ALERT"}</span>
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

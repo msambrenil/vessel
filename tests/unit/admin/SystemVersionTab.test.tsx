@@ -68,7 +68,7 @@ describe("VESSEL // UI SystemVersionTab", () => {
     expect(screen.getByText(/Historial de Versiones & Changelog Oficial/i)).toBeInTheDocument();
 
     const searchInput = screen.getByPlaceholderText(/Buscar por versión/i);
-    fireEvent.change(searchInput, { target: { value: "v2.5.0" } });
+    fireEvent.change(searchInput, { target: { value: CURRENT_SYSTEM_VERSION } });
 
     expect(screen.getByText(CURRENT_SYSTEM_VERSION)).toBeInTheDocument();
   });

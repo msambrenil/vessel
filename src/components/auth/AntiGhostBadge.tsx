@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 import {
   Ghost,
   ShieldCheck,
@@ -34,8 +34,8 @@ export const AntiGhostBadge: React.FC<AntiGhostBadgeProps> = ({
 
   let language = "es";
   try {
-    const vessel = useVessel();
-    if (vessel?.language) language = vessel.language;
+    const settings = useSettings();
+    if (settings?.language) language = settings.language;
   } catch {
     // Fallback if rendered outside VesselProvider in isolated tests
   }

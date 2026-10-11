@@ -5,6 +5,7 @@ import { sendCloudMessage } from "@/lib/firebase/chatService";
 import { updateMyMatrixPresence } from "@/lib/firebase/matrixService";
 import { submitBetaFeedbackReport } from "@/lib/firebase/betaFeedbackService";
 import { ChatMessage, VesselProfile, BetaFeedbackReport } from "@/types/vessel";
+import { setInIdb, getFromIdb, removeFromIdb } from "@/lib/storage/indexedDbSync";
 
 export type OfflineMutationType =
   | "SEND_PULSE"
@@ -53,30 +54,69 @@ const MAX_RETRIES = 5;
 let isFlushing = false;
 let hasAttachedListeners = false;
 const queueListeners: ((items: OfflineMutationItem[]) => void)[] = [];
+let inMemoryQueue: OfflineMutationItem[] | null = null;
 
 /**
- * Carga la cola de mutaciones offline desde localStorage
+ * Carga la cola de mutaciones offline desde memoria (o fallback de inicialización)
  */
 export function getOfflineQueue(): OfflineMutationItem[] {
+  if (inMemoryQueue !== null) {
+    return inMemoryQueue;
+  }
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    inMemoryQueue = raw ? JSON.parse(raw) : [];
+    return inMemoryQueue || [];
   } catch {
     return [];
   }
 }
 
 /**
- * Persiste la cola y notifica a los suscriptores reactivos
+ * Hidrata de forma asíncrona la cola desde IndexedDB en el arranque
+ */
+export async function hydrateQueueFromIdb(): Promise<OfflineMutationItem[]> {
+  if (typeof window === "undefined") return [];
+  try {
+    const idbData = await getFromIdb<OfflineMutationItem[] | null>(STORAGE_KEY, null);
+    if (idbData && Array.isArray(idbData)) {
+      inMemoryQueue = idbData;
+      notifyQueueChange(inMemoryQueue);
+      return inMemoryQueue;
+    }
+  } catch (err) {
+    console.warn("[VESSEL OfflineQueue] Error hidratando cola desde IndexedDB:", err);
+  }
+  return getOfflineQueue();
+}
+
+/**
+ * Persiste la cola en IndexedDB (primario no bloqueante) y notifica a los suscriptores reactivos
  */
 function persistQueue(items: OfflineMutationItem[]): void {
+  const sliced = items.slice(0, MAX_QUEUE_ITEMS);
+  inMemoryQueue = sliced;
+  notifyQueueChange(sliced);
+
   if (typeof window === "undefined") return;
+
+  // 1. Guardar en IndexedDB de forma asíncrona fuera del hilo principal
+  if (sliced.length === 0) {
+    removeFromIdb(STORAGE_KEY).catch(() => {});
+  } else {
+    setInIdb(STORAGE_KEY, sliced).catch(() => {});
+  }
+
+  // 2. Espejo en localStorage como fallback seguro de compatibilidad
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_QUEUE_ITEMS)));
-    notifyQueueChange(items);
+    if (sliced.length === 0) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sliced));
+    }
   } catch (err) {
-    console.warn("[VESSEL OfflineQueue] Error persistiendo cola en almacenamiento:", err);
+    console.warn("[VESSEL OfflineQueue] Fallback localStorage omitido (asegurado en IndexedDB):", err);
   }
 }
 
@@ -221,6 +261,7 @@ export async function flushOfflineMutations(): Promise<{ processed: number; rema
  * Limpia la cola offline manualmente (por ejemplo, al cerrar sesión)
  */
 export function clearOfflineQueue(): void {
+  inMemoryQueue = [];
   persistQueue([]);
 }
 
@@ -230,6 +271,9 @@ export function clearOfflineQueue(): void {
 export function initOfflineQueueListeners(): () => void {
   if (typeof window === "undefined" || hasAttachedListeners) return () => {};
   hasAttachedListeners = true;
+
+  // Hidratar asíncronamente desde IndexedDB en segundo plano sin bloquear el hilo principal
+  hydrateQueueFromIdb().catch(() => {});
 
   const handleOnline = () => {
     flushOfflineMutations().catch(() => {});

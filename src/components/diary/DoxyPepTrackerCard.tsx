@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary, useSettings } from "@/context/VesselContext";
 import { DoxyPepTracker } from "@/types/vessel";
 import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 
@@ -10,7 +10,8 @@ interface DoxyPepTrackerCardProps {
 }
 
 export const DoxyPepTrackerCard: React.FC<DoxyPepTrackerCardProps> = ({ tracker }) => {
-  const { toggleDoxyPepDose, dismissDoxyPepTracker, language, t } = useVessel();
+  const { toggleDoxyPepDose, dismissDoxyPepTracker } = useDiary();
+  const { language, t } = useSettings();
 
   const now = Date.now();
   const due72Ms = new Date(tracker.due72h).getTime();

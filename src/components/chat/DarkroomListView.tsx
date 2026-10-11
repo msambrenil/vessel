@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useVessel, createFallbackProfile } from "@/context/VesselContext";
+import {
+  useRadarMatrix,
+  useChat,
+  useDiary,
+  useSettings,
+  createFallbackProfile,
+} from "@/context/VesselContext";
 import {
   MessageSquare,
   Zap,
@@ -22,6 +28,10 @@ import { formatLocaleTime24h, hasHostingCapability, getLocalTodayIso } from "@/l
 import { ExitProtocol, VesselProfile } from "@/types/vessel";
 import { getActiveAppMode } from "@/lib/storage/localStorageSync";
 import { isGhostOrMockProfile, isGhostOrMockProfileId } from "@/lib/firebase/matrixService";
+import { SegmentedTabGroup, SegmentedTabItem } from "@/components/ui/SegmentedTabGroup";
+import { TacticalAvatar } from "@/components/ui/TacticalAvatar";
+import { TacticalBadge } from "@/components/ui/TacticalBadge";
+import { BrutalistButton } from "@/components/ui/BrutalistButton";
 
 interface DarkroomListViewProps {
   onOpenChat: (profileId: string) => void;
@@ -35,19 +45,28 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
     profiles,
     knownProfiles,
     getProfileById,
-    chatMessages,
     transmissions,
     receivedPulses,
     unreadPulsesCount,
     hasMutualPulse,
-    diaryEntries,
+    setActiveView,
+    setSelectedProfile,
+  } = useRadarMatrix();
+
+  const {
+    chatMessages,
     activeRendezvous,
+  } = useChat();
+
+  const {
+    diaryEntries,
+    getProfileDossier,
+  } = useDiary();
+
+  const {
     t,
     language,
-    setActiveView,
-    getProfileDossier,
-    setSelectedProfile,
-  } = useVessel();
+  } = useSettings();
 
   // Filtro segmentado de la bandeja: "all" | "mutual" | "hosting" | "unread"
   const [chatFilter, setChatFilter] = useState<"all" | "mutual" | "hosting" | "unread">("all");
@@ -173,6 +192,63 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
     return profilesWithInteractions;
   }, [chatFilter, profilesWithInteractions, hostingChatProfiles, unreadChatProfiles, hasMutualPulse]);
 
+  // Pestañas segmentadas con diseño Brutalista del sistema
+  const tabItems = useMemo<SegmentedTabItem<"all" | "mutual" | "hosting" | "unread">[]>(() => {
+    return [
+      {
+        id: "all",
+        label: t.chat.filterAll || (language === "es" ? "Todos" : "All"),
+        badge: profilesWithInteractions.length > 0 ? (
+          <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-black bg-white/10 text-neutral-300">
+            {profilesWithInteractions.length}
+          </span>
+        ) : undefined,
+      },
+      ...(mutualPulseProfiles.length > 0
+        ? [
+            {
+              id: "mutual" as const,
+              label: language === "es" ? "Onda Mutua 🔥" : "Mutual 🔥",
+              badge: (
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-black bg-mintNeon text-obsidian-deep">
+                  {mutualPulseProfiles.length}
+                </span>
+              ),
+              accentClass: "text-mintNeon",
+            },
+          ]
+        : []),
+      {
+        id: "hosting",
+        label: t.chat.filterHosting || (language === "es" ? "Tienen lugar 🏠" : "Can Host 🏠"),
+        badge: hostingChatProfiles.length > 0 ? (
+          <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-black bg-white/10 text-neutral-300">
+            {hostingChatProfiles.length}
+          </span>
+        ) : undefined,
+      },
+      {
+        id: "unread",
+        label: t.chat.filterUnread || (language === "es" ? "No leídos" : "Unread"),
+        badge: unreadChatProfiles.length > 0 ? (
+          <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-black bg-bloodNeon text-white animate-pulse">
+            {unreadChatProfiles.length}
+          </span>
+        ) : undefined,
+        accentClass: unreadChatProfiles.length > 0 ? "text-bloodNeon" : undefined,
+      },
+    ];
+  }, [
+    t.chat.filterAll,
+    t.chat.filterHosting,
+    t.chat.filterUnread,
+    language,
+    profilesWithInteractions.length,
+    mutualPulseProfiles.length,
+    hostingChatProfiles.length,
+    unreadChatProfiles.length,
+  ]);
+
   // Helper para renderizar micro-píldora de protocolo de salida
   const renderExitProtocolPill = (protocol: ExitProtocol | undefined) => {
     if (!protocol) return null;
@@ -182,88 +258,37 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
     const label = isFast
       ? (language === "es" ? "Touch & go" : "Quick exit")
       : isCuddle
-      ? (language === "es" ? "Mimos & charla" : "Cuddle & relax")
-      : (language === "es" ? "Dormir juntos" : "Sleepover");
+      ? (language === "es" ? "Tranqui" : "Cuddle")
+      : (language === "es" ? "Pasar la noche" : "Sleepover");
 
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-purple-950/60 border border-purple-500/30 text-purple-200 text-[9px] font-mono font-bold uppercase">
-        <span>{icon}</span>
+      <TacticalBadge
+        variant="purple"
+        size="xs"
+        className="!px-1.5 !py-0.2"
+        icon={<span>{icon}</span>}
+      >
         <span>{label}</span>
-      </span>
+      </TacticalBadge>
     );
   };
 
   return (
-    <div className="flex flex-col flex-1 p-3 sm:p-4 pb-48 sm:pb-56 space-y-3.5 select-none bg-obsidian-deep min-h-[calc(100vh-140px)]">
-      {/* 1. CABECERA LIMPIA: FILTROS SEGMENTADOS DE 1 TOQUE (OPERATE FIRST) */}
-      <div className="border-b border-white/10 pb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" role="tablist">
-          {[
-            {
-              id: "all" as const,
-              label: t.chat.filterAll || (language === "es" ? "Todos" : "All"),
-              count: profilesWithInteractions.length,
-            },
-            ...(mutualPulseProfiles.length > 0
-              ? [
-                  {
-                    id: "mutual" as const,
-                    label: language === "es" ? "Onda Mutua 🔥" : "Mutual 🔥",
-                    count: mutualPulseProfiles.length,
-                  },
-                ]
-              : []),
-            {
-              id: "hosting" as const,
-              label: t.chat.filterHosting || (language === "es" ? "Ponen lugar 🏠" : "Can Host 🏠"),
-              count: hostingChatProfiles.length,
-            },
-            {
-              id: "unread" as const,
-              label: t.chat.filterUnread || (language === "es" ? "No leídos" : "Unread"),
-              count: unreadChatProfiles.length,
-            },
-          ].map((tab) => {
-            const isActive = chatFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setChatFilter(tab.id);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[38px] rounded-xl text-xs font-mono font-bold uppercase transition-all duration-200 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 ${
-                  isActive
-                    ? "bg-electricViolet text-white border border-electricViolet shadow-violet-soft font-black"
-                    : "bg-obsidian-surface text-neutral-400 border border-white/10 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span>{tab.label}</span>
-                {tab.count > 0 && (
-                  <span
-                    className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-black ${
-                      isActive
-                        ? "bg-black/40 text-white"
-                        : tab.id === "unread"
-                        ? "bg-bloodNeon text-white animate-pulse"
-                        : tab.id === "mutual"
-                        ? "bg-mintNeon text-obsidian-deep font-black"
-                        : "bg-white/10 text-neutral-300"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+    <div className="flex flex-col flex-1 p-3 sm:p-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] sm:pb-28 space-y-3 select-none bg-obsidian-deep min-h-[calc(100dvh-140px)]">
+      {/* 1. CABECERA LIMPIA: FILTROS SEGMENTADOS STICKY (1 TOQUE) */}
+      <div className="sticky top-0 z-30 bg-obsidian-deep/95 backdrop-blur-md pt-1 pb-2.5 border-b border-white/10 -mx-3 sm:-mx-4 px-3 sm:px-4">
+        <SegmentedTabGroup
+          tabs={tabItems}
+          activeTab={chatFilter}
+          onChange={(id) => setChatFilter(id as typeof chatFilter)}
+          variant="obsidian"
+          size="default"
+          className="w-full overflow-x-auto no-scrollbar"
+          ariaLabel={language === "es" ? "Filtros de conversaciones" : "Conversation filters"}
+        />
       </div>
 
-      {/* 2. CHIP DISCRETO DE ZUMBIDOS PENDIENTES (Solo si hay nuevos zumbidos, sin robar pantalla) */}
+      {/* 2. CHIP DISCRETO DE TOQUES PENDIENTES (Solo si hay nuevos toques, sin robar pantalla) */}
       {enrichedReceivedPulses.length > 0 && (
         <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs shadow-xs">
           <div className="flex items-center gap-2 min-w-0">
@@ -286,7 +311,7 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
               audioEngine.playPulse();
               setActiveView("pulses");
             }}
-            className="text-[11px] font-mono font-bold text-electricViolet-glow hover:text-white flex items-center gap-1 cursor-pointer flex-shrink-0"
+            className="text-[11px] font-mono font-bold text-electricViolet-glow hover:text-white flex items-center gap-1 cursor-pointer flex-shrink-0 focus-visible:outline-none focus-visible:underline"
           >
             <span>{language === "es" ? "Ver" : "View"}</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -294,16 +319,16 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
         </div>
       )}
 
-      {/* 3. SMART BAR: CÁPSULAS DE ONDA MUTUA / CITAS HOY / PIN ACTIVO (Solo visible si hay actividad) */}
-      {(activeRendezvous || todayUpcomingDates.length > 0 || mutualPulseProfiles.length > 0) && (
-        <div className="space-y-2 pt-0.5">
+      {/* 3. SMART TRAY 1: CITAS DE HOY & PIN ACTIVO (CONFIRMADOS REALES) */}
+      {(activeRendezvous || todayUpcomingDates.length > 0) && (
+        <div className="space-y-1.5 pt-0.5">
           <div className="flex items-center justify-between px-1">
-            <span className="text-[10px] font-black uppercase font-mono tracking-wider text-electricViolet-glow flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-electricViolet" />
-              <span>{t.chat.filterUpcoming || (language === "es" ? "Citas de hoy, toques mutuos y encuentros" : "Today's Dates & Active Meets")}</span>
+            <span className="text-[10px] font-black uppercase font-mono tracking-wider text-bloodNeon flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-bloodNeon" />
+              <span>{language === "es" ? "Citas de hoy & encuentros confirmados" : "Today's Dates & Meets"}</span>
             </span>
             <span className="text-[10px] text-neutral-400 font-mono">
-              {(activeRendezvous ? 1 : 0) + todayUpcomingDates.length + mutualPulseProfiles.length} {language === "es" ? "ACTIVAS" : "ACTIVE"}
+              {(activeRendezvous ? 1 : 0) + todayUpcomingDates.length} {language === "es" ? "ACTIVAS" : "ACTIVE"}
             </span>
           </div>
 
@@ -319,24 +344,17 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     audioEngine.playPulse();
                     onOpenChat(activeRendezvous.profileId);
                   }}
-                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-bloodNeon/25 via-obsidian-surface to-obsidian-surface border border-bloodNeon/60 hover:border-bloodNeon text-left transition-all cursor-pointer shadow-blood-glow flex-shrink-0 active:scale-98"
+                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-bloodNeon/25 via-obsidian-surface to-obsidian-surface border border-bloodNeon/60 hover:border-bloodNeon text-left transition-all cursor-pointer shadow-blood-glow flex-shrink-0 active:scale-98 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-bloodNeon"
                 >
-                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-bloodNeon bg-neutral-900 flex-shrink-0">
-                    {targetProfile?.avatarUrl ? (
-                      <img
-                        src={targetProfile.avatarUrl}
-                        alt={activeRendezvous.profileCodename}
-                        referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xs font-mono text-bloodNeon font-bold">
-                        PIN
-                      </div>
-                    )}
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-bloodNeon border border-black animate-ping" />
-                  </div>
+                  <TacticalAvatar
+                    src={targetProfile?.avatarUrl}
+                    alt={activeRendezvous.profileCodename}
+                    codename={activeRendezvous.profileCodename}
+                    size="xs"
+                    borderVariant="blood"
+                    hasUnreadPing={true}
+                    pingVariant="blood"
+                  />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-black text-white truncate">
@@ -370,18 +388,15 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                       onOpenChat(partnerId);
                     }
                   }}
-                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-electricViolet/20 via-obsidian-surface to-obsidian-surface border border-electricViolet/40 hover:border-electricViolet text-left transition-all cursor-pointer shadow-violet-soft flex-shrink-0 active:scale-98"
+                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-electricViolet/20 via-obsidian-surface to-obsidian-surface border border-electricViolet/40 hover:border-electricViolet text-left transition-all cursor-pointer shadow-violet-soft flex-shrink-0 active:scale-98 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-electricViolet"
                 >
-                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-electricViolet/60 bg-neutral-900 flex-shrink-0">
-                    <img
-                      src={entry.person.avatarUrl || partnerProfile?.avatarUrl || "/placeholders/avatar.jpg"}
-                      alt={entry.person.codename}
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-mintNeon border border-black" />
-                  </div>
+                  <TacticalAvatar
+                    src={entry.person.avatarUrl || partnerProfile?.avatarUrl}
+                    alt={entry.person.codename}
+                    codename={entry.person.codename}
+                    size="xs"
+                    borderVariant="violet"
+                  />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-black text-white truncate">
@@ -402,9 +417,25 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
 
-            {/* Cápsulas de Onda Mutua 🔥 (Mutual Matches por Toques) */}
-            {mutualPulseProfiles.slice(0, 6).map((pulse) => {
+      {/* 4. SMART TRAY 2: PEGARON ONDA 🔥 (MATCHES MUTUOS LISTOS PARA HABLAR) */}
+      {mutualPulseProfiles.length > 0 && (
+        <div className="space-y-1.5 pt-0.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black uppercase font-mono tracking-wider text-mintNeon flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-mintNeon fill-current" />
+              <span>{language === "es" ? "Pegaron Onda 🔥 (Matches para chatear)" : "Mutual Matches 🔥"}</span>
+            </span>
+            <span className="text-[10px] text-neutral-400 font-mono">
+              {mutualPulseProfiles.length} {language === "es" ? "NUEVOS" : "NEW"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+            {mutualPulseProfiles.map((pulse) => {
               const partnerProfile = pulse.profile;
               if (!partnerProfile) return null;
               return (
@@ -415,18 +446,17 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     audioEngine.playPulse();
                     onOpenChat(partnerProfile.id);
                   }}
-                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-mintNeon/20 via-obsidian-surface to-obsidian-surface border border-mintNeon/40 hover:border-mintNeon text-left transition-all cursor-pointer shadow-mint-glow flex-shrink-0 active:scale-98"
+                  className="flex items-center gap-2.5 p-2 pr-3 rounded-2xl bg-gradient-to-r from-mintNeon/20 via-obsidian-surface to-obsidian-surface border border-mintNeon/40 hover:border-mintNeon text-left transition-all cursor-pointer shadow-mint-glow flex-shrink-0 active:scale-98 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-mintNeon"
                 >
-                  <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-mintNeon/60 bg-neutral-900 flex-shrink-0">
-                    <img
-                      src={partnerProfile.avatarUrl || "/placeholders/avatar.jpg"}
-                      alt={partnerProfile.codename}
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
-                      className="w-full h-full object-cover"
-                    />
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-mintNeon border border-black animate-pulse" />
-                  </div>
+                  <TacticalAvatar
+                    src={partnerProfile.avatarUrl}
+                    alt={partnerProfile.codename}
+                    codename={partnerProfile.codename}
+                    size="xs"
+                    borderVariant="emerald"
+                    hasUnreadPing={true}
+                    pingVariant="emerald"
+                  />
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-black text-white truncate">
@@ -438,7 +468,7 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     </div>
                     <p className="text-[10px] text-mintNeon font-mono truncate flex items-center gap-1">
                       <Zap className="w-3 h-3 text-mintNeon flex-shrink-0 fill-current" />
-                      <span>{language === "es" ? "Toque correspondido" : "Mutual tap"}</span>
+                      <span>{language === "es" ? "Toque correspondido · Chateá" : "Mutual tap · Chat"}</span>
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-mintNeon ml-1 flex-shrink-0" />
@@ -449,7 +479,7 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
         </div>
       )}
 
-      {/* 4. BANDEJA DE CONVERSACIONES ERGONÓMICAS (ALTURA ~68px, OPERATE MODE) */}
+      {/* 5. BANDEJA DE CONVERSACIONES ERGONÓMICAS (ALTURA HOMOGÉNEA DE 2 LÍNEAS) */}
       <div className="space-y-2 pt-1">
         {filteredChatList.length > 0 ? (
           filteredChatList.map((profile) => {
@@ -462,86 +492,138 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
               (m) => m.senderId !== "me" && m.senderId !== "system" && !m.isRead
             ).length;
 
-            const avatarBorderClass =
-              profile.bodyState === "open"
-                ? "border-electricViolet shadow-violet-soft"
-                : profile.bodyState === "occupied"
-                ? "border-bloodNeon shadow-blood-glow"
-                : "border-purple-500/40";
+            // Formateo sintetizado e inequívoco del snippet de última interacción
+            let snippetContent: React.ReactNode = null;
+            if (lastMsg) {
+              if (lastMsg.isBurnOnView || lastMsg.isBurned) {
+                snippetContent = (
+                  <span className="flex items-center gap-1 text-bloodNeon font-mono text-[11px]">
+                    <Flame className="w-3 h-3 animate-pulse" />
+                    <span>{language === "es" ? "Mensaje efímero (1 sola vista)" : "Burn message"}</span>
+                  </span>
+                );
+              } else if (lastMsg.isVoiceMessage) {
+                snippetContent = (
+                  <span className="flex items-center gap-1 text-mintNeon font-mono text-[11px]">
+                    <Mic className="w-3 h-3" />
+                    <span>
+                      {language === "es"
+                        ? `Audio (${lastMsg.voiceData?.durationSeconds || 0}s)`
+                        : `Voice note (${lastMsg.voiceData?.durationSeconds || 0}s)`}
+                    </span>
+                  </span>
+                );
+              } else if (
+                lastMsg.isKindClosure ||
+                (lastMsg.text && lastMsg.text.includes("PROTOCOLO CERO PLANTONES")) ||
+                (lastMsg.text && lastMsg.text.includes("Puntos de Respeto"))
+              ) {
+                snippetContent = (
+                  <span className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] font-semibold">
+                    <span>✌️</span>
+                    <span>{language === "es" ? "Salida con onda (+5 Respeto)" : "Kind exit (+5 Respect)"}</span>
+                  </span>
+                );
+              } else if (lastMsg.isSecureWaypoint) {
+                snippetContent = (
+                  <span className="flex items-center gap-1 text-electricViolet-glow font-mono text-[11px]">
+                    <MapPin className="w-3 h-3" />
+                    <span>{language === "es" ? "Esquina pactada (Fase 1)" : "Safe waypoint"}</span>
+                  </span>
+                );
+              } else if (lastMsg.isEncounterTicket) {
+                snippetContent = (
+                  <span className="flex items-center gap-1 text-amber-300 font-mono text-[11px]">
+                    <Calendar className="w-3 h-3" />
+                    <span>{language === "es" ? "Ticket de cita enviado" : "Encounter ticket"}</span>
+                  </span>
+                );
+              } else if (lastMsg.isPreFlightChecklist) {
+                snippetContent = (
+                  <span className="flex items-center gap-1 text-electricViolet-glow font-mono text-[11px]">
+                    <Zap className="w-3 h-3" />
+                    <span>{language === "es" ? "Acuerdo de encuentro" : "Pre-flight agreement"}</span>
+                  </span>
+                );
+              } else {
+                snippetContent = lastMsg.text;
+              }
+            } else if (hasMutualPulse?.(profile.id)) {
+              snippetContent = (
+                <span className="text-mintNeon font-mono text-[11px] font-bold flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-mintNeon flex-shrink-0 fill-current" />
+                  <span>
+                    {language === "es" ? "¡Pegaron onda! Toque correspondido" : "Mutual match! Tap returned"}
+                  </span>
+                </span>
+              );
+            } else if (signalCount > 0) {
+              snippetContent = (
+                <span className="text-electricViolet-glow font-mono text-[11px] flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  <span>
+                    {language === "es" ? `Toque enviado (+${signalCount})` : `Tap sent (+${signalCount})`}
+                  </span>
+                </span>
+              );
+            } else {
+              snippetContent = (
+                <span className="italic text-neutral-400 text-[11px]">
+                  {language === "es" ? "Chat listo..." : "Chat ready..."}
+                </span>
+              );
+            }
 
             return (
               <div
                 key={profile.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  audioEngine.playPulse();
-                  onOpenChat(profile.id);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    audioEngine.playPulse();
-                    onOpenChat(profile.id);
-                  }
-                }}
-                className={`group relative flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all duration-200 bg-obsidian-surface hover:border-electricViolet/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.99] ${
+                className={`group relative flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all duration-200 bg-obsidian-surface hover:border-electricViolet/50 ${
                   unreadCount > 0
                     ? "border-electricViolet/50 bg-gradient-to-r from-electricViolet/10 via-obsidian-surface to-obsidian-surface shadow-[0_0_16px_rgba(139,92,246,0.12)]"
                     : "border-white/10 hover:shadow-md"
                 }`}
               >
-                {/* IZQUIERDA: AVATAR ERGONÓMICO 48x48px (TAP PARA FICHA) */}
+                {/* IZQUIERDA: AVATAR TÁCTICO INDEPENDIENTE (CLICK ABRE FICHA DIRECTA) */}
                 <div className="relative flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      audioEngine.playPulse();
-                      setSelectedProfile(profile);
-                    }}
-                    className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 bg-neutral-900 transition-transform cursor-pointer hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${avatarBorderClass}`}
-                    title={language === "es" ? `Ver ficha de ${profile.codename}` : `View bio of ${profile.codename}`}
-                  >
-                    {profile.avatarUrl ? (
-                      <img
-                        src={profile.avatarUrl}
-                        alt={profile.codename}
-                        referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
-                        className={`w-full h-full object-cover transition-transform duration-200 ${
-                          profile.isFogMode ? "filter blur-[3px]" : ""
-                        }`}
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = "flex";
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className={`w-full h-full flex items-center justify-center font-mono font-black text-sm bg-purple-950/80 text-electricViolet-glow ${
-                        profile.avatarUrl ? "hidden" : "flex"
-                      }`}
-                    >
-                      {(profile.codename || "??").slice(0, 2).toUpperCase()}
-                    </div>
-                  </button>
-                  {profile.bodyState === "open" && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-mintNeon rounded-full border-2 border-black z-10" />
-                  )}
-                  {profile.bodyState === "occupied" && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-bloodNeon rounded-full border-2 border-black z-10" />
-                  )}
+                  <TacticalAvatar
+                    src={profile.avatarUrl}
+                    alt={profile.codename}
+                    codename={profile.codename}
+                    size="sm"
+                    borderVariant={
+                      profile.bodyState === "open"
+                        ? "emerald"
+                        : profile.bodyState === "occupied"
+                        ? "blood"
+                        : "violet"
+                    }
+                    bodyState={profile.bodyState}
+                    isFogMode={profile.isFogMode}
+                    hasUnreadPing={unreadCount > 0}
+                    pingVariant="blood"
+                    onClick={() => setSelectedProfile(profile)}
+                    soundEffect="pulse"
+                    ariaLabel={language === "es" ? `Ver ficha de ${profile.codename}` : `View bio of ${profile.codename}`}
+                  />
                 </div>
 
-                {/* CENTRO: INFORMACIÓN JERÁRQUICA LIMPIA (CERO COLISIONES) */}
-                <div className="min-w-0 flex-1 flex flex-col justify-center">
-                  {/* Fila 1: Nombre, edad, verificación y hora */}
+                {/* CENTRO Y DERECHA: BOTÓN SEMÁNTICO PRINCIPAL (LÍNEAS 1 Y 2 UNIFORMES) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    audioEngine.playPulse();
+                    onOpenChat(profile.id);
+                  }}
+                  aria-label={
+                    language === "es"
+                      ? `Abrir chat con ${dossier?.customAlias || profile.codename}`
+                      : `Open chat with ${dossier?.customAlias || profile.codename}`
+                  }
+                  className="min-w-0 flex-1 flex flex-col justify-center text-left cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-electricViolet rounded-xl p-0.5 transition-transform active:scale-[0.99]"
+                >
+                  {/* Fila 1: Identidad, micro-tags, hora */}
                   <div className="flex items-center justify-between gap-1.5">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                       <span
                         className={`text-sm truncate font-mono ${
                           unreadCount > 0
@@ -552,7 +634,7 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                         {dossier?.customAlias || profile.codename}
                       </span>
                       {profile.showAge && (
-                        <span className="text-[11px] text-neutral-400 font-mono">
+                        <span className="text-[11px] text-neutral-400 font-mono flex-shrink-0">
                           · {profile.age}
                         </span>
                       )}
@@ -566,11 +648,17 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                           size="xs"
                         />
                       )}
-                      {hasMutualPulse?.(profile.id) && (
-                        <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-mintNeon/20 border border-mintNeon/40 text-mintNeon uppercase tracking-tight flex items-center gap-0.5">
-                          <span>🔥</span>
-                          <span>{language === "es" ? "Onda Mutua" : "Mutual"}</span>
-                        </span>
+                      {/* Micro-tags integrados en línea 1 para no desfasar la altura del card */}
+                      {renderExitProtocolPill(profile.exitProtocol)}
+                      {profile.onTheClock?.isActive && (
+                        <TacticalBadge
+                          variant="violet"
+                          size="xs"
+                          className="!px-1.5 !py-0.2 !bg-purple-950/80 !border-electricViolet/50 !text-electricViolet-glow font-bold"
+                          pulse
+                        >
+                          <span>⚡ YA</span>
+                        </TacticalBadge>
                       )}
                     </div>
 
@@ -580,7 +668,7 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                       return (
                         <span
                           className={`text-[10px] font-mono flex-shrink-0 flex items-center gap-1 ${
-                            unreadCount > 0 ? "text-electricViolet-glow font-black" : "text-neutral-500"
+                            unreadCount > 0 ? "text-electricViolet-glow font-black" : "text-neutral-400"
                           }`}
                         >
                           <Clock className="w-3 h-3" />
@@ -590,90 +678,44 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
                     })()}
                   </div>
 
-                  {/* Fila 2: Snippet de mensaje y micro-badge derecho */}
-                  <div className="mt-0.5 flex items-center justify-between gap-2">
+                  {/* Fila 2: Snippet sintetizado y etiquetas derechas (Lugar / Unread) */}
+                  <div className="mt-1 flex items-center justify-between gap-2">
                     <p
                       className={`text-xs truncate font-sans ${
                         unreadCount > 0 ? "text-white font-semibold" : "text-neutral-400 group-hover:text-neutral-300"
                       }`}
                     >
-                      {lastMsg ? (
-                        lastMsg.isBurnOnView || lastMsg.isBurned ? (
-                          <span className="flex items-center gap-1 text-bloodNeon font-mono text-[11px]">
-                            <Flame className="w-3 h-3 animate-pulse" />
-                            <span>{language === "es" ? "Mensaje efímero (1 sola vista)" : "Burn message"}</span>
-                          </span>
-                        ) : lastMsg.isVoiceMessage ? (
-                          <span className="flex items-center gap-1 text-mintNeon font-mono text-[11px]">
-                            <Mic className="w-3 h-3" />
-                            <span>
-                              {language === "es"
-                                ? `Audio (${lastMsg.voiceData?.durationSeconds || 0}s)`
-                                : `Voice note (${lastMsg.voiceData?.durationSeconds || 0}s)`}
-                            </span>
-                          </span>
-                        ) : lastMsg.isPreFlightChecklist ? (
-                          <span className="flex items-center gap-1 text-electricViolet-glow font-mono text-[11px]">
-                            <Zap className="w-3 h-3" />
-                            <span>{language === "es" ? "Acuerdo de encuentro" : "Pre-flight agreement"}</span>
-                          </span>
-                        ) : (
-                          lastMsg.text
-                        )
-                      ) : hasMutualPulse?.(profile.id) ? (
-                        <span className="text-mintNeon font-mono text-[11px] font-bold flex items-center gap-1">
-                          <Zap className="w-3 h-3 text-mintNeon flex-shrink-0 fill-current" />
-                          <span>
-                            {language === "es" ? "¡Onda Mutua! 🔥 Toque correspondido" : "Mutual Pulse! 🔥 Tap matched"}
-                          </span>
-                        </span>
-                      ) : signalCount > 0 ? (
-                        <span className="text-electricViolet-glow font-mono text-[11px] flex items-center gap-1">
-                          <Zap className="w-3 h-3" />
-                          <span>
-                            {language === "es" ? `Toque enviado (+${signalCount})` : `Tap sent (+${signalCount})`}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="italic text-neutral-500 text-[11px]">
-                          {language === "es" ? "Chat listo..." : "Chat ready..."}
-                        </span>
-                      )}
+                      {snippetContent}
                     </p>
 
-                    {/* Micro-etiquetas derechas: Pone lugar y contador no leídos */}
+                    {/* Micro-etiquetas derechas: Tiene depto y contador no leídos */}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {hasHostingCapability(profile.mobility) && (
-                        <span className="text-[9px] font-mono font-bold text-neutral-400 bg-white/5 border border-white/10 px-1.5 py-0.2 rounded-md hidden xs:inline-flex items-center gap-0.5">
-                          🏠 Lugar
-                        </span>
+                        <TacticalBadge
+                          variant="neutral"
+                          size="xs"
+                          className="!px-1.5 !py-0.2 !text-neutral-400 !bg-white/5 !border-white/10"
+                        >
+                          <span>🏠 {language === "es" ? "Depto" : "Apt"}</span>
+                        </TacticalBadge>
                       )}
                       {unreadCount > 0 && (
-                        <span className="px-2 py-0.5 rounded-full bg-electricViolet text-white font-mono text-[10px] font-black shadow-violet-soft">
-                          {unreadCount}
-                        </span>
+                        <TacticalBadge
+                          variant="violet"
+                          size="xs"
+                          className="!px-2 !py-0.5 !rounded-full shadow-violet-soft font-black text-white !bg-electricViolet"
+                        >
+                          <span>{unreadCount}</span>
+                        </TacticalBadge>
                       )}
                     </div>
                   </div>
-
-                  {/* Fila 3: Micro-tags de protocolo o estado activo (Solo si existen) */}
-                  {(profile.exitProtocol || profile.onTheClock?.isActive) && (
-                    <div className="pt-1 flex items-center gap-1.5 flex-wrap">
-                      {renderExitProtocolPill(profile.exitProtocol)}
-                      {profile.onTheClock?.isActive && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-purple-950/80 border border-electricViolet/50 text-electricViolet-glow font-mono text-[9px] font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-electricViolet animate-ping" />
-                          ⚡ YA ({profile.onTheClock.durationMinutes || 45}m)
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                </button>
               </div>
             );
           })
         ) : (
-          /* ESTADO VACÍO CONTEXTUAL SEGÚN PESTAÑA */
+          /* ESTADO VACÍO CONTEXTUAL SEGÚN PESTAÑA (BRUTALIST BUTTON EN VEZ DE NATIVO) */
           <div className="bg-obsidian-surface rounded-3xl border border-white/10 p-8 text-center my-6 space-y-4 shadow-xl">
             <div className="w-14 h-14 rounded-2xl bg-electricViolet/10 border border-electricViolet/30 flex items-center justify-center mx-auto text-electricViolet shadow-[0_0_20px_rgba(139,92,246,0.2)]">
               <MessageSquare className="w-7 h-7" />
@@ -700,33 +742,36 @@ export const DarkroomListView: React.FC<DarkroomListViewProps> = ({
               </p>
             </div>
 
-            {chatFilter !== "all" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setChatFilter("all");
-                }}
-                className="min-h-[40px] inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-mono font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
-              >
-                <span>{language === "es" ? "Ver todos los chats" : "View all chats"}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  audioEngine.playPulse();
-                  setActiveView("grid");
-                }}
-                className="min-h-[44px] inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-electricViolet text-white font-extrabold text-xs uppercase tracking-wider shadow-violet-soft hover:bg-electricViolet-glow active:scale-95 transition-all cursor-pointer"
-              >
-                <LayoutGrid className="w-4 h-4 stroke-[2.5]" />
-                <span>{t.pulses?.goToGrid || (language === "es" ? "Explorar Radar" : "Explore Radar")}</span>
-              </button>
-            )}
+            <div className="pt-2 flex justify-center">
+              {chatFilter !== "all" ? (
+                <BrutalistButton
+                  variant="outline"
+                  size="default"
+                  onClick={() => setChatFilter("all")}
+                  soundEffect="pulse"
+                  aria-label={language === "es" ? "Ver todos los chats" : "View all chats"}
+                >
+                  <span>{language === "es" ? "Ver todos los chats" : "View all chats"}</span>
+                </BrutalistButton>
+              ) : (
+                <BrutalistButton
+                  variant="primary"
+                  size="default"
+                  onClick={() => setActiveView("grid")}
+                  soundEffect="pulse"
+                  aria-label={t.pulses?.goToGrid || (language === "es" ? "Explorar Radar" : "Explore Radar")}
+                >
+                  <LayoutGrid className="w-4 h-4 stroke-[2.5]" />
+                  <span>{t.pulses?.goToGrid || (language === "es" ? "Explorar Radar" : "Explore Radar")}</span>
+                </BrutalistButton>
+              )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Espaciador de seguridad para scroll completo sobre dock de navegación */}
+      <div className="h-8 flex-shrink-0" aria-hidden="true" />
     </div>
   );
 };

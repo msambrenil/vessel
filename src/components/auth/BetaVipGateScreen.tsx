@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useAuth } from "@/context/VesselContext";
 import { VesselLogo } from "@/components/brand/VesselLogo";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -35,15 +35,14 @@ const QUICK_ROLES: { id: RoleType; labelEs: string; labelEn: string }[] = [
 ];
 
 export const BetaVipGateScreen: React.FC<BetaVipGateScreenProps> = ({ onVipUnlocked }) => {
+  const { language, setAppMode } = useSettings();
   const {
-    language,
     isAuthenticated,
     authUser,
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
-    setAppMode,
-  } = useVessel();
+  } = useAuth();
 
   const isEs = language === "es";
 

@@ -13,7 +13,7 @@ Este documento define las reglas de operación, calidad, contexto y arquitectura
 * **Rol:** Senior Product Engineer.
 * **Criterio:** Priorizar velocidad de entrega (speed-to-market), código limpio y mantenible, y una experiencia de usuario (UX) sobresaliente.
 * **Comunicación:** Explicar el **POR QUÉ (Why)** antes del **CÓMO (How)**. Evitar respuestas genéricas o robóticas.
-* **Validación por Arquetipos (Invariante Obligatoria):** Cada tarea, feature, ajuste de UI/UX, microinteracción o refactor debe concebirse y evaluarse pensando en los **20 Arquetipos de Usuario** de VESSEL ([arquetipos.md](./docs/contexto/arquetipos.md)). Toda solución técnica y de diseño debe justificar: *¿A qué arquetipos beneficia directamente? ¿Genera fricción en conectividad baja, batería degradada, accesibilidad o necesidad de discreción?*
+* **Validación por Arquetipos:** Aplicar el prisma de los **20 Arquetipos de Usuario** de VESSEL ([arquetipos.md](./docs/contexto/arquetipos.md)) **exclusivamente al diseñar features funcionales nuevas o redefinir flujos de producto**. En refactors técnicos, correcciones de errores (bugfixes) y optimizaciones internas, NO forzar justificaciones de arquetipos: priorizar resolución rápida y causa raíz (criterio Ponytail).
 * **Pragmatismo & Eficiencia Extrema (Criterio Ponytail - `.agents/skills/ponytail/SKILL.md`):** Claridad > Complejidad innecesaria. No sobre-diseñar. Aplicar la escalera de decisiones (**The Ladder**: *1. YAGNI ➔ 2. Reusar en el codebase ➔ 3. Stdlib nativa ➔ 4. Plataforma Web/CSS ➔ 5. Dependencias ya instaladas ➔ 6. ¿Una sola línea? ➔ 7. Solo entonces el código mínimo funcional*). Prohibido añadir dependencias npm innecesarias o abstracciones especulativas. Todo fix debe atacar la causa raíz inspeccionando llamadores con `grep` antes de editar.
 
 ---
@@ -35,8 +35,8 @@ Este documento define las reglas de operación, calidad, contexto y arquitectura
 
 Antes de dar por concluida cualquier tarea:
 
-1. **Explicación & Arquetipos:** Justificar la solución técnica adoptada (Why) y el cambio realizado (How), explicitando a qué arquetipo(s) de usuario de `docs/contexto/arquetipos.md` beneficia o protege.
-2. **Integridad de Código:** Validación estricta de tipos (`npm run typecheck` o `npx tsc --noEmit`) y ejecución de pruebas.
+1. **Explicación Clara (Why & How):** Justificar la solución técnica adoptada y el cambio realizado. Explicitar impacto en arquetipos únicamente cuando se trate de features de producto o cambios de UX.
+2. **Integridad de Código:** Validación estricta de tipos (`npm run typecheck` o `npx tsc --noEmit`) y ejecución de pruebas (`npm run test`).
    - ⛔ **PROHIBICIÓN ESTRICTA:** **NUNCA ejecutar `npm run build` (`next build`) en caliente mientras el servidor de desarrollo (`npm run dev`) esté corriendo**. Esto sobreescribe `.next/` con manifiestos de producción, rompiendo la entrega de CSS y JS dev en el servidor local y dejando la app en pantalla blanca sin estilos (Gotcha #8 / #12). Para validación de tipos y compilación en caliente, usar exclusivamente `npm run typecheck`.
 3. **Sin Capturas Obligatorias de UI:** A petición expresa del usuario, NO tomar capturas de pantalla de antes/después al modificar características de la app.
 4. **Higiene de Código:** No dejar archivos basura, logs temporales ni código comentado sin justificación.
@@ -68,15 +68,19 @@ El contexto vivo del proyecto se mantiene en la carpeta `docs/contexto/`:
 
 ---
 
-## 6. Flujo de Trabajo Automático: SDD & Memoria Engram
+## 6. Flujo de Trabajo Armonizado: Fast-Path Ponytail, SDD Estructural & Memoria
 
-* **Metodología SDD por Defecto (Spec-Driven Development):**
-  * Ante cualquier solicitud del usuario que implique cambios de comportamiento, features o refactors (>2 archivos), activar automáticamente el flujo SDD (*Explore ➔ Spec/Design ➔ Tasks ➔ Apply ➔ Verify ➔ Archive*).
-  * Para fixes atómicos, preguntas o ajustes de 1 solo archivo, aplicar vía rápida (*Fast-Path*) validando con `npm run typecheck` (o `npx tsc --noEmit`) antes de entregar.
+* **Fast-Path Ponytail por Defecto (Motor Operativo Principal):**
+  * Toda tarea cotidiana, corrección de errores (bugfix), ajuste de UI, optimización o refactor se resuelve **directamente inline en el hilo principal** aplicando la escalera de decisiones (**The Ladder**: YAGNI, reutilización interna, cero abstracciones innecesarias).
+  * Validación rápida y obligatoria con `npm run typecheck` y `npm run test` (Vitest). Cero burocracia de especificaciones intermedias para trabajo directo.
+* **Delegación a Subagentes ODD (Solo cuando desborde el contexto):**
+  * Reservado exclusivamente para tareas de exploración masiva a ciegas (>5 búsquedas de archivos profundas), suites complejas de análisis o tareas que quemen excesivamente la ventana de contexto.
+* **Ciclo de Especificación SDD / OpenSpec (Solo para Features Nuevas de Producto):**
+  * Se activa **exclusivamente** ante features de producto nuevas, cambios estructurales de arquitectura o mutaciones del modelo de datos (`src/types/`) que requieran diseño funcional previo.
+  * Queda **estrictamente prohibido** abrir ciclos SDD en `openspec/` para bugfixes, arreglos cosméticos o tareas cotidianas.
 * **Protocolo de Memoria Persistente (Engram):**
-  * **Proactivo e Ineludible:** Invocar `mem_save` inmediatamente ante decisiones de arquitectura, creación de features, fixes con causa raíz o descubrimientos no obvios.
-  * **Búsqueda Previa:** Consultar memoria previa con `mem_context` / `mem_search` al iniciar tareas o investigar antecedentes.
-  * **Cierre de Sesión:** Concluir sesiones significativas con `mem_session_summary`.
+  * **Namespace Fijo:** Usar siempre el proyecto canónico `"vessel"` y ruta física `/Users/ojitos/Documents/vessel app`.
+  * **Sin Bloqueo Síncrono:** Consultar contexto (`mem_context` / `mem_search`) cuando sea necesario. Guardar en memoria (`mem_save`) al concluir hitos grandes o decisiones arquitectónicas, sin bloquear la respuesta al usuario con resolución de conflictos en fixes menores.
   * **Garantía de Respuesta:** Guardar en memoria nunca reemplaza responder al usuario; la respuesta final debe ser completa y estructurada.
 
 ---
@@ -90,7 +94,76 @@ El contexto vivo del proyecto se mantiene en la carpeta `docs/contexto/`:
 * **Protocolo de Aplicación:**
   - Antes de alterar UI: invocar mental o procedimentalmente los playbooks de Impeccable (`shape`, `critique`, `polish`, `audit`, `distill`, `harden`, `colorize`, `typeset`).
   - Respetar siempre el *Craft Floor* (contraste WCAG AA/AAA, antipatrones de diseño, sin layouts rotos ni bordes genéricos).
-* **Coexistencia con Ponytail:** Ponytail gobierna la lógica, estado, hooks, dependencias y minimización del bundle, pero NUNCA debe degradar la superficie visual, la identidad estética brutalista ni los elementos sensoriales (audio sub-bass, háptica, modales tácticos) a controles estándar o sin estilo del navegador.
+## 8. Biblioteca de Componentes UX & Estandarización Mandatoria (INVARIANTE OBLIGATORIA)
+
+* **Uso Obligatorio Exclusivo:** Todo nuevo elemento, vista, modal, panel, formulario o refactor DEBE construirse utilizando **las primitivas y componentes comunes de la biblioteca** del sistema de diseño (`src/components/ui/` y `src/components/ui/design-system/`).
+* **Cero Elementos Ad-Hoc:** Queda prohibido maquetar elementos interactivos o informativos ad-hoc (como botones HTML nativos sin estilos de sistema o modales con clases sueltas) cuando exista o deba existir un componente equivalente en la biblioteca.
+* **Extensión de la Biblioteca:** Si una tarea requiere una primitiva de UI que no existe aún en la biblioteca, implementarla directamente como un componente reutilizable dentro de `src/components/ui/` siguiendo las reglas de Impeccable UI y documentándola para todo el proyecto.
+* **Propagación Global:** Cualquier ajuste visual, de accesibilidad o de micro-interacción debe aplicarse en la primitiva de la biblioteca para garantizar que si un componente cambia, cambie automáticamente en toda la aplicación.
+
+---
+
+## 9. Invariante de Versión, Despliegue en Main y Purga Forzada de Caché (IMPORTANTE)
+
+* **Actualización Mandatoria en Push a `main`:** Cada vez que se sube una entrega o actualización de la app a la rama `main` de Git, **ES OBLIGATORIO E INELUDIBLE** que la versión del sistema sea actualizada e incrementada (`CURRENT_SYSTEM_VERSION`, `SYSTEM_BUILD_TIMESTAMP`, `SYSTEM_BUILD_FORMATTED` y la entrada correspondiente en `SYSTEM_CHANGELOG` en `src/lib/version/systemVersion.ts`).
+* **Sincronización Automática (`npm run version:sync`):** Antes de confirmar o validar el despliegue, debe ejecutarse `npm run version:sync` para sincronizar `public/sw.js` (`VESSEL_VERSION` y `CACHE_NAME`) y `package.json`, asegurando que el Service Worker detecte el byte-diff en el cliente.
+* **Forzado Inmediato en Navegadores Clientes:** Todo usuario que ingrese a la app desde el navegador (o reanude una pestaña en segundo plano / Safari bfcache) debe ser forzado a cargar la última versión. La combinación de cabeceras HTTP `no-cache, no-store, must-revalidate` en `next.config.ts`, la estrategia `Network-First` en `sw.js` y el vigilante `PwaRegister.tsx` (que compara versión y `buildTimestamp` contra `/api/system/version`) purgará automáticamente el CacheStorage local y forzará la recarga inmediata de la última build.
+* **Visibilidad en Consola de Administración:** La nueva versión desplegada debe verse reflejada inmediatamente en la app del administrador bajo la pestaña **"Versión & Despliegues"** (`/admin` ➔ `SystemVersionTab.tsx`), mostrando la `BUILD ACTIVA`, la fecha/hora en formato argentino, y el historial de cambios oficial.
+
+---
+
+## 10. Cadencia de Mantenimiento Periódico & Tareas Recurrentes por Fases
+
+Para preservar la salud técnica, la ergonomía y la velocidad operativa del sistema a lo largo del tiempo, las siguientes fases corresponden a **auditorías periódicas de mantenimiento integral o cierre de sprint**, y NO a un checklist bloqueante para cada respuesta cotidiana:
+
+* **Fase 1: Higiene, Poda & Salud de Código (Code Hygiene & Health Sweep)**
+  - Poda periódica de código muerto, componentes huérfanos e importaciones en desuso (mantener el codebase delgado, criterio Ponytail).
+  - Erradicación de timers parásitos (`setInterval`/`setTimeout` ociosos) en reposo para proteger CPU y batería.
+  - Verificación estricta de tipos de TypeScript en caliente (`npm run typecheck`) garantizando 0 errores.
+  - Análisis estático de código mediante linter (`npm run lint`).
+
+* **Fase 2: Auditoría UX/UI, Ergonomía Mobile & Accesibilidad (Impeccable & Primitivas)**
+  - Verificación de viewport en dispositivos móviles compactos (320px–400px), márgenes seguros (safe-area-insets, notches/Dynamic Island) y desasfixia vertical.
+  - Validación de áreas táctiles mínimas de 44×44px y los 5 estados obligatorios de componentes (*Default, Hover, Active, Focus, Disabled*).
+  - Cumplimiento estricto de la regla de Cero Elementos Ad-Hoc: asegurar que toda interfaz use exclusivamente componentes de la biblioteca (`@/components/ui/`).
+  - Auditoría de contraste visual WCAG AA (4.5:1 / 3:1) y consistencia del lenguaje vernáculo rioplatense (cero spanglish).
+
+* **Fase 3: Suite de Pruebas, Rendimiento & Batería (Testing & Telemetry Guard)**
+  - Ejecución de la suite completa de pruebas unitarias y de integración (`npm run test` en Vitest, manteniendo el 100% de tests en verde).
+  - Verificación del ciclo de vida y suspensión en segundo plano (`visibilitychange` / `document.hidden`) en temporizadores y contextos.
+  - Auditoría del motor `BatteryStateEngine` (4 estados adaptativos) y desregistro de sincronizaciones cuando la batería es crítica (≤15%).
+  - Desbloqueo gestual y liberación de recursos en `SubBassAudioEngine` (Web Audio API).
+
+* **Fase 4: Sincronización de Contexto Vivo & Memoria Persistente (Docs & Engram)**
+  - Actualización proactiva de la documentación viva en `docs/contexto/` (`registro-de-features.md`, `decisiones.md`, `errores-conocidos.md`).
+  - Persistencia obligatoria en memoria Engram (`mem_save`, `mem_session_summary`) bajo el proyecto canónico `"vessel"`.
+
+* **Fase 5: Versionado, Despliegue & Purga Forzada de Caché (Release Invariant)**
+  - Al preparar push a `main`: incremento de versión (`src/lib/version/systemVersion.ts`).
+  - Sincronización de Service Worker y package.json (`npm run version:sync`).
+  - Validación completa antes de push (`npm run validate` = `version:sync` + `typecheck` + `test`).
+  - Verificación de reflejo inmediato en panel Admin (`/admin` ➔ "Versión & Despliegues").
+
+---
+
+## 11. Tríada de Rendimiento & Arquitectura Moderna 2026 (INVARIANTE OBLIGATORIA EN CADA CAMBIO)
+
+De ahora en más, **CADA CAMBIO, FEATURE, REFACTOR O BUGFIX** debe cumplir obligatoriamente y sin excepciones con los siguientes tres principios de ingeniería moderna:
+
+### 1. Erradicación de Context Hell y Cascada de Re-renders (`useVessel` Prohibido)
+* **Prohibición Estricta de Monolitos:** Queda terminantemente prohibido importar o reintroducir el hook monolítico `useVessel()`. Todo componente o vista debe consumir exclusivamente hooks atómicos por dominio (`useAuth`, `useSettings`, `useRadarMatrix`, `useChat`, `useLogistics`, `useDiary`, `useSafety`) o micro-stores granulares.
+* **Aislamiento de Alta Frecuencia:** Eventos volátiles de alta frecuencia (mensajes de chat entrantes, ticks GPS, pulsos de audio) NUNCA deben mutar el contexto de la grilla de perfiles ni disparar renders en cascada por todo el árbol.
+* **Componentes Puros Desacoplados:** Componentes de alta densidad (`ProfileCard`, `PulseCard`, `ProfileGrid`) deben mantenerse como componentes puros (`PureProfileCard`) recibiendo props atómicas memorizadas, garantizando que `React.memo` no sea invalidado por hooks internos parásitos.
+
+### 2. Aprovechamiento Real de Next.js 16 y Web Platform (Rutas App Router & View Transitions)
+* **Cero SPAs Artificiales:** Prohibido atrapar vistas en `useState(activeView)` dentro de `page.tsx`. Toda vista principal o secundaria debe mapearse a rutas reales del App Router (`/radar`, `/pulses`, `/chat`, `/diary`, `/account`), alojadas bajo un layout compartido (`AppShell`).
+* **Navegación de Plataforma:** La navegación debe ejecutarse mediante `useRouter().push(targetPath)` y `usePathname()` de `next/navigation`, integrando de forma nativa la API de `startViewTransition` del navegador (`document.startViewTransition`).
+* **Deep-Linking & Historial Intacto:** El botón "Atrás/Adelante" del navegador móvil y el refresco directo de URLs específicas deben funcionar de forma nativa e inmediata en cualquier ruta sin resetear forzadamente a la pantalla inicial.
+
+### 3. Protección del Hilo Principal (Main Thread), Assets Crudos & I/O Asíncrona
+* **Imágenes Optimizadas & Fallback Resiliente:** En producción, las imágenes remotas deben optimizarse mediante `<Image>` de Next.js con formatos WebP/AVIF y dimensionado adaptativo (`w=400`), mientras que en desarrollo local (`NODE_ENV !== "production"`) deben usar `unoptimized={true}` o fallback de doble escalón (`useDirectUrl`) para evitar bloqueos del proxy de Node.js.
+* **Web Workers para Computación Pesada:** Operaciones intensivas de CPU o matemáticas complejas (como el procesamiento masivo de distancias Haversine o algoritmos de proximidad de radar) deben delegarse a hilos secundarios vía Web Workers (`proximityWorkerClient.ts`), protegiendo el event loop de la UI y del sintetizador analógico `SubBassAudioEngine`.
+* **I/O Asíncrona en IndexedDB:** Las sincronizaciones pesadas, colas de mutaciones offline (`offlineMutationQueue.ts`) y almacenamiento voluminoso deben desacoplarse del `localStorage` síncrono (que bloquea el Main Thread y sube la métrica INP) delegándolos a IndexedDB.
 
 ---
 

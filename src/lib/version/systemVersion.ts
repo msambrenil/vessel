@@ -10,11 +10,47 @@ export interface SystemVersionEntry {
   isCurrent?: boolean;
 }
 
-export const CURRENT_SYSTEM_VERSION = "v2.5.0";
-export const SYSTEM_BUILD_TIMESTAMP = "2026-10-06T19:30:00-03:00";
-export const SYSTEM_BUILD_FORMATTED = "06/10/2026, 19:30:00 ART";
+export const CURRENT_SYSTEM_VERSION = "v2.7.0";
+export const SYSTEM_BUILD_TIMESTAMP = "2026-10-09T01:30:00-03:00";
+export const SYSTEM_BUILD_FORMATTED = "09/10/2026, 01:30:00 ART";
 
 export const SYSTEM_CHANGELOG: SystemVersionEntry[] = [
+  {
+    version: "v2.7.0",
+    releaseDate: "2026-10-09T01:30:00-03:00",
+    formattedDate: "09/10/2026, 01:30 ART",
+    title: "Poda Táctica del Core: Extirpación de 7 Módulos Satélite y Arquitectura Zen",
+    type: "core",
+    modules: ["Poda de Módulos", "Seguridad Ligera", "Autenticación", "Nightlife", "Clean Architecture"],
+    description:
+      "Auditoría integral y poda profunda de 7 características satélite para lograr una experiencia de usuario despojada, ágil y de máxima concentración en el valor central (encuentros inmediatos sin fricción y privacidad biométrica real con foto obligatoria).",
+    changes: [
+      "Eliminación de Alerta de Trago Adulterado, Baliza Óptica, Wingman AI, Conexiones Perdidas y After Hours modal de la suite de fiesta.",
+      "Derogación de Guardián Silencioso y PIN de Coacción: erradicación de temporizadores invasivos, falsos positivos y Dead-Man switches.",
+      "Eliminación de Avatares Estilizados de Catálogo: consolidación del estándar de fotos 100% reales de usuarios humanos con Modo Niebla opcional.",
+      "Optimización de SafetyContext y LogisticsContext: remoción de más de 600 líneas de estado huérfano, timers y listeners parásitos.",
+      "Preservación y blindaje de características nucleares: Testimonios y Vessel Wrapped preservados para próxima etapa de refinamiento.",
+    ],
+    isCurrent: true,
+  },
+  {
+    version: "v2.6.0",
+    releaseDate: "2026-10-07T02:35:00-03:00",
+    formattedDate: "07/10/2026, 02:35 ART",
+    title: "Estandarización Total del Design System, Reingeniería Modular de Chat, Toques In-Place y Asistente Express",
+    type: "core",
+    modules: ["Design System", "Chat Darkroom", "Toques", "Asistente de Encuentro", "Seguridad SOS", "PWA Cache"],
+    description:
+      "Despliegue mayor con adopción 100% de la biblioteca de componentes UI (@/components/ui), descomposición modular del chat, respuesta in-place en toques sin bouncing, Asistente de Encuentro con Modo Express (1 Toque), persistencia reactiva de contactos SOS y forzado de última versión en producción.",
+    changes: [
+      "Invariante de Versión en Main: todo push a 'main' actualiza la versión del sistema y fuerza la purga de caché y recarga en navegadores.",
+      "Asistente de Encuentro (RendezvousSheet): estandarizado con BrutalistButton, BrutalistInput, SegmentedTabGroup, TacticalAvatar, Modo Express (1 Toque) y PIN SOS configurable.",
+      "Chat Darkroom: descomposición de monolito de 2.232 líneas en 5 submódulos atómicos y erradicación de botones anidados.",
+      "Toques (Pulses): respuesta en el lugar a 60Hz sin expulsión forzada al chat y modal de confirmación antiborrado.",
+      "Estandarización en Design System: erradicación total de controles ad-hoc en ProfileDetailModal, Radar, PlacesGrid y App Shell.",
+    ],
+    isCurrent: false,
+  },
   {
     version: "v2.5.0",
     releaseDate: "2026-10-06T19:30:00-03:00",
@@ -33,7 +69,7 @@ export const SYSTEM_CHANGELOG: SystemVersionEntry[] = [
       "Comando remoto en Admin para forzar la recarga inmediata de la última versión en todos los clientes conectados.",
       "Comando remoto en Admin para forzar el cierre seguro de sesiones activas de usuarios en toda la plataforma.",
     ],
-    isCurrent: true,
+    isCurrent: false,
   },
   {
     version: "v2.4.0",

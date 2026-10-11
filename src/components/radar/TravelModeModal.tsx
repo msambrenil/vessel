@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings } from "@/context/VesselContext";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const TravelModeModal: React.FC = () => {
   const {
@@ -10,10 +11,8 @@ export const TravelModeModal: React.FC = () => {
     travelMode,
     setTravelModeCity,
     resetTravelMode,
-    t,
-  } = useVessel();
-
-  if (!isTravelModalOpen) return null;
+  } = useLogistics();
+  const { t } = useSettings();
 
   const cities = [
     { name: "Río Cuarto", country: "Argentina", coords: { lat: -33.1325, lng: -64.3470 }, flag: "🇦🇷" },
@@ -28,99 +27,73 @@ export const TravelModeModal: React.FC = () => {
   ];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.tacticalSuite.unlimited.travelMode}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
-      onClick={closeTravelModal}
+    <BrutalistModal
+      isOpen={isTravelModalOpen}
+      onClose={closeTravelModal}
+      icon="✈️"
+      title={t.tacticalSuite.unlimited.travelMode}
+      subtitle="Teleporta tu presencia a otra ciudad antes de aterrizar"
+      maxWidth="md"
+      ariaLabel={t.tacticalSuite.unlimited.travelMode}
+      contentClassName="p-5 space-y-4 text-xs"
     >
-      <div
-        className="relative w-full max-w-md bg-[#0c0c0c] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header */}
-        <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">✈️</span>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-neutral-100">
-                {t.tacticalSuite.unlimited.travelMode}
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                Teleporta tu presencia a otra ciudad antes de aterrizar
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={closeTravelModal}
-            aria-label="Cerrar modo viajero"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100 flex items-center justify-center text-sm font-mono transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Contenido */}
-        <div className="p-5 space-y-4 text-xs">
-          {travelMode.isActive && (
-            <div className="p-3 bg-amber-950/20 border border-amber-500/40 rounded-xl flex items-center justify-between">
-              <div>
-                <span className="font-mono text-amber-400 font-bold uppercase block text-xs">
-                  TELEPORTACIÓN ACTIVA
-                </span>
-                <span className="text-[11px] text-neutral-300 font-mono">
-                  {travelMode.cityName}, {travelMode.country}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={resetTravelMode}
-                className="px-2.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-mono text-[10px] uppercase rounded transition-all"
-              >
-                Restablecer GPS Real
-              </button>
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <span className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block mb-2">
-              Ciudades Tácticas Disponibles:
+      {travelMode.isActive && (
+        <div className="p-3 bg-amber-950/20 border border-amber-500/40 rounded-xl flex items-center justify-between">
+          <div>
+            <span className="font-mono text-amber-400 font-bold uppercase block text-xs">
+              TELEPORTACIÓN ACTIVA
             </span>
-            <div className="grid grid-cols-2 gap-2">
-              {cities.map((city) => {
-                const isCurrent = travelMode.isActive && travelMode.cityName === city.name;
-                return (
-                  <button
-                    key={city.name}
-                    type="button"
-                    onClick={() => setTravelModeCity(city.name, city.country, city.coords)}
-                    className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
-                      isCurrent
-                        ? "bg-amber-950/40 border-amber-500 text-amber-300 font-bold shadow-sm"
-                        : "bg-neutral-900/40 border-neutral-800 text-neutral-300 hover:border-neutral-700"
-                    }`}
-                  >
-                    <span className="text-xl">{city.flag}</span>
-                    <div className="truncate">
-                      <div className="font-mono font-bold text-xs truncate">{city.name}</div>
-                      <div className="text-[10px] text-neutral-500 truncate">{city.country}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <span className="text-[11px] text-neutral-300 font-mono">
+              {travelMode.cityName}, {travelMode.country}
+            </span>
           </div>
+          <BrutalistButton
+            type="button"
+            variant="ghost"
+            size="compact"
+            soundEffect="none"
+            onClick={resetTravelMode}
+            className="!px-2.5 !py-1.5 !bg-neutral-800 hover:!bg-neutral-700 text-neutral-200 font-mono text-[10px] uppercase !rounded-lg"
+          >
+            Restablecer GPS Real
+          </BrutalistButton>
+        </div>
+      )}
 
-          <p className="text-[11px] text-neutral-500">
-            Al activar el Modo Viajero, el radar de proximidad y la grilla cargan los perfiles locales de la ciudad seleccionada.
-          </p>
+      <div className="space-y-1.5">
+        <span className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider block mb-2">
+          Ciudades Tácticas Disponibles:
+        </span>
+        <div className="grid grid-cols-2 gap-2">
+          {cities.map((city) => {
+            const isCurrent = travelMode.isActive && travelMode.cityName === city.name;
+            return (
+              <BrutalistButton
+                key={city.name}
+                type="button"
+                variant="ghost"
+                soundEffect="pulse"
+                onClick={() => setTravelModeCity(city.name, city.country, city.coords)}
+                className={`!p-3 min-h-[48px] !rounded-xl border !justify-start !text-left flex items-center gap-2.5 transition-all ${
+                  isCurrent
+                    ? "!bg-amber-950/40 !border-amber-500 text-amber-300 font-bold shadow-sm"
+                    : "!bg-neutral-900/40 !border-neutral-800 text-neutral-300 hover:!border-neutral-700"
+                }`}
+              >
+                <span className="text-xl shrink-0">{city.flag}</span>
+                <div className="truncate min-w-0">
+                  <div className="font-mono font-bold text-xs truncate">{city.name}</div>
+                  <div className="text-[10px] text-neutral-500 truncate">{city.country}</div>
+                </div>
+              </BrutalistButton>
+            );
+          })}
         </div>
       </div>
-    </div>
+
+      <p className="text-[11px] text-neutral-500">
+        Al activar el Modo Viajero, el radar de proximidad y la grilla cargan los perfiles locales de la ciudad seleccionada.
+      </p>
+    </BrutalistModal>
   );
 };

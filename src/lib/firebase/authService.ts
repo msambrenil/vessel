@@ -25,11 +25,19 @@ import {
   checkCodenameAvailability,
   claimCodename,
 } from "./identityDeduplicationService";
+import { RoleType, YoSoyType, MobilityType, HivStatusType } from "@/types/vessel";
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
 const USERS_COLLECTION = "vessel_users";
+
+function getFirebaseErrorCode(error: unknown): string {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return String((error as { code: unknown }).code);
+  }
+  return "";
+}
 
 export interface AuthActionResult {
   success: boolean;
@@ -108,13 +116,13 @@ async function ensureUserDocInFirestore(user: User, additionalData?: { codename?
       const initialPayload = {
         profile: {
           codename,
-          role: (additionalData?.role || "") as any,
+          role: ((additionalData?.role as RoleType) || "Versatile"),
           age: 0,
           showAge: true,
           twitterHandle: "",
-          yoSoy: "" as any,
-          mobility: "" as any,
-          hivStatus: "" as any,
+          yoSoy: "Discreto / Perfil bajo" as YoSoyType,
+          mobility: "Tengo depto / lugar" as MobilityType,
+          hivStatus: "Negativo en PrEP" as HivStatusType,
           genderIdentity: "",
           pronouns: "",
           genderInterests: [],
@@ -221,8 +229,8 @@ export async function loginWithGoogle(lang: "es" | "en" = "es"): Promise<AuthAct
       user,
       isNewUser,
     };
-  } catch (error: any) {
-    const code = error?.code as string;
+  } catch (error: unknown) {
+    const code = getFirebaseErrorCode(error);
     return {
       success: false,
       error: getAuthErrorMessage(code, lang),
@@ -249,8 +257,8 @@ export async function loginWithEmail(
       success: true,
       user,
     };
-  } catch (error: any) {
-    const code = error?.code as string;
+  } catch (error: unknown) {
+    const code = getFirebaseErrorCode(error);
     return {
       success: false,
       error: getAuthErrorMessage(code, lang),
@@ -309,8 +317,8 @@ export async function registerWithEmail(
       user,
       isNewUser: true,
     };
-  } catch (error: any) {
-    const code = error?.code as string;
+  } catch (error: unknown) {
+    const code = getFirebaseErrorCode(error);
     return {
       success: false,
       error: getAuthErrorMessage(code, lang),
@@ -326,8 +334,8 @@ export async function resetPassword(email: string, lang: "es" | "en" = "es"): Pr
     const trimmedEmail = email.trim().toLowerCase();
     await sendPasswordResetEmail(auth, trimmedEmail);
     return { success: true };
-  } catch (error: any) {
-    const code = error?.code as string;
+  } catch (error: unknown) {
+    const code = getFirebaseErrorCode(error);
     return {
       success: false,
       error: getAuthErrorMessage(code, lang),
@@ -346,7 +354,7 @@ export async function signInAsGuest(): Promise<AuthActionResult> {
       user: result.user,
       isNewUser: true,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.warn("Fallo en login anónimo:", error);
     return {
       success: false,
@@ -376,8 +384,8 @@ export async function linkGuestWithGoogle(lang: "es" | "en" = "es"): Promise<Aut
       success: true,
       user,
     };
-  } catch (error: any) {
-    const code = error?.code as string;
+  } catch (error: unknown) {
+    const code = getFirebaseErrorCode(error);
     // Si la credencial ya existe en otra cuenta, el usuario debe iniciar sesión directamente
     return {
       success: false,
@@ -413,8 +421,8 @@ export async function linkGuestWithEmail(
       success: true,
       user,
     };
-  } catch (error: any) {
-    const code = error?.code as string;
+  } catch (error: unknown) {
+    const code = getFirebaseErrorCode(error);
     return {
       success: false,
       error: getAuthErrorMessage(code, lang),

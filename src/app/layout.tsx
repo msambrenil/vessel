@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { VesselProvider } from "@/context/VesselContext";
 import { PwaRegister } from "@/components/pwa/PwaRegister";
+import { AppShell } from "@/components/shell/AppShell";
 
 export const metadata: Metadata = {
   title: "VESSEL — Built to Receive",
@@ -44,7 +45,7 @@ export default function RootLayout({
       <body className="bg-obsidian min-h-screen text-white antialiased" suppressHydrationWarning>
         <VesselProvider>
           <PwaRegister />
-          {children}
+          <AppShell>{children}</AppShell>
         </VesselProvider>
       </body>
     </html>

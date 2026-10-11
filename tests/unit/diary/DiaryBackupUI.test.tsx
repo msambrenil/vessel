@@ -84,15 +84,25 @@ describe("DiaryLoversVaultSection — Respaldo Cifrado UI", () => {
 
 import { DiaryScheduleSection } from "@/components/diary/DiaryScheduleSection";
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     updateDiaryEntry: vi.fn(),
     deleteDiaryEntry: vi.fn(),
     sendChatMessage: vi.fn(),
     language: "es",
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 describe("DiaryScheduleSection — Vista Unificada Citas & Agenda Íntima", () => {
   const t = TRANSLATIONS.es;
@@ -146,8 +156,8 @@ describe("DiaryScheduleSection — Vista Unificada Citas & Agenda Íntima", () =
       />
     );
 
-    expect(screen.getByTestId("diary-export-backup-btn")).toBeDefined();
-    expect(screen.getByTestId("diary-import-backup-btn")).toBeDefined();
+    expect(screen.queryByTestId("diary-export-backup-btn")).toBeNull();
+    expect(screen.queryByTestId("diary-import-backup-btn")).toBeNull();
     expect(screen.getByText("🔥 Química Nuclear")).toBeDefined();
     expect(screen.getByText("1 fotos")).toBeDefined();
 

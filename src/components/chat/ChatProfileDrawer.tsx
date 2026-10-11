@@ -2,13 +2,12 @@
 
 import React, { useEffect } from "react";
 import { VesselProfile } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useRadarMatrix, useDiary, useLogistics } from "@/context/VesselContext";
 import {
   X,
   ShieldCheck,
   CheckCircle2,
   Navigation,
-  ShieldAlert,
   BookOpen,
   Calendar,
   ExternalLink,
@@ -33,16 +32,10 @@ export const ChatProfileDrawer: React.FC<ChatProfileDrawerProps> = ({
   profile,
   onOpenRendezvousSheet,
 }) => {
-  const {
-    language,
-    formatDist,
-    setSelectedProfile,
-    getProfileDossier,
-    openEnRouteModal,
-    openSafetyBeaconModal,
-    openCreateDiaryModal,
-    t,
-  } = useVessel();
+  const { language, formatDist, t } = useSettings();
+  const { setSelectedProfile } = useRadarMatrix();
+  const { getProfileDossier, openCreateDiaryModal } = useDiary();
+  const { openEnRouteModal } = useLogistics();
 
   const dossier = getProfileDossier ? getProfileDossier(profile.id) : null;
 
@@ -108,6 +101,8 @@ export const ChatProfileDrawer: React.FC<ChatProfileDrawerProps> = ({
             <img
               src={profile.avatarUrl}
               alt={profile.codename}
+              loading="lazy"
+              decoding="async"
               referrerPolicy="no-referrer"
               crossOrigin="anonymous"
               className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
@@ -226,22 +221,6 @@ export const ChatProfileDrawer: React.FC<ChatProfileDrawerProps> = ({
               <span className="text-[11px]">{t.chat.imOnMyWayBtn || (language === "es" ? "Estoy yendo" : "I'm on my way")}</span>
             </div>
             <span className="text-[9px] text-neutral-400">{t.chat.imOnMyWaySub || (language === "es" ? "En viaje" : "En route")}</span>
-          </button>
-
-          {/* Guardián SOS */}
-          <button
-            type="button"
-            onClick={() => {
-              audioEngine.playPulse();
-              openSafetyBeaconModal();
-            }}
-            className="w-full flex items-center justify-between p-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 border border-red-500/30 text-red-300 text-xs font-mono font-bold transition-all cursor-pointer active:scale-98 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-bloodNeon" />
-              <span className="text-[11px]">{t.chat.sosTimerBtn || (language === "es" ? "Guardián SOS" : "Safety SOS")}</span>
-            </div>
-            <span className="text-[9px] text-bloodNeon">{t.chat.sosTimerSub || (language === "es" ? "Check-in" : "Check-in")}</span>
           </button>
 
           {/* Guardar Nota Privada */}

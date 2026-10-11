@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { FlaskConical, Zap, Trash2, X, CheckCircle2, ShieldAlert, Sparkles } from "lucide-react";
+import { FlaskConical, Zap, Trash2, CheckCircle2, ShieldAlert, Sparkles } from "lucide-react";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 interface AppModeModalProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ interface AppModeModalProps {
 }
 
 export const AppModeModal: React.FC<AppModeModalProps> = ({ isOpen, onClose }) => {
-  const { appMode, setAppMode, resetModeData, language } = useVessel();
+  const { appMode, setAppMode, resetModeData, language } = useSettings();
 
   if (!isOpen || !isLocalEnvironment()) return null;
 
@@ -37,67 +38,44 @@ export const AppModeModal: React.FC<AppModeModalProps> = ({ isOpen, onClose }) =
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Selector de Modo de Aplicación"
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-2xl flex justify-center items-end sm:items-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[88vh] sm:max-h-[92vh] overflow-hidden shadow-card-elevation relative animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Cabecera Brutalista */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-obsidian-deep/90 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-2.5 rounded-2xl border flex items-center justify-center ${
-                isReal
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-                  : "bg-electricViolet/10 border-electricViolet/30 text-electricViolet-glow shadow-[0_0_15px_rgba(139,92,246,0.2)]"
-              }`}
-            >
-              {isReal ? <Zap className="w-5 h-5 stroke-[2.5]" /> : <FlaskConical className="w-5 h-5 stroke-[2.5]" />}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-black text-white tracking-wider uppercase font-mono">
-                  {language === "es" ? "ENTORNO OPERATIVO" : "OPERATING ENVIRONMENT"}
-                </h2>
-                <span
-                  className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold border ${
-                    isReal
-                      ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
-                      : "bg-electricViolet/20 text-electricViolet-glow border-electricViolet/40"
-                  }`}
-                >
-                  {isReal ? "⚡ REAL DATA" : "🧪 TEST DATA"}
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                {language === "es"
-                  ? "Alterna entre simulación con datos mock y pruebas operativas reales."
-                  : "Switch between mock simulation and real operative testing."}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar selector de entorno"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <BrutalistModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="lg"
+      icon={
+        <div
+          className={`p-2 rounded-xl border flex items-center justify-center ${
+            isReal
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+              : "bg-electricViolet/10 border-electricViolet/30 text-electricViolet-glow shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+          }`}
+        >
+          {isReal ? <Zap className="w-4 h-4 stroke-[2.5]" /> : <FlaskConical className="w-4 h-4 stroke-[2.5]" />}
         </div>
-
-        {/* Opciones de Modo */}
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
+      }
+      title={
+        <div className="flex items-center gap-2">
+          <span>{language === "es" ? "ENTORNO OPERATIVO" : "OPERATING ENVIRONMENT"}</span>
+          <span
+            className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+              isReal
+                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                : "bg-electricViolet/20 text-electricViolet-glow border-electricViolet/40"
+            }`}
+          >
+            {isReal ? "⚡ REAL DATA" : "🧪 TEST DATA"}
+          </span>
+        </div>
+      }
+      subtitle={
+        language === "es"
+          ? "Alterna entre simulación con datos mock y pruebas operativas reales."
+          : "Switch between mock simulation and real operative testing."
+      }
+      ariaLabel="Selector de Modo de Aplicación"
+      closeButtonAriaLabel={language === "es" ? "Cerrar selector de entorno" : "Close environment selector"}
+      contentClassName="p-4 sm:p-5 space-y-4"
+    >
           {/* Card: Modo de Prueba */}
           <button
             type="button"
@@ -236,8 +214,6 @@ export const AppModeModal: React.FC<AppModeModalProps> = ({ isOpen, onClose }) =
                 : `Clears only the '${appMode}' localStorage cache without touching the other mode.`}
             </p>
           </div>
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

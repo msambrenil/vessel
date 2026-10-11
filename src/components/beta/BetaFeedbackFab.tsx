@@ -1,31 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useLogistics } from "@/context/VesselContext";
 import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { BetaFeedbackModal } from "./BetaFeedbackModal";
 import { BetaDiagnosticsModal } from "./BetaDiagnosticsModal";
-import { AppModeModal } from "@/components/settings/AppModeModal";
-import { Bug, Terminal, Wrench, Sliders, Loader2 } from "lucide-react";
+import { Bug, Terminal, Wrench, Loader2 } from "lucide-react";
+import { BrutalistButton, TacticalBadge } from "@/components/ui";
 
 export interface BetaFeedbackMenuSectionProps {
   onCloseMenu?: () => void;
 }
 
 export const BetaFeedbackMenuSection: React.FC<BetaFeedbackMenuSectionProps> = ({ onCloseMenu }) => {
+  const { language } = useSettings();
   const {
-    language,
-    appMode,
     isSimulatedLocationActive,
     setSimulatedLocationActive,
     myCoordinates,
     isLocating,
-  } = useVessel();
+  } = useLogistics();
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState(false);
-  const [isAppModeOpen, setIsAppModeOpen] = useState(false);
   const [isSwitchingLocation, setIsSwitchingLocation] = useState(false);
 
   const handleOpenFeedback = () => {
@@ -38,12 +36,6 @@ export const BetaFeedbackMenuSection: React.FC<BetaFeedbackMenuSectionProps> = (
     onCloseMenu?.();
     audioEngine.playPulse();
     setIsDiagnosticsOpen(true);
-  };
-
-  const handleOpenAppMode = () => {
-    onCloseMenu?.();
-    audioEngine.playPulse();
-    setIsAppModeOpen(true);
   };
 
   const handleToggleSimulatedLocation = async () => {
@@ -67,22 +59,32 @@ export const BetaFeedbackMenuSection: React.FC<BetaFeedbackMenuSectionProps> = (
             <Wrench className="w-3.5 h-3.5 text-electricViolet-glow flex-shrink-0" />
             <span>BETA TESTER LAB</span>
           </div>
-          <button
-            type="button"
+          <TacticalBadge
+            role="button"
+            tabIndex={0}
             data-testid="beta-toggle-location-pill"
             onClick={handleToggleSimulatedLocation}
-            disabled={isSwitchingLocation || isLocating}
-            className={`text-[8.5px] font-mono px-2 py-0.5 rounded font-black border flex items-center gap-1 cursor-pointer transition-all active:scale-95 disabled:opacity-50 ${
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleToggleSimulatedLocation();
+              }
+            }}
+            variant={isSimulatedLocationActive ? "violet" : "emerald"}
+            size="xs"
+            pulse
+            className={`cursor-pointer active:scale-95 transition-all !text-[8.5px] font-black ${
+              isSwitchingLocation || isLocating ? "opacity-50 pointer-events-none" : ""
+            } ${
               isSimulatedLocationActive
-                ? "bg-electricViolet/30 text-electricViolet-glow border-electricViolet/50 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
-                : "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                ? "!bg-electricViolet/30 text-electricViolet-glow !border-electricViolet/50 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+                : "!bg-emerald-500/20 text-emerald-400 !border-emerald-500/40"
             }`}
             title={isSimulatedLocationActive ? "Fija en Saavedra 620 · Tocá para usar GPS Real" : "GPS Real activo · Tocá para fijar en Saavedra 620"}
             aria-label={isSimulatedLocationActive ? "Desactivar y usar GPS Real" : "Fijar en Saavedra 620"}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
             <span>{isSimulatedLocationActive ? "RÍO CUARTO" : "GPS REAL"}</span>
-          </button>
+          </TacticalBadge>
         </div>
 
         {/* Info de Ubicación Compacta */}
@@ -90,11 +92,13 @@ export const BetaFeedbackMenuSection: React.FC<BetaFeedbackMenuSectionProps> = (
           <span className="truncate">
             {isSimulatedLocationActive ? "Saavedra 620 · Río IV" : myCoordinates ? `${myCoordinates.lat.toFixed(4)}, ${myCoordinates.lng.toFixed(4)}` : "GPS Activo"}
           </span>
-          <button
-            type="button"
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
+            soundEffect="none"
             disabled={isSwitchingLocation || isLocating}
             onClick={handleToggleSimulatedLocation}
-            className="text-[9px] text-electricViolet-glow hover:underline ml-1 flex-shrink-0 font-bold cursor-pointer disabled:opacity-50"
+            className="!p-0 !min-h-0 text-[9px] text-electricViolet-glow hover:underline ml-1 flex-shrink-0 font-bold"
           >
             {isSwitchingLocation || isLocating ? (
               <Loader2 className="w-3 h-3 animate-spin inline" />
@@ -103,59 +107,37 @@ export const BetaFeedbackMenuSection: React.FC<BetaFeedbackMenuSectionProps> = (
             ) : (
               (language === "es" ? "Fijar Río IV" : "Set Río IV")
             )}
-          </button>
+          </BrutalistButton>
         </div>
 
         {/* Botones de acción rápida: Reportar Bug + Diagnóstico */}
         <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-          <button
-            type="button"
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
+            soundEffect="pulse"
             onClick={handleOpenFeedback}
-            className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-electricViolet/20 text-neutral-200 hover:text-white border border-white/10 hover:border-electricViolet/40 text-[10px] font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            className="!px-2 !py-1.5 !rounded-lg !bg-white/5 hover:!bg-electricViolet/20 text-neutral-200 hover:text-white !border-white/10 hover:!border-electricViolet/40 text-[10px] font-mono font-bold flex items-center justify-center gap-1.5"
           >
             <Bug className="w-3 h-3 text-electricViolet-glow flex-shrink-0" />
             <span className="truncate">{language === "es" ? "Reportar Bug" : "Report Bug"}</span>
-          </button>
+          </BrutalistButton>
 
-          <button
-            type="button"
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
+            soundEffect="pulse"
             onClick={handleOpenDiagnostics}
-            className="px-2 py-1.5 rounded-lg bg-white/5 hover:bg-mintNeon/20 text-neutral-200 hover:text-white border border-white/10 hover:border-mintNeon/40 text-[10px] font-mono font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            className="!px-2 !py-1.5 !rounded-lg !bg-white/5 hover:!bg-mintNeon/20 text-neutral-200 hover:text-white !border-white/10 hover:!border-mintNeon/40 text-[10px] font-mono font-bold flex items-center justify-center gap-1.5"
           >
             <Terminal className="w-3 h-3 text-mintNeon flex-shrink-0" />
             <span className="truncate">{language === "es" ? "Sensores" : "Sensors"}</span>
-          </button>
+          </BrutalistButton>
         </div>
-
-        {/* Solo en entorno local se expone el switcher de modo Mock / Real */}
-        {isLocalEnvironment() && (
-          <button
-            type="button"
-            onClick={handleOpenAppMode}
-            className="w-full px-2 py-1 rounded-lg bg-white/5 hover:bg-amber-500/20 text-neutral-300 hover:text-white border border-transparent hover:border-amber-500/40 text-[9.5px] font-mono font-bold flex items-center justify-between transition-all cursor-pointer text-left"
-          >
-            <div className="flex items-center gap-1.5">
-              <Sliders className="w-3 h-3 text-amber-400 flex-shrink-0" />
-              <span>{language === "es" ? "Modo Dev" : "Dev Mode"}</span>
-            </div>
-            <span
-              className={`text-[8.5px] font-mono px-1 py-0.2 rounded font-bold border ${
-                appMode === "real"
-                  ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
-                  : "bg-electricViolet/20 text-electricViolet-glow border-electricViolet/40"
-              }`}
-            >
-              {appMode === "real" ? "REAL" : "TEST"}
-            </span>
-          </button>
-        )}
       </div>
 
       <BetaFeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
       <BetaDiagnosticsModal isOpen={isDiagnosticsOpen} onClose={() => setIsDiagnosticsOpen(false)} />
-      {isLocalEnvironment() && (
-        <AppModeModal isOpen={isAppModeOpen} onClose={() => setIsAppModeOpen(false)} />
-      )}
     </>
   );
 };

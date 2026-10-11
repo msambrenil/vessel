@@ -136,42 +136,63 @@ const mockProfiles = [
     mobility: "Me desplazo" as const,
     exitProtocol: "chill_cuddle" as const,
   },
+  {
+    id: "vessel-03",
+    codename: "VOID_MONOLITH",
+    age: 35,
+    role: "Dominant",
+    bodyState: "open" as const,
+    mobility: "Tengo lugar y me muevo" as const,
+    exitProtocol: "fast_encounter" as const,
+  },
 ];
 
 const mockOpenLoverDossierModal = vi.fn();
 
+const mockDiaryContextValue = {
+  openCreateDiaryModal: mockOpenCreateDiaryModal,
+  openItsExposureModal: mockOpenItsExposureModal,
+  openLoverDossierModal: mockOpenLoverDossierModal,
+  diaryEntries: mockEntries,
+  diaryStats: {
+    totalEncounters: 3,
+    averageSatisfaction: 4.8,
+    averageChemistry: 4.7,
+    repeatPercentage: 100,
+    topLocationCategory: "their_place",
+    upcomingDatesCount: 1,
+    pendingHealthChecksCount: 0,
+  },
+  doxyPepTrackers: [],
+  addDoxyPepTracker: mockAddDoxyPepTracker,
+  deleteDiaryEntry: mockDeleteDiaryEntry,
+  updateDiaryEntry: vi.fn(),
+  toggleHealthReminderResolved: vi.fn(),
+  restoreDiaryBackup: vi.fn(),
+  myReceivedTestimonials: mockReceivedTestimonials,
+  toggleTestimonialVisibility: mockToggleTestimonialVisibility,
+  profiles: mockProfiles,
+  getProfileById: (id: string) => mockProfiles.find((p) => p.id === id),
+  setSelectedProfile: mockSetSelectedProfile,
+  setActiveChatProfileId: mockSetActiveChatProfileId,
+  sendChatMessage: vi.fn(),
+  myProfile: {
+    respectScore: 98,
+  },
+  language: "es" as const,
+  t: TRANSLATIONS.es,
+  favoriteProfileIds: ["vessel-01"],
+  isFavoriteProfile: (id: string) => id === "vessel-01",
+  toggleFavoriteProfile: vi.fn(),
+};
+
 vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
-    openCreateDiaryModal: mockOpenCreateDiaryModal,
-    openItsExposureModal: mockOpenItsExposureModal,
-    openLoverDossierModal: mockOpenLoverDossierModal,
-    diaryEntries: mockEntries,
-    diaryStats: {
-      totalEncounters: 3,
-      averageSatisfaction: 4.8,
-      averageChemistry: 4.7,
-      repeatPercentage: 100,
-      topLocationCategory: "their_place",
-      upcomingDatesCount: 1,
-      pendingHealthChecksCount: 0,
-    },
-    doxyPepTrackers: [],
-    addDoxyPepTracker: mockAddDoxyPepTracker,
-    deleteDiaryEntry: mockDeleteDiaryEntry,
-    myReceivedTestimonials: mockReceivedTestimonials,
-    toggleTestimonialVisibility: mockToggleTestimonialVisibility,
-    profiles: mockProfiles,
-    setSelectedProfile: mockSetSelectedProfile,
-    setActiveChatProfileId: mockSetActiveChatProfileId,
-    myProfile: {
-      respectScore: 98,
-    },
-    language: "es",
-    t: TRANSLATIONS.es,
-    favoriteProfileIds: ["vessel-01"],
-    isFavoriteProfile: (id: string) => id === "vessel-01",
-    toggleFavoriteProfile: vi.fn(),
-  }),
+  useVessel: () => mockDiaryContextValue,
+  useDiary: () => mockDiaryContextValue,
+  useChat: () => mockDiaryContextValue,
+  useRadarMatrix: () => mockDiaryContextValue,
+  useAuth: () => mockDiaryContextValue,
+  useSettings: () => mockDiaryContextValue,
 }));
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
@@ -181,7 +202,7 @@ vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   },
 }));
 
-describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
+describe("DateDiaryView — Dashboard Táctico de Encuentros (Alternativa D)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -194,19 +215,30 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     expect(screen.getByText(/Anotar Cita|Documentar Encuentro/i)).toBeInTheDocument();
   });
 
-  it("debe renderizar las 3 pestañas de navegación: Agenda & Citas, Salud & Cuidados y Métricas", () => {
+  it("debe renderizar la navegación bipolar superior: 'Próximas & Mi Día' y 'Mi Agenda'", () => {
     render(<DateDiaryView />);
 
     expect(screen.getByTestId("diary-tab-schedule")).toBeInTheDocument();
-    expect(screen.getByTestId("diary-tab-health")).toBeInTheDocument();
-    expect(screen.getByTestId("diary-tab-insights")).toBeInTheDocument();
+    expect(screen.getByTestId("diary-tab-my-agenda")).toBeInTheDocument();
   });
 
-  it("debe renderizar la solapa Citas por defecto con listado de citas y filtros de fecha", () => {
+  it("debe renderizar la solapa 'Próximas & Mi Día' por defecto con citas agendadas futuras", () => {
     render(<DateDiaryView />);
 
-    expect(screen.getByText("KLAUS_030")).toBeInTheDocument();
-    expect(screen.getByText("RECEPTOR_V")).toBeInTheDocument();
+    // En Próximas & Mi Día, muestra la cita futura de VOID_MONOLITH
+    expect(screen.getByText("VOID_MONOLITH")).toBeInTheDocument();
+    expect(screen.getByText("Basement Darkroom")).toBeInTheDocument();
+  });
+
+  it("debe conmutar a 'Mi Agenda' y mostrar el Feed Cronológico con filtros de fecha y contactos", () => {
+    render(<DateDiaryView />);
+
+    const agendaTabBtn = screen.getByTestId("diary-tab-my-agenda");
+    fireEvent.click(agendaTabBtn);
+
+    // En Mi Agenda -> Feed Cronológico y Mis Chongos unificados
+    expect(screen.getAllByText("KLAUS_030").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("RECEPTOR_V").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(TRANSLATIONS.es.diary.filterAll)).toBeInTheDocument();
     expect(screen.getByText(TRANSLATIONS.es.diary.filter7Days)).toBeInTheDocument();
     expect(screen.getByText(TRANSLATIONS.es.diary.filter30Days)).toBeInTheDocument();
@@ -214,14 +246,14 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     expect(screen.getByText(TRANSLATIONS.es.diary.filterCustomRange)).toBeInTheDocument();
   });
 
-  it("debe conmutar a la solapa 'Salud & Cuidados' e invocar openItsExposureModal al hacer clic en Emitir Alerta Anónima", () => {
+  it("debe conmutar a la solapa independiente 'Salud & Cuidados' e invocar openItsExposureModal", () => {
     render(<DateDiaryView />);
 
     const healthTabBtn = screen.getByTestId("diary-tab-health");
     fireEvent.click(healthTabBtn);
 
     expect(screen.getByText(/Control & Calendario PrEP/i)).toBeInTheDocument();
-    expect(screen.getByText(/Alerta de Exposición a ITS/i)).toBeInTheDocument();
+    expect(screen.getByText(/Alerta de Exposición a ETS/i)).toBeInTheDocument();
     expect(screen.getByText(/Reducción de Daños/i)).toBeInTheDocument();
 
     const alertBtn = screen.getByRole("button", { name: /Emitir Alerta Anónima/i });
@@ -230,7 +262,7 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     expect(mockOpenItsExposureModal).toHaveBeenCalledTimes(1);
   });
 
-  it("debe conmutar a la solapa 'Métricas' y renderizar los 4 KPIs y las valoraciones de onda y confianza", () => {
+  it("debe conmutar a la solapa independiente 'Fuego' y renderizar los 4 KPIs y las valoraciones", () => {
     render(<DateDiaryView />);
 
     const insightsTabBtn = screen.getByTestId("diary-tab-insights");
@@ -246,27 +278,28 @@ describe("DateDiaryView — Dashboard Táctico de Encuentros", () => {
     expect(screen.getAllByText(/Excelente Host/i).length).toBeGreaterThan(0);
   });
 
-  it("debe invocar openLoverDossierModal al hacer clic en el rostro de un encuentro", () => {
+  it("debe invocar openLoverDossierModal al hacer clic en el avatar de un encuentro en Mi Día", () => {
     render(<DateDiaryView />);
 
-    const klausAvatars = screen.getAllByAltText("KLAUS_030");
-    fireEvent.click(klausAvatars[0]);
+    const voidAvatars = screen.getAllByAltText("VOID_MONOLITH");
+    fireEvent.click(voidAvatars[0]);
 
-    expect(mockOpenLoverDossierModal).toHaveBeenCalledWith("vessel-01");
+    expect(mockOpenLoverDossierModal).toHaveBeenCalledWith("vessel-03");
   });
 
   it("debe invocar openCreateDiaryModal al hacer clic en Anotar Cita", () => {
     render(<DateDiaryView />);
 
-    const docBtn = screen.getByRole("button", { name: /Anotar Cita|Documentar Encuentro/i });
+    const docBtn = screen.getByTestId("diary-schedule-btn");
     fireEvent.click(docBtn);
 
     expect(mockOpenCreateDiaryModal).toHaveBeenCalledTimes(1);
   });
 
-  it("debe renderizar el botón de filtro 'Solo Favoritos' en el feed y permitir activarlo", () => {
+  it("debe renderizar el botón de filtro 'Solo Favoritos' en el feed de Mi Agenda y permitir activarlo", () => {
     render(<DateDiaryView />);
 
+    fireEvent.click(screen.getByTestId("diary-tab-my-agenda"));
     const favFilterBtn = screen.getByTestId("diary-filter-only-favorites");
     expect(favFilterBtn).toBeInTheDocument();
 

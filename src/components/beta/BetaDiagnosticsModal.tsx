@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings, useAuth } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   Terminal,
@@ -26,11 +26,9 @@ export const BetaDiagnosticsModal: React.FC<BetaDiagnosticsModalProps> = ({ isOp
     myCoordinates,
     setMyCoordinates,
     batteryEngineState,
-    language,
-    appMode,
-    currentUserUid,
-    myProfile,
-  } = useVessel();
+  } = useLogistics();
+  const { language, appMode } = useSettings();
+  const { currentUserUid, myProfile } = useAuth();
 
   const [simulatedFreq, setSimulatedFreq] = useState(55);
   const [toastMessage, setToastMessage] = useState<string | null>(null);

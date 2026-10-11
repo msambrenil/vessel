@@ -1,6 +1,6 @@
 {
   "name": "vessel-app",
-  "version": "1.0.0",
+  "version": "2.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack -p 3001",
@@ -11,7 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "validate": "tsc --noEmit && vitest run"
+    "version:sync": "node scripts/sync-system-version.mjs",
+    "version:bump": "node scripts/sync-system-version.mjs --bump",
+    "validate": "node scripts/sync-system-version.mjs && tsc --noEmit && vitest run"
   },
   "dependencies": {
     "clsx": "^2.1.1",

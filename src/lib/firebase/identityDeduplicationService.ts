@@ -160,7 +160,7 @@ export async function checkCodenameAvailability(
 
   // 2. Validar contra Firestore (lookup O(1) en vessel_unique_identities)
   try {
-    if (db && typeof (db as any).type === "string") {
+    if (db && "type" in db && typeof (db as { type?: unknown }).type === "string") {
       const codenameRef = doc(db, UNIQUE_IDENTITIES_COLLECTION, `codename_${normalized}`);
       const snap = await getDoc(codenameRef);
       if (snap.exists()) {
@@ -253,7 +253,7 @@ export async function verifyIdentityUniqueness(params: {
       }
     }
 
-    if (db && typeof (db as any).type === "string") {
+    if (db && "type" in db && typeof (db as { type?: unknown }).type === "string") {
       const deviceId = params.deviceId || (await generateDeviceFingerprint());
 
       // 2. Verificar si el dispositivo está en la Lista Negra Permanente

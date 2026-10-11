@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary, useSettings } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   X,
@@ -17,15 +17,15 @@ import {
   ChevronRight,
   Shield,
 } from "lucide-react";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const VesselWrappedModal: React.FC = () => {
   const {
     isWrappedModalOpen,
     closeWrappedModal,
     getVesselWrappedMetrics,
-    language,
-    t,
-  } = useVessel();
+  } = useDiary();
+  const { language, t } = useSettings();
 
   const [period, setPeriod] = useState<"month" | "year">("year");
   const [activeSlide, setActiveSlide] = useState(0);
@@ -49,21 +49,14 @@ export const VesselWrappedModal: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wrapped-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-lg animate-fade-in select-none [overscroll-behavior:contain]"
-      onClick={closeWrappedModal}
-    >
-      <div
-        className="relative w-full max-w-lg bg-obsidian border-t sm:border border-white/15 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-        {/* CABECERA */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/40">
+    <BrutalistModal
+      isOpen={isWrappedModalOpen}
+      onClose={closeWrappedModal}
+      maxWidth="lg"
+      ariaLabel={language === "es" ? "Resumen Anual Vessel" : "Vessel Wrapped"}
+      hideCloseButton={true}
+      customHeader={
+        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/40 shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-xl bg-bloodNeon/20 text-bloodNeon border border-bloodNeon/40 shadow-blood-glow">
               <Flame className="w-4 h-4" />
@@ -71,7 +64,7 @@ export const VesselWrappedModal: React.FC = () => {
             <div>
               <h3 id="wrapped-title" className="text-xs font-mono font-black text-white uppercase tracking-wider">
                 {language === "es"
-                  ? `RETROSPECTIVA VESSEL // ${period === "year" ? "2026" : "MENSUAL"}`
+                  ? `RESUMEN ANUAL VESSEL // ${period === "year" ? "2026" : "MENSUAL"}`
                   : `VESSEL WRAPPED // ${period === "year" ? "2026" : "MONTHLY"}`}
               </h3>
               <p className="text-[10px] font-mono text-neutral-400">
@@ -111,22 +104,61 @@ export const VesselWrappedModal: React.FC = () => {
               </button>
             </div>
 
-            <button
-              type="button"
+            <BrutalistButton
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 audioEngine.playPulse();
                 closeWrappedModal();
               }}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-              aria-label={language === "es" ? "Cerrar retrospectiva" : "Close retrospective"}
+              className="text-neutral-400 hover:text-white"
+              aria-label={language === "es" ? "Cerrar resumen anual" : "Close annual summary"}
             >
-              <X className="w-5 h-5" />
-            </button>
+              <X className="w-4 h-4" />
+            </BrutalistButton>
           </div>
         </div>
+      }
+      footer={
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handlePrev}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 disabled:opacity-30 cursor-pointer"
+            disabled={activeSlide === 0}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
 
-        {/* CONTENIDO DEL SLIDE */}
-        <div className="p-6 flex-1 flex flex-col justify-center items-center text-center space-y-6">
+          {/* Dots */}
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalSlides }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setActiveSlide(i);
+                  audioEngine.playPulse();
+                }}
+                className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                  i === activeSlide ? "w-6 bg-bloodNeon" : "bg-neutral-600"
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleNext}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 disabled:opacity-30 cursor-pointer"
+            disabled={activeSlide === totalSlides - 1}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      }
+      contentClassName="p-6 flex-1 flex flex-col justify-center items-center text-center space-y-6"
+    >
           {/* SLIDE 0: TOTAL ACTIVIDAD & PERCENTIL */}
           {activeSlide === 0 && (
             <div className="space-y-4 animate-fade-in w-full">
@@ -288,46 +320,6 @@ export const VesselWrappedModal: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* PIE CON CONTROLES */}
-        <div className="p-4 border-t border-white/10 flex items-center justify-between bg-black/60">
-          <button
-            type="button"
-            onClick={handlePrev}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 disabled:opacity-30 cursor-pointer"
-            disabled={activeSlide === 0}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          {/* Dots */}
-          <div className="flex items-center gap-1.5">
-            {Array.from({ length: totalSlides }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setActiveSlide(i);
-                  audioEngine.playPulse();
-                }}
-                className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                  i === activeSlide ? "w-6 bg-bloodNeon" : "bg-neutral-600"
-                }`}
-              />
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={handleNext}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 disabled:opacity-30 cursor-pointer"
-            disabled={activeSlide === totalSlides - 1}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

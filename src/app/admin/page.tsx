@@ -9,6 +9,7 @@ import {
   AdminAuditLogEntry,
   GlobalQuotaSettings,
   UserModerationStatus,
+  AuditActionType,
 } from "@/types/admin";
 import {
   getStaffMembers,
@@ -52,24 +53,27 @@ import { KinksManagementTab } from "@/components/admin/tabs/KinksManagementTab";
 import { HotspotsManagementTab } from "@/components/admin/tabs/HotspotsManagementTab";
 import { SystemVersionTab } from "@/components/admin/tabs/SystemVersionTab";
 import { AdminAuthGuard } from "@/components/admin/AdminAuthGuard";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useSettings,
+  useRadarMatrix,
+  useLogistics,
+  useAuth,
+} from "@/context/VesselContext";
 import { createVipInviteCode } from "@/lib/firebase/inviteService";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getAllKinks } from "@/lib/kinks/kinkAdminService";
 import { ChevronDown, ChevronUp, Wrench, Sparkles } from "lucide-react";
 
 export default function AdminConsolePage() {
+  const { appMode, setAppMode } = useSettings();
+  const { profiles, filteredProfiles } = useRadarMatrix();
   const {
-    appMode,
-    setAppMode,
-    profiles,
-    filteredProfiles,
     isGpsHibernating,
     confirmPartyArrivalLock,
     checkOutOfEvent,
-    authUser,
     tacticalHotspots,
-  } = useVessel();
+  } = useLogistics();
+  const { authUser } = useAuth();
   const [vipCopiedMsg, setVipCopiedMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTabId>("dashboard");
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
@@ -284,13 +288,13 @@ export default function AdminConsolePage() {
   };
 
   // Registro de auditoría manual
-  const handleLogManualAction = (action: string, details: string) => {
+  const handleLogManualAction = (action: AuditActionType, details: string) => {
     if (!currentStaff) return;
     logAdminAction({
       operatorId: currentStaff.id,
       operatorName: currentStaff.name,
       operatorRole: currentStaff.role,
-      action: action as any,
+      action,
       details,
     });
     refreshData();

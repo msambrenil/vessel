@@ -90,6 +90,20 @@ vi.mock("@/lib/firebase/config", () => ({
   ensureAnonymousSession: vi.fn().mockResolvedValue({ uid: "test-user-123" }),
 }));
 
+// Mock global para Next.js App Router hooks (useRouter, usePathname, useSearchParams)
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+  }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 beforeEach(() => {
   if (typeof window !== "undefined") {
     window.localStorage.clear();

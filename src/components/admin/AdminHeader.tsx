@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { StaffMember } from "@/types/admin";
 import { VesselLogo } from "@/components/brand/VesselLogo";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -53,7 +53,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   activeTab = "dashboard",
   onOpenMobileNav,
 }) => {
-  const { appMode, setAppMode } = useVessel();
+  const { appMode, setAppMode } = useSettings();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [timeStr, setTimeStr] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);

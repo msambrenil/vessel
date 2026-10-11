@@ -71,9 +71,12 @@ export const saveCloudAlbum = async (
     });
     await setDoc(albumRef, payload, { merge: true });
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error guardando álbum en Firestore:", error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error guardando álbum en Firestore",
+    };
   }
 };
 

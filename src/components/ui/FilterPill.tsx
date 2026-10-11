@@ -71,6 +71,43 @@ export const FilterPill: React.FC<FilterPillProps> = ({
   const idleStyles =
     "bg-white/5 text-neutral-300 border-white/10 hover:text-white hover:bg-white/10";
 
+  if (active && onClear) {
+    return (
+      <div
+        className={`inline-flex items-center min-h-[36px] sm:min-h-[34px] rounded-full text-[10.5px] font-mono font-bold border transition-all duration-150 flex-shrink-0 select-none ${
+          activeStyles[variant]
+        } ${className}`}
+      >
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-pressed={active}
+          disabled={disabled}
+          title={title}
+          className="px-2.5 py-1 min-h-[36px] sm:min-h-[34px] flex items-center gap-1.5 cursor-pointer rounded-l-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+          {...props}
+        >
+          {icon && <span className="flex-shrink-0 leading-none">{icon}</span>}
+          <span className="whitespace-nowrap truncate">{label}</span>
+          {typeof count === "number" && count > 0 && (
+            <span className="text-[9px] px-1 rounded-full font-mono flex-shrink-0 bg-white/20 text-white font-black">
+              {count}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={handleClear}
+          aria-label={`Limpiar ${label}`}
+          title={`Limpiar ${label}`}
+          className="pr-2.5 pl-1 py-1 min-h-[36px] min-w-[28px] sm:min-h-[34px] rounded-r-full hover:bg-white/20 text-neutral-200 hover:text-white cursor-pointer flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95"
+        >
+          <span className="text-[11px] font-bold leading-none">✕</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -78,7 +115,7 @@ export const FilterPill: React.FC<FilterPillProps> = ({
       aria-pressed={active}
       disabled={disabled}
       title={title}
-      className={`px-2.5 py-1 min-h-[32px] sm:min-h-[34px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all duration-150 flex-shrink-0 cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
+      className={`px-2.5 py-1 min-h-[36px] sm:min-h-[34px] rounded-full text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-all duration-150 flex-shrink-0 cursor-pointer border select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
         active ? activeStyles[variant] : idleStyles
       } ${className}`}
       {...props}
@@ -94,23 +131,6 @@ export const FilterPill: React.FC<FilterPillProps> = ({
           }`}
         >
           {count}
-        </span>
-      )}
-      {active && onClear && (
-        <span
-          role="button"
-          tabIndex={0}
-          onClick={handleClear}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleClear(e as unknown as React.MouseEvent<HTMLButtonElement>);
-            }
-          }}
-          className="ml-0.5 p-0.5 rounded-full hover:bg-white/20 text-neutral-300 hover:text-white cursor-pointer"
-          aria-label={`Limpiar ${label}`}
-        >
-          ✕
         </span>
       )}
     </button>

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { UserAlbum, AlbumPhoto, MediaType } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useAuth, useChat } from "@/context/VesselContext";
 import {
   X,
   Globe,
@@ -30,6 +31,7 @@ import { uploadMediaFile } from "@/lib/firebase/storageService";
 import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import { DrmBlackoutProtector } from "@/components/security/DrmBlackoutProtector";
 import { SteganographicWatermark } from "@/components/security/SteganographicWatermark";
+import { TacticalBadge, BrutalistButton } from "@/components/ui";
 
 interface AlbumDetailModalProps {
   album: UserAlbum;
@@ -46,14 +48,15 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
     addPhotoToAlbum,
     updatePhotoInAlbum,
     removePhotoFromAlbum,
-    currentUserUid,
-    myProfile,
     setProfileCoverPhoto,
-    revokeAlbumAccessGlobally,
     unshareAlbumGlobally,
-    getSharedChatIdsForAlbum,
     language,
-  } = useVessel();
+  } = useSettings();
+  const { currentUserUid, myProfile } = useAuth();
+  const {
+    revokeAlbumAccessGlobally,
+    getSharedChatIdsForAlbum,
+  } = useChat();
 
   // Obtener el álbum vivo y reactivo desde el estado global
   const album = userAlbums.find((a) => a.id === initialAlbum.id) || initialAlbum;
@@ -72,16 +75,16 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
 
   // Estados para añadir fotos/videos
   const [showAddSection, setShowAddSection] = useState(false);
-  const [newPhotoUrl, setNewPhotoUrl] = useState("");
-  const [newPhotoCaption, setNewPhotoCaption] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Manejo de tecla Escape para cerrar visor o modal
+  // Manejo de tecla Escape y bloqueo de scroll para cerrar visor o modal
   useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (activePhoto) {
@@ -92,7 +95,10 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [activePhoto, onClose]);
 
   const processUploadedFiles = async (files: FileList | File[]) => {
@@ -181,24 +187,6 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
     });
   };
 
-  const handleAddPhoto = () => {
-    if (!newPhotoUrl.trim()) return;
-    const isVideo =
-      newPhotoUrl.endsWith(".mp4") ||
-      newPhotoUrl.endsWith(".webm") ||
-      newPhotoUrl.endsWith(".mov");
-
-    addPhotoToAlbum(album.id, {
-      url: newPhotoUrl.trim(),
-      blurredUrl: newPhotoUrl.trim(),
-      caption: newPhotoCaption.trim() || undefined,
-      mediaType: isVideo ? "video" : "photo",
-    });
-    setNewPhotoUrl("");
-    setNewPhotoCaption("");
-    setShowAddSection(false);
-  };
-
   const handleDeleteAlbum = () => {
     deleteAlbum(album.id);
     onClose();
@@ -208,13 +196,13 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
   const videoCount = album.photos.filter((p) => p.mediaType === "video").length;
   const photoCount = album.photos.filter((p) => p.mediaType !== "video").length;
 
-  return (
+  const modalContent = (
     <>
       <div
         role="dialog"
         aria-modal="true"
         aria-label={album.title}
-        className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+        className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
         onClick={onClose}
       >
         <div
@@ -240,15 +228,11 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
                 <h2 className="text-sm font-bold text-white tracking-wide">
                   {album.title}
                 </h2>
-                <span
-                  className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                    isPrivate
-                      ? "bg-bloodNeon/20 text-bloodNeon"
-                      : "bg-electricViolet/20 text-electricViolet-glow font-bold"
-                  }`}
-                >
-                  {isPrivate ? "Bóveda Privada" : "Público"}
-                </span>
+                <TacticalBadge variant={isPrivate ? "blood" : "violet"} size="sm">
+                  {isPrivate
+                    ? (language === "es" ? "Con Llave 🔑" : "Locked")
+                    : (language === "es" ? "Público" : "Public")}
+                </TacticalBadge>
               </div>
               <div className="flex items-center gap-2 text-[10px] text-neutral-400 mt-0.5">
                 <span className="flex items-center gap-1">
@@ -341,32 +325,10 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
                     </span>
                   </div>
                   {isProcessing && (
-                    <div className="text-center text-xs text-electricViolet-glow font-bold animate-pulse mt-2">
-                      Procesando y optimizando medios...
+                    <div className="text-center text-xs text-electricViolet-glow font-bold animate-pulse mt-2 font-mono">
+                      {language === "es" ? "Procesando y optimizando medios..." : "Processing media..."}
                     </div>
                   )}
-                </div>
-
-                <div className="pt-2 border-t border-white/5 space-y-2">
-                  <span className="text-[11px] font-bold text-neutral-400 block">
-                    O por URL directa:
-                  </span>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newPhotoUrl}
-                      onChange={(e) => setNewPhotoUrl(e.target.value)}
-                      placeholder="https://ejemplo.com/media.mp4 o .jpg"
-                      className="flex-1 bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3 py-2 focus:outline-none focus:border-electricViolet"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddPhoto}
-                      className="px-3 py-2 bg-electricViolet text-white rounded-xl font-bold text-xs hover:bg-electricViolet-glow transition-all"
-                    >
-                      Añadir
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
@@ -633,7 +595,7 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
                   <div className="flex items-center gap-1.5 text-bloodNeon font-bold">
                     <Lock className="w-4 h-4" />
                     <span className="text-xs font-mono uppercase tracking-wider">
-                      BÓVEDA PRIVADA // {album.title}
+                      {language === "es" ? "ÁLBUM CON LLAVE 🔑" : "KEY-LOCKED ALBUM"} // {album.title}
                     </span>
                   </div>
                 ) : (
@@ -732,4 +694,8 @@ export const AlbumDetailModal: React.FC<AlbumDetailModalProps> = ({
       )}
     </>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };

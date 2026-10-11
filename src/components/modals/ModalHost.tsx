@@ -2,7 +2,15 @@
 
 import React, { memo } from "react";
 import dynamic from "next/dynamic";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useRadarMatrix,
+  useChat,
+  useAuth,
+  useDiary,
+  useSettings,
+  useLogistics,
+  useSafety,
+} from "@/context/VesselContext";
 
 // ==========================================
 // 1. Core Overlays & Navegación Táctica
@@ -13,10 +21,6 @@ const ProfileDetailModal = dynamic(
 );
 const DarkroomChatModal = dynamic(
   () => import("@/components/chat/DarkroomChatModal").then((m) => m.DarkroomChatModal),
-  { ssr: false }
-);
-const DynamicFilterDrawer = dynamic(
-  () => import("@/components/filters/DynamicFilterDrawer").then((m) => m.DynamicFilterDrawer),
   { ssr: false }
 );
 
@@ -41,23 +45,15 @@ const LivenessVerificationModal = dynamic(
 );
 
 // ==========================================
-// 3. Seguridad, Camuflaje & Modo Sigilo
+// 3. Seguridad & Reducción de Daños
 // ==========================================
-const SafetyBeaconModal = dynamic(
-  () => import("@/components/safety/SafetyBeaconModal").then((m) => m.SafetyBeaconModal),
-  { ssr: false }
-);
-const DuressPinSettingsModal = dynamic(
-  () => import("@/components/safety/DuressPinSettingsModal").then((m) => m.DuressPinSettingsModal),
-  { ssr: false }
-);
 const HarmReductionModal = dynamic(
   () => import("@/components/safety/HarmReductionModal").then((m) => m.HarmReductionModal),
   { ssr: false }
 );
 
 // ==========================================
-// 4. Suite Táctica & Logística
+// 4. Suite Táctica, Logística & Vida Nocturna
 // ==========================================
 const HostCardModal = dynamic(
   () => import("@/components/logistics/HostCardModal").then((m) => m.HostCardModal),
@@ -77,26 +73,6 @@ const TravelModeModal = dynamic(
 );
 const NightlifeEventsModal = dynamic(
   () => import("@/components/nightlife/NightlifeEventsModal").then((m) => m.NightlifeEventsModal),
-  { ssr: false }
-);
-const OpticalBeaconModal = dynamic(
-  () => import("@/components/nightlife/OpticalBeaconModal").then((m) => m.OpticalBeaconModal),
-  { ssr: false }
-);
-const MissedConnectionsModal = dynamic(
-  () => import("@/components/nightlife/MissedConnectionsModal").then((m) => m.MissedConnectionsModal),
-  { ssr: false }
-);
-const AfterHoursModal = dynamic(
-  () => import("@/components/nightlife/AfterHoursModal").then((m) => m.AfterHoursModal),
-  { ssr: false }
-);
-const WingmanModal = dynamic(
-  () => import("@/components/nightlife/WingmanModal").then((m) => m.WingmanModal),
-  { ssr: false }
-);
-const SpikedDrinkAlertModal = dynamic(
-  () => import("@/components/nightlife/SpikedDrinkAlertModal").then((m) => m.SpikedDrinkAlertModal),
   { ssr: false }
 );
 // ==========================================
@@ -140,70 +116,57 @@ const QuickShareQrModal = dynamic(
 );
 
 /**
- * ModalHost: Orquestador desacoplado de modales y overlays del sistema VESSEL.
- * Centraliza el code-splitting y renderizado condicional fuera del componente raíz `page.tsx`.
+ * Sub-hosts de modales segmentados por dominio táctico.
+ * Cada sub-host se suscribe ÚNICAMENTE a su propio contexto, aislando las
+ * mutaciones de alta frecuencia (ej: chat, radar, GPS) del resto del árbol de modales.
  */
-export const ModalHost: React.FC = memo(function ModalHost() {
+
+const RadarModalHost = memo(function RadarModalHost() {
+  const { selectedProfile, setSelectedProfile } = useRadarMatrix();
+  const { setActiveChatProfileId } = useChat();
+
+  if (!selectedProfile) return null;
+
+  return (
+    <ProfileDetailModal
+      profile={selectedProfile}
+      onClose={() => setSelectedProfile(null)}
+      onOpenChat={(profileId) => {
+        setSelectedProfile(null);
+        setActiveChatProfileId(profileId);
+      }}
+    />
+  );
+});
+
+const ChatModalHost = memo(function ChatModalHost() {
+  const { activeChatProfileId, setActiveChatProfileId } = useChat();
+
+  if (!activeChatProfileId) return null;
+
+  return (
+    <DarkroomChatModal
+      profileId={activeChatProfileId}
+      onClose={() => setActiveChatProfileId(null)}
+    />
+  );
+});
+
+const AuthModalHost = memo(function AuthModalHost() {
   const {
-    selectedProfile,
-    setSelectedProfile,
-    activeChatProfileId,
-    setActiveChatProfileId,
     isAuthModalOpen,
     authModalMode,
     closeAuthModal,
-    isDiaryModalOpen,
-    closeCreateDiaryModal,
-    isGeoBatteryModalOpen,
-    closeGeoBatteryModal,
-    isFilterDrawerOpen,
-    isAppSettingsModalOpen,
-    isHostCardModalOpen,
-    isVoiceRecorderOpen,
-    isEnRouteModalOpen,
-    isSafetyBeaconModalOpen,
-    isDuressPinSettingsOpen,
     isLivenessModalOpen,
-    isUnlimitedModalOpen,
-    isTravelModalOpen,
-    isHarmReductionModalOpen,
-    isItsExposureModalOpen,
-    isNightlifeModalOpen,
-    isOpticalBeaconOpen,
-    isMissedConnectionsModalOpen,
-    isAfterHoursModalOpen,
-    isWingmanModalOpen,
-    isSpikedAlertModalOpen,
     isGenderOnboardingOpen,
-    isDuoModalOpen,
-    isDossierModalOpen,
-    isWrappedModalOpen,
-  } = useVessel();
+  } = useAuth();
+
+  if (!isAuthModalOpen && !isGenderOnboardingOpen && !isLivenessModalOpen) {
+    return null;
+  }
 
   return (
     <>
-      {/* 1. Core Overlays */}
-      {isFilterDrawerOpen && <DynamicFilterDrawer />}
-
-      {activeChatProfileId && (
-        <DarkroomChatModal
-          profileId={activeChatProfileId}
-          onClose={() => setActiveChatProfileId(null)}
-        />
-      )}
-
-      {selectedProfile && (
-        <ProfileDetailModal
-          profile={selectedProfile}
-          onClose={() => setSelectedProfile(null)}
-          onOpenChat={(profileId) => {
-            setSelectedProfile(null);
-            setActiveChatProfileId(profileId);
-          }}
-        />
-      )}
-
-      {/* 2. Auth & Identidad */}
       {isAuthModalOpen && (
         authModalMode === "verify" ? (
           <IdentityVerificationModal onClose={closeAuthModal} />
@@ -211,40 +174,130 @@ export const ModalHost: React.FC = memo(function ModalHost() {
           <AuthModal onClose={closeAuthModal} initialMode={authModalMode} />
         )
       )}
-
       {isGenderOnboardingOpen && <GenderInterestOnboardingModal />}
       {isLivenessModalOpen && <LivenessVerificationModal />}
+    </>
+  );
+});
 
-      {/* 3. Seguridad & Camuflaje */}
-      {isSafetyBeaconModalOpen && <SafetyBeaconModal />}
-      {isDuressPinSettingsOpen && <DuressPinSettingsModal />}
-      {isHarmReductionModalOpen && <HarmReductionModal />}
+const SafetyModalHost = memo(function SafetyModalHost() {
+  const { isHarmReductionModalOpen } = useSafety();
 
-      {/* 4. Suite Táctica, Logística & Vida Nocturna */}
+  if (!isHarmReductionModalOpen) return null;
+
+  return <HarmReductionModal />;
+});
+
+const LogisticsModalHost = memo(function LogisticsModalHost() {
+  const {
+    isHostCardModalOpen,
+    isEnRouteModalOpen,
+    isTravelModalOpen,
+    isNightlifeModalOpen,
+    isGeoBatteryModalOpen,
+    closeGeoBatteryModal,
+    isVoiceRecorderOpen,
+    isDuoModalOpen,
+  } = useLogistics();
+
+  if (
+    !isHostCardModalOpen &&
+    !isVoiceRecorderOpen &&
+    !isEnRouteModalOpen &&
+    !isTravelModalOpen &&
+    !isNightlifeModalOpen &&
+    !isGeoBatteryModalOpen &&
+    !isDuoModalOpen
+  ) {
+    return null;
+  }
+
+  return (
+    <>
       {isHostCardModalOpen && <HostCardModal />}
       {isVoiceRecorderOpen && <VoiceVibeRecorderModal />}
       {isEnRouteModalOpen && <EnRouteTrackerModal />}
       {isTravelModalOpen && <TravelModeModal />}
       {isNightlifeModalOpen && <NightlifeEventsModal />}
-      {isOpticalBeaconOpen && <OpticalBeaconModal />}
-      {isMissedConnectionsModalOpen && <MissedConnectionsModal />}
-      {isAfterHoursModalOpen && <AfterHoursModal />}
-      {isWingmanModalOpen && <WingmanModal />}
-      {isSpikedAlertModalOpen && <SpikedDrinkAlertModal />}
-
-      {/* 5. Utilidades, Salud, Cuentas & The Black Vault */}
-      {isAppSettingsModalOpen && <AppSettingsModal />}
       {isGeoBatteryModalOpen && (
         <GeoBatteryModal onClose={closeGeoBatteryModal} />
       )}
+      {isDuoModalOpen && <DuoLinkModal />}
+    </>
+  );
+});
+
+const SettingsModalHost = memo(function SettingsModalHost() {
+  const { isAppSettingsModalOpen, isUnlimitedModalOpen } = useSettings();
+
+  if (!isAppSettingsModalOpen && !isUnlimitedModalOpen) return null;
+
+  return (
+    <>
+      {isAppSettingsModalOpen && <AppSettingsModal />}
+      {isUnlimitedModalOpen && <UnlimitedPaywallModal />}
+    </>
+  );
+});
+
+const DiaryModalHost = memo(function DiaryModalHost() {
+  const {
+    isDiaryModalOpen,
+    closeCreateDiaryModal,
+    isItsExposureModalOpen,
+    isDossierModalOpen,
+    isWrappedModalOpen,
+  } = useDiary();
+
+  if (
+    !isDiaryModalOpen &&
+    !isDossierModalOpen &&
+    !isWrappedModalOpen &&
+    !isItsExposureModalOpen
+  ) {
+    return null;
+  }
+
+  return (
+    <>
       {isDiaryModalOpen && (
         <CreateDiaryEntryModal onClose={closeCreateDiaryModal} />
       )}
       {isDossierModalOpen && <LoverDossierModal />}
       {isWrappedModalOpen && <VesselWrappedModal />}
       {isItsExposureModalOpen && <ItsExposureModal />}
-      {isUnlimitedModalOpen && <UnlimitedPaywallModal />}
-      {isDuoModalOpen && <DuoLinkModal />}
+    </>
+  );
+});
+
+/**
+ * ModalHost: Orquestador desacoplado de modales y overlays del sistema VESSEL.
+ * Centraliza el code-splitting y renderizado condicional fuera del componente raíz `page.tsx`.
+ * Cada sub-host está aislado reactivamente para evitar cascada de renders al actualizar un solo dominio.
+ */
+export const ModalHost: React.FC = memo(function ModalHost() {
+  return (
+    <>
+      {/* 1. Core Overlays & Navegación (Chat antes de ProfileDetail para stacking z-index correcto) */}
+      <ChatModalHost />
+      <RadarModalHost />
+
+      {/* 2. Auth & Identidad */}
+      <AuthModalHost />
+
+      {/* 3. Seguridad & Reducción de Daños */}
+      <SafetyModalHost />
+
+      {/* 4. Suite Táctica, Logística & Vida Nocturna */}
+      <LogisticsModalHost />
+
+      {/* 5. Configuración & Membresías */}
+      <SettingsModalHost />
+
+      {/* 6. Agenda & The Black Vault */}
+      <DiaryModalHost />
+
+      {/* 7. Pase QR de Contacto Rápido */}
       <QuickShareQrModal />
     </>
   );

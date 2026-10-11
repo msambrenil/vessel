@@ -13,6 +13,7 @@ import {
   VerificationMethod,
   GenderInterest,
   UserSubscriptionTier,
+  SubstanceAtmosphere,
 } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -37,6 +38,8 @@ export interface MyProfileState {
   age: number;
   showAge: boolean;
   twitterHandle: string;
+  instagramHandle?: string;
+  telegramHandle?: string;
   yoSoy: YoSoyType;
   mobility: MobilityType;
   hivStatus: HivStatusType;
@@ -65,6 +68,7 @@ export interface MyProfileState {
   isProfileSetupComplete?: boolean;
   isProfileCustomized?: boolean;
   isBetaTester?: boolean;
+  substanceAtmosphere?: SubstanceAtmosphere;
 }
 
 export const INITIAL_MY_PROFILE: MyProfileState = {
@@ -72,6 +76,8 @@ export const INITIAL_MY_PROFILE: MyProfileState = {
   age: 28,
   showAge: true,
   twitterHandle: "",
+  instagramHandle: "",
+  telegramHandle: "",
   yoSoy: "Musculoso / Gym",
   mobility: "Tengo depto / lugar",
   hivStatus: "Negativo en PrEP",
@@ -118,6 +124,8 @@ export const CLEAN_UNAUTHENTICATED_PROFILE: MyProfileState = {
   age: 0,
   showAge: true,
   twitterHandle: "",
+  instagramHandle: "",
+  telegramHandle: "",
   yoSoy: "" as YoSoyType,
   mobility: "" as MobilityType,
   hivStatus: "" as HivStatusType,

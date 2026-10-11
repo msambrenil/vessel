@@ -1,11 +1,103 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CURRENT_SYSTEM_VERSION } from "@/lib/version/systemVersion";
-import { subscribeToSystemControl } from "@/lib/version/systemControlService";
+import {
+  CURRENT_SYSTEM_VERSION,
+  SYSTEM_BUILD_TIMESTAMP,
+  SYSTEM_BUILD_FORMATTED,
+} from "@/lib/version/systemVersion";
+import {
+  subscribeToSystemControl,
+  DEFAULT_SYSTEM_CONTROL_STATE,
+  SystemControlState,
+} from "@/lib/version/systemControlService";
+import {
+  loadFromStorage,
+  saveToStorage,
+  STORAGE_KEYS,
+} from "@/lib/storage/localStorageSync";
 
 // Marca de tiempo de arranque de la instancia actual en el cliente
 const APP_BOOT_TIMESTAMP = Date.now();
+
+// Clave y tiempos para el disyuntor (Circuit Breaker) en sessionStorage
+const RELOAD_GUARD_KEY = "vessel_pwa_reload_guard";
+const RELOAD_COOLDOWN_MS = 15000; // Mínimo 15s entre recargas automáticas
+const MAX_RELOADS_PER_MINUTE = 3;
+
+interface ReloadGuardRecord {
+  timestamp: number;
+  reason: string;
+  count: number;
+}
+
+/**
+ * Determina si el entorno actual es de desarrollo local.
+ * En desarrollo, el Service Worker y el auto-reload deben estar desactivados
+ * para no romper Fast Refresh ni generar bucles de recarga.
+ */
+export const isDevEnvironment = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return (
+    process.env.NODE_ENV === "development" ||
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.endsWith(".local")
+  );
+};
+
+/**
+ * Disyuntor (Circuit Breaker) contra bucles infinitos de recarga.
+ * Impide que un cliente recargue más de una vez en un intervalo corto
+ * o más de 3 veces por minuto.
+ */
+export const canTriggerReload = (reason: string): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = sessionStorage.getItem(RELOAD_GUARD_KEY);
+    const now = Date.now();
+
+    if (raw) {
+      const record: ReloadGuardRecord = JSON.parse(raw);
+
+      // Si intentó recargar hace menos de 15 segundos: BLOQUEAR
+      if (now - record.timestamp < RELOAD_COOLDOWN_MS) {
+        console.warn(
+          `[VESSEL PWA] Disyuntor activado: recarga cancelada para prevenir bucle. (Última recarga hace ${Math.round(
+            (now - record.timestamp) / 1000
+          )}s por "${record.reason}").`
+        );
+        return false;
+      }
+
+      // Si hubo demasiadas recargas recientes: BLOQUEAR
+      if (record.count >= MAX_RELOADS_PER_MINUTE && now - record.timestamp < 60000) {
+        console.error(
+          `[VESSEL PWA] Disyuntor de emergencia activado: >${MAX_RELOADS_PER_MINUTE} recargas en menos de un minuto. Cancelando recargas automáticas.`
+        );
+        return false;
+      }
+
+      const updatedRecord: ReloadGuardRecord = {
+        timestamp: now,
+        reason,
+        count: record.count + 1,
+      };
+      sessionStorage.setItem(RELOAD_GUARD_KEY, JSON.stringify(updatedRecord));
+    } else {
+      const newRecord: ReloadGuardRecord = {
+        timestamp: now,
+        reason,
+        count: 1,
+      };
+      sessionStorage.setItem(RELOAD_GUARD_KEY, JSON.stringify(newRecord));
+    }
+    return true;
+  } catch {
+    return true;
+  }
+};
 
 export const PwaRegister: React.FC = () => {
   const isRefreshingRef = useRef(false);
@@ -15,10 +107,43 @@ export const PwaRegister: React.FC = () => {
       return;
     }
 
+    // Si estamos en entorno de desarrollo local, limpiar service workers huérfanos y abortar
+    if (isDevEnvironment()) {
+      console.info(
+        `[VESSEL PWA] Entorno local detectado (${window.location.hostname}). Service Worker y recarga automática desactivados para no interferir con Fast Refresh.`
+      );
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const reg of registrations) {
+            reg.unregister().catch(() => {});
+          }
+        });
+      }
+      return;
+    }
+
     const purgeCachesAndReload = async (reason: string) => {
       if (isRefreshingRef.current) return;
+      if (!canTriggerReload(reason)) return;
+
       isRefreshingRef.current = true;
       console.info(`[VESSEL PWA] Forzando recarga de última versión (${reason}). Purgando cachés...`);
+
+      // Sincronizar localStorage con la versión actual para no re-disparar lecturas locales desactualizadas
+      try {
+        const currentControl = loadFromStorage<SystemControlState>(
+          STORAGE_KEYS.SYSTEM_CONTROL,
+          DEFAULT_SYSTEM_CONTROL_STATE
+        );
+        saveToStorage(STORAGE_KEYS.SYSTEM_CONTROL, {
+          ...currentControl,
+          currentVersion: CURRENT_SYSTEM_VERSION,
+          buildReleaseDate: SYSTEM_BUILD_TIMESTAMP,
+          formattedDate: SYSTEM_BUILD_FORMATTED,
+        });
+      } catch (err) {
+        console.warn("[VESSEL PWA] Error sincronizando localStorage antes de recarga:", err);
+      }
 
       try {
         if ("caches" in window) {
@@ -59,10 +184,16 @@ export const PwaRegister: React.FC = () => {
           // 1. Si la versión del servidor es diferente a la compilada en el cliente
           if (data.version && data.version !== CURRENT_SYSTEM_VERSION) {
             console.log(`[VESSEL PWA] Nueva versión detectada en servidor: ${data.version} (local: ${CURRENT_SYSTEM_VERSION})`);
-            await purgeCachesAndReload(`Versión ${data.version} disponible`);
+            await purgeCachesAndReload(`Versión ${data.version} disponible en servidor`);
             return;
           }
-          // 2. Si el administrador disparó un forzado de recarga después de que este cliente abrió la app
+          // 2. Si la marca de compilación del servidor es más reciente
+          if (data.buildTimestamp && data.buildTimestamp !== SYSTEM_BUILD_TIMESTAMP) {
+            console.log(`[VESSEL PWA] Nueva compilación detectada en servidor: ${data.buildTimestamp} (local: ${SYSTEM_BUILD_TIMESTAMP})`);
+            await purgeCachesAndReload(`Nueva build ${data.buildTimestamp} disponible`);
+            return;
+          }
+          // 3. Si el administrador disparó un forzado de recarga después de que este cliente abrió la app
           if (
             data.forceReloadTimestamp &&
             data.forceReloadTimestamp > APP_BOOT_TIMESTAMP
@@ -77,15 +208,13 @@ export const PwaRegister: React.FC = () => {
       }
     };
 
-    // 1. Suscripción en tiempo real a señales del sistema (Firestore / eventos locales)
+    // 1. Suscripción en tiempo real a señales de administración maestra (Firestore / eventos)
     const unsubControl = subscribeToSystemControl((state) => {
       if (
         state.forceReloadTimestamp &&
         state.forceReloadTimestamp > APP_BOOT_TIMESTAMP
       ) {
         purgeCachesAndReload("Control Maestro: Forzar Recarga");
-      } else if (state.currentVersion && state.currentVersion !== CURRENT_SYSTEM_VERSION) {
-        purgeCachesAndReload(`Versión del sistema actualizada a ${state.currentVersion}`);
       }
     });
 
@@ -115,12 +244,12 @@ export const PwaRegister: React.FC = () => {
     };
     window.addEventListener("focus", handleFocus);
 
-    // 6. Registro y ciclo de vida de Service Worker
+    // 6. Registro y ciclo de vida de Service Worker (Sólo en Producción)
     let cleanupSW = () => {};
 
     if ("serviceWorker" in navigator) {
       const handleControllerChange = () => {
-        if (!isRefreshingRef.current) {
+        if (!isRefreshingRef.current && canTriggerReload("Service Worker controller change")) {
           isRefreshingRef.current = true;
           window.location.reload();
         }

@@ -12,6 +12,9 @@ class SubBassAudioEngine {
   private hasAttachedVisibilityListener: boolean = false;
   private chatAudioBuffer: AudioBuffer | null = null;
   private isChatAudioLoading: boolean = false;
+  private workletNode: AudioWorkletNode | null = null;
+  private isWorkletLoaded: boolean = false;
+  private isWorkletLoading: boolean = false;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -22,6 +25,10 @@ class SubBassAudioEngine {
 
   public getIsAudioUnlocked(): boolean {
     return this.isAudioUnlocked;
+  }
+
+  public getIsWorkletLoaded(): boolean {
+    return this.isWorkletLoaded;
   }
 
   public subscribeAudioUnlocked(callback: (unlocked: boolean) => void): () => void {
@@ -106,22 +113,73 @@ class SubBassAudioEngine {
     if (this.ctx.state === "running") {
       if (!this.isAudioUnlocked) {
         this.isAudioUnlocked = true;
-        this.unlockListeners.forEach((listener) => {
-          try {
-            listener(true);
-          } catch {}
-        });
+        this.notifyUnlockListeners(true);
         window.dispatchEvent(
           new CustomEvent("vessel:audio-unlocked", {
             detail: { sampleRate: this.ctx.sampleRate },
           })
         );
         this.preloadChatMessageSound().catch(() => {});
+        this.initAudioWorklet().catch(() => {});
       }
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * Carga y conecta el procesador AudioWorklet en un hilo de renderizado de audio dedicado
+   */
+  public async initAudioWorklet(): Promise<boolean> {
+    if (typeof window === "undefined" || this.isWorkletLoaded || this.isWorkletLoading) {
+      return this.isWorkletLoaded;
+    }
+    this.initContext();
+    if (!this.ctx || !("audioWorklet" in this.ctx)) {
+      return false;
+    }
+
+    this.isWorkletLoading = true;
+    try {
+      await this.ctx.audioWorklet.addModule("/audio-processors/sub-bass-processor.js");
+      this.workletNode = new AudioWorkletNode(this.ctx, "sub-bass-processor");
+      this.workletNode.port.onmessage = (e) => {
+        if (e.data && e.data.type === "phase-attack") {
+          this.triggerTacticalPulse();
+        }
+      };
+      this.workletNode.connect(this.ctx.destination);
+      this.isWorkletLoaded = true;
+      return true;
+    } catch {
+      // Fallback seguro a osciladores nativos si el entorno bloquea AudioWorklet
+      this.isWorkletLoaded = false;
+      this.workletNode = null;
+      return false;
+    } finally {
+      this.isWorkletLoading = false;
+    }
+  }
+
+  private notifyUnlockListeners(unlocked: boolean) {
+    if (typeof queueMicrotask === "function") {
+      queueMicrotask(() => {
+        this.unlockListeners.forEach((listener) => {
+          try {
+            listener(unlocked);
+          } catch {}
+        });
+      });
+    } else {
+      setTimeout(() => {
+        this.unlockListeners.forEach((listener) => {
+          try {
+            listener(unlocked);
+          } catch {}
+        });
+      }, 0);
+    }
   }
 
   private initContext() {
@@ -139,20 +197,12 @@ class SubBassAudioEngine {
       this.ctx.resume().then(() => {
         if (this.ctx?.state === "running" && !this.isAudioUnlocked) {
           this.isAudioUnlocked = true;
-          this.unlockListeners.forEach((listener) => {
-            try {
-              listener(true);
-            } catch {}
-          });
+          this.notifyUnlockListeners(true);
         }
       }).catch(() => {});
     } else if (this.ctx && this.ctx.state === "running" && !this.isAudioUnlocked) {
       this.isAudioUnlocked = true;
-      this.unlockListeners.forEach((listener) => {
-        try {
-          listener(true);
-        } catch {}
-      });
+      this.notifyUnlockListeners(true);
     }
   }
 
@@ -196,7 +246,7 @@ class SubBassAudioEngine {
     this.triggerHaptic(12);
   }
 
-  // Vibración táctil física tipo Zumbido (Nudge): ráfaga intermitente (bzzz-bzzz-bzzzzz)
+  // Vibración táctil física tipo Toque (Nudge): ráfaga intermitente
   public triggerNudgeHaptic() {
     this.triggerHaptic([70, 45, 70, 45, 120]);
   }
@@ -214,6 +264,16 @@ class SubBassAudioEngine {
   // Patrón de emergencia táctica / Alerta SOS de alta prioridad
   public triggerEmergencyBurst() {
     this.triggerHaptic([80, 40, 80, 40, 120]);
+  }
+
+  // Patrón táctil de encuentro inminente / cita agendada
+  public triggerEncounterImminentHaptic() {
+    this.triggerHaptic([20, 40, 20]);
+  }
+
+  // Patrón táctil de alerta de seguridad / Pin Rendezvous / Doble consentimiento
+  public triggerSafetyAlertHaptic() {
+    this.triggerHaptic([40, 60, 80]);
   }
 
   /**
@@ -461,8 +521,8 @@ class SubBassAudioEngine {
   }
 
   /**
-   * Notificación sensorial de Zumbido (Nudge) entrante.
-   * Emite una vibración física tipo zumbido intermitente y una modulación acústica sub-bass analógica (~68Hz -> 45Hz).
+   * Notificación sensorial de Toque (Nudge) entrante.
+   * Emite una vibración física tipo toque intermitente y una modulación acústica sub-bass analógica (~68Hz -> 45Hz).
    */
   public playNudgeReceived() {
     this.triggerNudgeHaptic();
@@ -503,6 +563,21 @@ class SubBassAudioEngine {
     this.initContext();
     if (!this.ctx) return;
 
+    // Vía 1: AudioWorkletProcessor de baja latencia fuera del hilo principal
+    if (this.isWorkletLoaded && this.workletNode && this.ctx.state === "running") {
+      try {
+        this.workletNode.port.postMessage({
+          type: "trigger-pulse",
+          frequency,
+          duration,
+        });
+        return;
+      } catch {
+        // Fallback transparente a oscilador si falla la comunicación del worklet
+      }
+    }
+
+    // Vía 2: Oscilador analógico estándar de Web Audio API (fallback)
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -519,6 +594,20 @@ class SubBassAudioEngine {
 
     osc.start(now);
     osc.stop(now + duration + 0.05);
+  }
+
+  // Alerta sensorial de cita o encuentro inminente
+  public playEncounterImminent() {
+    this.triggerEncounterImminentHaptic();
+    if (this.isMuted) return;
+    this.playSubBass(55, 0.35);
+  }
+
+  // Alerta sensorial de seguridad táctica / Rendezvous PIN
+  public playSafetyAlert() {
+    this.triggerSafetyAlertHaptic();
+    if (this.isMuted) return;
+    this.playError();
   }
 
   // Pulso de Radar

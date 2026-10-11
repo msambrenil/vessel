@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings } from "@/context/VesselContext";
 import { GeoPrivacyLevel } from "@/types/vessel";
 import {
   X,
@@ -19,6 +19,7 @@ import {
   Compass,
   Sparkles,
 } from "lucide-react";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 interface GeoBatteryModalProps {
   onClose: () => void;
@@ -36,8 +37,8 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
     isLocating,
     geoError,
     refreshRealGeolocation,
-    t,
-  } = useVessel();
+  } = useLogistics();
+  const { t } = useSettings();
 
   const privacyOptions: {
     id: GeoPrivacyLevel;
@@ -86,48 +87,28 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
   const modeInfo = getModeLabel(batteryEngineState.mode);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Privacidad de Ubicación & Batería"
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex justify-center items-end sm:items-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg bg-obsidian-surface border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[88vh] sm:max-h-[92vh] overflow-hidden shadow-card-elevation relative animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-        {/* Cabecera del Modal */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-obsidian-deep/80 backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-electricViolet/15 border border-electricViolet/30 flex items-center justify-center text-electricViolet-glow shadow-violet-soft">
-              <Compass className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white tracking-wide uppercase">
-                Privacidad de Ubicación & Batería
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                Protección contra rastreo exacto y optimización de energía
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
+    <BrutalistModal
+      isOpen={true}
+      onClose={onClose}
+      icon={<Compass className="w-4 h-4 text-electricViolet-glow" />}
+      title="Privacidad de Ubicación & Batería"
+      subtitle="Protección contra rastreo exacto y optimización de energía"
+      maxWidth="lg"
+      ariaLabel="Privacidad de Ubicación & Batería"
+      contentClassName="space-y-4"
+      footer={
+        <div className="flex justify-end">
+          <BrutalistButton
+            variant="primary"
             onClick={onClose}
-            aria-label="Cerrar modal de privacidad de ubicación y batería"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            className="px-6 py-2.5 min-h-[44px] text-xs font-mono font-bold"
           >
-            <X className="w-5 h-5" />
-          </button>
+            Aceptar & Cerrar
+          </BrutalistButton>
         </div>
-
-        {/* Contenido Modular con Scroll */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* SECCIÓN 1: MOTOR DE AHORRO DE BATERÍA (BATTERY-SAVING STATE ENGINE) */}
+      }
+    >
+      {/* SECCIÓN 1: MOTOR DE AHORRO DE BATERÍA (BATTERY-SAVING STATE ENGINE) */}
           <div className="bg-obsidian-card p-4 rounded-2xl border border-white/5 space-y-3 shadow-card-elevation">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -189,18 +170,19 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
                   Reduce el uso de GPS a 5 min y cuida la batería de tu dispositivo
                 </div>
               </div>
-              <button
-                type="button"
+              <BrutalistButton
+                variant={manualEcoSaver ? "primary" : "ghost"}
+                size="compact"
                 onClick={toggleEcoSaverMode}
                 aria-pressed={manualEcoSaver}
-                className={`px-3.5 py-2 min-h-[38px] rounded-xl text-xs font-bold border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mintNeon active:scale-95 ${
+                className={`px-3.5 py-2 min-h-[38px] rounded-xl text-xs font-bold border transition-all ${
                   manualEcoSaver
-                    ? "bg-mintNeon text-obsidian-deep border-mintNeon shadow-mint-glow font-extrabold"
-                    : "bg-white/5 border-white/10 text-neutral-400 hover:text-white"
+                    ? "!bg-mintNeon !text-obsidian-deep !border-mintNeon shadow-mint-glow font-extrabold"
+                    : "!bg-white/5 !border-white/10 text-neutral-400 hover:text-white"
                 }`}
               >
                 {manualEcoSaver ? "ACTIVO" : "INACTIVO"}
-              </button>
+              </BrutalistButton>
             </div>
           </div>
 
@@ -240,15 +222,16 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
                   </span>
                 )}
               </div>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="primary"
+                size="compact"
                 disabled={isLocating}
                 onClick={() => refreshRealGeolocation()}
-                className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white font-mono text-xs font-bold shadow-violet-soft transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto px-3.5 py-2 rounded-xl text-white font-mono text-xs font-bold shadow-violet-soft flex items-center justify-center gap-1.5"
               >
                 <Radio className={`w-3.5 h-3.5 ${isLocating ? "animate-spin" : "animate-pulse text-mintNeon"}`} />
                 <span>{isLocating ? "Consultando GPS..." : "📍 Actualizar GPS en Vivo"}</span>
-              </button>
+              </BrutalistButton>
             </div>
           </div>
 
@@ -306,19 +289,6 @@ export const GeoBatteryModal: React.FC<GeoBatteryModalProps> = ({ onClose }) => 
               })}
             </div>
           </div>
-        </div>
-
-        {/* Pie del Modal */}
-        <div className="p-4 border-t border-white/10 bg-obsidian-deep/90 backdrop-blur-md flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2.5 min-h-[44px] rounded-xl bg-electricViolet text-white hover:bg-electricViolet-glow text-xs font-bold shadow-violet-soft transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98 font-mono"
-          >
-            Aceptar & Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

@@ -13,7 +13,7 @@ import {
   Sparkles,
   ShieldAlert,
 } from "lucide-react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useChat } from "@/context/VesselContext";
 import { ChatMediaAttachment, UserAlbum } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { DrmBlackoutProtector } from "@/components/security/DrmBlackoutProtector";
@@ -36,7 +36,8 @@ export const ChatMediaViewerModal: React.FC<ChatMediaViewerModalProps> = ({
   senderCodename,
   targetProfileId,
 }) => {
-  const { userAlbums, burnMediaMessage, markMediaMessageAsViewed } = useVessel();
+  const { userAlbums } = useSettings();
+  const { burnMediaMessage, markMediaMessageAsViewed } = useChat();
 
   // If viewing a shared album, resolve album object
   const sharedAlbum: UserAlbum | undefined = media.sharedAlbumId
@@ -136,7 +137,7 @@ export const ChatMediaViewerModal: React.FC<ChatMediaViewerModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="media-viewer-title"
-      className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-between p-3 sm:p-5 backdrop-blur-2xl animate-fade-in select-none"
+      className="fixed inset-0 z-[75] bg-black/95 flex flex-col items-center justify-between p-3 sm:p-5 backdrop-blur-2xl animate-fade-in select-none"
       onClick={handleManualClose}
     >
       {/* BARRA TÁCTICA SUPERIOR */}
@@ -352,7 +353,7 @@ export const ChatMediaViewerModal: React.FC<ChatMediaViewerModalProps> = ({
                     : "border-white/10 opacity-60 hover:opacity-100"
                 }`}
               >
-                <img src={photo.url} alt="Miniatura" className="w-full h-full object-cover" />
+                <img src={photo.url} alt="Miniatura" loading="lazy" decoding="async" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>

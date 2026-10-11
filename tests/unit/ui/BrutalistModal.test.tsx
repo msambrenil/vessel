@@ -76,4 +76,69 @@ describe("BrutalistModal — Contenedor Modal Táctico Impeccable", () => {
     unmount();
     expect(document.body.style.overflow).not.toBe("hidden");
   });
+
+  it("debe soportar la variante fullscreen con altura 100dvh", () => {
+    render(
+      <BrutalistModal
+        isOpen={true}
+        onClose={vi.fn()}
+        variant="fullscreen"
+        title="Dossier Completo"
+      >
+        <div>Vista Inmersiva</div>
+      </BrutalistModal>
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("h-[100dvh]");
+    expect(screen.getByText("Vista Inmersiva")).toBeInTheDocument();
+  });
+
+  it("debe vincular aria-labelledby y aria-describedby con los encabezados semánticos", () => {
+    render(
+      <BrutalistModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Título Accesible"
+        subtitle="Descripción Accesible"
+      >
+        <div>Contenido accesible</div>
+      </BrutalistModal>
+    );
+
+    const dialog = screen.getByRole("dialog");
+    const labelledById = dialog.getAttribute("aria-labelledby");
+    const describedById = dialog.getAttribute("aria-describedby");
+
+    expect(labelledById).toBeTruthy();
+    expect(describedById).toBeTruthy();
+
+    const titleEl = screen.getByText("Título Accesible");
+    const subtitleEl = screen.getByText("Descripción Accesible");
+
+    expect(titleEl.getAttribute("id")).toBe(labelledById);
+    expect(subtitleEl.getAttribute("id")).toBe(describedById);
+  });
+
+  it("debe atrapar el foco dentro del diálogo en eventos de tecla Tab (Focus Trap)", () => {
+    render(
+      <BrutalistModal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Focus Trap Test"
+      >
+        <button type="button" data-testid="first-input">Primero</button>
+        <button type="button" data-testid="second-input">Segundo</button>
+      </BrutalistModal>
+    );
+
+    const closeBtn = screen.getByRole("button", { name: /Cerrar modal/i });
+    const secondBtn = screen.getByTestId("second-input");
+
+    // Simulamos Shift+Tab desde el primer elemento enfocable (el botón de cierre): debe ciclar al último elemento
+    closeBtn.focus();
+    fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(secondBtn);
+  });
 });
+

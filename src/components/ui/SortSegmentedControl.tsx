@@ -16,6 +16,7 @@ export interface SortSegmentedControlProps<T extends string> {
   onChange: (value: T) => void;
   className?: string;
   testId?: string;
+  size?: "default" | "sm";
 }
 
 export function SortSegmentedControl<T extends string>({
@@ -24,18 +25,21 @@ export function SortSegmentedControl<T extends string>({
   onChange,
   className = "",
   testId = "sort-segmented-control",
+  size = "default",
 }: SortSegmentedControlProps<T>) {
   const handleSelect = (id: T) => {
     audioEngine.playPulse();
     onChange(id);
   };
 
+  const isSmall = size === "sm";
+
   return (
     <div
       data-testid={testId}
       role="radiogroup"
       aria-label="Criterio de ordenamiento"
-      className={`flex items-center gap-0.5 bg-white/5 border border-white/10 rounded-full p-0.5 font-mono text-[9.5px] flex-shrink-0 ${className}`}
+      className={`flex items-center gap-1 w-full bg-neutral-950/80 border border-white/15 rounded-xl p-1 font-mono select-none ${className}`}
     >
       {options.map((opt) => {
         const isSelected = value === opt.id;
@@ -48,14 +52,16 @@ export function SortSegmentedControl<T extends string>({
             data-testid={`sort-option-${opt.id}`}
             onClick={() => handleSelect(opt.id)}
             title={opt.title}
-            className={`px-2 py-1 min-h-[28px] sm:min-h-[30px] rounded-full transition-all duration-150 cursor-pointer flex items-center gap-1 select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-electricViolet ${
+            className={`flex-1 ${
+              isSmall ? "min-h-[34px] text-[10px] py-1 px-2" : "min-h-[44px] text-xs sm:text-sm py-2 px-3"
+            } rounded-lg transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-[0.98] ${
               isSelected
-                ? "bg-electricViolet text-white font-black shadow-violet-soft"
-                : "text-neutral-400 hover:text-white hover:bg-white/5"
+                ? "bg-electricViolet text-white font-black shadow-[0_0_15px_rgba(139,92,246,0.35)] border border-electricViolet-glow"
+                : "text-neutral-300 hover:text-white hover:bg-white/5 border border-transparent"
             }`}
           >
-            {opt.icon && <span>{opt.icon}</span>}
-            <span>{opt.label}</span>
+            {opt.icon && <span className="text-sm shrink-0">{opt.icon}</span>}
+            <span className="truncate">{opt.label}</span>
           </button>
         );
       })}

@@ -313,7 +313,7 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
       expect(screen.getByText(/LISTO \d+m/)).toBeInTheDocument();
     });
 
-    it("renderiza el botón primario Coordinar y permite disparar el acuerdo de Pre-Flight", () => {
+    it("mantiene la tarjeta limpia en Bento Puro: no renderiza la barra pesada de botones y delega las acciones al Quick Peek", () => {
       const targetProfile = createMockProfile();
 
       render(
@@ -324,13 +324,68 @@ describe("ProfileCard — Píldora de Telemetría Táctica & Ausencia de Colisi�
         />
       );
 
-      const sintonizarBtn = screen.getByTestId(`profile-sintonizar-btn-${targetProfile.id}`);
-      expect(sintonizarBtn).toBeInTheDocument();
-      expect(sintonizarBtn).toHaveTextContent(/Coordinar|Sintonizar/);
+      // En Bento Puro, los botones pesados se remueven de la tarjeta para evitar clics accidentales
+      expect(screen.queryByTestId(`profile-sintonizar-btn-${targetProfile.id}`)).toBeNull();
+      // El botón de favoritos vive de forma sutil en la esquina superior derecha
+      expect(screen.getByTestId(`profile-favorite-toggle-${targetProfile.id}`)).toBeInTheDocument();
+    });
 
-      fireEvent.click(sintonizarBtn);
-      // Al hacer click en Coordinar, no se abre el detalle del perfil (stopPropagation)
+    it("renderiza micro-acciones 1-tap de Toque directo y Chat directo en la tarjeta", () => {
+      const targetProfile = createMockProfile({ distanceMeters: 250 });
+
+      render(
+        <ProfileCard
+          profile={targetProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+        />
+      );
+
+      const toqueBtn = screen.getByTestId(`quick-toque-btn-${targetProfile.id}`);
+      const chatBtn = screen.getByTestId(`quick-chat-btn-${targetProfile.id}`);
+
+      expect(toqueBtn).toBeInTheDocument();
+      expect(chatBtn).toBeInTheDocument();
+
+      fireEvent.click(chatBtn);
+      expect(mockOnOpenChat).toHaveBeenCalledWith(targetProfile.id);
       expect(mockOnSelect).not.toHaveBeenCalled();
+    });
+
+    it("desacoplamiento de reactividad: PureProfileCard ejecuta callbacks pasados por props sin tocar contexto", () => {
+      const targetProfile = createMockProfile({ distanceMeters: 250 });
+      const mockToggleFav = vi.fn();
+      const mockTransmit = vi.fn();
+
+      render(
+        <ProfileCard
+          profile={targetProfile}
+          onSelect={mockOnSelect}
+          onOpenChat={mockOnOpenChat}
+          isFavorite={true}
+          onToggleFavorite={mockToggleFav}
+          signalCount={3}
+          onTransmitSignal={mockTransmit}
+          customAlias="Alias Personalizado"
+        />
+      );
+
+      // Debe mostrar el alias personalizado
+      expect(screen.getByText("Alias Personalizado")).toBeInTheDocument();
+
+      // Debe reflejar el conteo de toques +3
+      expect(screen.getByText("+3")).toBeInTheDocument();
+
+      // Al hacer click en favorito, debe llamar a onToggleFavorite provisto
+      const favBtn = screen.getByTestId(`profile-favorite-toggle-${targetProfile.id}`);
+      expect(favBtn).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(favBtn);
+      expect(mockToggleFav).toHaveBeenCalledWith(targetProfile.id);
+
+      // Al hacer click en toque, debe llamar a onTransmitSignal provisto
+      const toqueBtn = screen.getByTestId(`quick-toque-btn-${targetProfile.id}`);
+      fireEvent.click(toqueBtn);
+      expect(mockTransmit).toHaveBeenCalledWith(targetProfile.id);
     });
   });
 });

@@ -102,4 +102,35 @@ describe("BrutalistButton — Primitiva Táctica de UI (Convención 44px & 5 Est
     expect(handleClick).not.toHaveBeenCalled();
     expect(button).toBeDisabled();
   });
+
+  it("debe activar estado microinteractivo de guardado (isSaving) con shimmer y bloqueo", () => {
+    render(
+      <BrutalistButton isSaving savingText="Almacenando en Vault...">
+        Guardar
+      </BrutalistButton>
+    );
+
+    const button = screen.getByRole("button", { name: /Almacenando en Vault.../i });
+    expect(button).toBeDisabled();
+    expect(button.className).toContain("cursor-wait");
+    expect(button.className).toContain("shadow-violet-soft");
+    expect(screen.getByText("Almacenando en Vault...")).toBeInTheDocument();
+  });
+
+  it("debe activar estado microinteractivo de éxito (isSuccess) con feedback sonoro y estilo mintNeon", () => {
+    const playSuccessSpy = vi.spyOn(audioEngine, "playSuccess");
+
+    render(
+      <BrutalistButton isSuccess successText="¡Clave Guardada!">
+        Guardar
+      </BrutalistButton>
+    );
+
+    const button = screen.getByRole("button", { name: /¡Clave Guardada!/i });
+    expect(button.className).toContain("bg-mintNeon");
+    expect(button.className).toContain("text-obsidian-deep");
+    expect(screen.getByText("¡Clave Guardada!")).toBeInTheDocument();
+    expect(playSuccessSpy).toHaveBeenCalledTimes(1);
+  });
 });
+

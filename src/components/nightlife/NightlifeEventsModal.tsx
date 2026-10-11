@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useAuth } from "@/context/VesselContext";
 import { NightlifeEvent } from "@/types/vessel";
 import { EventDetailModal } from "./EventDetailModal";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
@@ -11,15 +11,11 @@ import {
   MapPin,
   Clock,
   Radio,
-  Eye,
-  Users,
-  Zap,
-  Moon,
   X,
   Sparkles,
   Flame,
   Check,
-  ShieldAlert,
+  Users,
 } from "lucide-react";
 
 export const NightlifeEventsModal: React.FC = () => {
@@ -28,16 +24,9 @@ export const NightlifeEventsModal: React.FC = () => {
     closeNightlifeModal,
     nightlifeEvents,
     activeCheckin,
-    missedConnections,
-    openMissedConnectionsModal,
-    openOpticalBeacon,
-    openAfterHoursModal,
-    openWingmanModal,
-    openSpikedAlertModal,
-    wingmanPair,
     toggleEventRsvp,
-    currentUserUid,
-  } = useVessel();
+  } = useLogistics();
+  const { currentUserUid } = useAuth();
 
   const [selectedEvent, setSelectedEvent] = useState<NightlifeEvent | null>(null);
   const [filterDarkroom, setFilterDarkroom] = useState(false);
@@ -54,7 +43,7 @@ export const NightlifeEventsModal: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-label="VESSEL Nightlife"
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none [overscroll-behavior:contain]"
+          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none [overscroll-behavior:contain]"
           onClick={closeNightlifeModal}
         >
           <div
@@ -114,64 +103,6 @@ export const NightlifeEventsModal: React.FC = () => {
             </div>
           )}
 
-          {/* Barra de Acceso Rápido a Herramientas Nocturnas */}
-          <div className="p-3 bg-neutral-950/70 border-b border-white/10 flex items-center gap-2 overflow-x-auto no-scrollbar flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => openMissedConnectionsModal()}
-              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-emerald-500/50 rounded-xl font-mono text-xs text-neutral-200 flex items-center gap-1.5 flex-shrink-0 transition-all cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Cruces en la Pista</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
-                {missedConnections.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => openOpticalBeacon()}
-              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-fuchsia-500/40 hover:border-fuchsia-400 rounded-xl font-mono text-xs text-fuchsia-200 flex items-center gap-1.5 flex-shrink-0 transition-all cursor-pointer shadow-[0_0_12px_rgba(255,0,127,0.2)]"
-            >
-              <Zap className="w-3.5 h-3.5 text-[#ff2a85] animate-pulse" />
-              <span>Baliza Fucsia</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => openWingmanModal()}
-              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-blue-500/50 rounded-xl font-mono text-xs text-neutral-200 flex items-center gap-1.5 flex-shrink-0 transition-all cursor-pointer"
-            >
-              <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span>Modo Wingman</span>
-              {wingmanPair && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => openAfterHoursModal()}
-              className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-white/15 hover:border-indigo-500/50 rounded-xl font-mono text-xs text-neutral-200 flex items-center gap-1.5 flex-shrink-0 transition-all cursor-pointer"
-            >
-              <Moon className="w-3.5 h-3.5 text-indigo-400" />
-              <span>After-Hours</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                audioEngine.playSubBass(75);
-                openSpikedAlertModal();
-              }}
-              className="px-3 py-1.5 bg-red-950/30 hover:bg-red-950/60 border border-red-500/30 hover:border-red-500/60 rounded-xl font-mono text-xs text-red-300 flex items-center gap-1.5 flex-shrink-0 transition-all cursor-pointer shadow-xs"
-              title="Alerta SOS / Trago Sospechoso"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
-              <span>Alerta Trago SOS</span>
-            </button>
-          </div>
-
           {/* Filtros Rápidos de Cartelera */}
           <div className="px-4 py-2 bg-neutral-900/40 border-b border-white/5 flex items-center justify-between flex-shrink-0">
             <span className="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider">
@@ -200,8 +131,16 @@ export const NightlifeEventsModal: React.FC = () => {
               return (
                 <div
                   key={ev.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedEvent(ev)}
-                  className="p-3 bg-neutral-900/90 hover:bg-neutral-900 border border-white/10 hover:border-electricViolet/50 rounded-xl transition-all cursor-pointer flex flex-col sm:flex-row gap-3 group shadow-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedEvent(ev);
+                    }
+                  }}
+                  className="p-3 bg-obsidian-surface hover:bg-obsidian-card border border-white/10 hover:border-electricViolet/50 rounded-xl transition-all cursor-pointer flex flex-col sm:flex-row gap-3 group shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
                 >
                   {/* Flyer miniatura en 16:9 / aspect */}
                   <div className="relative w-full sm:w-36 h-28 sm:h-auto rounded-lg overflow-hidden flex-shrink-0 border border-white/10">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics } from "@/context/VesselContext";
 import { GeoPrivacyLevel } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
@@ -18,6 +18,7 @@ import {
   Plane,
   Radio,
 } from "lucide-react";
+import { BrutalistSwitch, BrutalistButton } from "@/components/ui";
 
 export const LocationPrivacySection: React.FC = () => {
   const {
@@ -30,7 +31,7 @@ export const LocationPrivacySection: React.FC = () => {
     openTravelModal,
     openGeoBatteryModal,
     travelMode,
-  } = useVessel();
+  } = useLogistics();
 
   const privacyOptions: {
     id: GeoPrivacyLevel;
@@ -141,23 +142,15 @@ export const LocationPrivacySection: React.FC = () => {
             const isSelected = geoPrivacyLevel === opt.id;
 
             return (
-              <div
+              <button
                 key={opt.id}
-                role="button"
-                tabIndex={0}
+                type="button"
                 onClick={() => {
                   setGeoPrivacyLevel(opt.id);
                   audioEngine.playPulse();
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setGeoPrivacyLevel(opt.id);
-                    audioEngine.playPulse();
-                  }
-                }}
                 aria-pressed={isSelected}
-                className={`p-3.5 rounded-2xl border cursor-pointer transition-all space-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                className={`w-full text-left p-3.5 rounded-2xl border cursor-pointer transition-all space-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet select-none active:scale-[0.99] ${
                   isSelected
                     ? "bg-electricViolet/15 border-electricViolet text-white shadow-violet-soft font-bold"
                     : "bg-black/50 border-white/10 text-neutral-300 hover:border-white/20"
@@ -184,7 +177,7 @@ export const LocationPrivacySection: React.FC = () => {
                 <p className="text-[11px] font-mono text-neutral-400 leading-relaxed pl-5 font-normal">
                   {opt.description}
                 </p>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -239,34 +232,16 @@ export const LocationPrivacySection: React.FC = () => {
           </div>
         </div>
 
-        {/* Switch Manual de Modo Eco-Saver */}
-        <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-          <div className="space-y-0.5 min-w-0">
-            <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
-              <span>Forzar Modo Ahorro de Energía</span>
-            </div>
-            <p className="text-[10px] text-neutral-400 font-mono">
-              Reduce las consultas de GPS a 5 minutos y optimiza el consumo cuando tenés poca batería
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              toggleEcoSaverMode();
-              audioEngine.playPulse();
-            }}
-            className={`w-12 h-7 rounded-full transition-colors relative p-1 flex-shrink-0 cursor-pointer ${
-              manualEcoSaver ? "bg-emerald-500 shadow-sm" : "bg-neutral-800"
-            }`}
+        {/* Switch Manual de Modo Eco-Saver con BrutalistSwitch */}
+        <div className="bg-black/60 border border-white/10 rounded-2xl p-3.5">
+          <BrutalistSwitch
+            checked={manualEcoSaver}
+            onChange={() => toggleEcoSaverMode()}
+            variant="emerald"
+            label="Forzar Modo Ahorro de Energía"
+            description="Reduce las consultas de GPS a 5 minutos y optimiza el consumo cuando tenés poca batería"
             aria-label="Conmutar Modo Ahorro Eco-Saver"
-          >
-            <div
-              className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
-                manualEcoSaver ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
+          />
         </div>
 
         {/* 3. ZONA DE CONEXIÓN LOCAL */}
@@ -287,59 +262,55 @@ export const LocationPrivacySection: React.FC = () => {
 
         {/* 4. HERRAMIENTAS TÁCTICAS DE UBICACIÓN & RADAR */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              openTravelModal();
-              audioEngine.playPulse();
-            }}
-            className="p-3 bg-neutral-900 border border-white/10 hover:border-electricViolet/50 rounded-2xl text-left flex items-center justify-between transition-all cursor-pointer group active:scale-98"
+          <BrutalistButton
+            variant="tactical"
+            size="default"
+            onClick={() => openTravelModal()}
+            className="w-full min-h-[56px] justify-between text-left p-3"
           >
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-electricViolet/15 text-electricViolet-glow">
+              <div className="p-2 rounded-xl bg-electricViolet/15 text-electricViolet-glow flex-shrink-0">
                 <Plane className="w-4 h-4" />
               </div>
-              <div>
-                <span className="font-mono text-xs font-bold text-white block">
+              <div className="min-w-0">
+                <span className="font-mono text-xs font-bold text-white block truncate">
                   Modo Viajero (Teletransporte)
                 </span>
-                <span className="text-[10px] font-mono text-neutral-400">
+                <span className="text-[10px] font-mono text-neutral-400 block truncate">
                   {travelMode.isActive
                     ? `Activo: ${travelMode.cityName}`
                     : "Simular presencia en otra ciudad"}
                 </span>
               </div>
             </div>
-            <span className="text-xs font-mono text-electricViolet-glow group-hover:translate-x-0.5 transition-transform">
+            <span className="text-xs font-mono text-electricViolet-glow ml-2">
               →
             </span>
-          </button>
+          </BrutalistButton>
 
-          <button
-            type="button"
-            onClick={() => {
-              openGeoBatteryModal();
-              audioEngine.playPulse();
-            }}
-            className="p-3 bg-neutral-900 border border-white/10 hover:border-mintNeon/50 rounded-2xl text-left flex items-center justify-between transition-all cursor-pointer group active:scale-98"
+          <BrutalistButton
+            variant="tactical"
+            size="default"
+            onClick={() => openGeoBatteryModal()}
+            className="w-full min-h-[56px] justify-between text-left p-3"
           >
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-mintNeon/15 text-mintNeon">
+              <div className="p-2 rounded-xl bg-mintNeon/15 text-mintNeon flex-shrink-0">
                 <Radio className="w-4 h-4" />
               </div>
-              <div>
-                <span className="font-mono text-xs font-bold text-white block">
+              <div className="min-w-0">
+                <span className="font-mono text-xs font-bold text-white block truncate">
                   Calibrar GPS & Telemetría
                 </span>
-                <span className="text-[10px] font-mono text-neutral-400">
+                <span className="text-[10px] font-mono text-neutral-400 block truncate">
                   Forzar refresco de satélite y batería
                 </span>
               </div>
             </div>
-            <span className="text-xs font-mono text-mintNeon group-hover:translate-x-0.5 transition-transform">
+            <span className="text-xs font-mono text-mintNeon ml-2">
               →
             </span>
-          </button>
+          </BrutalistButton>
         </div>
       </div>
     </div>

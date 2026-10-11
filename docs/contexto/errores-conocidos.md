@@ -265,3 +265,37 @@ Registro de problemas comunes de usabilidad, contraste, foco en teclado y ajuste
      - `deleteUserByAdmin` elimina en cascada `vessel_profiles/{id}`, `vessel_users/{id}`, `vessel_unique_identities/user_{id}`, libera el codename y registra la auditoría `USER_DELETED`.
 
 
+
+---
+
+## 22. Bucle Infinito de Recarga en Local por Service Worker Activo y Desajuste de Versión en LocalStorage (`PwaRegister.tsx`)
+
+- **Síntoma / Diagnóstico**: Al iniciar la aplicación en desarrollo local (`npm run dev`), la página entra en un bucle frenético de recarga cada ~100 milisegundos sin permitir interactuar con la interfaz.
+- **Causa Raíz Triple**:
+  1. **Desajuste de Versión en `localStorage`**: En `PwaRegister.tsx`, `subscribeToSystemControl` leía sincrónicamente el estado previo guardado en `localStorage` (`STORAGE_KEYS.SYSTEM_CONTROL`, ej: `v2.5.0`). Al comparar `state.currentVersion !== CURRENT_SYSTEM_VERSION` (`"v2.5.0" !== "v2.6.0"`), llamaba a `purgeCachesAndReload()`. Esta función limpiaba `CacheStorage` pero no actualizaba `localStorage`. Al recargar, volvía a leer `v2.5.0` y repetía el ciclo infinitamente.
+  2. **Service Worker en `development` y Evento `controllerchange`**: El Service Worker se registraba incondicionalmente en `localhost`. Al activarse, `public/sw.js` ejecutaba `self.clients.claim()`, disparando el evento `controllerchange` en el cliente, el cual ejecutaba otro `window.location.reload()`, colisionando con Next.js Fast Refresh.
+  3. **Ausencia de Circuit Breaker**: No existía disyuntor en `sessionStorage` que limitara las recargas sucesivas ante discrepancias persistentes.
+- **Solución Definitiva**:
+  1. **Detección de Entorno de Desarrollo (`isDevEnvironment`)**: Si la app corre en `localhost`, `127.0.0.1` o `NODE_ENV === "development"`, `PwaRegister` desregistra workers huérfanos y desactiva completamente el registro del Service Worker y las recargas automáticas.
+  2. **Disyuntor de Emergencia (`canTriggerReload`)**: Implementación de un Circuit Breaker en `sessionStorage` con cooldown mínimo de 15 segundos entre recargas automáticas y bloqueo total si se superan 3 recargas por minuto.
+  3. **Sincronización Previa de `localStorage`**: Antes de forzar la recarga por versión, se sincroniza `CURRENT_SYSTEM_VERSION` en `STORAGE_KEYS.SYSTEM_CONTROL` para evitar lecturas stale.
+  4. **Cobertura con Pruebas**: Suite unitaria en `tests/unit/pwa/PwaRegister.test.tsx` (5 pruebas pasando).
+
+---
+
+## 23. InvalidStateError en View Transitions API por Concurrencia, Pestañas Ocultas o Aborto del Motor Gráfico (`Transition was aborted because of invalid state. Animation start failed`)
+
+- **Síntoma / Diagnóstico**: En navegadores basados en Chromium o WebKit, al navegar rápidamente por la barra inferior (`BrutalistNav.tsx`) o al hacer clic reiterado sobre perfiles en el radar (`ProfileCard.tsx`), el overlay de desarrollo de Next.js detiene la ejecución con una pantalla roja de error:
+  `Runtime InvalidStateError: Transition was aborted because of invalid state. Animation start failed` (Next.js 16.3.5 Webpack).
+- **Causa Raíz Detallada**:
+  - La API nativa `document.startViewTransition(updateCallback)` devuelve un objeto `ViewTransition` con tres promesas: `ready`, `finished` y `updateCallbackDone`.
+  - Si el usuario pulsa un enlace mientras otra transición está en curso, si la pestaña pasa a segundo plano (`document.visibilityState !== "visible"`), o si el motor gráfico descarta el frame de captura, la promesa `ready` se rechaza internamente con `DOMException: InvalidStateError`.
+  - Al no haber manejadores `.catch()` enlazados a `transition.ready` ni comprobación de visibilidad de documento, el navegador emite un evento `unhandledrejection`, el cual Next.js intercepta como un error fatal de ejecución.
+- **Solución Definitiva**:
+  1. Creación de la utilidad universal [`safeStartViewTransition`](file:///Users/ojitos/Documents/vessel%20app/src/lib/ui/viewTransitions.ts):
+     - Comprueba que el documento soporte la API y que `document.visibilityState === "visible"`. Si la pestaña está oculta, ejecuta el callback de navegación directamente sin intentar animar.
+     - Envuelve la llamada en un bloque `try...catch` síncrono para ejecutar el callback como fallback ante cualquier fallo inmediato del motor.
+     - Conecta escuchas defensivas `.catch(() => {})` a `transition.ready` y `transition.finished` para neutralizar rechazos benignos por abortos de concurrencia.
+  2. Sustitución de invocaciones crudas en [`BrutalistNav.tsx`](file:///Users/ojitos/Documents/vessel%20app/src/components/navigation/BrutalistNav.tsx) y [`ProfileCard.tsx`](file:///Users/ojitos/Documents/vessel%20app/src/components/matrix/ProfileCard.tsx).
+  3. Cobertura con pruebas unitarias exhaustivas en [`tests/unit/ui/viewTransitions.test.ts`](file:///Users/ojitos/Documents/vessel%20app/tests/unit/ui/viewTransitions.test.ts) (5 tests verificando rechazos, estados ocultos y fallbacks).
+

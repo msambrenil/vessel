@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useRadarMatrix, useAuth, useSettings } from "@/context/VesselContext";
 import { NightlifeEvent } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
@@ -30,11 +30,10 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose }) => {
     toggleEventRsvp,
     checkInToEvent,
     activeCheckin,
-    profiles,
-    setSelectedProfile,
-    currentUserUid,
-    language,
-  } = useVessel();
+  } = useLogistics();
+  const { profiles, setSelectedProfile } = useRadarMatrix();
+  const { currentUserUid } = useAuth();
+  const { language } = useSettings();
 
   const isGoing =
     event.confirmedAttendees.includes("my-user-id") ||
@@ -61,7 +60,7 @@ export const EventDetailModal: React.FC<Props> = ({ event, onClose }) => {
       role="dialog"
       aria-modal="true"
       aria-label={event.name}
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none [overscroll-behavior:contain]"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-xl animate-in fade-in select-none [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div

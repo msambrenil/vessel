@@ -19,8 +19,6 @@ import {
   ExitProtocol,
   NightlifeEvent,
   EventCheckin,
-  MissedConnection,
-  WingmanPair,
   PartyPassState,
 } from "@/types/vessel";
 import { VesselProfile, ClubZoneType, ActiveNavView } from "@/types/vessel";
@@ -33,7 +31,7 @@ import { initOfflineQueueListeners, flushOfflineMutations } from "@/lib/sync/off
 import { loadFromStorage, saveToStorage, removeFromStorage, STORAGE_KEYS, getActiveAppMode } from "@/lib/storage/localStorageSync";
 import { saveFullUserDataToCloud, FullUserDataPayload } from "@/lib/firebase/userDataService";
 import { MOCK_HOTSPOTS } from "@/data/mockHotspots";
-import { MOCK_NIGHTLIFE_EVENTS, MOCK_INITIAL_MISSED_CONNECTIONS } from "@/data/mockNightlifeEvents";
+import { MOCK_NIGHTLIFE_EVENTS } from "@/data/mockNightlifeEvents";
 import {
   subscribeToHotspots,
   checkInHotspotCloud,
@@ -193,8 +191,6 @@ export interface LogisticsContextType {
   // Suite Nightlife
   nightlifeEvents: NightlifeEvent[];
   activeCheckin: EventCheckin | null;
-  missedConnections: MissedConnection[];
-  wingmanPair: WingmanPair | null;
   partyPass: PartyPassState;
   isNightlifeModalOpen: boolean;
   openNightlifeModal: (preselectedEventId?: string) => void;
@@ -203,26 +199,6 @@ export interface LogisticsContextType {
   checkInToEvent: (eventId: string, zone?: ClubZoneType, isIncognito?: boolean) => void;
   checkOutOfEvent: () => void;
   updateEventZone: (zone: ClubZoneType) => void;
-  isMissedConnectionsModalOpen: boolean;
-  openMissedConnectionsModal: () => void;
-  closeMissedConnectionsModal: () => void;
-  sendMissedConnectionPulse: (missedConnectionId: string, note?: string) => void;
-  isOpticalBeaconOpen: boolean;
-  openOpticalBeacon: () => void;
-  closeOpticalBeacon: () => void;
-  isAfterHoursModalOpen: boolean;
-  openAfterHoursModal: () => void;
-  closeAfterHoursModal: () => void;
-  isWingmanModalOpen: boolean;
-  openWingmanModal: () => void;
-  closeWingmanModal: () => void;
-  pairWingman: (partnerId: string, codename: string, avatarUrl: string, pin: string) => boolean;
-  unpairWingman: () => void;
-  updateWingmanStatus: (status: WingmanPair["status"]) => void;
-  isSpikedAlertModalOpen: boolean;
-  openSpikedAlertModal: () => void;
-  closeSpikedAlertModal: () => void;
-  triggerSpikedAlert: (customNotes?: string) => void;
   activatePartyPass: (eventId?: string) => void;
 }
 
@@ -329,18 +305,9 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     getActiveAppMode() === "real" ? [] : MOCK_NIGHTLIFE_EVENTS
   );
   const [activeCheckin, setActiveCheckin] = useState<EventCheckin | null>(null);
-  const [missedConnections, setMissedConnections] = useState<MissedConnection[]>(() =>
-    getActiveAppMode() === "real" ? [] : MOCK_INITIAL_MISSED_CONNECTIONS
-  );
-  const [wingmanPair, setWingmanPair] = useState<WingmanPair | null>(null);
   const [partyPass, setPartyPass] = useState<PartyPassState>({ isActive: false, expiresAt: null });
 
   const [isNightlifeModalOpen, setIsNightlifeModalOpen] = useState(false);
-  const [isMissedConnectionsModalOpen, setIsMissedConnectionsModalOpen] = useState(false);
-  const [isOpticalBeaconOpen, setIsOpticalBeaconOpen] = useState(false);
-  const [isAfterHoursModalOpen, setIsAfterHoursModalOpen] = useState(false);
-  const [isWingmanModalOpen, setIsWingmanModalOpen] = useState(false);
-  const [isSpikedAlertModalOpen, setIsSpikedAlertModalOpen] = useState(false);
 
   // Hidratación local-first según el modo
   useEffect(() => {
@@ -367,14 +334,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     if (localCheckin && new Date(localCheckin.expiresAt).getTime() > Date.now()) {
       setActiveCheckin(localCheckin);
     }
-
-    const fallbackMissed = appMode === "real" ? [] : MOCK_INITIAL_MISSED_CONNECTIONS;
-    const localMissed = loadFromStorage<MissedConnection[]>(STORAGE_KEYS.MISSED_CONNECTIONS, fallbackMissed, appMode);
-    const validMissed = (localMissed || []).filter((m) => new Date(m.expiresAt).getTime() > Date.now());
-    if (validMissed.length > 0) setMissedConnections(validMissed);
-
-    const localWingman = loadFromStorage<WingmanPair | null>(STORAGE_KEYS.WINGMAN_PAIR, null, appMode);
-    if (localWingman && localWingman.isActive) setWingmanPair(localWingman);
 
     const localPartyPass = loadFromStorage<PartyPassState>(STORAGE_KEYS.PARTY_PASS, { isActive: false, expiresAt: null }, appMode);
     if (localPartyPass.isActive && localPartyPass.expiresAt && new Date(localPartyPass.expiresAt).getTime() > Date.now()) {
@@ -1293,100 +1252,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
     });
   }, []);
 
-  const openMissedConnectionsModal = useCallback(() => {
-    setIsMissedConnectionsModalOpen(true);
-  }, []);
-
-  const closeMissedConnectionsModal = useCallback(() => {
-    setIsMissedConnectionsModalOpen(false);
-  }, []);
-
-  const sendMissedConnectionPulse = useCallback((missedConnectionId: string, note?: string) => {
-    setMissedConnections((prev) => {
-      const next = prev.map((conn) => {
-        if (conn.id !== missedConnectionId) return conn;
-        return {
-          ...conn,
-          pulseSent: true,
-          pulseNote: note || "Te vi en la pista // Toque de reencuentro",
-        };
-      });
-      saveToStorage(STORAGE_KEYS.MISSED_CONNECTIONS, next);
-      return next;
-    });
-    audioEngine.playSubBass(80);
-  }, []);
-
-  const openOpticalBeacon = useCallback(() => {
-    setIsOpticalBeaconOpen(true);
-  }, []);
-
-  const closeOpticalBeacon = useCallback(() => {
-    setIsOpticalBeaconOpen(false);
-  }, []);
-
-  const openAfterHoursModal = useCallback(() => {
-    setIsAfterHoursModalOpen(true);
-  }, []);
-
-  const closeAfterHoursModal = useCallback(() => {
-    setIsAfterHoursModalOpen(false);
-  }, []);
-
-  const openWingmanModal = useCallback(() => {
-    setIsWingmanModalOpen(true);
-  }, []);
-
-  const closeWingmanModal = useCallback(() => {
-    setIsWingmanModalOpen(false);
-  }, []);
-
-  const pairWingman = useCallback((partnerId: string, codename: string, avatarUrl: string, pin: string) => {
-    const newPair: WingmanPair = {
-      isActive: true,
-      partnerId,
-      partnerCodename: codename,
-      partnerAvatarUrl: avatarUrl,
-      pinCode: pin,
-      pairedAt: new Date().toISOString(),
-      lastSafetyCheckAt: new Date().toISOString(),
-      status: "partying_together",
-    };
-    setWingmanPair(newPair);
-    saveToStorage(STORAGE_KEYS.WINGMAN_PAIR, newPair);
-    audioEngine.playSubBass(65);
-    return true;
-  }, []);
-
-  const unpairWingman = useCallback(() => {
-    setWingmanPair(null);
-    removeFromStorage(STORAGE_KEYS.WINGMAN_PAIR);
-  }, []);
-
-  const updateWingmanStatus = useCallback((status: WingmanPair["status"]) => {
-    setWingmanPair((prev) => {
-      if (!prev) return null;
-      const next = { ...prev, status, lastSafetyCheckAt: new Date().toISOString() };
-      saveToStorage(STORAGE_KEYS.WINGMAN_PAIR, next);
-      return next;
-    });
-  }, []);
-
-  const openSpikedAlertModal = useCallback(() => {
-    setIsSpikedAlertModalOpen(true);
-  }, []);
-
-  const closeSpikedAlertModal = useCallback(() => {
-    setIsSpikedAlertModalOpen(false);
-  }, []);
-
-  const triggerSpikedAlert = useCallback((customNotes?: string) => {
-    audioEngine.playSubBass(85);
-    if (wingmanPair) {
-      updateWingmanStatus("needs_help");
-    }
-  }, [wingmanPair, updateWingmanStatus]);
-
   const activatePartyPass = useCallback((eventId?: string) => {
     const newPass: PartyPassState = {
       isActive: true,
@@ -1479,8 +1344,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       adminDeleteHotspot,
       nightlifeEvents,
       activeCheckin,
-      missedConnections,
-      wingmanPair,
       partyPass,
       isNightlifeModalOpen,
       openNightlifeModal,
@@ -1489,26 +1352,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       checkInToEvent,
       checkOutOfEvent,
       updateEventZone,
-      isMissedConnectionsModalOpen,
-      openMissedConnectionsModal,
-      closeMissedConnectionsModal,
-      sendMissedConnectionPulse,
-      isOpticalBeaconOpen,
-      openOpticalBeacon,
-      closeOpticalBeacon,
-      isAfterHoursModalOpen,
-      openAfterHoursModal,
-      closeAfterHoursModal,
-      isWingmanModalOpen,
-      openWingmanModal,
-      closeWingmanModal,
-      pairWingman,
-      unpairWingman,
-      updateWingmanStatus,
-      isSpikedAlertModalOpen,
-      openSpikedAlertModal,
-      closeSpikedAlertModal,
-      triggerSpikedAlert,
       activatePartyPass,
     }),
     [
@@ -1587,8 +1430,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       adminDeleteHotspot,
       nightlifeEvents,
       activeCheckin,
-      missedConnections,
-      wingmanPair,
       partyPass,
       isNightlifeModalOpen,
       openNightlifeModal,
@@ -1597,26 +1438,6 @@ export const LogisticsProvider: React.FC<LogisticsProviderProps> = ({
       checkInToEvent,
       checkOutOfEvent,
       updateEventZone,
-      isMissedConnectionsModalOpen,
-      openMissedConnectionsModal,
-      closeMissedConnectionsModal,
-      sendMissedConnectionPulse,
-      isOpticalBeaconOpen,
-      openOpticalBeacon,
-      closeOpticalBeacon,
-      isAfterHoursModalOpen,
-      openAfterHoursModal,
-      closeAfterHoursModal,
-      isWingmanModalOpen,
-      openWingmanModal,
-      closeWingmanModal,
-      pairWingman,
-      unpairWingman,
-      updateWingmanStatus,
-      isSpikedAlertModalOpen,
-      openSpikedAlertModal,
-      closeSpikedAlertModal,
-      triggerSpikedAlert,
       activatePartyPass,
     ]
   );

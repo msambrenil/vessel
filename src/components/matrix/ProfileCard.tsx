@@ -1,49 +1,84 @@
 "use client";
 
 import React from "react";
-import { VesselProfile } from "@/types/vessel";
+import { VesselProfile, KinkMutualMatch } from "@/types/vessel";
 import {
   useRadarMatrix,
-  useChat,
-  useDiary,
   useSettings,
 } from "@/context/VesselContext";
 import { Lock, Star, Zap } from "lucide-react";
 import Image from "next/image";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { getRoleDisplayLabel } from "@/data/roleActionCatalog";
+import { getRoleDisplayLabel, getRoleActionMeta } from "@/data/roleActionCatalog";
 import { DOSSIER_VERDICT_CONFIG } from "@/data/dossierCatalog";
 import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
 import { TelemetryPill } from "@/components/ui/TelemetryPill";
 import { BrutalistButton, TacticalBadge, TacticalBadgeVariant } from "@/components/ui";
 
-interface ProfileCardProps {
+export interface ProfileCardProps {
   profile: VesselProfile;
   onSelect: (profile: VesselProfile) => void;
   onOpenChat?: (profileId: string) => void;
   onOpenRendezvous?: (profile: VesselProfile) => void;
   isPriority?: boolean;
   isLockedByGridLimit?: boolean;
+
+  // Granular decoupled props (eliminates context cascades in ProfileGrid)
+  isFavorite?: boolean;
+  onToggleFavorite?: (profileId: string) => void;
+  signalCount?: number;
+  onTransmitSignal?: (profileId: string) => void;
+  isAttenuated?: boolean;
+  dossierRating?: number | null;
+  customAlias?: string | null;
+  mutualMatches?: readonly KinkMutualMatch[];
+  language?: "es" | "en";
+  isUnlimited?: boolean;
+  openUnlimitedModal?: () => void;
 }
 
-const ProfileCardComponent: React.FC<ProfileCardProps> = ({
+interface PureProfileCardProps extends ProfileCardProps {
+  isFavorite: boolean;
+  onToggleFavorite: (profileId: string) => void;
+  signalCount: number;
+  onTransmitSignal: (profileId: string) => void;
+  isAttenuated: boolean;
+  dossierRating: number | null;
+  customAlias: string | null;
+  mutualMatches: readonly KinkMutualMatch[];
+  language: "es" | "en";
+  isUnlimited: boolean;
+  openUnlimitedModal?: () => void;
+}
+
+const BLUR_PLACEHOLDER_DATA_URL =
+  "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23121212'/%3E%3C/svg%3E";
+
+import { isOptimizableImageUrl } from "@/lib/images/imageUtils";
+import { TRANSLATIONS } from "@/lib/i18n/translations";
+import { hasHostingCapability, canTravel } from "@/lib/geo/mobility";
+import { safeStartViewTransition } from "@/lib/ui/viewTransitions";
+
+const PureProfileCardComponent: React.FC<PureProfileCardProps> = ({
   profile,
   onSelect,
+  onOpenChat,
   onOpenRendezvous,
   isPriority = false,
   isLockedByGridLimit = false,
+  isFavorite,
+  onToggleFavorite,
+  signalCount,
+  onTransmitSignal,
+  isAttenuated,
+  dossierRating,
+  customAlias,
+  mutualMatches = [],
+  language = "es",
+  isUnlimited = false,
+  openUnlimitedModal,
 }) => {
-  const {
-    isFavoriteProfile: isFavProp,
-    toggleFavoriteProfile: toggleFavProp,
-    getMutualKinkMatches: getMatchesProp,
-  } = useRadarMatrix();
-  const isFavoriteProfile = isFavProp || (() => false);
-  const toggleFavoriteProfile = toggleFavProp || (() => {});
-  const getMutualKinkMatches = getMatchesProp || (() => []);
-  const { getBoundaryForProfile } = useChat();
-  const { getProfileDossier } = useDiary();
-  const { t, language, isUnlimited, openUnlimitedModal } = useSettings();
+  const t = TRANSLATIONS[language] || TRANSLATIONS.es;
 
   const resolvedAvatarUrl = React.useMemo(() => {
     if (!profile.avatarUrl) return "";
@@ -56,12 +91,22 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     return profile.avatarUrl;
   }, [profile.avatarUrl]);
 
+  const [useDirectUrl, setUseDirectUrl] = React.useState(false);
   const [imgError, setImgError] = React.useState(!resolvedAvatarUrl);
   const [showTransportLegend, setShowTransportLegend] = React.useState(false);
 
   React.useEffect(() => {
     setImgError(!resolvedAvatarUrl);
+    setUseDirectUrl(false);
   }, [resolvedAvatarUrl]);
+
+  const handleImageError = React.useCallback(() => {
+    if (!useDirectUrl && isOptimizableImageUrl(resolvedAvatarUrl)) {
+      setUseDirectUrl(true);
+    } else {
+      setImgError(true);
+    }
+  }, [useDirectUrl, resolvedAvatarUrl]);
 
   React.useEffect(() => {
     if (showTransportLegend) {
@@ -80,10 +125,9 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const isLockedByDistance = isDistant && !isUnlimited;
   const isQuotaLocked = Boolean(isLockedByGridLimit && !isUnlimited && !profile.isCurrentUser);
 
-  const boundary = getBoundaryForProfile(profile.id);
-  const dossier = getProfileDossier(profile.id);
   const roleDisplay = getRoleDisplayLabel(profile.role, language);
-  const verdictMeta = dossier?.rating ? DOSSIER_VERDICT_CONFIG[dossier.rating] : null;
+  const verdictMeta = dossierRating ? DOSSIER_VERDICT_CONFIG[dossierRating] : null;
+  const roleAction = getRoleActionMeta(profile.role, language, profile.codename);
 
   // Tríada de Compatibilidad: Ficha Táctica de Hospedaje
   const hostBadge = React.useMemo(() => {
@@ -108,8 +152,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       };
     }
 
-    const mobilityStr = (profile.mobility || "") + " " + (profile.hosting || "");
-    if (/viaj|muev|desplaz/i.test(mobilityStr)) {
+    if (canTravel(profile.mobility) || canTravel(profile.hosting)) {
       return {
         isCar: true,
         label: "",
@@ -121,7 +164,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       };
     }
 
-    if (/casa|depto|sitio|lugar/i.test(mobilityStr)) {
+    if (hasHostingCapability(profile.mobility) || hasHostingCapability(profile.hosting)) {
       return {
         isCar: false,
         label: language === "es" ? "Con Lugar" : "Has Place",
@@ -142,10 +185,6 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     };
   }, [profile.hostCard, profile.mobility, profile.hosting, language]);
 
-  const mutualMatches = React.useMemo(() => {
-    return getMutualKinkMatches(profile.kinkMatrix);
-  }, [getMutualKinkMatches, profile.kinkMatrix]);
-
   // Contador de Disponibilidad Inmediata (Listo YA)
   const readinessMinutes = React.useMemo(() => {
     if (!profile.onTheClock?.isActive) return null;
@@ -156,15 +195,15 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
     return 60;
   }, [profile.onTheClock]);
 
-  const isAttenuated = boundary?.radarVisibility === "attenuated";
-
   const handleCardClick = () => {
     if (isQuotaLocked) {
       audioEngine.playSubBass(60);
-      openUnlimitedModal();
+      openUnlimitedModal?.();
       return;
     }
-    onSelect(profile);
+    safeStartViewTransition(() => {
+      onSelect(profile);
+    });
   };
 
   const distanceLabel =
@@ -216,10 +255,14 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           data-testid="quota-locked-badge"
           className="absolute top-2 left-2 z-20 pointer-events-none"
         >
-          <div className="flex items-center gap-1 bg-black/85 border border-purple-500/60 text-purple-300 px-2 py-0.5 rounded-full shadow-lg font-mono text-[9px] font-black uppercase tracking-wider backdrop-blur-md">
-            <Lock className="w-2.5 h-2.5 text-electricViolet-glow" />
+          <TacticalBadge
+            variant="purple"
+            size="xs"
+            icon={<Lock className="w-2.5 h-2.5 text-electricViolet-glow" />}
+            className="!px-2 !py-0.5 bg-black/85 border-purple-500/60 text-purple-300 shadow-lg backdrop-blur-md"
+          >
             <span>{t.card?.gridLimitLockedBadge || (language === "es" ? "99+ MEMBRESÍA" : "99+ UNLIMITED")}</span>
-          </div>
+          </TacticalBadge>
         </div>
       )}
 
@@ -231,10 +274,13 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
             alt={profile.codename}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            unoptimized
+            unoptimized={useDirectUrl || !isOptimizableImageUrl(resolvedAvatarUrl)}
+            placeholder="blur"
+            blurDataURL={BLUR_PLACEHOLDER_DATA_URL}
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
-            onError={() => setImgError(true)}
+            onError={handleImageError}
+            style={isPriority ? { viewTransitionName: `profile-avatar-${profile.id}` } : undefined}
             className={`w-full h-full object-cover transition-transform duration-500 ${
               profile.isFogMode
                 ? "filter blur-[6px] scale-105"
@@ -291,21 +337,29 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       {/* Badge Superior Izquierdo: Solo para Usuario Actual o Listo YA */}
       {profile.isCurrentUser ? (
         <div className="absolute top-2 left-2 pointer-events-none z-10">
-          <div className="flex items-center gap-1 bg-electricViolet text-white px-2 py-0.5 rounded-full shadow-violet-soft font-bold whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse flex-shrink-0" />
+          <TacticalBadge
+            variant="violet"
+            size="xs"
+            pulse
+            className="!px-2 !py-0.5 shadow-violet-soft font-bold whitespace-nowrap !bg-electricViolet !text-white border-transparent"
+          >
             <span className="text-[9px] font-black font-mono uppercase tracking-wider">
               {t.card?.youBadge || (language === "es" ? "⭐ VOS" : "⭐ YOU")}
             </span>
-          </div>
+          </TacticalBadge>
         </div>
       ) : (
         profile.onTheClock?.isActive && (
           <div className="absolute top-2 left-2 z-10 pointer-events-none">
-            <div className="flex items-center gap-1 bg-amber-500/20 border border-amber-400 text-amber-300 px-1.5 py-0.5 rounded-full text-[8px] font-mono font-black shadow-[0_0_10px_rgba(251,191,36,0.3)] uppercase tracking-wider backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping flex-shrink-0" />
+            <TacticalBadge
+              variant="amber"
+              size="xs"
+              pulse
+              className="!px-1.5 !py-0.5 text-[8px] font-mono font-black shadow-[0_0_10px_rgba(251,191,36,0.3)] uppercase tracking-wider backdrop-blur-md"
+            >
               <span className="hidden sm:inline">⚡ {language === "es" ? (readinessMinutes ? `LISTO ${readinessMinutes}m` : "LISTO YA") : (readinessMinutes ? `READY ${readinessMinutes}m` : "READY NOW")}</span>
               <span className="sm:hidden font-black">⚡ {readinessMinutes ? `${readinessMinutes}m` : (language === "es" ? "YA" : "NOW")}</span>
-            </div>
+            </TacticalBadge>
           </div>
         )
       )}
@@ -313,12 +367,46 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
       {/* Píldora Superior Derecha: Telemetría Unificada Usando TelemetryPill */}
       {!profile.isCurrentUser && (
         <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1 pointer-events-auto">
-          <TelemetryPill
-            bodyState={profile.bodyState}
-            distanceLabel={distanceLabel}
-            isRemote={isLockedByDistance}
-            title={isLockedByDistance ? (t.card?.remoteSignal || "Señal Remota") : undefined}
-          />
+          <div className="flex items-center gap-1">
+            <BrutalistButton
+              type="button"
+              data-testid={`profile-favorite-toggle-${profile.id}`}
+              variant="favorite"
+              size="compact-icon"
+              soundEffect="none"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(profile.id);
+              }}
+              aria-pressed={isFavorite}
+              aria-label={isFavorite ? (t.card?.favoriteActive || "Quitar de favoritos") : (t.card?.favoriteBtn || "Marcar favorito")}
+              className={`relative !w-7 !h-7 sm:!w-8 sm:!h-8 !min-w-0 !min-h-0 !p-0 !rounded-full transition-all duration-300 flex items-center justify-center after:absolute after:-inset-2 after:content-[''] ${
+                isFavorite
+                  ? "!bg-amber-950/90 !border-amber-400 !text-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.6)]"
+                  : "!bg-black/70 !border-white/20 !text-neutral-400 hover:!text-amber-300 hover:!border-amber-400/50 opacity-0 group-hover:opacity-100 sm:opacity-80 focus:opacity-100 backdrop-blur-xs"
+              }`}
+            >
+              <span
+                className={`flex items-center justify-center w-full h-full transition-transform duration-300 ease-out active:scale-125 ${
+                  isFavorite ? "scale-110" : "scale-100 group-hover:scale-105"
+                }`}
+              >
+                <Star
+                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${
+                    isFavorite
+                      ? "fill-amber-400 text-amber-400 stroke-[2] drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+                      : "stroke-[2.2] text-neutral-300 group-hover:text-amber-300"
+                  }`}
+                />
+              </span>
+            </BrutalistButton>
+            <TelemetryPill
+              bodyState={profile.bodyState}
+              distanceLabel={distanceLabel}
+              isRemote={isLockedByDistance}
+              title={isLockedByDistance ? (t.card?.remoteSignal || "Señal Remota") : undefined}
+            />
+          </div>
 
           {profile.hasSafetyAlert && (
             <div className="flex items-center gap-1 bg-red-950/95 border border-red-500 text-red-300 px-1.5 py-0.5 rounded-full text-[8px] font-mono font-bold uppercase tracking-wider shadow-sm pointer-events-none">
@@ -330,16 +418,45 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
 
       {/* Pie de Foto Impeccable: Jerarquía Táctica */}
       <div className="absolute bottom-2 inset-x-2 z-10 flex flex-col gap-1 pointer-events-none">
+        {/* Badge de Doble Avatar para Modo Dúo */}
+        {profile.isDuo && profile.duoInfo?.partnerAvatarUrl && (
+          <div
+            data-testid={`duo-avatars-${profile.id}`}
+            className="flex items-center gap-1.5 mb-0.5 pointer-events-auto"
+            title={profile.duoInfo?.jointTitle || `Modo Dúo: ${profile.codename} & ${profile.duoInfo.partnerCodename}`}
+          >
+            <div className="flex items-center -space-x-1.5 flex-shrink-0">
+              <div className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full border border-electricViolet overflow-hidden shadow-sm bg-black">
+                <img
+                  src={resolvedAvatarUrl || profile.avatarUrl}
+                  alt={profile.codename}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full border border-white/80 overflow-hidden shadow-sm bg-black">
+                <img
+                  src={profile.duoInfo.partnerAvatarUrl}
+                  alt={profile.duoInfo.partnerCodename || "Pareja"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+            <span className="text-[10px] font-mono font-bold text-electricViolet-glow tracking-tight truncate drop-shadow">
+              {profile.duoInfo?.jointTitle || `${profile.codename} & ${profile.duoInfo.partnerCodename}`}
+            </span>
+          </div>
+        )}
+
         {/* Fila 1: Nombre, Edad, Química & Dúo */}
         <div className="flex items-center gap-1.5 w-full min-w-0 pointer-events-auto">
-          <span
-            title={dossier?.customAlias || profile.codename}
-            className={`text-xs sm:text-sm font-extrabold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate ${
-              dossier?.customAlias ? "text-electricViolet-glow font-black" : "text-white"
+          <h3
+            title={customAlias || profile.codename}
+            className={`text-xs sm:text-sm font-extrabold tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] truncate m-0 p-0 inline font-inherit ${
+              customAlias ? "text-electricViolet-glow font-black" : "text-white"
             }`}
           >
-            {dossier?.customAlias || profile.codename}
-          </span>
+            {customAlias || profile.codename}
+          </h3>
           {profile.showAge && (
             <span className="text-[11px] sm:text-xs text-neutral-300 font-bold flex-shrink-0 drop-shadow-sm font-mono">
               {profile.age}
@@ -355,10 +472,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           )}
           {profile.isDuo && (
             <span
-              title={language === "es" ? "Modo Dúo de Pareja" : "Duo Partner Mode"}
-              className="text-[10px] flex-shrink-0 leading-none select-none"
+              title={
+                profile.duoInfo?.jointTitle ||
+                (language === "es"
+                  ? `Modo Dúo con @${profile.duoInfo?.partnerCodename || "pareja"}`
+                  : `Duo Mode with @${profile.duoInfo?.partnerCodename || "partner"}`)
+              }
+              className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-electricViolet/30 text-electricViolet-glow border border-electricViolet/50 flex-shrink-0 leading-none select-none flex items-center gap-0.5"
             >
-              👥
+              <span>👥</span>
+              <span>DÚO</span>
             </span>
           )}
         </div>
@@ -371,24 +494,34 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
 
           {hostBadge.isCar ? (
             <div className="relative inline-flex items-center flex-shrink-0">
-              <button
-                type="button"
+              <TacticalBadge
+                role="button"
+                tabIndex={0}
                 data-testid={`host-badge-${profile.id}`}
+                variant="cyan"
+                size="xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowTransportLegend((prev) => !prev);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowTransportLegend((prev) => !prev);
+                  }
+                }}
                 title={language === "es" ? "Tiene transporte" : "Has transport"}
                 aria-label={language === "es" ? "Tiene transporte" : "Has transport"}
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-bold shadow-xs border cursor-pointer active:scale-95 transition-all ${hostBadge.className}`}
+                className={`cursor-pointer active:scale-95 transition-all flex-shrink-0 shadow-xs border ${hostBadge.className}`}
+                icon={<span className="text-xs leading-none">🚗</span>}
               >
-                <span className="text-xs leading-none">🚗</span>
                 {showTransportLegend && (
                   <span className="text-[8px] font-mono whitespace-nowrap animate-in fade-in">
                     {language === "es" ? "Tiene transporte" : "Has transport"}
                   </span>
                 )}
-              </button>
+              </TacticalBadge>
               {showTransportLegend && (
                 <div
                   role="tooltip"
@@ -428,65 +561,77 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
             <TacticalBadge
               variant="neutral"
               size="xs"
-              className="flex-shrink-0 truncate max-w-[60px] min-[380px]:max-w-[75px]"
+              className="hidden min-[400px]:inline-flex flex-shrink-0 truncate max-w-[75px]"
               title={profile.kinks[0]}
             >
               #{profile.kinks[0]}
             </TacticalBadge>
           ) : null}
+
         </div>
 
-        {/* Fila 3: Acción Primaria Táctica + Favorito */}
+        {/* Fila 3: Micro-acciones Directas 1-Tap (Alternativa A) */}
         {!profile.isCurrentUser && (
-          <div className="flex items-center gap-1.5 w-full pt-0.5 pointer-events-auto relative z-20">
+          <div className="grid grid-cols-2 gap-1.5 w-full pt-1 pointer-events-auto relative z-20">
             <BrutalistButton
-              variant="tactical"
-              size="compact"
+              type="button"
+              data-testid={`quick-toque-btn-${profile.id}`}
+              variant="ghost"
               soundEffect="none"
-              data-testid={`profile-sintonizar-btn-${profile.id}`}
               onClick={(e) => {
                 e.stopPropagation();
-                if (isQuotaLocked) {
+                if (isLockedByDistance && !isUnlimited) {
                   audioEngine.playSubBass(60);
-                  openUnlimitedModal();
+                  openUnlimitedModal?.();
                   return;
                 }
-                audioEngine.playSubBass(55);
-                if (onOpenRendezvous) {
-                  onOpenRendezvous(profile);
-                }
+                audioEngine.playSubBass(65, 0.15);
+                onTransmitSignal(profile.id);
               }}
-              className="flex-1 min-h-[34px] sm:min-h-[36px]"
-              title={language === "es" ? "Coordinar encuentro y acuerdos" : "Coordinate date & terms"}
-              aria-label={`${language === "es" ? "Coordinar con" : "Coordinate with"} ${profile.codename}`}
+              title={language === "es" ? "Tirar toque directo" : "Send quick tap"}
+              aria-label={language === "es" ? `Tirar toque a ${profile.codename}` : `Send tap to ${profile.codename}`}
+              className={`!h-8.5 sm:!h-7.5 !min-h-[34px] sm:!min-h-[30px] !px-2 !rounded-xl !gap-1.5 !text-[11px] sm:!text-[10px] font-bold transition-all duration-300 after:absolute after:-inset-1 after:content-[''] ${
+                signalCount > 0
+                  ? "!bg-electricViolet !text-white shadow-violet-soft !border-electricViolet-glow"
+                  : "!bg-black/85 hover:!bg-electricViolet/30 !text-neutral-200 hover:!text-white !border-white/20 backdrop-blur-xs"
+              }`}
             >
-              <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300 flex-shrink-0" />
-              <span className="truncate">{language === "es" ? "Coordinar" : "Coordinate"}</span>
+              <span
+                className={`text-xs leading-none inline-block transition-transform duration-300 ${
+                  signalCount > 0 ? "scale-115 rotate-6" : "scale-100"
+                }`}
+              >
+                🔥
+              </span>
+              <span>{language === "es" ? "Toque" : "Tap"}</span>
+              {signalCount > 0 && <span className="font-mono text-[9px] text-electricViolet-glow">+{signalCount}</span>}
             </BrutalistButton>
 
             <BrutalistButton
-              variant="favorite"
-              size="compact-icon"
-              soundEffect="pulse"
-              data-testid={`profile-favorite-toggle-${profile.id}`}
+              type="button"
+              data-testid={`quick-chat-btn-${profile.id}`}
+              variant="ghost"
+              soundEffect="none"
               onClick={(e) => {
                 e.stopPropagation();
-                toggleFavoriteProfile(profile.id);
+                if (isLockedByDistance && !isUnlimited) {
+                  audioEngine.playSubBass(60);
+                  openUnlimitedModal?.();
+                  return;
+                }
+                audioEngine.playPulse();
+                if (onOpenChat) {
+                  onOpenChat(profile.id);
+                } else {
+                  onSelect(profile);
+                }
               }}
-              className={`transform active:scale-75 ${
-                isFavoriteProfile(profile.id)
-                  ? "!border-amber-400 !bg-amber-950/80 !text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.4)]"
-                  : ""
-              }`}
-              title={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
-              aria-label={isFavoriteProfile(profile.id) ? (t.card?.favoriteActive || "Favorito Guardado") : (t.card?.favoriteBtn || "Marcar Favorito")}
-              aria-pressed={isFavoriteProfile(profile.id)}
+              title={language === "es" ? "Abrir chat directo" : "Open direct chat"}
+              aria-label={language === "es" ? `Abrir chat con ${profile.codename}` : `Open chat with ${profile.codename}`}
+              className="!h-8.5 sm:!h-7.5 !min-h-[34px] sm:!min-h-[30px] !px-2 !rounded-xl !gap-1.5 !text-[11px] sm:!text-[10px] font-bold !bg-black/85 hover:!bg-white/20 !text-neutral-200 hover:!text-white !border-white/20 backdrop-blur-xs after:absolute after:-inset-1 after:content-['']"
             >
-              <Star
-                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2] transition-transform ${
-                  isFavoriteProfile(profile.id) ? "fill-amber-400 text-amber-400 scale-110" : ""
-                }`}
-              />
+              <span className="text-xs leading-none">💬</span>
+              <span>{language === "es" ? "Chat" : "Chat"}</span>
             </BrutalistButton>
           </div>
         )}
@@ -495,4 +640,94 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   );
 };
 
-export const ProfileCard = React.memo(ProfileCardComponent);
+const PureProfileCard = React.memo(PureProfileCardComponent, (prevProps, nextProps) => {
+  if (
+    prevProps.profile === nextProps.profile &&
+    prevProps.isFavorite === nextProps.isFavorite &&
+    prevProps.signalCount === nextProps.signalCount &&
+    prevProps.isAttenuated === nextProps.isAttenuated &&
+    prevProps.isLockedByGridLimit === nextProps.isLockedByGridLimit &&
+    prevProps.dossierRating === nextProps.dossierRating &&
+    prevProps.customAlias === nextProps.customAlias &&
+    prevProps.isPriority === nextProps.isPriority &&
+    prevProps.language === nextProps.language &&
+    prevProps.isUnlimited === nextProps.isUnlimited &&
+    prevProps.onSelect === nextProps.onSelect &&
+    prevProps.onOpenChat === nextProps.onOpenChat &&
+    prevProps.onOpenRendezvous === nextProps.onOpenRendezvous &&
+    (prevProps.mutualMatches?.length ?? 0) === (nextProps.mutualMatches?.length ?? 0)
+  ) {
+    return true;
+  }
+  return false;
+});
+
+const ConnectedProfileCardComponent: React.FC<ProfileCardProps> = (props) => {
+  const radar = useRadarMatrix();
+  const settings = useSettings();
+  const isFavorite = props.isFavorite ?? (radar.isFavoriteProfile ? radar.isFavoriteProfile(props.profile.id) : (radar.favoriteProfileIds?.includes(props.profile.id) ?? false));
+  const onToggleFavorite = props.onToggleFavorite ?? radar.toggleFavoriteProfile ?? (() => {});
+  const signalCount = props.signalCount ?? (radar.transmissions?.[props.profile.id] || 0);
+  const onTransmitSignal = props.onTransmitSignal ?? radar.transmitSignal ?? (() => {});
+  const isAttenuated = props.isAttenuated ?? (radar.boundaries?.[props.profile.id]?.radarVisibility === "attenuated");
+  const dossier = radar.profileDossiers?.[props.profile.id];
+  const customAlias = props.customAlias !== undefined
+    ? props.customAlias
+    : (dossier?.customAlias || null);
+  const dossierRating = props.dossierRating !== undefined
+    ? props.dossierRating
+    : (dossier?.rating || null);
+  const mutualMatches = props.mutualMatches ?? (radar.getMutualKinkMatches ? radar.getMutualKinkMatches(props.profile.kinkMatrix) : []);
+  const language = props.language ?? settings.language;
+  const isUnlimited = props.isUnlimited ?? settings.isUnlimited;
+  const openUnlimitedModal = props.openUnlimitedModal ?? settings.openUnlimitedModal;
+
+  return (
+    <PureProfileCard
+      {...props}
+      isFavorite={isFavorite}
+      onToggleFavorite={onToggleFavorite}
+      signalCount={signalCount}
+      onTransmitSignal={onTransmitSignal}
+      isAttenuated={isAttenuated}
+      dossierRating={dossierRating}
+      customAlias={customAlias}
+      mutualMatches={mutualMatches}
+      language={language}
+      isUnlimited={isUnlimited}
+      openUnlimitedModal={openUnlimitedModal}
+    />
+  );
+};
+
+const STATIC_NOOP = () => {};
+const STATIC_EMPTY_MATCHES: readonly KinkMutualMatch[] = Object.freeze([]);
+
+const ConnectedProfileCard = React.memo(ConnectedProfileCardComponent);
+
+export const ProfileCard: React.FC<ProfileCardProps> = React.memo((props) => {
+  if (
+    props.onToggleFavorite !== undefined &&
+    props.isFavorite !== undefined &&
+    props.language !== undefined &&
+    props.isUnlimited !== undefined
+  ) {
+    return (
+      <PureProfileCard
+        {...props}
+        isFavorite={props.isFavorite}
+        onToggleFavorite={props.onToggleFavorite}
+        signalCount={props.signalCount ?? 0}
+        onTransmitSignal={props.onTransmitSignal ?? STATIC_NOOP}
+        isAttenuated={props.isAttenuated ?? false}
+        dossierRating={props.dossierRating ?? null}
+        customAlias={props.customAlias ?? null}
+        mutualMatches={props.mutualMatches ?? STATIC_EMPTY_MATCHES}
+        language={props.language}
+        isUnlimited={props.isUnlimited}
+        openUnlimitedModal={props.openUnlimitedModal}
+      />
+    );
+  }
+  return <ConnectedProfileCard {...props} />;
+});

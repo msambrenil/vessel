@@ -58,7 +58,7 @@ const mockProfile: VesselProfile = {
   coordinates: { lat: -34.58, lng: -58.42 },
 } as unknown as VesselProfile;
 
-describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", () => {
+describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4 & Refactor)", () => {
   const onSelectProfile = vi.fn();
   const onReturnPulse = vi.fn();
   const onOpenChat = vi.fn();
@@ -89,8 +89,8 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
 
     expect(screen.getByTestId("pulse-sintonia-review")).toBeInTheDocument();
     expect(screen.getByText("LEO_TACTICAL")).toBeInTheDocument();
-    expect(screen.getByText(/Doble Consentimiento Requerido/i)).toBeInTheDocument();
-    expect(screen.getByText("Tiene Lugar 🏠")).toBeInTheDocument();
+    expect(screen.getByText(/(Doble Consentimiento|Onda mutua previa)/i)).toBeInTheDocument();
+    expect(screen.getByText(/(Tiene|Pone) Lugar 🏠/i)).toBeInTheDocument();
     expect(screen.getByText(/PrEP Activa/i)).toBeInTheDocument();
   });
 
@@ -121,7 +121,7 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
     expect(onDismissPulse).toHaveBeenCalledWith("pulse-123");
   });
 
-  it("al aceptar sintonía, emite sub-bass a 60Hz, retorna el pulso y abre el chat directamente", async () => {
+  it("al responder sintonía, emite sub-bass a 60Hz, retorna el pulso en el lugar y habilita el chat sin expulsar", async () => {
     const { audioEngine } = await import("@/lib/audio/SubBassAudioEngine");
 
     render(
@@ -141,11 +141,16 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
       />
     );
 
-    const acceptBtn = screen.getByRole("button", { name: /Aceptar (Zumbido|Toque)/i });
+    const acceptBtn = screen.getByRole("button", { name: /(Devolver|Aceptar) (Zumbido|Toque)/i });
     fireEvent.click(acceptBtn);
 
     expect(audioEngine.playSubBass).toHaveBeenCalledWith(60);
     expect(onReturnPulse).toHaveBeenCalledWith("pulse-user-01");
+
+    // En el lugar se actualiza para permitir chatear voluntariamente
+    const chatBtn = screen.getByRole("button", { name: /Abrir (Conversación|Chat)/i });
+    expect(chatBtn).toBeInTheDocument();
+    fireEvent.click(chatBtn);
     expect(onOpenChat).toHaveBeenCalledWith("pulse-user-01");
   });
 
@@ -168,7 +173,7 @@ describe("PulseCard — Doble Consentimiento y Tarjeta de Sintonía (Fase 4)", (
     );
 
     expect(screen.queryByTestId("pulse-sintonia-review")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Agendar Encuentro/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /(Agendar Encuentro|Coordinar cita|Pegar encuentro)/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Abrir (Conversación|Chat)/i })).toBeInTheDocument();
   });
 });

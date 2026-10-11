@@ -31,7 +31,7 @@ describe("adminService — Consola Administrativa & Autorización RBAC", () => {
   beforeEach(() => {
     process.env = { ...originalEnv };
     process.env.NEXT_PUBLIC_ADMIN_EMAILS = "admin@vessel.network,ojitos@vessel.app,msambrenil@gmail.com";
-    process.env.NEXT_PUBLIC_ADMIN_PASSCODE = "VESSEL-ROOT-2026";
+    process.env.ADMIN_MASTER_PASSCODE = "VESSEL-ROOT-2026";
     if (typeof window !== "undefined") {
       window.localStorage.clear();
     }

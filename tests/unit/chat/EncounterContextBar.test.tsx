@@ -25,7 +25,6 @@ const { mockAudioEngine, mockBarState } = vi.hoisted(() => {
     mockBarState: {
       profile,
       activeRendezvous: null as RendezvousPin | null,
-      safetyBeacon: null as any,
       diaryEntries: [] as DiaryEntry[],
     },
   };
@@ -35,27 +34,34 @@ vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: mockAudioEngine,
 }));
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     activeRendezvous: mockBarState.activeRendezvous,
-    safetyBeacon: mockBarState.safetyBeacon,
     diaryEntries: mockBarState.diaryEntries,
     language: "es" as const,
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 describe("EncounterContextBar — Barra Contextual Dinámica (Paso 5)", () => {
   const onOpenRendezvousSheet = vi.fn();
   const onOpenEnRoute = vi.fn();
-  const onOpenSafetyBeacon = vi.fn();
   const onCancelRendezvousPin = vi.fn();
   const onOpenDossier = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockBarState.activeRendezvous = null;
-    mockBarState.safetyBeacon = null;
     mockBarState.diaryEntries = [];
   });
 
@@ -65,7 +71,6 @@ describe("EncounterContextBar — Barra Contextual Dinámica (Paso 5)", () => {
         profile={mockBarState.profile}
         onOpenRendezvousSheet={onOpenRendezvousSheet}
         onOpenEnRoute={onOpenEnRoute}
-        onOpenSafetyBeacon={onOpenSafetyBeacon}
         onOpenDossier={onOpenDossier}
       />
     );
@@ -89,7 +94,6 @@ describe("EncounterContextBar — Barra Contextual Dinámica (Paso 5)", () => {
         profile={mockBarState.profile}
         onOpenRendezvousSheet={onOpenRendezvousSheet}
         onOpenEnRoute={onOpenEnRoute}
-        onOpenSafetyBeacon={onOpenSafetyBeacon}
         onCancelRendezvousPin={onCancelRendezvousPin}
         onOpenDossier={onOpenDossier}
       />
@@ -127,7 +131,6 @@ describe("EncounterContextBar — Barra Contextual Dinámica (Paso 5)", () => {
         profile={mockBarState.profile}
         onOpenRendezvousSheet={onOpenRendezvousSheet}
         onOpenEnRoute={onOpenEnRoute}
-        onOpenSafetyBeacon={onOpenSafetyBeacon}
         onOpenDossier={onOpenDossier}
       />
     );

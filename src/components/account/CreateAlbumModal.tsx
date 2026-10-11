@@ -1,27 +1,30 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { useVessel, FREE_TIER_LIMITS } from "@/context/VesselContext";
-import { AlbumPrivacy, AlbumPhoto, MediaType } from "@/types/vessel";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useSettings, FREE_TIER_LIMITS } from "@/context/VesselContext";
+import { AlbumPrivacy, MediaType } from "@/types/vessel";
 import { compressImage } from "@/lib/firebase/storageService";
 import { getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import {
   X,
   Globe,
   Lock,
-  Image as ImageIcon,
   Plus,
   Trash2,
   AlertTriangle,
-  Check,
-  Sparkles,
   UploadCloud,
-  Film,
-  Smartphone,
-  Laptop,
   Play,
   Crown,
 } from "lucide-react";
+import {
+  BrutalistButton,
+  BrutalistInput,
+  BrutalistTextarea,
+  TacticalBadge,
+  TacticalMorphingLock,
+} from "@/components/ui";
+
 
 interface CreateAlbumModalProps {
   onClose: () => void;
@@ -40,19 +43,32 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
   onClose,
   defaultPrivacy = "public",
 }) => {
-  const { userAlbums, userPlan, setUserPlan, createAlbum, t } = useVessel();
+  const { userAlbums, userPlan, setUserPlan, createAlbum, language, t } = useSettings();
 
   const [privacy, setPrivacy] = useState<AlbumPrivacy>(defaultPrivacy);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<MediaItemDraft[]>([]);
-  const [customPhotoUrl, setCustomPhotoUrl] = useState("");
-  const [customCaption, setCustomCaption] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessingFiles, setIsProcessingFiles] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   const isUnlimited = userPlan === "unlimited" || userPlan === "pro";
   const publicCount = userAlbums.filter((a) => a.privacy === "public").length;
@@ -67,7 +83,6 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
     (privacy === "public" && isPublicLimitReached) ||
     (privacy === "private" && isPrivateLimitReached);
 
-  // Procesamiento de archivos seleccionados o arrastrados (Fotos o Videos)
   const processFiles = async (files: FileList | File[]) => {
     setIsProcessingFiles(true);
     setErrorMessage(null);
@@ -84,7 +99,11 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
       }
 
       if (file.size > 50 * 1024 * 1024) {
-        setErrorMessage(`El archivo "${file.name}" supera el límite máximo de 50MB.`);
+        setErrorMessage(
+          language === "es"
+            ? `El archivo "${file.name}" supera el límite máximo de 50MB.`
+            : `File "${file.name}" exceeds 50MB limit.`
+        );
         continue;
       }
 
@@ -93,28 +112,32 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
         let durationSeconds: number | undefined = undefined;
 
         if (isImage) {
-          // Comprimir imagen a WebP optimizado (~35-50KB) preservando aspect ratio
           try {
             const compressed = await compressImage(file);
             fileUrl = compressed.dataUrl;
-          } catch (compressionErr) {
-            console.warn("Fallo en compresión de imagen, usando lectura estándar:", compressionErr);
+          } catch {
             fileUrl = await readFileAsDataUrl(file);
           }
-        } else {
-          fileUrl = await readFileAsDataUrl(file);
-          durationSeconds = await getVideoDuration(fileUrl);
+        } else if (isVideo) {
+          fileUrl = URL.createObjectURL(file);
+          try {
+            durationSeconds = await getVideoDuration(fileUrl);
+          } catch {
+            durationSeconds = undefined;
+          }
         }
 
-        newItems.push({
-          url: fileUrl,
-          mediaType: isVideo ? "video" : "photo",
-          fileName: file.name,
-          caption: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-          durationSeconds,
-        });
+        if (fileUrl) {
+          newItems.push({
+            url: fileUrl,
+            mediaType: isVideo ? "video" : "photo",
+            caption: "",
+            durationSeconds,
+            fileName: file.name,
+          });
+        }
       } catch (err) {
-        console.error("Error al procesar archivo:", err);
+        console.error("Error processing file:", err);
       }
     }
 
@@ -127,7 +150,7 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
   const readFileAsDataUrl = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = (e) => resolve(e.target?.result as string);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -136,54 +159,13 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
   const getVideoDuration = (url: string): Promise<number> => {
     return new Promise((resolve) => {
       const video = document.createElement("video");
-      video.src = url;
+      video.preload = "metadata";
       video.onloadedmetadata = () => {
         resolve(Math.round(video.duration));
       };
-      video.onerror = () => resolve(15);
+      video.onerror = () => resolve(0);
+      video.src = url;
     });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      processFiles(e.target.files);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFiles(e.dataTransfer.files);
-    }
-  };
-
-  const handleAddCustomPhoto = () => {
-    if (!customPhotoUrl.trim()) return;
-    const isVideo =
-      customPhotoUrl.endsWith(".mp4") ||
-      customPhotoUrl.endsWith(".webm") ||
-      customPhotoUrl.endsWith(".mov");
-    setSelectedMedia((prev) => [
-      ...prev,
-      {
-        url: customPhotoUrl.trim(),
-        caption: customCaption.trim() || undefined,
-        mediaType: isVideo ? "video" : "photo",
-      },
-    ]);
-    setCustomPhotoUrl("");
-    setCustomCaption("");
   };
 
   const handleRemoveMedia = (index: number) => {
@@ -194,50 +176,52 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!title.trim()) {
-      setErrorMessage("Por favor ingresa un nombre para el álbum.");
+    if (isCurrentSelectionBlocked) {
+      setErrorMessage(
+        language === "es"
+          ? "Alcanzaste el límite de álbumes para tu plan actual."
+          : "You have reached the album limit for your current plan."
+      );
       return;
     }
 
-    const todayIso = getLocalTodayIso();
-    const photosToSave: AlbumPhoto[] = selectedMedia.map((p, idx) => {
-      const item: AlbumPhoto = {
-        id: `media-${Date.now()}-${idx}`,
-        url: p.url,
-        blurredUrl: p.url.startsWith("data:") ? "" : p.url,
-        createdAt: todayIso,
-      };
-      if (p.caption?.trim()) item.caption = p.caption.trim();
-      if (p.mediaType) item.mediaType = p.mediaType;
-      if (typeof p.durationSeconds === "number" && !isNaN(p.durationSeconds)) {
-        item.durationSeconds = p.durationSeconds;
-      }
-      return item;
-    });
+    const finalTitle = title.trim();
+    if (!finalTitle) {
+      setErrorMessage(
+        language === "es"
+          ? "Por favor ingresá un nombre para el álbum."
+          : "Please enter a name for the album."
+      );
+      return;
+    }
 
+    const coverUrl = selectedMedia.length > 0 ? selectedMedia[0].url : "";
 
-    const result = createAlbum({
-      title,
-      description,
+    createAlbum({
+      title: finalTitle,
+      description: description.trim() || undefined,
       privacy,
-      coverUrl: photosToSave.length > 0 ? photosToSave[0].url : undefined,
-      photos: photosToSave,
+      coverUrl,
+      photos: selectedMedia.map((item, idx) => ({
+        id: `photo-${Date.now()}-${idx}`,
+        url: item.url,
+        caption: item.caption,
+        isLocked: privacy === "private",
+        mediaType: item.mediaType,
+        durationSeconds: item.durationSeconds,
+        createdAt: getLocalTodayIso(),
+      })),
     });
-
-    if (!result.success) {
-      setErrorMessage(result.error || "No se pudo crear el álbum.");
-      return;
-    }
 
     onClose();
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={t.account?.createAlbumModalTitle || "Crear Nuevo Álbum"}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
+      aria-label={t?.account?.createAlbumModalTitle || (language === "es" ? "Crear Nuevo Álbum" : "Create New Album")}
+      className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div
@@ -246,6 +230,7 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
       >
         {/* Mobile Tactical Drag Handle */}
         <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
+
         {/* Cabecera */}
         <div className="p-4 bg-obsidian-surface border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -253,97 +238,67 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
               <UploadCloud className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                {t.account?.createAlbumModalTitle || "Crear Nuevo Álbum // Bóveda"}
+              <h2 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                {t?.account?.createAlbumModalTitle || (language === "es" ? "Crear Nuevo Álbum" : "Create New Album")}
               </h2>
-              <p className="text-[10px] text-neutral-400">
-                Fotos y Videos desde Celular o Computadora
+              <p className="text-[10px] text-neutral-400 font-mono">
+                {language === "es"
+                  ? "Fotos y videos desde tu galería o cámara"
+                  : "Photos and videos from your gallery"}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Cerrar modal"
             className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-neutral-400 hover:text-white transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Notificación de Cuota / Upgrade a VESSEL UNLIMITED */}
-        <div className="px-4 py-2.5 bg-black/60 border-b border-white/5 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5 text-neutral-300">
-            {isUnlimited ? (
-              <>
-                <Crown className="w-4 h-4 text-electricViolet-glow" />
-                <span className="text-[11px] font-bold text-electricViolet-glow">
-                  VESSEL UNLIMITED: <span className="text-white">Álbumes Ilimitados</span>
-                </span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5 text-electricViolet-glow" />
-                <span className="text-[11px] font-semibold">
-                  Plan Gratuito: <span className="text-white">1 Público</span> • <span className="text-white">1 Privado</span>
-                </span>
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-[10px] font-mono">
-            {isUnlimited ? (
-              <span className="text-electricViolet-glow font-bold">SIN LÍMITES</span>
-            ) : (
-              <>
-                <span className={publicCount >= FREE_TIER_LIMITS.maxPublicAlbums ? "text-neutral-400 font-bold" : "text-electricViolet-glow font-bold"}>
-                  PUB: {publicCount}/{FREE_TIER_LIMITS.maxPublicAlbums}
-                </span>
-                <span className="text-neutral-600">|</span>
-                <span className={privateCount >= FREE_TIER_LIMITS.maxPrivateAlbums ? "text-neutral-400 font-bold" : "text-bloodNeon font-bold"}>
-                  PRIV: {privateCount}/{FREE_TIER_LIMITS.maxPrivateAlbums}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-
         {/* Formulario con Scroll */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
-          {/* Mensaje de Error si se excede la cuota */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs font-mono">
+          {/* Mensaje de Error */}
           {errorMessage && (
-            <div className="bg-bloodNeon/15 border border-bloodNeon/50 p-3 rounded-xl flex items-start gap-2 text-bloodNeon text-[11px]">
+            <div className="bg-bloodNeon/15 border border-bloodNeon/50 p-3 rounded-2xl flex items-start gap-2 text-bloodNeon text-xs animate-fade-in">
               <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          {/* Banner de Límite Superado con Botón a VESSEL UNLIMITED */}
+          {/* Banner de Límite Superado */}
           {isCurrentSelectionBlocked && (
-            <div className="bg-gradient-to-r from-electricViolet/15 via-black to-bloodNeon/15 border border-electricViolet/40 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+            <div className="bg-gradient-to-r from-electricViolet/20 via-black to-bloodNeon/20 border border-electricViolet/40 p-3.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
               <div>
                 <div className="flex items-center gap-1.5 text-electricViolet-glow font-bold text-xs uppercase tracking-wider">
                   <Crown className="w-4 h-4" />
-                  <span>Cuota Gratuita Alcanzada</span>
+                  <span>{language === "es" ? "Cuota Gratuita Alcanzada" : "Free Quota Reached"}</span>
                 </div>
                 <p className="text-[11px] text-neutral-300 mt-0.5">
-                  Activá <strong className="text-white">VESSEL UNLIMITED</strong> para álbumes, bóvedas y señales ilimitadas.
+                  {language === "es"
+                    ? "Activá VESSEL TOTAL para álbumes y fotos con llave ilimitadas."
+                    : "Upgrade to VESSEL TOTAL for unlimited albums and locked keys."}
                 </p>
               </div>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="primary"
+                size="sm"
                 onClick={() => setUserPlan("unlimited")}
-                className="px-3 py-1.5 bg-electricViolet hover:bg-electricViolet-glow text-white font-bold rounded-xl text-xs flex items-center gap-1 transition-all shadow-violet-soft self-end sm:self-auto"
               >
-                <Crown className="w-3.5 h-3.5" />
-                <span>Activar UNLIMITED</span>
-              </button>
+                <Crown className="w-3.5 h-3.5 mr-1" />
+                <span>{language === "es" ? "Activar Total" : "Activate Total"}</span>
+              </BrutalistButton>
             </div>
           )}
 
           {/* 1. Selector de Privacidad */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-white uppercase tracking-wider block">
-              Tipo de Álbum / Bóveda
+              {language === "es" ? "Tipo de Álbum" : "Album Type"}
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               {/* Opción Pública */}
               <button
                 type="button"
@@ -352,38 +307,38 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
                   setErrorMessage(null);
                 }}
                 aria-pressed={privacy === "public"}
-                className={`p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                className={`min-h-[44px] p-3 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
                   privacy === "public"
                     ? "bg-purple-950/50 border-electricViolet text-white shadow-violet-soft font-bold"
-                    : "bg-white/5 border-white/10 text-neutral-400 hover:border-white/20"
+                    : "bg-black/40 border-white/10 text-neutral-400 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <div
-                    className={`p-2 rounded-xl ${
+                    className={`p-1.5 rounded-lg ${
                       privacy === "public"
-                        ? "bg-electricViolet text-white font-bold"
+                        ? "bg-electricViolet text-white"
                         : "bg-white/10 text-neutral-300"
                     }`}
                   >
                     <Globe className="w-4 h-4" />
                   </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isUnlimited
-                        ? "bg-electricViolet/20 text-electricViolet-glow"
-                        : isPublicLimitReached
-                        ? "bg-red-900/60 text-red-300 border border-red-500/40"
-                        : "bg-electricViolet/20 text-electricViolet-glow"
-                    }`}
-                  >
-                    {isUnlimited ? "Ilimitado" : isPublicLimitReached ? "1/1 Límite" : `${publicCount}/1 Disp.`}
-                  </span>
+                  <TacticalBadge variant={privacy === "public" ? "violet" : "neutral"} size="sm">
+                    {isUnlimited
+                      ? "Ilimitado"
+                      : isPublicLimitReached
+                      ? "1/1 Límite"
+                      : `${publicCount}/1`}
+                  </TacticalBadge>
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-white">Álbum Público</div>
+                  <div className="font-bold text-xs text-white">
+                    {language === "es" ? "Álbum Público" : "Public Album"}
+                  </div>
                   <div className="text-[10px] text-neutral-400 mt-0.5 leading-tight">
-                    Visible en la matriz y radar para todos los usuarios.
+                    {language === "es"
+                      ? "Visible en tu ficha para quienes te vean en la matrix."
+                      : "Visible on your card for all matches."}
                   </div>
                 </div>
               </button>
@@ -396,38 +351,45 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
                   setErrorMessage(null);
                 }}
                 aria-pressed={privacy === "private"}
-                className={`p-3.5 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon ${
+                className={`min-h-[44px] p-3 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon ${
                   privacy === "private"
-                    ? "bg-bloodNeon/15 border-bloodNeon text-white shadow-lg"
-                    : "bg-white/5 border-white/10 text-neutral-400 hover:border-white/20"
+                    ? "bg-bloodNeon/15 border-bloodNeon text-white shadow-lg font-bold"
+                    : "bg-black/40 border-white/10 text-neutral-400 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <div
-                    className={`p-2 rounded-xl ${
+                    className={`p-1.5 rounded-lg flex items-center justify-center ${
                       privacy === "private"
-                        ? "bg-bloodNeon text-white font-bold"
+                        ? "bg-bloodNeon/20 text-white"
                         : "bg-white/10 text-neutral-300"
                     }`}
                   >
-                    <Lock className="w-4 h-4" />
+                    <TacticalMorphingLock
+                      isLocked={privacy === "private"}
+                      size="sm"
+                      variant="blood"
+                      soundEffect={true}
+                    />
+
                   </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isUnlimited
-                        ? "bg-bloodNeon/20 text-bloodNeon"
-                        : isPrivateLimitReached
-                        ? "bg-red-900/60 text-red-300 border border-red-500/40"
-                        : "bg-bloodNeon/20 text-bloodNeon"
-                    }`}
-                  >
-                    {isUnlimited ? "Ilimitado" : isPrivateLimitReached ? "1/1 Límite" : `${privateCount}/1 Disp.`}
-                  </span>
+
+                  <TacticalBadge variant={privacy === "private" ? "blood" : "neutral"} size="sm">
+                    {isUnlimited
+                      ? "Ilimitado"
+                      : isPrivateLimitReached
+                      ? "1/1 Límite"
+                      : `${privateCount}/1`}
+                  </TacticalBadge>
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-white">Álbum Privado (Nudes 🔒)</div>
+                  <div className="font-bold text-xs text-white">
+                    {language === "es" ? "Álbum con Llave 🔑" : "Key-Locked Album 🔑"}
+                  </div>
                   <div className="text-[10px] text-neutral-400 mt-0.5 leading-tight">
-                    Cifrado bajo autorización y temporizador efímero.
+                    {language === "es"
+                      ? "Protegido. Solo visible si das llave en un chat."
+                      : "Protected. Only visible if you grant a key."}
                   </div>
                 </div>
               </button>
@@ -435,149 +397,102 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
           </div>
 
           {/* 2. Título del Álbum */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-white uppercase tracking-wider block">
-              Nombre del Álbum <span className="text-electricViolet-glow">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={
-                privacy === "public"
-                  ? "Ej. Sesión Nocturna en Palermo"
-                  : "Ej. Álbum Privado: Arnés, Tensión y Cuarto Oscuro"
-              }
-              className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3.5 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-medium"
-            />
-          </div>
+          <BrutalistInput
+            label={language === "es" ? "Nombre del Álbum" : "Album Name"}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={
+              privacy === "public"
+                ? (language === "es" ? "Ej: Salida de noche, Palermo..." : "e.g., Night out...")
+                : (language === "es" ? "Ej: Fotos íntimas, arnés..." : "e.g., Intimate, gear...")
+            }
+          />
 
           {/* 3. Descripción */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-white uppercase tracking-wider block">
-              Descripción / Notas de Contexto (Opcional)
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Agregá detalles sobre el contenido, onda o requisitos de acceso..."
-              rows={2}
-              className="w-full bg-black/60 border border-white/15 rounded-xl text-white text-xs p-3 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all resize-none"
-            />
-          </div>
+          <BrutalistTextarea
+            label={language === "es" ? "Descripción (Opcional)" : "Description (Optional)"}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={
+              language === "es"
+                ? "Agregá detalles o requisitos de acceso..."
+                : "Add details or access context..."
+            }
+            rows={2}
+          />
 
-          {/* 4. CARGA DE ARCHIVOS MULTIMEDIA */}
+          {/* 4. Carga de Archivos */}
           <div className="space-y-2.5 pt-2 border-t border-white/10">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
                 <UploadCloud className="w-4 h-4 text-electricViolet-glow" />
-                <span>Cargar Fotos o Videos desde Dispositivo</span>
+                <span>{language === "es" ? "Fotos o Videos" : "Photos or Videos"}</span>
               </label>
-              <span className="text-[10px] text-neutral-400 font-mono">
-                {selectedMedia.length} archivo(s) listo(s)
+              <span className="text-[10px] text-neutral-400">
+                {selectedMedia.length} {language === "es" ? "archivos listos" : "ready"}
               </span>
             </div>
 
-            {/* Input oculto nativo */}
             <input
               type="file"
               ref={fileInputRef}
-              onChange={handleFileChange}
+              onChange={(e) => e.target.files && processFiles(e.target.files)}
               accept="image/*,video/*"
               multiple
               className="hidden"
             />
 
-            {/* Zona Drag and Drop Táctica */}
             <div
-              role="button"
-              tabIndex={0}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (e.dataTransfer.files) {
+                  processFiles(e.dataTransfer.files);
                 }
               }}
-              aria-label="Seleccionar o arrastrar archivos para el álbum"
-              className={`p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-2 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+              onClick={() => fileInputRef.current?.click()}
+              className={`p-5 rounded-2xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-2 ${
                 isDragging
-                  ? "bg-electricViolet/20 border-electricViolet scale-[0.99] shadow-violet-soft"
-                  : "bg-black/50 border-white/15 hover:border-electricViolet/50 hover:bg-black/70"
+                  ? "border-electricViolet bg-electricViolet/20"
+                  : "border-white/15 bg-black/40 hover:border-electricViolet hover:bg-electricViolet/5"
               }`}
             >
-              <div className="flex items-center gap-2 text-electricViolet-glow">
-                <div className="p-2.5 rounded-xl bg-electricViolet/15 border border-electricViolet/30 group-hover:scale-110 transition-transform">
-                  <UploadCloud className="w-6 h-6" />
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs font-bold text-white group-hover:text-electricViolet-glow transition-colors">
-                  Toca para seleccionar fotos o videos
-                </div>
-                <p className="text-[10px] text-neutral-400 mt-0.5">
-                  Soporta cámara y carrete en celulares o arrastrar archivos en notebook/PC (JPG, PNG, WebP, MP4, MOV)
-                </p>
-              </div>
-
-              {/* Badges de Compatibilidad */}
-              <div className="flex items-center gap-2 text-[9px] text-neutral-400 mt-1">
-                <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-1">
-                  <Smartphone className="w-3 h-3 text-electricViolet-glow" /> Móvil / Celu
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-1">
-                  <Laptop className="w-3 h-3 text-electricViolet-glow" /> Notebook / PC
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 flex items-center gap-1">
-                  <Film className="w-3 h-3 text-bloodNeon" /> Videos HD
-                </span>
-              </div>
+              <UploadCloud className="w-8 h-8 text-electricViolet-glow" />
+              <span className="text-xs font-bold text-white">
+                {language === "es"
+                  ? "Tocá para elegir fotos o videos de tu galería"
+                  : "Tap to select photos or videos"}
+              </span>
+              <span className="text-[10px] text-neutral-400">
+                {language === "es"
+                  ? "Compresión optimizada en tu dispositivo"
+                  : "Optimized compression"}
+              </span>
 
               {isProcessingFiles && (
                 <div className="text-xs text-electricViolet-glow font-bold animate-pulse mt-1">
-                  Procesando archivos multimedia...
+                  {language === "es" ? "Optimizando archivos..." : "Optimizing files..."}
                 </div>
               )}
             </div>
           </div>
 
-          {/* 5. Agregar Foto/Video con URL Directa */}
-          <div className="space-y-2 pt-1 border-t border-white/5">
-            <label className="text-[11px] font-bold text-neutral-400 block">
-              O agregar por link directo:
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customPhotoUrl}
-                onChange={(e) => setCustomPhotoUrl(e.target.value)}
-                placeholder="https://ejemplo.com/media.mp4 o .jpg"
-                className="flex-1 bg-black/60 border border-white/15 rounded-xl text-white text-xs px-3 py-2.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-mono"
-              />
-              <button
-                type="button"
-                onClick={handleAddCustomPhoto}
-                className="px-4 py-2.5 min-h-[40px] bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center gap-1 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Añadir</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Previsualización de Medios Seleccionados */}
+          {/* Previsualización de Medios */}
           {selectedMedia.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-white/10">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-white uppercase font-bold tracking-wider">
-                  Contenido de este Álbum ({selectedMedia.length}):
-                </span>
-                <span className="text-[9px] text-neutral-400">
-                  {selectedMedia.filter((m) => m.mediaType === "video").length} videos • {selectedMedia.filter((m) => m.mediaType === "photo").length} fotos
+                  {language === "es"
+                    ? `Contenido (${selectedMedia.length}):`
+                    : `Content (${selectedMedia.length}):`}
                 </span>
               </div>
 
@@ -597,30 +512,24 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                          <div className="p-1.5 rounded-full bg-bloodNeon/80 text-white shadow-lg">
-                            <Play className="w-3.5 h-3.5 fill-current" />
+                          <div className="p-1 rounded-full bg-bloodNeon/80 text-white">
+                            <Play className="w-3 h-3 fill-current" />
                           </div>
                         </div>
-                        {item.durationSeconds && (
-                          <div className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 rounded text-[8px] font-mono text-white">
-                            {item.durationSeconds}s
-                          </div>
-                        )}
                       </div>
                     ) : (
                       <img
                         src={item.url}
-                        alt={item.caption || "Preview"}
+                        alt="Preview"
                         className="w-full h-full object-cover"
                       />
                     )}
 
-                    {/* Botón Eliminar */}
                     <button
                       type="button"
                       onClick={() => handleRemoveMedia(index)}
-                      aria-label="Eliminar este archivo de la selección"
-                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity cursor-pointer focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon"
+                      aria-label="Eliminar archivo"
+                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 transition-opacity cursor-pointer"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -632,28 +541,33 @@ export const CreateAlbumModal: React.FC<CreateAlbumModalProps> = ({
 
           {/* Botones de Acción */}
           <div className="pt-3 border-t border-white/10 flex items-center gap-2.5">
-            <button
-              type="button"
+            <BrutalistButton
+              variant="secondary"
               onClick={onClose}
-              className="flex-1 min-h-[44px] py-3 bg-white/5 hover:bg-white/10 text-neutral-300 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+              className="flex-1"
             >
-              Cancelar
-            </button>
-            <button
+              {language === "es" ? "Cancelar" : "Cancel"}
+            </BrutalistButton>
+            <BrutalistButton
+              variant="primary"
               type="submit"
               disabled={isCurrentSelectionBlocked}
-              className={`flex-1 min-h-[44px] py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98 ${
-                isCurrentSelectionBlocked
-                  ? "bg-neutral-800 text-neutral-500 cursor-not-allowed border border-white/5"
-                  : "bg-electricViolet text-white hover:bg-electricViolet-glow shadow-violet-soft font-extrabold"
-              }`}
+              className="flex-1 shadow-violet-soft font-bold"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Guardar Álbum ({selectedMedia.length})</span>
-            </button>
+              <Plus className="w-4 h-4 mr-1 stroke-[3]" />
+              <span>
+                {language === "es"
+                  ? `Guardar Álbum (${selectedMedia.length})`
+                  : `Save Album (${selectedMedia.length})`}
+              </span>
+            </BrutalistButton>
           </div>
         </form>
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };

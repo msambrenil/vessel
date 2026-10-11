@@ -13,8 +13,9 @@ import {
 } from "firebase/firestore";
 import { db } from "./config";
 import { sanitizeForFirestore } from "./firestoreSanitizer";
-import { VesselProfile } from "@/types/vessel";
+import { VesselProfile, YoSoyType, MobilityType, HivStatusType } from "@/types/vessel";
 import { MOCK_PROFILES } from "@/data/mockProfiles";
+import { DEFAULT_FALLBACK_COORDINATES } from "@/lib/geo/GeospatialEngine";
 
 const PROFILES_COLLECTION = "vessel_profiles";
 
@@ -142,7 +143,7 @@ export const normalizeMatrixProfile = (
         testedDate: "AL DÍA",
         details: "Lo charlamos por privado",
       },
-      coordinates: { lat: -34.588, lng: -58.43 },
+      coordinates: DEFAULT_FALLBACK_COORDINATES,
     } as unknown as VesselProfile;
   }
 
@@ -157,9 +158,9 @@ export const normalizeMatrixProfile = (
     age: typeof p.age === "number" ? p.age : 28,
     showAge: p.showAge ?? true,
     twitterHandle: p.twitterHandle || "",
-    yoSoy: (p.yoSoy as any) || "Musculoso / Gym",
-    mobility: (p.mobility as any) || "Me muevo / voy",
-    hivStatus: (p.hivStatus as any) || "Lo charlamos por privado",
+    yoSoy: (p.yoSoy as YoSoyType) || "Musculoso / Gym",
+    mobility: (p.mobility as MobilityType) || "Me muevo / voy",
+    hivStatus: (p.hivStatus as HivStatusType) || "Lo charlamos por privado",
     genderIdentity: p.genderIdentity || "",
     pronouns: p.pronouns || "",
     desires: Array.isArray(p.desires) ? p.desires : [],
@@ -199,7 +200,7 @@ export const normalizeMatrixProfile = (
       testedDate: "AL DÍA",
       details: p.hivStatus || "No especificado",
     },
-    coordinates: p.coordinates || { lat: -34.588, lng: -58.43 },
+    coordinates: p.coordinates || DEFAULT_FALLBACK_COORDINATES,
   } as VesselProfile;
 };
 

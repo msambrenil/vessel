@@ -8,8 +8,8 @@ const mockLinkAccountWithGoogle = vi.fn();
 const mockOpenAuthModal = vi.fn();
 const mockVerifyIdentity = vi.fn();
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     verifyIdentity: mockVerifyIdentity,
     myProfile: { codename: "TEST_USER", verification: { isVerified: false } },
     currentUserUid: "unauthenticated",
@@ -29,8 +29,18 @@ vi.mock("@/context/VesselContext", () => ({
         fogOptionDesc: "Difuminar rostro",
       },
     },
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {
@@ -78,7 +88,7 @@ describe("IdentityVerificationModal — Flujo Limpio de Verificación Google y L
 
     expect(mockLoginWithGoogle).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(screen.getByText(/Identidad Visual & Privacidad/i)).toBeInTheDocument();
+      expect(screen.getByText(/Foto de Perfil & Privacidad Facial/i)).toBeInTheDocument();
     });
   });
 

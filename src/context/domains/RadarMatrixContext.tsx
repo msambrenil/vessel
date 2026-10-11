@@ -29,6 +29,8 @@ import {
   isProfileActiveInMatrix,
   sortAndEnrichProfilesByProximity,
 } from "@/lib/geo/GeospatialEngine";
+import { calculateBatchProximityOffMainThread } from "@/lib/geo/proximityWorkerClient";
+import { hasHostingCapability, canTravel, isInClubOrCruising } from "@/lib/geo/mobility";
 import {
   subscribeToMatrixProfiles,
   updateMyMatrixPresence,
@@ -52,7 +54,6 @@ import { useAuth } from "./AuthContext";
 import { useLogistics } from "./LogisticsContext";
 import { useSettings } from "./SettingsContext";
 import { useSafety } from "./SafetyContext";
-import { useChat } from "./ChatContext";
 import { useDiary } from "./DiaryContext";
 
 /**
@@ -162,6 +163,20 @@ const INITIAL_RECEIVED_PULSES: ReceivedPulse[] = [
     isRead: true,
     returned: true,
   },
+  {
+    id: "pulse-rec-08",
+    fromProfileId: "vessel-04",
+    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    isRead: false,
+    returned: false,
+  },
+  {
+    id: "pulse-rec-09",
+    fromProfileId: "vessel-06",
+    timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
+    isRead: false,
+    returned: false,
+  },
 ];
 
 const INITIAL_ON_THE_CLOCK: OnTheClockState = {
@@ -228,6 +243,8 @@ export interface RadarMatrixContextType {
   getProfileById: (idOrCodename: string) => VesselProfile | undefined;
   getKnownProfile: (id: string) => VesselProfile | undefined;
   registerKnownProfiles: (profiles: VesselProfile[]) => void;
+  boundaries?: Record<string, UserBoundarySetting>;
+  profileDossiers?: Record<string, ProfileDossier>;
 }
 
 const RadarMatrixContext = createContext<RadarMatrixContextType | undefined>(undefined);
@@ -245,15 +262,30 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
   profileDossiers: propProfileDossiers,
   myReceivedTestimonials: propTestimonials,
 }) => {
-  let chatBoundaries: Record<string, UserBoundarySetting> | undefined;
-  let chatMessages: Record<string, ChatMessage[]> | undefined;
-  try {
-    const chat = useChat();
-    chatBoundaries = chat.boundaries;
-    chatMessages = chat.chatMessages;
-  } catch {
-    // standalone fallback
-  }
+  // 2026 Architecture: RadarMatrixProvider completamente desacoplado de useChat()
+  // Las boundaries se leen de props o de almacenamiento persistente con actualización reactiva por evento
+  const [boundaries, setBoundaries] = useState<Record<string, UserBoundarySetting>>(() => {
+    return propBoundaries ?? loadFromStorage<Record<string, UserBoundarySetting>>(STORAGE_KEYS.BOUNDARIES, {});
+  });
+
+  useEffect(() => {
+    if (propBoundaries) {
+      setBoundaries(propBoundaries);
+      return;
+    }
+    const handleBoundariesChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<Record<string, UserBoundarySetting>>;
+      if (customEvent.detail) {
+        setBoundaries(customEvent.detail);
+      } else {
+        setBoundaries(loadFromStorage<Record<string, UserBoundarySetting>>(STORAGE_KEYS.BOUNDARIES, {}));
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("vessel_boundaries_changed", handleBoundariesChanged);
+      return () => window.removeEventListener("vessel_boundaries_changed", handleBoundariesChanged);
+    }
+  }, [propBoundaries]);
 
   let diaryDossiers: Record<string, ProfileDossier> | undefined;
   let diaryTestimonials: EncounterTestimonial[] | undefined;
@@ -265,7 +297,6 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     // standalone fallback
   }
 
-  const boundaries = propBoundaries ?? chatBoundaries ?? {};
   const profileDossiers = propProfileDossiers ?? diaryDossiers ?? {};
   const myReceivedTestimonials = propTestimonials ?? diaryTestimonials ?? [];
 
@@ -503,9 +534,14 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       prevRolesRef.current = filters.roles;
     }
   }, [filters.roles, updateMyProfile, currentUserUid]);
+
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState<boolean>(false);
-  const [activeView, setActiveView] = useState<ActiveNavView>("grid");
   const [selectedProfile, setSelectedProfile] = useState<VesselProfile | null>(null);
+  const [activeView, setActiveViewState] = useState<ActiveNavView>("grid");
+
+  const setActiveView = useCallback((view: ActiveNavView) => {
+    setActiveViewState(view);
+  }, []);
   const [matrixTab, setMatrixTabState] = useState<"people" | "places">("people");
   const [operatingIntent, setOperatingIntentState] = useState<OperatingIntentMode>(() => {
     return loadFromStorage<OperatingIntentMode>(STORAGE_KEYS.OPERATING_INTENT, "now", getActiveAppMode());
@@ -561,6 +597,10 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     }
     return INITIAL_RECEIVED_PULSES;
   });
+  const receivedPulsesRef = useRef(receivedPulses);
+  useEffect(() => {
+    receivedPulsesRef.current = receivedPulses;
+  }, [receivedPulses]);
 
   const [myOnTheClock, setMyOnTheClock] = useState<OnTheClockState>(INITIAL_ON_THE_CLOCK);
   const [isOnTheClockFilterActive, setIsOnTheClockFilterActive] = useState<boolean>(false);
@@ -584,7 +624,20 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       setProfiles(getSanitizedMockProfiles());
 
       const localReceivedPulses = loadFromStorage<ReceivedPulse[]>(STORAGE_KEYS.RECEIVED_PULSES, INITIAL_RECEIVED_PULSES, "test");
-      if (localReceivedPulses && localReceivedPulses.length > 0) setReceivedPulses(localReceivedPulses);
+      if (localReceivedPulses && localReceivedPulses.length > 0) {
+        const hasPending = localReceivedPulses.some((p) => !p.returned);
+        if (!hasPending) {
+          const freshPending = INITIAL_RECEIVED_PULSES.filter((p) => !p.returned);
+          const combined = [
+            ...freshPending,
+            ...localReceivedPulses.filter((p) => !freshPending.some((f) => f.fromProfileId === p.fromProfileId)),
+          ];
+          setReceivedPulses(combined);
+          saveToStorage(STORAGE_KEYS.RECEIVED_PULSES, combined, "test");
+        } else {
+          setReceivedPulses(localReceivedPulses);
+        }
+      }
     }
 
     const localOnTheClock = loadFromStorage<OnTheClockState>(STORAGE_KEYS.ON_THE_CLOCK, INITIAL_ON_THE_CLOCK, appMode);
@@ -712,17 +765,19 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     };
   }, [appMode]);
 
-  // Suscripción a perfiles públicos de la matriz en Firestore (Estrictamente aislada a Modo Real)
+  const [rawBaseProfiles, setRawBaseProfiles] = useState<VesselProfile[]>(() => profiles);
+
+  // 1. Suscripción a perfiles públicos de la matriz en Firestore (Desacoplada de myCoordinates / GPS)
   useEffect(() => {
     if (appMode !== "real") {
       // En Modo Prueba: Entorno sandbox 100% aislado en memoria/storage local, sin contaminación de Firestore
       const mocks = getSanitizedMockProfiles();
       registerKnownProfiles(mocks);
-      setProfiles(sortAndEnrichProfilesByProximity(mocks, myCoordinates));
+      setRawBaseProfiles(mocks);
       return;
     }
 
-    // En Modo Real: Suscripción en tiempo real a perfiles de usuarios reales en Firestore con TTL de 30m y orden por cercanía
+    // En Modo Real: Suscripción en tiempo real a perfiles de usuarios reales en Firestore con TTL de 30m
     const unsubMatrix = subscribeToMatrixProfiles((cloudProfiles) => {
       const now = Date.now();
       const validCloudProfiles = cloudProfiles.filter(
@@ -736,18 +791,15 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       registerKnownProfiles(validCloudProfiles);
 
       const activeOthers = validCloudProfiles.filter((cp) => isProfileActiveInMatrix(cp, now));
-      setProfiles(sortAndEnrichProfilesByProximity(activeOthers, myCoordinates));
+      setRawBaseProfiles(activeOthers);
     }, "real");
 
     // Barrido periódico cada 30s para expulsar de la Matrix radar perfiles cuyo TTL de 30 minutos haya expirado o hayan sido eliminados
     const ttlSweepInterval = setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
       const now = Date.now();
-      setProfiles((prev) =>
-        sortAndEnrichProfilesByProximity(
-          prev.filter((cp) => !isDeletedUserId(cp.id, "real") && isProfileActiveInMatrix(cp, now)),
-          myCoordinates
-        )
+      setRawBaseProfiles((prev) =>
+        prev.filter((cp) => !isDeletedUserId(cp.id, "real") && isProfileActiveInMatrix(cp, now))
       );
     }, 30000);
 
@@ -755,22 +807,46 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       unsubMatrix();
       clearInterval(ttlSweepInterval);
     };
-  }, [currentUserUid, appMode, getSanitizedMockProfiles, myCoordinates, registerKnownProfiles]);
+  }, [currentUserUid, appMode, getSanitizedMockProfiles, registerKnownProfiles]);
 
-  // Asegurar que todos los participantes de chats activos tengan su perfil cargado en knownProfiles
+  // 2. Cómputo geoespacial en segundo plano (Web Worker fuera del Main Thread) reactivo a coordenadas o perfiles
   useEffect(() => {
-    if (appMode !== "real" || !chatMessages) return;
-    const partnerIds = Object.keys(chatMessages).filter((id) => id !== "me" && id !== "system");
-    partnerIds.forEach((pid) => {
-      if (!knownProfiles[pid] && !profiles.some((p) => p.id === pid)) {
-        fetchPublicProfileById(pid)
-          .then((fetched) => {
-            if (fetched) registerKnownProfiles([fetched]);
-          })
-          .catch(() => {});
-      }
-    });
-  }, [chatMessages, appMode, knownProfiles, profiles, registerKnownProfiles]);
+    let isCancelled = false;
+    const currentBase = rawBaseProfiles.length > 0 ? rawBaseProfiles : (appMode !== "real" ? getSanitizedMockProfiles() : []);
+
+    if (currentBase.length === 0) {
+      setProfiles([]);
+      return;
+    }
+
+    calculateBatchProximityOffMainThread(myCoordinates, currentBase)
+      .then((results) => {
+        if (isCancelled) return;
+        const distMap = new Map(results.map((r) => [r.id, r.distanceMeters]));
+        const enriched = currentBase.map((p) => ({
+          ...p,
+          distanceMeters: distMap.get(p.id) ?? p.distanceMeters ?? 300,
+        }));
+        enriched.sort((a, b) => {
+          const verifiedA = a.verification?.isVerified ? 1 : 0;
+          const verifiedB = b.verification?.isVerified ? 1 : 0;
+          if (verifiedA !== verifiedB) return verifiedB - verifiedA;
+          const antiGhostA = a.isAntiGhost ? 1 : 0;
+          const antiGhostB = b.isAntiGhost ? 1 : 0;
+          if (antiGhostA !== antiGhostB) return antiGhostB - antiGhostA;
+          return (a.distanceMeters ?? 999999) - (b.distanceMeters ?? 999999);
+        });
+        setProfiles(enriched);
+      })
+      .catch(() => {
+        if (isCancelled) return;
+        setProfiles(sortAndEnrichProfilesByProximity(currentBase, myCoordinates));
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [rawBaseProfiles, myCoordinates, appMode, getSanitizedMockProfiles]);
 
   // Suscripción en tiempo real a pulsos entrantes en Firestore
   useEffect(() => {
@@ -778,14 +854,11 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
 
     const unsubPulses = subscribeToIncomingPulses(currentUserUid, (cloudPulses) => {
       if (!cloudPulses || cloudPulses.length === 0) return;
+
+      const existingIds = new Set(receivedPulsesRef.current.map((p) => p.id));
+      const hasNewIncoming = cloudPulses.some((p) => !existingIds.has(p.id) && !p.isRead);
+
       setReceivedPulses((prev) => {
-        const existingIds = new Set(prev.map((p) => p.id));
-        const hasNewIncoming = cloudPulses.some((p) => !existingIds.has(p.id) && !p.isRead);
-
-        if (hasNewIncoming) {
-          audioEngine.playNudgeReceived();
-        }
-
         const map = new Map<string, ReceivedPulse>();
         prev.forEach((p) => map.set(p.id, p));
         cloudPulses.forEach((p) => map.set(p.id, p));
@@ -793,6 +866,10 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         saveToStorage(STORAGE_KEYS.RECEIVED_PULSES, merged);
         return merged;
       });
+
+      if (hasNewIncoming) {
+        audioEngine.playNudgeReceived();
+      }
     });
 
     return () => {
@@ -1172,7 +1249,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
     (vibe: SubstanceAtmosphere) => {
       setMySubstanceAtmosphereState(vibe);
       saveToStorage(STORAGE_KEYS.SUBSTANCE_ATMOSPHERE, vibe, appMode);
-      updateMyProfile({ substanceAtmosphere: vibe } as any);
+      updateMyProfile({ substanceAtmosphere: vibe });
       if (currentUserUid && currentUserUid !== "local-user" && currentUserUid !== "unauthenticated") {
         saveFullUserDataToCloud(currentUserUid, { substanceAtmosphere: vibe });
       }
@@ -1438,8 +1515,8 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           !p.isCurrentUser &&
           p.bodyState !== "dormant" &&
           (p.hostCard?.hasPlace ||
-            /casa|depto|sitio|lugar/i.test(p.hosting || "") ||
-            /casa|depto|sitio|lugar/i.test(p.mobility || ""))
+            hasHostingCapability(p.hosting) ||
+            hasHostingCapability(p.mobility))
       );
       const hostIds = new Set(hostProfiles.map((p) => p.id));
 
@@ -1458,7 +1535,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
           !p.isCurrentUser &&
           !hostIds.has(p.id) &&
           !readyIds.has(p.id) &&
-          (/viaj|muev|desplaz/i.test(p.hosting || "") || /viaj|muev|desplaz/i.test(p.mobility || ""))
+          (canTravel(p.hosting) || canTravel(p.mobility))
       );
       const mobileIds = new Set(mobileProfiles.map((p) => p.id));
 
@@ -1471,7 +1548,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-now-host",
           intent: "now",
-          title: language === "es" ? "Con Lugar Inmediato" : "Immediate Hosts Available",
+          title: language === "es" ? "Con lugar propio ya" : "Immediate Hosts Available",
           subtitle: language === "es" ? "Listos para recibir con privacidad" : "Ready to host with privacy",
           icon: "🏠",
           accentColor: "border-electricViolet text-electricViolet",
@@ -1480,7 +1557,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-now-ready",
           intent: "now",
-          title: language === "es" ? "Listos para Salir" : "Ready to Go",
+          title: language === "es" ? "Listos para salir" : "Ready to Go",
           subtitle: language === "es" ? "Disponibilidad inmediata declarada" : "Immediate availability declared",
           icon: "⚡",
           accentColor: "border-amber-400 text-amber-400",
@@ -1489,8 +1566,8 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-now-mobile",
           intent: "now",
-          title: language === "es" ? "Listos para Desplazarse" : "Ready to Travel",
-          subtitle: language === "es" ? "Tienen movilidad o pueden viajar" : "Have mobility or can travel",
+          title: language === "es" ? "Se mueven / Van a donde estés" : "Ready to Travel",
+          subtitle: language === "es" ? "Van a donde estés o te buscan" : "Have mobility or can travel",
           icon: "🚗",
           accentColor: "border-cyan-400 text-cyan-400",
           profiles: mobileProfiles,
@@ -1498,8 +1575,8 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-now-nearby",
           intent: "now",
-          title: language === "es" ? "Cercanía Táctica" : "Tactical Proximity",
-          subtitle: language === "es" ? "Perfiles en tu radio de alcance" : "Profiles within your radius",
+          title: language === "es" ? "Acá al toque" : "Tactical Proximity",
+          subtitle: language === "es" ? "En tu radio de alcance" : "Profiles within your radius",
           icon: "📍",
           accentColor: "border-zinc-500 text-zinc-400",
           profiles: nearbyProfiles,
@@ -1509,7 +1586,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       const partyProfiles = list.filter(
         (p) =>
           !p.isCurrentUser &&
-          (/boliche|club|party|fiesta|darkroom|cruising/i.test(p.mobility || "") ||
+          (isInClubOrCruising(p.mobility) ||
             /boliche|club|party|fiesta|darkroom|cruising/i.test(p.yoSoy || "") ||
             (p.intentions && p.intentions.some((i) => /noche|fiesta|club|after/i.test(i))))
       );
@@ -1529,7 +1606,7 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
         {
           id: "cluster-night-venues",
           intent: "nightlife",
-          title: language === "es" ? "En Fiestas y Boliches de Hoy" : "Tonight's Venues & Parties",
+          title: language === "es" ? "Salidas & Joda Hoy" : "Tonight's Venues & Parties",
           subtitle: language === "es" ? "Clubes, saunas y eventos activos" : "Active clubs, saunas, and venues",
           icon: "🍸",
           accentColor: "border-pink-500 text-pink-400",
@@ -1725,6 +1802,8 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       getProfileById,
       getKnownProfile,
       registerKnownProfiles,
+      boundaries,
+      profileDossiers,
     }),
     [
       processedProfiles,
@@ -1773,6 +1852,8 @@ export const RadarMatrixProvider: React.FC<RadarMatrixProviderProps> = ({
       getProfileById,
       getKnownProfile,
       registerKnownProfiles,
+      boundaries,
+      profileDossiers,
     ]
   );
 

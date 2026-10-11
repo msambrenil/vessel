@@ -131,6 +131,18 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Accesibilidad y Selección de Texto: Permitir selección en textos de lectura, mensajes e inputs */
+input,
+textarea,
+[contenteditable="true"],
+p,
+article p,
+.selectable-text,
+[data-selectable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Modo accesibilidad: Respetar preferencias de movimiento reducido y ahorro de batería del OS */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -270,4 +282,77 @@ body {
 
 .animate-lock-rotate {
   animation: lock-rotate 0.4s ease-in-out;
+}
+
+@keyframes tactical-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-tactical-shimmer {
+  animation: tactical-shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes micro-slam {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.90); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.animate-micro-slam {
+  animation: micro-slam 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes success-pop {
+  0% { transform: scale(0.6) rotate(-14deg); opacity: 0.3; }
+  50% { transform: scale(1.28) rotate(6deg); opacity: 1; }
+  75% { transform: scale(0.96) rotate(-2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-success-pop {
+  animation: success-pop 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes morph-breathe {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(139, 92, 246, 0.4)); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.8)); }
+}
+
+.animate-morph-breathe {
+  animation: morph-breathe 2.4s ease-in-out infinite;
+}
+
+/* Transiciones de Vista Nativas (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.2s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: vessel-view-fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: vessel-view-fade-in;
+}
+
+@keyframes vessel-view-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes vessel-view-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

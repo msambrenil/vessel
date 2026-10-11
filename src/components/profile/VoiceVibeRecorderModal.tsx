@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings } from "@/context/VesselContext";
 import { VoiceSnippet } from "@/types/vessel";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const VoiceVibeRecorderModal: React.FC = () => {
   const {
@@ -14,9 +15,8 @@ export const VoiceVibeRecorderModal: React.FC = () => {
     deleteMyVoiceVibe,
     playVoiceVibe,
     activePlayingVoiceId,
-    language,
-    t,
-  } = useVessel();
+  } = useLogistics();
+  const { language, t } = useSettings();
 
   const {
     status,
@@ -73,46 +73,39 @@ export const VoiceVibeRecorderModal: React.FC = () => {
   const isPlaying = recordedSnippet ? activePlayingVoiceId === recordedSnippet.id : false;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.tacticalSuite.voiceVibe.title}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
-      onClick={closeVoiceRecorder}
-    >
-      <div
-        className="relative w-full max-w-md bg-[#0c0c0c] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header */}
-        <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🎙️</span>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-neutral-100">
-                {t.tacticalSuite.voiceVibe.title}
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                Audio de 5 segundos para transmitir tono, confianza y presencia real
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
+    <BrutalistModal
+      isOpen={isVoiceRecorderOpen}
+      onClose={closeVoiceRecorder}
+      icon="🎙️"
+      title={t.tacticalSuite.voiceVibe.title}
+      subtitle="Audio de 5 segundos para transmitir tono, confianza y presencia real"
+      maxWidth="md"
+      ariaLabel={t.tacticalSuite.voiceVibe.title}
+      contentClassName="p-6 flex flex-col items-center justify-center text-center space-y-5"
+      footer={
+        <div className="flex items-center justify-end gap-2">
+          <BrutalistButton
+            variant="ghost"
+            size="compact"
             onClick={closeVoiceRecorder}
-            aria-label="Cerrar grabador de voz"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100 flex items-center justify-center text-sm font-mono transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
+            className="text-xs font-mono"
           >
-            ✕
-          </button>
+            {t.common.cancel}
+          </BrutalistButton>
+          {recordedSnippet && !isRecording && (
+            <BrutalistButton
+              variant="primary"
+              size="compact"
+              onClick={handleSave}
+              className="font-mono text-xs font-bold uppercase tracking-wider"
+            >
+              Guardar en Perfil
+            </BrutalistButton>
+          )}
         </div>
-
-        {/* Grabador / Visualizador */}
-        <div className="p-6 flex flex-col items-center justify-center text-center space-y-5">
-          {!isSupported ? (
+      }
+    >
+      {!isSupported ? (
             <div className="p-4 bg-red-950/30 border border-red-900/50 rounded-xl">
               <p className="text-red-400 font-mono text-xs">{t.tacticalSuite.voiceVibe.micNotSupported}</p>
             </div>
@@ -207,28 +200,6 @@ export const VoiceVibeRecorderModal: React.FC = () => {
               )}
             </>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-3 border-t border-neutral-800/80 bg-neutral-900/40 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={closeVoiceRecorder}
-            className="px-3 py-1.5 rounded font-mono text-xs text-neutral-400 hover:text-neutral-200"
-          >
-            {t.common.cancel}
-          </button>
-          {recordedSnippet && !isRecording && (
-            <button
-              type="button"
-              onClick={handleSave}
-              className="px-4 py-2 bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider rounded-lg shadow-violet-soft active:scale-95 transition-all"
-            >
-              Guardar en Perfil
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

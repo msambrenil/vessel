@@ -51,8 +51,8 @@ let mockDuoLinkState = {
   jointTitle: undefined as string | undefined,
 };
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     isDuoModalOpen: true,
     closeDuoModal: mockCloseDuoModal,
     myDuoLink: mockDuoLinkState,
@@ -66,8 +66,18 @@ vi.mock("@/context/VesselContext", () => ({
       avatarUrl: "https://example.com/santi.jpg",
     },
     language: "es",
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {

@@ -7,6 +7,7 @@ import { TRANSLATIONS } from "@/lib/i18n/translations";
 const mockOpenAuthModal = vi.fn();
 const mockOpenUnlimitedModal = vi.fn();
 const mockOpenHarmReductionModal = vi.fn();
+const mockOpenAppSettingsModal = vi.fn();
 const mockSetActiveView = vi.fn();
 const mockSetActiveChatProfileId = vi.fn();
 const mockUpdateAppSettings = vi.fn();
@@ -28,7 +29,6 @@ vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
 
 let mockIsAuthenticated = false;
 let mockUserPlan = "free";
-let mockSafetyBeacon: { isActive: boolean } | null = null;
 let mockActiveRendezvous: { profileId: string; profileCodename: string } | null = null;
 let mockHarmReductionSession: { isActive: boolean } | null = null;
 let mockOnTheClock: {
@@ -43,8 +43,8 @@ let mockOnTheClock: {
   expiresAt: null,
 };
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const getMockState = () => ({
     activeRendezvous: mockActiveRendezvous,
     setActiveChatProfileId: mockSetActiveChatProfileId,
     myProfile: {
@@ -57,9 +57,9 @@ vi.mock("@/context/VesselContext", () => ({
     isAuthenticated: mockIsAuthenticated,
     userPlan: mockUserPlan,
     openUnlimitedModal: mockOpenUnlimitedModal,
-    safetyBeacon: mockSafetyBeacon,
     harmReductionSession: mockHarmReductionSession,
     openHarmReductionModal: mockOpenHarmReductionModal,
+    openAppSettingsModal: mockOpenAppSettingsModal,
     appSettings: { soundEnabled: true },
     updateAppSettings: mockUpdateAppSettings,
     myOnTheClock: mockOnTheClock,
@@ -67,15 +67,25 @@ vi.mock("@/context/VesselContext", () => ({
     stopOnTheClock: mockStopOnTheClock,
     language: "es",
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+
+  return {
+    useVessel: getMockState,
+    useSettings: getMockState,
+    useAuth: getMockState,
+    useSafety: getMockState,
+    useRadarMatrix: getMockState,
+    useChat: getMockState,
+    useLogistics: getMockState,
+    useDiary: getMockState,
+  };
+});
 
 describe("BrutalistHeader — Cabecera Táctica Zen (Fase 2)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsAuthenticated = false;
     mockUserPlan = "free";
-    mockSafetyBeacon = null;
     mockActiveRendezvous = null;
     mockHarmReductionSession = null;
     mockOnTheClock = {
@@ -160,5 +170,16 @@ describe("BrutalistHeader — Cabecera Táctica Zen (Fase 2)", () => {
     fireEvent.click(readyBtn);
 
     expect(mockStopOnTheClock).toHaveBeenCalled();
+  });
+
+  it("debe renderizar los bloques de Beta Tester Lab y Versión de Prueba en el menú táctico", () => {
+    render(<BrutalistHeader />);
+
+    const userMenuBtn = screen.getByTestId("header-user-menu-btn");
+    fireEvent.click(userMenuBtn);
+
+    expect(screen.getByTestId("beta-tester-lab-section")).toBeInTheDocument();
+    expect(screen.getByTestId("test-environment-section")).toBeInTheDocument();
+    expect(screen.getByText(/VERSIÓN DE PRUEBA/i)).toBeInTheDocument();
   });
 });

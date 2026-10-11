@@ -114,14 +114,23 @@ const mockVesselState = {
   isFavoriteProfile: (id: string) => mockFavoriteProfileIds.includes(id),
 };
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => mockVesselState,
-  useRadarMatrix: () => ({
-    favoriteProfileIds: mockFavoriteProfileIds,
-    isFavoriteProfile: (id: string) => mockFavoriteProfileIds.includes(id),
-    toggleFavoriteProfile: mockToggleFavorite,
-  }),
-}));
+vi.mock("@/context/VesselContext", () => {
+  const mockFn = () => mockVesselState;
+  return {
+    useVessel: mockFn,
+    useAuth: mockFn,
+    useSettings: mockFn,
+    useChat: mockFn,
+    useLogistics: mockFn,
+    useDiary: mockFn,
+    useRadarMatrix: () => ({
+      ...mockVesselState,
+      favoriteProfileIds: mockFavoriteProfileIds,
+      isFavoriteProfile: (id: string) => mockFavoriteProfileIds.includes(id),
+      toggleFavoriteProfile: mockToggleFavorite,
+    }),
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {

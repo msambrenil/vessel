@@ -8,7 +8,7 @@ import {
   useAuth,
   useLogistics,
 } from "@/context/VesselContext";
-import { VesselProfile, HotspotCategory } from "@/types/vessel";
+import { VesselProfile, HotspotCategory, KinkMutualMatch } from "@/types/vessel";
 import { ProfileCard } from "./ProfileCard";
 import { PlacesGrid } from "./PlacesGrid";
 import { MatrixUnlimitedPromoCard } from "./MatrixUnlimitedPromoCard";
@@ -17,6 +17,10 @@ import { FREE_TIER_LIMITS } from "@/lib/business/freeTierLimits";
 
 const RendezvousSheet = dynamic(
   () => import("@/components/chat/RendezvousSheet").then((m) => m.RendezvousSheet),
+  { ssr: false }
+);
+const ProfileBentoQuickPeek = dynamic(
+  () => import("./ProfileBentoQuickPeek").then((m) => m.ProfileBentoQuickPeek),
   { ssr: false }
 );
 import {
@@ -39,7 +43,10 @@ import {
   TacticalSearchInput,
   FilterPill,
   SortSegmentedControl,
+  BrutalistButton,
 } from "@/components/ui";
+
+const EMPTY_MUTUAL_MATCHES: readonly KinkMutualMatch[] = Object.freeze([]);
 
 interface ProfileGridProps {
   onSelectProfile: (profile: VesselProfile) => void;
@@ -59,12 +66,20 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     isOnTheClockFilterActive,
     setIsOnTheClockFilterActive,
     matrixTab,
+    setMatrixTab,
     favoriteProfileIds: favIdsProp,
     operatingIntent = "now",
+    setOperatingIntent,
     intentClusters = [],
+    transmissions = {},
+    transmitSignal,
+    toggleFavoriteProfile,
+    boundaries = {},
+    profileDossiers = {},
+    getMutualKinkMatches,
   } = useRadarMatrix();
   const favoriteProfileIds = favIdsProp || [];
-  const { language, t, appMode, setAppMode, isUnlimited } = useSettings();
+  const { language, t, appMode, setAppMode, isUnlimited, openUnlimitedModal } = useSettings();
   const { openAuthModal, currentUserUid } = useAuth();
   const {
     openNightlifeModal,
@@ -76,6 +91,10 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
 
   // Estado desacoplado del sheet táctico de Rendezvous (Singleton en memoria)
   const [rendezvousTargetProfile, setRendezvousTargetProfile] = React.useState<VesselProfile | null>(null);
+
+  // Estado desacoplado de Quick Peek Bento (Singleton para toda la Grilla)
+  const [quickPeekProfile, setQuickPeekProfile] = React.useState<VesselProfile | null>(null);
+  const [isBillboardVisible, setIsBillboardVisible] = React.useState<boolean>(false);
 
   // Estados locales para la pestaña Lugares & Fiestas
   const [placesSearchQuery, setPlacesSearchQuery] = React.useState("");
@@ -308,6 +327,32 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     return list;
   }, [filteredProfiles, sortBy, getPriorityTier]);
 
+  // Mapa de índices O(1) para evitar escaneos O(N*M) con findIndex dentro del renderizado de racimos
+  const profileIndexMap = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < sortedProfiles.length; i++) {
+      map.set(sortedProfiles[i].id, i);
+    }
+    return map;
+  }, [sortedProfiles]);
+
+  // Set O(1) de favoritos memorizado para eliminar búsquedas lineales en el render loop
+  const favoriteIdsSet = React.useMemo(
+    () => new Set(favoriteProfileIds),
+    [favoriteProfileIds]
+  );
+
+  // Mapa de mutualMatches O(1) con referencias estables de array para blindar React.memo(ProfileCard)
+  const mutualMatchesMap = React.useMemo(() => {
+    const map = new Map<string, readonly KinkMutualMatch[]>();
+    if (!getMutualKinkMatches) return map;
+    for (let i = 0; i < sortedProfiles.length; i++) {
+      const p = sortedProfiles[i];
+      map.set(p.id, getMutualKinkMatches(p.kinkMatrix) || EMPTY_MUTUAL_MATCHES);
+    }
+    return map;
+  }, [sortedProfiles, getMutualKinkMatches]);
+
   const handleResetAllFilters = () => {
     audioEngine.playPulse();
     setSearchValue("");
@@ -315,11 +360,163 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
     setIsOnTheClockFilterActive(false);
   };
 
+  const totalPlacesCount = (tacticalHotspots?.length || 0) + (nightlifeEvents?.length || 0);
+
   return (
-    <div className="flex flex-col flex-1 pb-48 sm:pb-56 select-none">
+    <div className="flex flex-col flex-1 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] sm:pb-28 select-none">
+      {/* =========================================================
+          CABECERA TÁCTICA DEL RADAR (ALTERNATIVA A - RADAR ZEN)
+          SWITCHER 1-TAP (GENTE vs BOLICHES)
+          ========================================================= */}
+      <div className="flex flex-col gap-2 p-2 sm:p-3 pb-1">
+        {/* Fila 1: Switcher 1-Tap Unificado (Full Width) */}
+        <div
+          role="tablist"
+          aria-label={language === "es" ? "Cambiar vista del radar" : "Switch radar view"}
+          className="grid grid-cols-2 w-full p-1 bg-obsidian-surface/90 border border-white/10 rounded-2xl backdrop-blur-md shadow-sm"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={matrixTab === "people"}
+            data-testid="radar-tab-people"
+            onClick={() => {
+              if (matrixTab !== "people") {
+                audioEngine.playSubBass(60, 0.1);
+                setMatrixTab("people");
+              }
+            }}
+            className={`w-full py-2 rounded-xl font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              matrixTab === "people"
+                ? "bg-electricViolet text-white shadow-violet-soft border border-electricViolet-glow"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            <span>👥</span>
+            <span>{language === "es" ? "Gente" : "People"}</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                matrixTab === "people" ? "bg-white/20 text-white" : "bg-white/5 text-neutral-400"
+              }`}
+            >
+              {sortedProfiles.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={matrixTab === "places"}
+            data-testid="radar-tab-places"
+            onClick={() => {
+              if (matrixTab !== "places") {
+                audioEngine.playSubBass(60, 0.1);
+                setMatrixTab("places");
+                if (setOperatingIntent) setOperatingIntent("nightlife");
+              }
+            }}
+            className={`w-full py-2 rounded-xl font-mono text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              matrixTab === "places"
+                ? "bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)] border border-pink-400"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            <span>🍸</span>
+            <span>{language === "es" ? "Boliches & Joda" : "Spots & Parties"}</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                matrixTab === "places" ? "bg-white/20 text-white" : "bg-white/5 text-neutral-400"
+              }`}
+            >
+              {totalPlacesCount}
+            </span>
+          </button>
+        </div>
+
+        {/* Fila 2: Carrusel Ergonómico de Filtros 1-Tap (Thumb Zone) con Acciones Pinned en Desktop */}
+        {matrixTab === "people" && (
+          <div className="flex items-center gap-2 w-full py-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-2 px-2 sm:mx-0 sm:px-0 flex-1 min-w-0">
+              <FilterPill
+                label={language === "es" ? "⚡ Pinta ya" : "⚡ Ready Now"}
+                active={isOnTheClockFilterActive}
+                variant="violet"
+                onClick={() => {
+                  audioEngine.playPulse();
+                  setIsOnTheClockFilterActive(!isOnTheClockFilterActive);
+                }}
+              />
+              <FilterPill
+                label={language === "es" ? "🏠 Pone casa" : "🏠 Has Place"}
+                active={isHostOnlyActive}
+                variant="emerald"
+                onClick={() => toggleQuickFilter("host")}
+              />
+              <FilterPill
+                label={language === "es" ? "✨ Morbos mutuos" : "✨ Mutual Kinks"}
+                active={isMutualKinksActive}
+                variant="blood"
+                onClick={() => toggleQuickFilter("mutualKinks")}
+              />
+              <FilterPill
+                label={language === "es" ? "⭐ Favoritos" : "⭐ Favorites"}
+                active={isFavoritesActive}
+                count={favoriteProfileIds.length}
+                variant="amber"
+                onClick={() => toggleQuickFilter("favorites")}
+              />
+              <FilterPill
+                label={language === "es" ? "🛡️ Verificados" : "🛡️ Verified"}
+                active={isVerifiedActive}
+                variant="cyan"
+                onClick={() => toggleQuickFilter("verified")}
+              />
+              <FilterPill
+                label={language === "es" ? "👻 Cero plantones" : "👻 Anti-Ghost"}
+                active={isAntiGhostActive}
+                variant="emerald"
+                onClick={() => toggleQuickFilter("antiGhost")}
+              />
+            </div>
+
+            {/* Acciones de Filtro: Botón de Drawer + Link Limpiar (Siempre visibles, sin recorte en desktop) */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <BrutalistButton
+                type="button"
+                variant="tactical"
+                size="compact"
+                soundEffect="pulse"
+                onClick={() => setIsFilterDrawerOpen(true)}
+                data-testid="bento-radar-top-filters-btn"
+                className="!px-3 !py-1.5 min-h-[38px] sm:min-h-[34px] !rounded-xl !bg-white/5 hover:!bg-white/10 border !border-white/15 hover:!border-electricViolet text-xs font-mono font-bold flex items-center gap-1.5 flex-shrink-0 transition-all active:scale-95 relative after:absolute after:-inset-1 after:content-['']"
+                aria-label={language === "es" ? "Abrir panel completo de filtros" : "Open all filters"}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-electricViolet" />
+                <span>{language === "es" ? "Filtros" : "Filters"}</span>
+                {activeFiltersCount > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-bloodNeon text-white text-[9px] font-mono font-black flex items-center justify-center shadow-blood-glow">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </BrutalistButton>
+
+              {/* Chip de Limpieza 1-Tap */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={handleResetAllFilters}
+                  className="text-[11px] font-mono text-neutral-400 hover:text-bloodNeon underline underline-offset-2 flex-shrink-0 whitespace-nowrap cursor-pointer transition-colors px-1"
+                >
+                  {language === "es" ? "✕ Limpiar" : "✕ Clear"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* =========================================================
           CONTENIDO SEGÚN PESTAÑA ACTIVA: PERSONAS vs LUGARES
-          (100% Pantalla Completa Inmersiva - App Shell 2.0)
           ========================================================= */}
       {matrixTab === "places" ? (
         <PlacesGrid
@@ -332,65 +529,68 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           onOpenNightlifeModal={openNightlifeModal}
         />
       ) : sortedProfiles.length > 0 ? (
-        <div className="flex flex-col flex-1 p-2 sm:p-3 space-y-5">
-          {/* Billboard Táctico de Fiestas y Hotspots (solo en modo nightlife con eventos activos) */}
-          {operatingIntent === "nightlife" && nightlifeEvents.length > 0 && (
-            <div className="p-3 bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-obsidian-surface border border-pink-500/30 rounded-2xl space-y-2.5 backdrop-blur-md shadow-[0_0_25px_rgba(236,72,153,0.15)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base animate-pulse">🍸</span>
-                  <div>
-                    <h4 className="text-xs font-mono font-black text-white uppercase tracking-wider">
-                      {language === "es" ? "Cartelera Nocturna & Fiestas Activas" : "Active Nightlife & Parties"}
-                    </h4>
-                    <p className="text-[10px] text-pink-300/80 font-sans">
-                      {language === "es" ? "Eventos y clubes recomendados para esta noche" : "Recommended events and clubs tonight"}
-                    </p>
+        <div className="flex flex-col flex-1 p-2 sm:p-3 pt-1 space-y-3">
+
+          {/* =========================================================
+              BENTO BILLBOARD COLAPSABLE: SALIDAS & JODA HOY
+             ========================================================= */}
+          {isBillboardVisible && (
+            <div
+              data-testid="bento-billboard-card"
+              className="p-2.5 sm:p-3 bg-gradient-to-r from-pink-950/40 via-purple-950/30 to-obsidian-surface border border-pink-500/30 rounded-2xl flex items-center justify-between gap-2.5 shadow-[0_0_20px_rgba(236,72,153,0.15)] animate-in fade-in transition-all"
+            >
+              <div
+                className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+                onClick={() => {
+                  audioEngine.playSubBass(60);
+                  openNightlifeModal();
+                }}
+              >
+                <span className="text-base sm:text-lg flex-shrink-0">🍸</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="text-[10px] sm:text-[11px] font-mono font-bold text-pink-300 uppercase tracking-wider">
+                      {language === "es" ? "SALIDAS & JODA HOY:" : "NIGHTLIFE TONIGHT:"}
+                    </span>
+                    <span className="text-xs font-mono font-black text-white truncate">
+                      {nightlifeEvents && nightlifeEvents.length > 0 ? nightlifeEvents[0].name : "Crobar"}
+                    </span>
+                    {(nightlifeEvents && nightlifeEvents.length > 0 ? nightlifeEvents[0].hasDarkroom : true) && (
+                      <span className="text-[8.5px] px-1.5 py-0.2 bg-purple-900/70 text-purple-200 rounded border border-purple-500/50 font-mono font-bold">
+                        ⚡ Darkroom activo
+                      </span>
+                    )}
                   </div>
+                  <p className="text-[10px] text-neutral-400 font-sans truncate">
+                    📍 {nightlifeEvents && nightlifeEvents.length > 0 ? `${nightlifeEvents[0].venueName} • ${nightlifeEvents[0].activeAttendeesCount} presentes hoy` : "Palermo • Lista abierta"}
+                  </p>
                 </div>
-                <button
-                  type="button"
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <BrutalistButton
+                  variant="ghost"
+                  size="compact"
+                  soundEffect="pulse"
                   onClick={() => {
                     audioEngine.playSubBass(60);
                     openNightlifeModal();
                   }}
-                  className="px-2.5 py-1 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+                  className="!px-2.5 !py-1 !rounded-xl !bg-pink-500/20 hover:!bg-pink-500/30 !text-pink-300 !border !border-pink-500/40 !text-[10px] !font-mono font-bold flex items-center gap-1"
                 >
-                  <span>{language === "es" ? "Ver Agenda" : "Full Agenda"}</span>
+                  <span>{language === "es" ? "Ver Agenda" : "Agenda"}</span>
                   <span>→</span>
-                </button>
-              </div>
+                </BrutalistButton>
 
-              {/* Scroll horizontal de eventos destacados */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                {nightlifeEvents.slice(0, 4).map((evt) => (
-                  <div
-                    key={evt.id}
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      openNightlifeModal();
-                    }}
-                    className="flex-shrink-0 w-48 sm:w-56 p-2 rounded-xl bg-black/60 border border-white/10 hover:border-pink-500/50 transition-all cursor-pointer space-y-1 group"
-                  >
-                    <div className="flex items-center justify-between text-[10px] font-mono">
-                      <span className="font-bold text-white group-hover:text-pink-300 transition-colors truncate max-w-[120px]">
-                        {evt.name}
-                      </span>
-                      {evt.hasDarkroom && (
-                        <span className="text-[9px] px-1 py-0.2 bg-purple-900/60 text-purple-300 rounded border border-purple-500/40">
-                          ⚡ Darkroom
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-neutral-400 truncate">
-                      📍 {evt.venueName} • {evt.neighborhood}
-                    </p>
-                    <div className="flex items-center justify-between text-[9px] font-mono text-neutral-500 pt-0.5">
-                      <span>🕒 {evt.timeRange}</span>
-                      <span className="text-emerald-400 font-bold">👥 {evt.activeAttendeesCount} presentes</span>
-                    </div>
-                  </div>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setIsBillboardVisible(false)}
+                  className="relative p-2 min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center text-neutral-400 hover:text-white rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer after:absolute after:-inset-1.5 after:content-['']"
+                  title={language === "es" ? "Ocultar cartel" : "Hide billboard"}
+                  aria-label={language === "es" ? "Ocultar cartel" : "Hide billboard"}
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
           )}
@@ -412,16 +612,16 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                             {cluster.profiles.length}
                           </span>
                         </div>
-                        <p className="text-[10.5px] text-neutral-400 font-sans">
+                        <p className="text-xs text-neutral-400 font-sans leading-relaxed">
                           {cluster.subtitle}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+                  <div className="@container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 @xs:grid-cols-2 @md:grid-cols-3 @lg:grid-cols-4 gap-2.5 sm:gap-3.5">
                     {cluster.profiles.map((profile, idx) => {
-                      const globalIndex = sortedProfiles.findIndex((p) => p.id === profile.id);
+                      const globalIndex = profileIndexMap.get(profile.id) ?? -1;
                       const isLockedByLimit = !isUnlimited && globalIndex >= FREE_TIER_LIMITS.maxFreeProfilesInMatrix;
                       const showPromoAfterThis = !isUnlimited && globalIndex === FREE_TIER_LIMITS.maxFreeProfilesInMatrix - 1;
 
@@ -430,11 +630,22 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                           <div className="[content-visibility:auto] [contain-intrinsic-size:0_260px]">
                             <ProfileCard
                               profile={profile}
-                              onSelect={onSelectProfile}
+                              onSelect={setQuickPeekProfile}
                               onOpenChat={onOpenChat}
                               onOpenRendezvous={setRendezvousTargetProfile}
                               isPriority={idx < 2}
                               isLockedByGridLimit={isLockedByLimit}
+                              isFavorite={favoriteIdsSet.has(profile.id)}
+                              onToggleFavorite={toggleFavoriteProfile}
+                              signalCount={transmissions[profile.id] || 0}
+                              onTransmitSignal={transmitSignal}
+                              isAttenuated={boundaries[profile.id]?.radarVisibility === "attenuated"}
+                              dossierRating={profileDossiers[profile.id]?.rating || null}
+                              customAlias={profileDossiers[profile.id]?.customAlias || null}
+                              mutualMatches={mutualMatchesMap.get(profile.id) ?? EMPTY_MUTUAL_MATCHES}
+                              language={language}
+                              isUnlimited={isUnlimited}
+                              openUnlimitedModal={openUnlimitedModal}
                             />
                           </div>
                           {showPromoAfterThis && (
@@ -452,7 +663,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
             </div>
           ) : (
             /* Fallback: Cuadrícula directa tradicional (tests unitarios o filtros sin racimos) */
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3.5">
+            <div className="@container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 @xs:grid-cols-2 @md:grid-cols-3 @lg:grid-cols-4 gap-2.5 sm:gap-3.5">
               {sortedProfiles.map((profile, index) => {
                 const isLockedByLimit = !isUnlimited && index >= FREE_TIER_LIMITS.maxFreeProfilesInMatrix;
                 const showPromoAfterThis = !isUnlimited && index === FREE_TIER_LIMITS.maxFreeProfilesInMatrix - 1;
@@ -462,11 +673,22 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                     <div className="[content-visibility:auto] [contain-intrinsic-size:0_260px]">
                       <ProfileCard
                         profile={profile}
-                        onSelect={onSelectProfile}
+                        onSelect={setQuickPeekProfile}
                         onOpenChat={onOpenChat}
                         onOpenRendezvous={setRendezvousTargetProfile}
                         isPriority={index < 4}
                         isLockedByGridLimit={isLockedByLimit}
+                        isFavorite={favoriteIdsSet.has(profile.id)}
+                        onToggleFavorite={toggleFavoriteProfile}
+                        signalCount={transmissions[profile.id] || 0}
+                        onTransmitSignal={transmitSignal}
+                        isAttenuated={boundaries[profile.id]?.radarVisibility === "attenuated"}
+                        dossierRating={profileDossiers[profile.id]?.rating || null}
+                        customAlias={profileDossiers[profile.id]?.customAlias || null}
+                        mutualMatches={mutualMatchesMap.get(profile.id) ?? EMPTY_MUTUAL_MATCHES}
+                        language={language}
+                        isUnlimited={isUnlimited}
+                        openUnlimitedModal={openUnlimitedModal}
                       />
                     </div>
                     {showPromoAfterThis && (
@@ -498,14 +720,16 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                     : "Your active filters exclude all other profiles available on the radar."}
                 </p>
               </div>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="primary"
+                size="compact"
+                soundEffect="pulse"
                 onClick={handleResetAllFilters}
-                className="px-3.5 py-1.5 min-h-[36px] rounded-xl bg-electricViolet hover:bg-electricViolet-glow text-white text-xs font-mono font-bold transition-all shadow-violet-soft cursor-pointer flex items-center gap-1.5"
+                className="!px-3.5 !py-1.5 min-h-[36px] !rounded-xl text-xs font-mono font-bold shadow-violet-soft flex items-center gap-1.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>{language === "es" ? "Restablecer Filtros" : "Reset Filters"}</span>
-              </button>
+              </BrutalistButton>
             </div>
           )}
         </div>
@@ -536,13 +760,15 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           </div>
 
           <div className="pt-2 flex flex-col w-full gap-2.5">
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
+              size="lg"
+              soundEffect="none"
               onClick={() => {
                 audioEngine.playSubBass(70);
                 openAuthModal(currentUserUid && currentUserUid !== "unauthenticated" ? "verify" : "register");
               }}
-              className="w-full py-3.5 min-h-[48px] bg-electricViolet hover:bg-electricViolet-glow text-white font-bold text-xs rounded-2xl active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet transition-all shadow-violet-soft uppercase tracking-wider font-mono cursor-pointer flex items-center justify-center gap-2"
+              className="w-full min-h-[48px] !rounded-2xl text-xs uppercase tracking-wider font-mono shadow-violet-soft flex items-center justify-center gap-2"
             >
               <UserPlus className="w-4 h-4 stroke-[2.5]" />
               <span>
@@ -550,19 +776,21 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
                   ? (language === "es" ? "Gestionar Mi Perfil" : "Manage My Profile")
                   : (language === "es" ? "Registrar Mi Perfil" : "Register My Profile")}
               </span>
-            </button>
+            </BrutalistButton>
 
-            <button
-              type="button"
+            <BrutalistButton
+              variant="outline"
+              size="compact"
+              soundEffect="none"
               onClick={() => {
                 audioEngine.playPulse();
                 setAppMode("test");
               }}
-              className="w-full py-2.5 min-h-[42px] bg-white/5 hover:bg-white/10 text-electricViolet-glow border border-electricViolet/30 font-bold text-xs rounded-2xl active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet transition-all uppercase tracking-wider font-mono cursor-pointer flex items-center justify-center gap-2"
+              className="w-full min-h-[42px] !rounded-2xl text-xs uppercase tracking-wider font-mono !border-electricViolet/30 !text-electricViolet-glow hover:!bg-white/10 flex items-center justify-center gap-2"
             >
               <FlaskConical className="w-3.5 h-3.5" />
               <span>{language === "es" ? "Cargar Modo de Prueba (Mock)" : "Switch to Test Mode (Mock)"}</span>
-            </button>
+            </BrutalistButton>
 
             {process.env.NODE_ENV === "development" && (
               <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-left text-[11px] text-neutral-400 font-mono space-y-1">
@@ -662,15 +890,38 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
           </div>
 
           <div className="pt-2 flex flex-col w-full gap-2">
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
+              size="lg"
+              soundEffect="pulse"
               onClick={handleResetAllFilters}
-              className="w-full py-3.5 min-h-[48px] bg-electricViolet text-white font-extrabold text-xs rounded-2xl hover:bg-electricViolet-glow active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black transition-all shadow-violet-soft uppercase tracking-wider font-mono cursor-pointer"
+              className="w-full min-h-[48px] !rounded-2xl text-xs uppercase tracking-wider font-mono shadow-violet-soft"
             >
               {t.filters?.resetBtn || (language === "es" ? "Restablecer Todos los Filtros" : "Reset All Filters")}
-            </button>
+            </BrutalistButton>
           </div>
         </div>
+      )}
+
+      {/* Quick Peek Bento Sheet (Singleton dinámico para toda la Grilla) */}
+      {quickPeekProfile && (
+        <ProfileBentoQuickPeek
+          isOpen={Boolean(quickPeekProfile)}
+          profile={quickPeekProfile}
+          onClose={() => setQuickPeekProfile(null)}
+          onOpenChat={(profileId) => {
+            setQuickPeekProfile(null);
+            onOpenChat(profileId);
+          }}
+          onOpenRendezvous={(p) => {
+            setQuickPeekProfile(null);
+            setRendezvousTargetProfile(p);
+          }}
+          onViewFullProfile={(p) => {
+            setQuickPeekProfile(null);
+            onSelectProfile(p);
+          }}
+        />
       )}
 
       {/* Sheet Táctico Desacoplado de Rendezvous / Pre-Flight (Singleton para toda la Grilla) */}
@@ -684,6 +935,7 @@ export const ProfileGrid: React.FC<ProfileGridProps> = ({
 
       {/* Barra de Comandos Flotante con BottomSheet Deslizable (App Shell 2.0) */}
       <RadarBottomCommandBar
+        hidePeekBar={true}
         sortBy={sortBy}
         onSortByChange={setSortBy}
         onProposePlace={() => setIsProposeOpen(true)}

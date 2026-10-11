@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useAuth, useSettings } from "@/context/VesselContext";
 import { Camera, RefreshCw, AlertCircle } from "lucide-react";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
+import { BrutalistButton, BrutalistModal } from "@/components/ui";
 
 export const LivenessVerificationModal: React.FC = () => {
-  const { isLivenessModalOpen, closeLivenessModal, completeLivenessVerification, t } = useVessel();
+  const { isLivenessModalOpen, closeLivenessModal, completeLivenessVerification } = useAuth();
+  const { t } = useSettings();
 
   const [step, setStep] = useState<"ready" | "scanning" | "gesture" | "success">("ready");
   const [progress, setProgress] = useState<number>(0);
@@ -81,84 +83,55 @@ export const LivenessVerificationModal: React.FC = () => {
     setStep("scanning");
     setProgress(0);
 
+    let currentProgress = 0;
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 60) {
-          clearInterval(interval);
-          setStep("gesture");
-          setGestureInstruction("GIRA LA CABEZA LEVEMENTE A LA IZQUIERDA");
+      currentProgress += 10;
+      if (currentProgress >= 60) {
+        clearInterval(interval);
+        setProgress(60);
+        setStep("gesture");
+        setGestureInstruction("GIRA LA CABEZA LEVEMENTE A LA IZQUIERDA");
+
+        setTimeout(() => {
+          setStep("success");
+          audioEngine.playVaultUnlock();
+
+          // Capturar fotograma real de la cámara si está activa
+          if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 400;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            }
+          }
+
+          stopCamera();
 
           setTimeout(() => {
-            setStep("success");
-            audioEngine.playVaultUnlock();
-
-            // Capturar fotograma real de la cámara si está activa
-            if (videoRef.current && canvasRef.current) {
-              const video = videoRef.current;
-              const canvas = canvasRef.current;
-              canvas.width = video.videoWidth || 320;
-              canvas.height = video.videoHeight || 400;
-              const ctx = canvas.getContext("2d");
-              if (ctx) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              }
-            }
-
-            stopCamera();
-
-            setTimeout(() => {
-              completeLivenessVerification();
-            }, 1400);
-          }, 2000);
-
-          return 60;
-        }
-        return prev + 10;
-      });
+            completeLivenessVerification();
+          }, 1400);
+        }, 2000);
+      } else {
+        setProgress(currentProgress);
+      }
     }, 150);
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Prueba de Vida Facial 3D"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn select-none [overscroll-behavior:contain]"
-      onClick={closeLivenessModal}
+    <BrutalistModal
+      isOpen={isLivenessModalOpen}
+      onClose={closeLivenessModal}
+      icon="🛡️"
+      title="Prueba de Vida Facial 3D"
+      subtitle="Prueba biométrica de presencia real y cámara en vivo"
+      maxWidth="md"
+      ariaLabel="Prueba de Vida Facial 3D"
+      contentClassName="p-6 flex flex-col items-center justify-center text-center space-y-4"
     >
-      <div
-        className="relative w-full max-w-md bg-[#0c0c0c] border-t sm:border border-neutral-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[90vh] animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto mt-2.5 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Header */}
-        <div className="p-4 border-b border-neutral-800/80 bg-neutral-900/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🛡️</span>
-            <div>
-              <h2 className="text-sm font-mono font-bold tracking-wider uppercase text-electricViolet-glow">
-                Prueba de Vida Facial 3D
-              </h2>
-              <p className="text-[11px] text-neutral-400">
-                Prueba biométrica de presencia real y cámara en vivo
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={closeLivenessModal}
-            aria-label="Cerrar prueba de vida facial"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-neutral-100 flex items-center justify-center text-sm font-mono transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Viewport de Escaneo con Cámara Real */}
-        <div className="p-6 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="relative w-52 h-64 rounded-2xl bg-neutral-950 border-2 border-neutral-800 overflow-hidden flex items-center justify-center shadow-inner">
+      <div className="relative w-52 h-64 rounded-2xl bg-neutral-950 border-2 border-neutral-800 overflow-hidden flex items-center justify-center shadow-inner">
             {/* Elemento de video nativo en vivo (espejado para experiencia natural) */}
             <video
               ref={videoRef}
@@ -242,17 +215,15 @@ export const LivenessVerificationModal: React.FC = () => {
 
           {/* Botón de acción */}
           {step === "ready" && (
-            <button
-              type="button"
+            <BrutalistButton
+              variant="primary"
               onClick={startScan}
-              className="w-full py-3 bg-electricViolet hover:bg-electricViolet-glow text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl shadow-violet-soft active:scale-95 transition-all mt-2 cursor-pointer flex items-center justify-center gap-2"
+              className="w-full font-mono text-xs uppercase tracking-wider mt-2 flex items-center justify-center gap-2"
             >
               <Camera className="w-4 h-4" />
               <span>INICIAR ESCANEO FACIAL</span>
-            </button>
+            </BrutalistButton>
           )}
-        </div>
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

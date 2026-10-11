@@ -41,8 +41,8 @@ vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: mockAudioEngine,
 }));
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     language: "es" as const,
     formatDist: (m: number) => `${m}m`,
     setSelectedProfile: mockDrawerContext.setSelectedProfile,
@@ -51,8 +51,18 @@ vi.mock("@/context/VesselContext", () => ({
     openSafetyBeaconModal: mockDrawerContext.openSafetyBeaconModal,
     openCreateDiaryModal: mockDrawerContext.openCreateDiaryModal,
     t: TRANSLATIONS.es,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 describe("ChatProfileDrawer — Ficha Táctica On-Demand (Paso 5)", () => {
   const onClose = vi.fn();
@@ -89,7 +99,6 @@ describe("ChatProfileDrawer — Ficha Táctica On-Demand (Paso 5)", () => {
     expect(screen.getByText("98%")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Coordinar Encuentro/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Estoy yendo/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Guardián SOS/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Guardar Nota Privada/i })).toBeInTheDocument();
   });
 

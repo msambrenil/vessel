@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary, useAuth, useSettings } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { formatDiaryDateDisplay } from "@/lib/calendar/dateLocale";
 import {
@@ -17,6 +17,7 @@ import {
   Lock,
   Sparkles,
 } from "lucide-react";
+import { SegmentedTabGroup, SegmentedTabItem, BrutalistButton } from "@/components/ui";
 
 export const PendingTestimonialsManager: React.FC = () => {
   const {
@@ -25,10 +26,9 @@ export const PendingTestimonialsManager: React.FC = () => {
     hideTestimonial,
     toggleTestimonialVisibility,
     rejectTestimonial,
-    myProfile,
-    t,
-    language,
-  } = useVessel();
+  } = useDiary();
+  const { myProfile } = useAuth();
+  const { t, language } = useSettings();
 
   const [tab, setTab] = useState<"pending" | "approved" | "hidden">("pending");
 
@@ -88,53 +88,33 @@ export const PendingTestimonialsManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Selector de Pestañas (44px Touch Targets) */}
-        <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 text-xs font-mono">
-          <button
-            type="button"
-            onClick={() => setTab("pending")}
-            className={`flex-1 min-h-[44px] py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
-              tab === "pending"
-                ? "bg-electricViolet text-white font-bold shadow-violet-soft"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <span>Pendientes</span>
-            {pendingList.length > 0 && (
-              <span
-                className={`text-[9px] px-1.5 py-0.2 rounded-full ${
-                  tab === "pending" ? "bg-black text-white" : "bg-electricViolet text-white font-bold"
-                }`}
-              >
-                {pendingList.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("approved")}
-            className={`flex-1 min-h-[44px] py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
-              tab === "approved"
-                ? "bg-electricViolet text-white font-bold shadow-violet-soft"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <span>Públicos ({approvedList.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("hidden")}
-            className={`flex-1 min-h-[44px] py-1.5 rounded-lg transition-all font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
-              tab === "hidden"
-                ? "bg-electricViolet text-white font-bold shadow-violet-soft"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            <span>Ocultos ({hiddenList.length})</span>
-          </button>
-        </div>
+        {/* Selector de Pestañas con SegmentedTabGroup */}
+        <SegmentedTabGroup<"pending" | "approved" | "hidden">
+          tabs={[
+            {
+              id: "pending",
+              label: "Pendientes",
+              badge:
+                pendingList.length > 0 ? (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-electricViolet text-white font-bold ml-1">
+                    {pendingList.length}
+                  </span>
+                ) : undefined,
+            },
+            {
+              id: "approved",
+              label: `Públicos (${approvedList.length})`,
+            },
+            {
+              id: "hidden",
+              label: `Ocultos (${hiddenList.length})`,
+            },
+          ]}
+          activeTab={tab}
+          onChange={(newTab) => setTab(newTab)}
+          variant="glass"
+          size="default"
+        />
       </div>
 
       {/* PESTAÑA 1: TESTIMONIOS PENDIENTES */}
@@ -191,36 +171,36 @@ export const PendingTestimonialsManager: React.FC = () => {
 
                 {/* Acciones de Doble Consentimiento y Visibilidad Selectiva (44px) */}
                 <div className="grid grid-cols-3 gap-2 pt-1">
-                  {/* Rechazar */}
-                  <button
-                    type="button"
+                  <BrutalistButton
+                    variant="ghost"
+                    size="compact"
                     onClick={() => rejectTestimonial("me", item.id)}
-                    className="min-h-[44px] py-2 px-2 rounded-xl border border-white/10 hover:border-bloodNeon text-neutral-400 hover:text-bloodNeon text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    className="border border-white/10 hover:border-bloodNeon text-neutral-400 hover:text-bloodNeon"
                   >
                     <X className="w-3.5 h-3.5" />
                     <span>Rechazar</span>
-                  </button>
+                  </BrutalistButton>
 
-                  {/* Guardar Oculto pero Validar Encuentro */}
-                  <button
-                    type="button"
+                  <BrutalistButton
+                    variant="secondary"
+                    size="compact"
                     onClick={() => hideTestimonial("me", item.id)}
-                    className="min-h-[44px] py-2 px-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1 border border-white/10 cursor-pointer"
+                    className="border border-white/10"
                     title="Mantiene el texto privado pero suma al contador de encuentros verificados"
                   >
                     <EyeOff className="w-3.5 h-3.5 text-neutral-300" />
                     <span>Guardar Privado</span>
-                  </button>
+                  </BrutalistButton>
 
-                  {/* Aceptar y Publicar Abiertamente */}
-                  <button
-                    type="button"
+                  <BrutalistButton
+                    variant="primary"
+                    size="compact"
                     onClick={() => approveTestimonial("me", item.id, true)}
-                    className="min-h-[44px] py-2 px-2 rounded-xl bg-electricViolet text-white hover:bg-electricViolet-glow text-[11px] font-bold transition-all shadow-violet-soft flex items-center justify-center gap-1 cursor-pointer"
+                    className="shadow-violet-soft"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                     <span>Publicar</span>
-                  </button>
+                  </BrutalistButton>
                 </div>
               </div>
             ))
@@ -260,23 +240,24 @@ export const PendingTestimonialsManager: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <button
-                      type="button"
+                    <BrutalistButton
+                      variant="ghost"
+                      size="compact"
                       onClick={() => toggleTestimonialVisibility("me", item.id)}
-                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-all text-[10px] font-mono flex items-center gap-1"
+                      className="text-[10px] text-neutral-400 hover:text-white"
                       title="Ocultar de tu perfil público manteniendo la verificación de actividad"
                     >
                       <EyeOff className="w-3.5 h-3.5 text-neutral-300" />
                       <span className="hidden sm:inline">Ocultar</span>
-                    </button>
-                    <button
-                      type="button"
+                    </BrutalistButton>
+                    <BrutalistButton
+                      variant="danger"
+                      size="compact-icon"
                       onClick={() => rejectTestimonial("me", item.id)}
-                      className="p-1.5 rounded-lg text-neutral-500 hover:text-bloodNeon hover:bg-bloodNeon/10 transition-colors"
                       title="Eliminar de mi perfil"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </BrutalistButton>
                   </div>
                 </div>
 
@@ -343,23 +324,24 @@ export const PendingTestimonialsManager: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <button
-                      type="button"
+                    <BrutalistButton
+                      variant="secondary"
+                      size="compact"
                       onClick={() => toggleTestimonialVisibility("me", item.id)}
-                      className="px-2 py-1 rounded-lg bg-electricViolet/15 hover:bg-electricViolet/25 text-electricViolet-glow border border-electricViolet/30 transition-all text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-electricViolet-glow font-bold"
                       title="Hacer visible este testimonio en tu perfil"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Hacer Público</span>
-                    </button>
-                    <button
-                      type="button"
+                    </BrutalistButton>
+                    <BrutalistButton
+                      variant="danger"
+                      size="compact-icon"
                       onClick={() => rejectTestimonial("me", item.id)}
-                      className="p-1.5 rounded-lg text-neutral-500 hover:text-bloodNeon hover:bg-bloodNeon/10 transition-colors"
                       title="Eliminar registro"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </BrutalistButton>
                   </div>
                 </div>
 

@@ -70,56 +70,11 @@ export type VesselContextType = SettingsContextType &
 const VesselContext = createContext<VesselContextType | undefined>(undefined);
 
 /**
- * VesselFacadeBridge
- * Bridges all 7 domain hooks into a single unified context value.
- * This ensures 100% backward compatibility for all 76 existing consumer components
- * using `useVessel()`, while isolating domain-specific renders and background intervals.
- */
-const VesselFacadeBridge: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const settings = useSettings();
-  const auth = useAuth();
-  const safety = useSafety();
-  const logistics = useLogistics();
-  const diary = useDiary();
-  const chat = useChat();
-  const radarMatrix = useRadarMatrix();
-
-  const isUnlimited = settings.isUnlimited || Boolean(logistics.partyPass?.isActive);
-
-  const setProfileCoverPhoto = useCallback(
-    (photoUrl: string) => {
-      settings.setProfileCoverPhoto(photoUrl);
-      auth.updateUserAvatar(photoUrl, false);
-    },
-    [settings.setProfileCoverPhoto, auth.updateUserAvatar]
-  );
-
-  const facadeValue = useMemo<VesselContextType>(
-    () => ({
-      ...settings,
-      ...auth,
-      ...safety,
-      ...logistics,
-      ...diary,
-      ...chat,
-      ...radarMatrix,
-      setProfileCoverPhoto,
-      isUnlimited,
-    }),
-    [settings, auth, safety, logistics, diary, chat, radarMatrix, setProfileCoverPhoto, isUnlimited]
-  );
-
-  return (
-    <VesselContext.Provider value={facadeValue}>
-      {children}
-    </VesselContext.Provider>
-  );
-};
-
-/**
  * VesselProvider
  * Hierarchical composition of all 7 specialized domain providers in dependency order:
- * SettingsProvider -> AuthProvider -> SafetyProvider -> LogisticsProvider -> DiaryProvider -> ChatProvider -> RadarMatrixProvider -> VesselFacadeBridge
+ * SettingsProvider -> AuthProvider -> SafetyProvider -> LogisticsProvider -> DiaryProvider -> ChatProvider -> RadarMatrixProvider
+ *
+ * 2026 Architecture: VesselFacadeBridge eliminated to prevent monolithic re-render cascades.
  */
 export const VesselProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -129,9 +84,7 @@ export const VesselProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           <LogisticsProvider>
             <DiaryProvider>
               <ChatProvider>
-                <RadarMatrixProvider>
-                  <VesselFacadeBridge>{children}</VesselFacadeBridge>
-                </RadarMatrixProvider>
+                <RadarMatrixProvider>{children}</RadarMatrixProvider>
               </ChatProvider>
             </DiaryProvider>
           </LogisticsProvider>
@@ -142,13 +95,16 @@ export const VesselProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 };
 
 /**
- * useVessel
- * Universal facade hook returning the unified Vessel context.
+ * @deprecated PROHIBIDO en arquitectura 2026 (Rule 11).
+ * Consumir exclusivamente hooks atómicos por dominio:
+ * useAuth, useSettings, useRadarMatrix, useChat, useLogistics, useDiary, useSafety.
  */
 export const useVessel = (): VesselContextType => {
   const context = useContext(VesselContext);
   if (!context) {
-    throw new Error("useVessel must be used within a VesselProvider");
+    throw new Error(
+      "[VESSEL 2026] useVessel() está deprecado y prohibido para evitar Context Hell y cascadas de re-renders. Usá hooks atómicos (useAuth, useRadarMatrix, useChat, etc.)."
+    );
   }
   return context;
 };

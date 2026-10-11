@@ -139,7 +139,56 @@ Para asegurar **coherencia absoluta** y evitar dispersión de clases Tailwind o 
    - Selector segmentado para ordenamiento táctico (`Cerca`, `On-Line`, `Afinidad`), accesible con roles `radiogroup` y respuesta táctil.
 5. **`BrutalistButton` & `TacticalBadge`**:
    - Botones y badges semánticos con micro-animaciones, elevación `active:scale-[0.97]` y síntesis acústica analógica (pulse, subbass, vault).
+6. **`SegmentedTabGroup` (`SegmentedTabGroup.tsx`)**:
+   - Selector segmentado brutalista para navegación por pestañas y sintonías operativas con soporte de accesibilidad WAI-ARIA (`tablist`/`tab`) y feedback háptico/sub-bass.
+7. **`TacticalBottomSheet` (`design-system/TacticalBottomSheet.tsx`)**:
+   - Hoja deslizable táctica con soporte para modos docking peeking y fullscreen `100dvh`, drag handle táctil y aislamiento estricto de gestos swipe-down.
+8. **`TacticalMenuItem` (`TacticalMenuItem.tsx`)**:
+   - Elemento de menú desplegable táctico brutalista con target de 44px, roles WAI-ARIA `menuitem`, badge contextual e interacción acústica sub-bass.
+9. **`TacticalAvatar` (`TacticalAvatar.tsx`)**:
+   - Avatar táctico con 5 estados interactivos, targets ergonómicos de 44px+, síntesis sub-bass (60Hz), indicador animado de ping unread, desenfoque reactivo para Modo Niebla (Fog Mode) y fallback de iniciales en mono con fondo dark obsidian.
 
-**Regla de Consistencia Global:** Si un estilo, borde o interacción de filtro/telemetría necesita cambiar, **DEBE modificarse en su componente primitivo en `src/components/ui/`**, propagando el cambio reactivamente a todas las vistas de la aplicación.
+### ⚠️ Invariantes de Uso y Guarda de Confirmación Previa
+
+1. **Mandato de Componente Único**: Desde ahora, **TODO elemento visual, botón, badge, input, tab o modal DEBE crearse consumiendo exclusivamente los componentes de `@/components/ui/`**.
+2. **Prohibición de Elementos Ad-Hoc**: Se prohíbe maquetar `<button>`, `<input>`, `<div role="button">` o spans con clases Tailwind sueltas si ya existe una primitiva del sistema.
+3. **Guarda de Confirmación para Nuevos Componentes**: En caso de que se requiera un patrón de interfaz que **NO exista en la biblioteca**, **ES OBLIGATORIO DETENERSE Y PEDIR CONFIRMACIÓN AL USUARIO** antes de crearlo o implementarlo, justificando su necesidad y diseño.
+4. **Regla de Propagación Global**: Si un componente de la biblioteca cambia, **debe cambiar automáticamente en toda la aplicación**, asegurando coherencia visual, técnica y de accesibilidad.
+
+---
+
+## 9. Invariante de Versionado, Despliegue en Main y Purga Forzada de Caché (IMPORTANTE)
+
+1. **Actualización Obligatoria en Push a `main`**:
+   - Cada entrega que se sube a `main` debe actualizar la versión del sistema (`CURRENT_SYSTEM_VERSION`, `SYSTEM_BUILD_TIMESTAMP`, `SYSTEM_BUILD_FORMATTED` y registro en `SYSTEM_CHANGELOG` en `src/lib/version/systemVersion.ts`).
+2. **Sincronización Automática (`npm run version:sync` / `npm run validate`)**:
+   - Debe ejecutarse la sincronización para actualizar `public/sw.js` (`VESSEL_VERSION` y `CACHE_NAME`) y `package.json`, provocando la activación inmediata de `skipWaiting()` y `clients.claim()` en el Service Worker.
+3. **Forzado de Última Versión en Navegadores Clientes**:
+   - Combinación de cabeceras HTTP `no-cache, no-store, must-revalidate` en `next.config.ts`, estrategia `Network-First` para navegación en `sw.js` y sondeo activo en `PwaRegister.tsx` (que compara versión y `buildTimestamp` contra `/api/system/version` en arranque, focus, visibilitychange y Safari iOS bfcache).
+   - Ante cualquier discrepancia de versión, el cliente purga automáticamente el CacheStorage local y realiza un hard reload hacia la build más reciente.
+4. **Telemetría en Consola de Administración (`/admin`)**:
+   - La nueva versión debe reflejarse en vivo bajo la pestaña **"Versión & Despliegues"** (`SystemVersionTab.tsx`), indicando la `BUILD ACTIVA`, fecha/hora en formato argentino y el historial de cambios oficial.
+
+---
+
+## 10. Tríada de Rendimiento & Arquitectura Moderna 2026 (Invariantes Obligatorias)
+
+Todo cambio, refactor, módulo o feature agregado al código debe alinearse con estos tres pilares de rendimiento:
+
+1. **Hooks Atómicos & Cero Monolito Contextual**:
+   - Prohibido el uso de `useVessel()`.
+   - Se consumen exclusivamente hooks por dominio (`useAuth`, `useRadarMatrix`, `useChat`, `useSettings`, `useLogistics`, `useDiary`, `useSafety`).
+   - Componentes reactivos densos como `ProfileCard` se mantienen puros (`PureProfileCard`) con props atómicas memorizadas, eliminando cascadas de renderizado innecesarias provocadas por eventos de chat o GPS.
+
+2. **Next.js 16 App Router & View Transitions Nativas**:
+   - Toda vista responde a una ruta real de App Router (`/radar`, `/pulses`, `/chat`, `/diary`, `/account`) bajo el shell unificado `AppShell.tsx`.
+   - Navegación cliente a través de `useRouter().push(targetPath)` y `usePathname()` con soporte para `document.startViewTransition`.
+   - Soporte total para deep-linking e historial nativo del navegador (Back/Forward en mobile).
+
+3. **Optimización del Main Thread, Assets & I/O Asíncrona**:
+   - Optimización de imágenes remotas mediante Next Image (AVIF/WebP, dimensionado `w=400`), con fallback de carga directa (`unoptimized={true}`) en desarrollo local para garantizar resiliencia total.
+   - Cómputos masivos (Haversine en lotes, proximidad geoespacial) delegados a Web Workers (`proximityWorkerClient.ts`).
+   - I/O pesada y sincronizaciones desacopladas de `localStorage` hacia IndexedDB (`offlineMutationQueue.ts`), protegiendo la latencia INP y el audio de `SubBassAudioEngine`.
+
 
 

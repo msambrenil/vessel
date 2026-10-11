@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 import { PreFlightChecklist } from "@/types/vessel";
 
 interface PreFlightCardProps {
@@ -10,7 +10,7 @@ interface PreFlightCardProps {
 }
 
 export const PreFlightCard: React.FC<PreFlightCardProps> = ({ data, isCurrentUser }) => {
-  const { t, language } = useVessel();
+  const { t, language } = useSettings();
   const tempoLabels: Record<string, string> = {
     fast_carnal: language === "es" ? "⚡ Rápido & Carnal" : "⚡ Fast & Carnal",
     sensual_slow: language === "es" ? "🔥 Sensual & Pausado" : "🔥 Sensual & Slow",

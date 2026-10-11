@@ -109,5 +109,26 @@ describe("SubBassAudioEngine — Motor Acústico Sub-Bass & Respuesta Háptica",
     await expect(audioEngine.suspendAudioOnHidden()).resolves.toBeUndefined();
     await expect(audioEngine.resumeAudioOnVisible()).resolves.toBeUndefined();
   });
+
+  it("debe invocar los nuevos patrones hápticos contextuales (Encounter Imminent y Safety Alert)", () => {
+    audioEngine.triggerEncounterImminentHaptic();
+    expect(vibrateMock).toHaveBeenCalledWith([20, 40, 20]);
+
+    audioEngine.triggerSafetyAlertHaptic();
+    expect(vibrateMock).toHaveBeenCalledWith([40, 60, 80]);
+
+    audioEngine.playEncounterImminent();
+    expect(vibrateMock).toHaveBeenCalledWith([20, 40, 20]);
+
+    audioEngine.playSafetyAlert();
+    expect(vibrateMock).toHaveBeenCalledWith([40, 60, 80]);
+  });
+
+  it("debe manejar initAudioWorklet de forma segura retornando booleano", async () => {
+    const isLoaded = await audioEngine.initAudioWorklet();
+    expect(typeof isLoaded).toBe("boolean");
+    expect(typeof audioEngine.getIsWorkletLoaded()).toBe("boolean");
+  });
 });
+
 

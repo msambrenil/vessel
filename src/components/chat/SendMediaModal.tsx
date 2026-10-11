@@ -18,7 +18,7 @@ import {
   Zap,
   History,
 } from "lucide-react";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings, useChat } from "@/context/VesselContext";
 import { ChatMediaAttachment, ChatMediaMode, UserAlbum } from "@/types/vessel";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 
@@ -60,7 +60,8 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
   targetProfileId,
   targetCodename,
 }) => {
-  const { t, language, userAlbums, sendMediaChatMessage, registerAlbumSharedWith, chatMessages } = useVessel();
+  const { t, language, userAlbums, registerAlbumSharedWith } = useSettings();
+  const { sendMediaChatMessage, chatMessages } = useChat();
 
   const [activeTab, setActiveTab] = useState<"albums" | "device">("albums");
   const [selectedFileUrl, setSelectedFileUrl] = useState<string>("");
@@ -263,7 +264,7 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="send-media-modal-title"
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-2xl animate-fade-in p-0 sm:p-4 select-none [overscroll-behavior:contain]"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-2xl animate-fade-in p-0 sm:p-4 select-none [overscroll-behavior:contain]"
       onClick={onClose}
     >
       <div
@@ -395,6 +396,8 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                     <img
                       src={selectedFileUrl}
                       alt="Vista previa de archivo seleccionado"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full max-h-56 object-cover bg-black"
                     />
                   )}
@@ -436,6 +439,8 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                           <img
                             src={photo.url}
                             alt={photo.label}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent flex flex-col justify-between p-2">
@@ -492,6 +497,8 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                               <img
                                 src={cover}
                                 alt={album.title}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             ) : (
@@ -538,6 +545,8 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                         <img
                           src={selectedAlbum.coverUrl || selectedAlbum.photos[0]?.url || ""}
                           alt={selectedAlbum.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -635,6 +644,8 @@ export const SendMediaModal: React.FC<SendMediaModalProps> = ({
                               <img
                                 src={photo.url}
                                 alt="Foto de álbum"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover"
                               />
                               {isSelected && (

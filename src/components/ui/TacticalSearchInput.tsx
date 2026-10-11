@@ -46,7 +46,7 @@ export const TacticalSearchInput: React.FC<TacticalSearchInputProps> = ({
         value={value}
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full min-h-[38px] sm:min-h-[40px] bg-white/5 border border-white/10 rounded-xl text-white text-xs pl-9 pr-8 py-1.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-sans select-text"
+        className="w-full min-h-[44px] sm:min-h-[40px] bg-white/5 border border-white/10 rounded-xl text-white text-base sm:text-xs pl-9 pr-8 py-2 sm:py-1.5 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus:bg-white/10 focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all font-sans select-text"
       />
       {value && (
         <button

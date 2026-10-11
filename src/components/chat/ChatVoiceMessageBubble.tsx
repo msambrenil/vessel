@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Play, Pause, Flame } from "lucide-react";
 import { audioPlayerService } from "@/lib/audio/audioPlayerService";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 
 interface ChatVoiceMessageBubbleProps {
   messageId: string;
@@ -24,7 +24,7 @@ export const ChatVoiceMessageBubble: React.FC<ChatVoiceMessageBubbleProps> = ({
   timestamp,
   onBurn,
 }) => {
-  const { t, language } = useVessel();
+  const { t, language } = useSettings();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 

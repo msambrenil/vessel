@@ -249,19 +249,7 @@ export function formatRelativePulseTime(
   }
 }
 
-/**
- * Evalúa de forma resiliente e independiente del idioma si la movilidad
- * de un perfil incluye lugar/hospedaje propio disponible.
- */
-export function hasHostingCapability(mobility?: string): boolean {
-  if (!mobility) return false;
-  const normalized = mobility.toLowerCase();
-  return (
-    normalized.includes("tengo depto") ||
-    normalized.includes("tengo sitio") ||
-    normalized.includes("tengo lugar") ||
-    normalized.includes("host")
-  );
-}
+export { hasHostingCapability } from "@/lib/geo/mobility";
+
 
 

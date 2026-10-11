@@ -12,7 +12,6 @@ import {
   ItsExposureAlert,
   ItsExposureType,
   ProfileDossier,
-  VaultAuditLog,
   EncounterTicket,
   ConquestZone,
   VesselWrappedMetrics,
@@ -37,7 +36,6 @@ const INITIAL_VALIDATED_ENCOUNTERS: Record<string, EncounterRecord> = {};
 const INITIAL_MY_TESTIMONIALS: EncounterTestimonial[] = MOCK_MY_RECEIVED_TESTIMONIALS;
 const INITIAL_DOSSIERS: Record<string, ProfileDossier> = {};
 const INITIAL_DOXYPEP_TRACKERS: DoxyPepTracker[] = [];
-const INITIAL_VAULT_AUDIT_LOGS: VaultAuditLog[] = [];
 
 export interface DiaryContextType {
   // Diario de Citas & Calendario Inteligente
@@ -55,7 +53,7 @@ export interface DiaryContextType {
   updateDiaryEntry: (id: string, updates: Partial<DiaryEntry>) => void;
   deleteDiaryEntry: (id: string) => void;
   toggleHealthReminderResolved: (diaryId: string) => void;
-  restoreDiaryBackup: (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, any> }) => void;
+  restoreDiaryBackup: (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, Partial<ProfileDossier>> }) => void;
 
   // Testimonios Consensuados & Geofencing
   validatedEncounters: Record<string, EncounterRecord>;
@@ -121,7 +119,6 @@ export interface DiaryContextType {
   unlockedVaults: Record<string, boolean>;
   unlockVault: (vaultId: string) => void;
   revokeVaultAccess: (vaultId: string) => void;
-  vaultAuditLogs: VaultAuditLog[];
   isVaultAuditModalOpen: boolean;
   openVaultAuditModal: () => void;
   closeVaultAuditModal: () => void;
@@ -165,9 +162,6 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
   const [isDossierModalOpen, setIsDossierModalOpen] = useState<boolean>(false);
   const [isWrappedModalOpen, setIsWrappedModalOpen] = useState<boolean>(false);
   const [unlockedVaults, setUnlockedVaults] = useState<Record<string, boolean>>({});
-  const [vaultAuditLogs, setVaultAuditLogs] = useState<VaultAuditLog[]>(() =>
-    getActiveAppMode() === "real" ? [] : INITIAL_VAULT_AUDIT_LOGS
-  );
   const [isVaultAuditModalOpen, setIsVaultAuditModalOpen] = useState<boolean>(false);
 
   const openLoverDossierModal = useCallback((profileId: string) => {
@@ -237,13 +231,6 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       appMode
     );
     setDoxyPepTrackers(localDoxyPep || []);
-
-    const localVaultAudit = loadFromStorage<VaultAuditLog[]>(
-      STORAGE_KEYS.VAULT_AUDIT_LOGS,
-      appMode === "real" ? [] : INITIAL_VAULT_AUDIT_LOGS,
-      appMode
-    );
-    setVaultAuditLogs(localVaultAudit || []);
 
     const fallbackTestimonials = appMode === "real" ? [] : MOCK_MY_RECEIVED_TESTIMONIALS;
     const localTestimonials = loadFromStorage<EncounterTestimonial[]>(STORAGE_KEYS.MY_TESTIMONIALS, fallbackTestimonials, appMode);
@@ -358,7 +345,7 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
   }, [currentUserUid]);
 
   const restoreDiaryBackup = useCallback(
-    (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, any> }) => {
+    (backup: { entries?: DiaryEntry[]; dossiers?: Record<string, Partial<ProfileDossier>> }) => {
       if (backup.entries && Array.isArray(backup.entries)) {
         setDiaryEntries((prev) => {
           const map = new Map<string, DiaryEntry>();
@@ -374,7 +361,28 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       }
       if (backup.dossiers && typeof backup.dossiers === "object") {
         setProfileDossiers((prev) => {
-          const merged = { ...prev, ...backup.dossiers };
+          const merged: Record<string, ProfileDossier> = { ...prev };
+          Object.entries(backup.dossiers!).forEach(([pid, partialDossier]) => {
+            if (!partialDossier) return;
+            const existing = prev[pid];
+            merged[pid] = {
+              profileId: pid,
+              customAlias: partialDossier.customAlias || existing?.customAlias,
+              privateNotes: partialDossier.privateNotes !== undefined ? partialDossier.privateNotes : existing?.privateNotes,
+              rating: partialDossier.rating !== undefined ? partialDossier.rating : existing?.rating,
+              rankingTier: partialDossier.rankingTier || existing?.rankingTier,
+              redFlags: Array.isArray(partialDossier.redFlags) ? partialDossier.redFlags : (existing?.redFlags || []),
+              greenFlags: Array.isArray(partialDossier.greenFlags) ? partialDossier.greenFlags : (existing?.greenFlags || []),
+              sharedPhotos: Array.isArray(partialDossier.sharedPhotos) ? partialDossier.sharedPhotos : existing?.sharedPhotos,
+              chemistryLevel: partialDossier.chemistryLevel !== undefined ? partialDossier.chemistryLevel : existing?.chemistryLevel,
+              badges: Array.isArray(partialDossier.badges) ? partialDossier.badges : existing?.badges,
+              preferredRoles: Array.isArray(partialDossier.preferredRoles) ? partialDossier.preferredRoles : existing?.preferredRoles,
+              favoriteKinks: Array.isArray(partialDossier.favoriteKinks) ? partialDossier.favoriteKinks : existing?.favoriteKinks,
+              lastEncounterDate: partialDossier.lastEncounterDate || existing?.lastEncounterDate,
+              encounterCount: partialDossier.encounterCount !== undefined ? partialDossier.encounterCount : existing?.encounterCount,
+              updatedAt: partialDossier.updatedAt || existing?.updatedAt || new Date().toISOString(),
+            };
+          });
           saveToStorage(STORAGE_KEYS.DOSSIERS, merged);
           if (currentUserUid && currentUserUid !== "local-user") {
             saveFullUserDataToCloud(currentUserUid, { dossiers: merged });
@@ -1059,7 +1067,6 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       unlockedVaults,
       unlockVault,
       revokeVaultAccess,
-      vaultAuditLogs,
       isVaultAuditModalOpen,
       openVaultAuditModal,
       closeVaultAuditModal,
@@ -1114,7 +1121,6 @@ export const DiaryProvider: React.FC<DiaryProviderProps> = ({
       unlockedVaults,
       unlockVault,
       revokeVaultAccess,
-      vaultAuditLogs,
       isVaultAuditModalOpen,
       openVaultAuditModal,
       closeVaultAuditModal,

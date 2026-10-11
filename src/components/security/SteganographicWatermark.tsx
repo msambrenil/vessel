@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useAuth } from "@/context/VesselContext";
 
 interface SteganographicWatermarkProps {
   ownerCodename?: string;
@@ -15,7 +15,7 @@ export const SteganographicWatermark: React.FC<SteganographicWatermarkProps> = (
   className = "",
   variant = "subtle",
 }) => {
-  const { myProfile, currentUserUid } = useVessel();
+  const { myProfile, currentUserUid } = useAuth();
 
   // Nombre de usuario: prioriza el dueño de la foto o perfil, fallback al usuario activo
   const userIdentifier = ownerCodename || myProfile?.codename || currentUserUid || "vessel";

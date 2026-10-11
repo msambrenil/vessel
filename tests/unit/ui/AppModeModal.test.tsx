@@ -6,14 +6,24 @@ import { AppModeModal } from "@/components/settings/AppModeModal";
 const mockSetAppMode = vi.fn();
 const mockResetModeData = vi.fn();
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     appMode: "test",
     setAppMode: mockSetAppMode,
     resetModeData: mockResetModeData,
     language: "es",
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/audio/SubBassAudioEngine", () => ({
   audioEngine: {

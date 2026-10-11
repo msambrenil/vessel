@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useAuth,
+  useRadarMatrix,
+  useChat,
+  useSettings,
+} from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   QrCode,
@@ -32,6 +37,7 @@ import {
 } from "@/lib/qr/tacticalQrEngine";
 import { VesselProfile } from "@/types/vessel";
 import { TRANSLATIONS } from "@/lib/i18n/translations";
+import { BrutalistSwitch } from "@/components/ui/BrutalistSwitch";
 
 interface QuickShareQrModalProps {
   isOpen?: boolean;
@@ -42,27 +48,35 @@ interface QuickShareQrModalProps {
  * QuickShareQrModal: Pase QR de Contacto Rápido a pantalla completa para fiestas, bares o baños.
  * Diseñado bajo Impeccable UI (Modo Operate) y Ponytail (Cero dependencias externas).
  */
-export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
-  isOpen: controlledOpen,
-  onClose: controlledClose,
+interface QuickShareQrModalContentProps {
+  isOpen?: boolean;
+  onClose: () => void;
+  initialTab?: "show" | "receive";
+  initialConnectedPayload?: QuickShareQrPayload | null;
+  initialDecodeError?: "empty_input" | "expired_token" | "invalid_token" | null;
+}
+
+const QuickShareQrModalContent: React.FC<QuickShareQrModalContentProps> = ({
+  isOpen = true,
+  onClose: handleClose,
+  initialTab = "show",
+  initialConnectedPayload = null,
+  initialDecodeError = null,
 }) => {
+  const { myProfile, currentUserUid } = useAuth();
   const {
-    myProfile,
     myFullProfile,
-    currentUserUid,
     profiles = [],
     favoriteProfileIds = [],
     toggleFavoriteProfile,
     transmitSignal,
     setSelectedProfile,
-    setActiveChatProfileId,
     setActiveView,
-    language = "es",
-    t,
-  } = useVessel();
+  } = useRadarMatrix();
+  const { setActiveChatProfileId } = useChat();
+  const { language = "es", t } = useSettings();
 
-  const [internalOpen, setInternalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"show" | "receive">("show");
+  const [activeTab, setActiveTab] = useState<"show" | "receive">(initialTab);
   const [expiryPreset, setExpiryPreset] = useState<QrExpiryPreset>("2h");
   const [isHighBrightness, setIsHighBrightness] = useState(false);
   const [isStealthScreen, setIsStealthScreen] = useState(false);
@@ -76,73 +90,25 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
   const [isConnecting, setIsConnecting] = useState(false);
   const [decodeError, setDecodeError] = useState<
     "empty_input" | "expired_token" | "invalid_token" | null
-  >(null);
-  const [connectedPayload, setConnectedPayload] = useState<QuickShareQrPayload | null>(null);
-
-  const isModalOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
-
-  const handleClose = useCallback(() => {
-    setIsHighBrightness(false);
-    setDecodeError(null);
-    if (controlledClose) {
-      controlledClose();
-    } else {
-      setInternalOpen(false);
-    }
-  }, [controlledClose]);
+  >(initialDecodeError);
+  const [connectedPayload, setConnectedPayload] = useState<QuickShareQrPayload | null>(initialConnectedPayload);
 
   const qrStrings = t?.qrShare || TRANSLATIONS.es.qrShare;
 
-  // Escuchar evento global `vessel:open-qr-share` y parámetro URL `?v_qr=...`
+  // Sincronizar conexiones automáticas recibidas al escanear
   useEffect(() => {
-    const handleOpenEvent = (ev: Event) => {
-      const customEv = ev as CustomEvent<{ tab?: "show" | "receive" }>;
-      if (customEv.detail?.tab) {
-        setActiveTab(customEv.detail.tab);
-      } else {
-        setActiveTab("show");
+    if (connectedPayload) {
+      if (toggleFavoriteProfile && !favoriteProfileIds.includes(connectedPayload.uid)) {
+        toggleFavoriteProfile(connectedPayload.uid);
       }
-      setConnectedPayload(null);
-      setDecodeError(null);
-      setInternalOpen(true);
-      audioEngine.playSubBass(65);
-    };
-
-    window.addEventListener("vessel:open-qr-share", handleOpenEvent);
-
-    // Detectar si el usuario abrió la app escaneando un QR (`?v_qr=...`)
-    if (typeof window !== "undefined" && window.location.search.includes("v_qr=")) {
-      const params = new URLSearchParams(window.location.search);
-      const qrToken = params.get("v_qr");
-      if (qrToken) {
-        const res = decodeQuickSharePayload(qrToken);
-        setInternalOpen(true);
-        setActiveTab("receive");
-        if (res.ok) {
-          setConnectedPayload(res.payload);
-          if (toggleFavoriteProfile && !favoriteProfileIds.includes(res.payload.uid)) {
-            toggleFavoriteProfile(res.payload.uid);
-          }
-          if (transmitSignal && res.payload.autoPulse) {
-            transmitSignal(res.payload.uid);
-          }
-        } else {
-          setDecodeError(res.error);
-        }
-        // Limpiar query param sin recargar
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({}, "", cleanUrl);
+      if (transmitSignal && connectedPayload.autoPulse) {
+        transmitSignal(connectedPayload.uid);
       }
     }
-
-    return () => {
-      window.removeEventListener("vessel:open-qr-share", handleOpenEvent);
-    };
-  }, [favoriteProfileIds, transmitSignal, toggleFavoriteProfile]);
+  }, [connectedPayload, favoriteProfileIds, toggleFavoriteProfile, transmitSignal]);
 
   // Soporte de tecla Escape (WCAG 2.1 AA)
   useEffect(() => {
-    if (!isModalOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         handleClose();
@@ -150,7 +116,7 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isModalOpen, handleClose]);
+  }, [handleClose]);
 
   const isProfileIncomplete =
     !myProfile?.codename ||
@@ -312,7 +278,7 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
     };
   };
 
-  if (!isModalOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div
@@ -632,19 +598,11 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
 
                 {/* Switches Rápidos Táctiles (Brillo Óptico 100% + Ocultar Datos en Pantalla) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={isHighBrightness}
-                    aria-label={qrStrings.highBrightnessLabel}
-                    onClick={() => {
-                      audioEngine.playSubBass(80);
-                      setIsHighBrightness((prev) => !prev);
-                    }}
-                    className={`min-h-[44px] p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                  <div
+                    className={`min-h-[44px] p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2 transition-all ${
                       isHighBrightness
                         ? "bg-amber-400/20 border-amber-500 text-neutral-900 font-bold"
-                        : "bg-black/50 border-white/10 text-neutral-300 hover:bg-white/5"
+                        : "bg-black/50 border-white/10 text-neutral-300"
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -657,28 +615,25 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
                         {qrStrings.highBrightnessLabel}
                       </span>
                     </div>
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                        isHighBrightness ? "bg-amber-600" : "bg-neutral-600"
-                      }`}
+                    <BrutalistSwitch
+                      checked={isHighBrightness}
+                      onChange={(val) => {
+                        audioEngine.playSubBass(80);
+                        setIsHighBrightness(val);
+                      }}
+                      variant="emerald"
+                      size="sm"
+                      aria-label={qrStrings.highBrightnessLabel}
                     />
-                  </button>
+                  </div>
 
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={isStealthScreen}
-                    aria-label={qrStrings.stealthScreenLabel}
-                    onClick={() => {
-                      audioEngine.playPulse();
-                      setIsStealthScreen((prev) => !prev);
-                    }}
-                    className={`min-h-[44px] p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2 transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
+                  <div
+                    className={`min-h-[44px] p-2.5 rounded-2xl border text-left flex items-center justify-between gap-2 transition-all ${
                       isStealthScreen
                         ? "bg-electricViolet/20 border-electricViolet text-electricViolet-glow font-bold"
                         : isHighBrightness
                         ? "bg-neutral-100 border-neutral-300 text-neutral-800"
-                        : "bg-black/50 border-white/10 text-neutral-300 hover:bg-white/5"
+                        : "bg-black/50 border-white/10 text-neutral-300"
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -687,12 +642,17 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
                         {qrStrings.stealthScreenLabel}
                       </span>
                     </div>
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                        isStealthScreen ? "bg-electricViolet" : "bg-neutral-600"
-                      }`}
+                    <BrutalistSwitch
+                      checked={isStealthScreen}
+                      onChange={(val) => {
+                        audioEngine.playPulse();
+                        setIsStealthScreen(val);
+                      }}
+                      variant="violet"
+                      size="sm"
+                      aria-label={qrStrings.stealthScreenLabel}
                     />
-                  </button>
+                  </div>
                 </div>
 
                 {/* Botonera Principal de Acciones (44px Touch Targets) */}
@@ -891,5 +851,76 @@ export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
         )}
       </div>
     </div>
+  );
+};
+
+/**
+ * QuickShareQrModal: Orquestador ligero con montaje diferido (Lazy Mounting).
+ * Previene la ejecución de hooks y cómputo de matrices QR en reposo cuando el modal está cerrado.
+ */
+export const QuickShareQrModal: React.FC<QuickShareQrModalProps> = ({
+  isOpen: controlledOpen,
+  onClose: controlledClose,
+}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"show" | "receive">("show");
+  const [decodeError, setDecodeError] = useState<
+    "empty_input" | "expired_token" | "invalid_token" | null
+  >(null);
+  const [connectedPayload, setConnectedPayload] = useState<QuickShareQrPayload | null>(null);
+
+  useEffect(() => {
+    const handleOpenEvent = (ev: Event) => {
+      const customEv = ev as CustomEvent<{ tab?: "show" | "receive" }>;
+      setActiveTab(customEv.detail?.tab || "show");
+      setConnectedPayload(null);
+      setDecodeError(null);
+      setInternalOpen(true);
+      audioEngine.playSubBass(65);
+    };
+
+    window.addEventListener("vessel:open-qr-share", handleOpenEvent);
+
+    if (typeof window !== "undefined" && window.location.search.includes("v_qr=")) {
+      const params = new URLSearchParams(window.location.search);
+      const qrToken = params.get("v_qr");
+      if (qrToken) {
+        const res = decodeQuickSharePayload(qrToken);
+        setInternalOpen(true);
+        setActiveTab("receive");
+        if (res.ok) {
+          setConnectedPayload(res.payload);
+        } else {
+          setDecodeError(res.error);
+        }
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+
+    return () => {
+      window.removeEventListener("vessel:open-qr-share", handleOpenEvent);
+    };
+  }, []);
+
+  const isModalOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+
+  const handleClose = useCallback(() => {
+    if (controlledClose) {
+      controlledClose();
+    } else {
+      setInternalOpen(false);
+    }
+  }, [controlledClose]);
+
+  if (!isModalOpen) return null;
+
+  return (
+    <QuickShareQrModalContent
+      isOpen={isModalOpen}
+      onClose={handleClose}
+      initialTab={activeTab}
+      initialConnectedPayload={connectedPayload}
+      initialDecodeError={decodeError}
+    />
   );
 };

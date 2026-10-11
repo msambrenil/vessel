@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Square, X, Send, Play, Pause, Flame } from "lucide-react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
-import { useVessel } from "@/context/VesselContext";
+import { useSettings } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { audioPlayerService } from "@/lib/audio/audioPlayerService";
 
@@ -18,7 +18,7 @@ export const ChatVoiceRecorderInline: React.FC<ChatVoiceRecorderInlineProps> = (
   onCancel,
   isBurnMode,
 }) => {
-  const { t, language } = useVessel();
+  const { t, language } = useSettings();
   
   const {
     status,

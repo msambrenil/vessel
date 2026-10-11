@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { VoiceSnippet } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings } from "@/context/VesselContext";
 import { audioPlayerService } from "@/lib/audio/audioPlayerService";
 
 interface VoiceVibePlayerProps {
@@ -11,7 +11,8 @@ interface VoiceVibePlayerProps {
 }
 
 export const VoiceVibePlayer: React.FC<VoiceVibePlayerProps> = ({ voice, compact = false }) => {
-  const { activePlayingVoiceId, playVoiceVibe, stopVoiceVibe, language, t } = useVessel();
+  const { activePlayingVoiceId, playVoiceVibe, stopVoiceVibe } = useLogistics();
+  const { language, t } = useSettings();
   const [progress, setProgress] = useState(0);
 
   const isPlaying = voice ? activePlayingVoiceId === voice.id : false;
@@ -51,7 +52,7 @@ export const VoiceVibePlayer: React.FC<VoiceVibePlayerProps> = ({ voice, compact
       <button
         type="button"
         onClick={handleTogglePlay}
-        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono tracking-wider uppercase border transition-all ${
+        className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] min-w-[44px] rounded-lg text-[10px] font-mono tracking-wider uppercase border transition-all cursor-pointer ${
           isPlaying
             ? "bg-electricViolet text-white border-electricViolet font-bold shadow-violet-soft animate-pulse"
             : "bg-neutral-900 text-purple-200 border-electricViolet/30 hover:border-electricViolet hover:bg-neutral-800"
@@ -80,7 +81,15 @@ export const VoiceVibePlayer: React.FC<VoiceVibePlayerProps> = ({ voice, compact
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={handleTogglePlay}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleTogglePlay(e as unknown as React.MouseEvent);
+        }
+      }}
       className={`w-full p-2.5 rounded-xl border cursor-pointer transition-all ${
         isPlaying
           ? "bg-gradient-to-r from-purple-950/40 via-neutral-900 to-neutral-950 border-electricViolet shadow-violet-soft"
@@ -91,7 +100,8 @@ export const VoiceVibePlayer: React.FC<VoiceVibePlayerProps> = ({ voice, compact
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            className={`w-8 h-8 rounded-lg flex items-center justify-center font-mono text-xs transition-all ${
+            aria-label={isPlaying ? "Pausar nota de voz" : "Reproducir nota de voz"}
+            className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center font-mono text-xs transition-all shrink-0 ${
               isPlaying
                 ? "bg-electricViolet text-white shadow-violet-soft"
                 : "bg-neutral-800 text-purple-200 hover:bg-neutral-700"

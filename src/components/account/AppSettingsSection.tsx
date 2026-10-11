@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import {
+  useSettings,
+  useAuth,
+  useLogistics,
+  useRadarMatrix,
+} from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import { getLocalTodayIso } from "@/lib/calendar/dateLocale";
 import {
@@ -28,7 +33,7 @@ import Link from "next/link";
 import { AppModeModal } from "@/components/settings/AppModeModal";
 import { isLocalEnvironment } from "@/lib/storage/localStorageSync";
 import { checkIsAdminAuthorized } from "@/lib/admin/adminService";
-
+import { BrutalistButton, BrutalistSwitch } from "@/components/ui";
 import { createVipInviteCode } from "@/lib/firebase/inviteService";
 
 export const AppSettingsSection: React.FC = () => {
@@ -45,19 +50,23 @@ export const AppSettingsSection: React.FC = () => {
     isSyncingCloud,
     syncCloudNow,
     exportBackupData,
+  } = useSettings();
+  const {
     logout,
     currentUserUid,
-    isCloudConnected,
     authUser,
     isAuthenticated,
     isAnonymous,
     openAuthModal,
+    isCloudConnected,
+  } = useAuth();
+  const {
     isGpsHibernating,
     confirmPartyArrivalLock,
     checkOutOfEvent,
     activeCheckin,
-    profiles,
-  } = useVessel();
+  } = useLogistics();
+  const { profiles } = useRadarMatrix();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAppModeModalOpen, setIsAppModeModalOpen] = useState(false);
@@ -440,26 +449,16 @@ export const AppSettingsSection: React.FC = () => {
               )}
             </div>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={appSettings.cloudSyncEnabled}
-              onClick={() =>
+            <BrutalistSwitch
+              checked={appSettings.cloudSyncEnabled}
+              onChange={(val) =>
                 updateAppSettings({
-                  cloudSyncEnabled: !appSettings.cloudSyncEnabled,
+                  cloudSyncEnabled: val,
                 })
               }
+              variant="emerald"
               aria-label="Activar o desactivar sincronización en la nube"
-              className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                appSettings.cloudSyncEnabled ? "bg-emerald-500" : "bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform absolute top-1 ${
-                  appSettings.cloudSyncEnabled ? "left-6" : "left-1"
-                }`}
-              />
-            </button>
+            />
           </div>
 
           <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px]">
@@ -496,26 +495,16 @@ export const AppSettingsSection: React.FC = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={appSettings.autoBackupEnabled}
-              onClick={() =>
+            <BrutalistSwitch
+              checked={appSettings.autoBackupEnabled}
+              onChange={(val) =>
                 updateAppSettings({
-                  autoBackupEnabled: !appSettings.autoBackupEnabled,
+                  autoBackupEnabled: val,
                 })
               }
+              variant="violet"
               aria-label="Activar o desactivar backup automático"
-              className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                appSettings.autoBackupEnabled ? "bg-electricViolet" : "bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform absolute top-1 ${
-                  appSettings.autoBackupEnabled ? "left-6" : "left-1"
-                }`}
-              />
-            </button>
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
@@ -558,24 +547,15 @@ export const AppSettingsSection: React.FC = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={appSettings.soundEnabled}
-              onClick={() =>
-                updateAppSettings({ soundEnabled: !appSettings.soundEnabled })
+            <BrutalistSwitch
+              checked={appSettings.soundEnabled}
+              onChange={(val) =>
+                updateAppSettings({ soundEnabled: val })
               }
+              variant="violet"
+              icon="bell"
               aria-label="Activar o desactivar sonido analógico"
-              className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                appSettings.soundEnabled ? "bg-electricViolet" : "bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform absolute top-1 ${
-                  appSettings.soundEnabled ? "left-6" : "left-1"
-                }`}
-              />
-            </button>
+            />
           </div>
 
           {/* Toggle Háptico Táctil */}
@@ -589,28 +569,17 @@ export const AppSettingsSection: React.FC = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              role="switch"
-              aria-checked={appSettings.hapticFeedbackEnabled}
-              onClick={() => {
-                const nextVal = !appSettings.hapticFeedbackEnabled;
-                updateAppSettings({ hapticFeedbackEnabled: nextVal });
-                if (nextVal) {
+            <BrutalistSwitch
+              checked={appSettings.hapticFeedbackEnabled}
+              onChange={(val) => {
+                updateAppSettings({ hapticFeedbackEnabled: val });
+                if (val) {
                   audioEngine.triggerTacticalPulse();
                 }
               }}
+              variant="violet"
               aria-label="Activar o desactivar respuesta háptica vibratoria"
-              className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet ${
-                appSettings.hapticFeedbackEnabled ? "bg-electricViolet" : "bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full bg-white transition-transform absolute top-1 ${
-                  appSettings.hapticFeedbackEnabled ? "left-6" : "left-1"
-                }`}
-              />
-            </button>
+            />
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-white/5">
@@ -644,26 +613,19 @@ export const AppSettingsSection: React.FC = () => {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
+            <BrutalistSwitch
+              checked={appSettings.antiTriangulationStrict}
+              onChange={(val) =>
                 updateAppSettings({
-                  antiTriangulationStrict: !appSettings.antiTriangulationStrict,
+                  antiTriangulationStrict: val,
                 })
               }
-              aria-pressed={appSettings.antiTriangulationStrict}
+              variant="emerald"
+              icon="lock"
               aria-label="Activar o desactivar anti-triangulación estricta"
-              className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                appSettings.antiTriangulationStrict ? "bg-emerald-500" : "bg-neutral-700"
-              }`}
-            >
-              <div
-                className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${
-                  appSettings.antiTriangulationStrict ? "left-7" : "left-1"
-                }`}
-              />
-            </button>
+            />
           </div>
+
 
           <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-3">
             <div>
@@ -677,30 +639,31 @@ export const AppSettingsSection: React.FC = () => {
 
             {isPurgeConfirmOpen ? (
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  type="button"
+                <BrutalistButton
+                  variant="ghost"
+                  size="compact"
                   onClick={() => setIsPurgeConfirmOpen(false)}
-                  className="px-3 py-1.5 min-h-[36px] bg-white/10 hover:bg-white/15 text-neutral-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
                 >
                   Cancelar
-                </button>
-                <button
-                  type="button"
+                </BrutalistButton>
+                <BrutalistButton
+                  variant="danger"
+                  size="compact"
                   onClick={handleConfirmPurge}
-                  className="px-3 py-1.5 min-h-[36px] bg-bloodNeon hover:bg-bloodNeon/80 text-white text-xs font-bold rounded-xl shadow-blood-glow transition-all cursor-pointer active:scale-95"
                 >
                   Sí, Purgar
-                </button>
+                </BrutalistButton>
               </div>
             ) : (
-              <button
-                type="button"
+              <BrutalistButton
+                variant="danger"
+                size="sm"
                 onClick={() => setIsPurgeConfirmOpen(true)}
-                className="px-3.5 py-2 min-h-[38px] bg-bloodNeon/15 hover:bg-bloodNeon/25 border border-bloodNeon/40 text-bloodNeon text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95 flex-shrink-0"
+                className="flex-shrink-0 !bg-bloodNeon/15 !border-bloodNeon/40 !text-bloodNeon hover:!bg-bloodNeon hover:!text-white"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{t.settings.purgeBtn}</span>
-              </button>
+              </BrutalistButton>
             )}
           </div>
         </div>
@@ -743,21 +706,19 @@ export const AppSettingsSection: React.FC = () => {
                 {t.auth.guestWarning}
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  type="button"
+                <BrutalistButton
+                  variant="primary"
                   onClick={() => openAuthModal("link")}
-                  className="py-2.5 px-3 min-h-[44px] bg-electricViolet text-white hover:bg-electricViolet-glow font-extrabold text-xs rounded-xl transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer shadow-violet-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-98"
                 >
                   <Zap className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Vincular Cuenta</span>
-                </button>
-                <button
-                  type="button"
+                </BrutalistButton>
+                <BrutalistButton
+                  variant="secondary"
                   onClick={() => openAuthModal("login")}
-                  className="py-2.5 px-3 min-h-[44px] bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-xl transition-all text-center cursor-pointer border border-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet active:scale-98"
                 >
                   Iniciar Sesión
-                </button>
+                </BrutalistButton>
               </div>
             </div>
           ) : (
@@ -765,19 +726,19 @@ export const AppSettingsSection: React.FC = () => {
               <span className="text-[10px] text-neutral-400">
                 Proveedor: <strong className="text-white uppercase font-mono">{authUser?.providerData[0]?.providerId.split(".")[0] || "Email"}</strong>
               </span>
-              <button
-                type="button"
+              <BrutalistButton
+                variant="danger"
+                size="sm"
                 onClick={() => {
                   if (window.confirm(t.settings.logoutConfirmDesc)) {
                     logout();
                     showToast(language === "es" ? "Sesión cerrada de forma segura" : "Logged out securely");
                   }
                 }}
-                className="px-3.5 py-2 min-h-[40px] bg-bloodNeon/15 hover:bg-bloodNeon text-bloodNeon hover:text-white border border-bloodNeon/40 font-extrabold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 uppercase tracking-wider cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bloodNeon active:scale-95"
               >
                 <LogOut className="w-3.5 h-3.5 stroke-[2.5]" />
                 <span>{t.settings.logoutBtn}</span>
-              </button>
+              </BrutalistButton>
             </div>
           )}
         </div>
@@ -816,17 +777,16 @@ export const AppSettingsSection: React.FC = () => {
             </Link>
 
             {isLocalEnvironment() && (
-              <button
-                type="button"
+              <BrutalistButton
+                variant="secondary"
                 onClick={() => {
                   setIsAppModeModalOpen(true);
                   audioEngine.playPulse();
                 }}
-                className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-200 border border-white/10 font-bold text-xs font-mono tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <Sliders className="w-4 h-4 text-electricViolet-glow" />
                 <span>{language === "es" ? "MODO DE ENTORNO (REAL / TEST)" : "ENVIRONMENT (REAL / TEST)"}</span>
-              </button>
+              </BrutalistButton>
             )}
           </div>
         </div>

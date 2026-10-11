@@ -8,6 +8,9 @@ import {
 // Tabla Base32 estándar para codificación Geohash
 const BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
 
+/** Coordenadas oficiales de fallback predeterminadas de VESSEL (Obelisco / CABA) */
+export const DEFAULT_FALLBACK_COORDINATES = { lat: -34.5885, lng: -58.4376 } as const;
+
 /**
  * Codifica coordenadas de latitud y longitud en un Geohash con la precisión especificada.
  * Precisión 7: ~152.8 m x 152.8 m (ideal para áreas urbanas de alta densidad)

@@ -109,7 +109,24 @@ export class BatteryStateEngine {
   }
 
   private notifyListeners() {
-    // Los suscriptores se actualizarán mediante el ciclo de contexto
+    if (this.listeners.length === 0) return;
+    const currentState: BatteryEngineState = {
+      mode: "foreground_active",
+      level: this.batteryLevel,
+      isCharging: this.isCharging,
+      lastSampledAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      updateIntervalSeconds: 30,
+      highAccuracyGps: true,
+      autoEcoActive: !this.isCharging && this.batteryLevel <= 20,
+      hasHardwareApi: this.hasBatteryApi,
+    };
+    this.listeners.forEach((listener) => {
+      try {
+        listener(currentState);
+      } catch (err) {
+        console.error("Error in BatteryStateEngine listener:", err);
+      }
+    });
   }
 
   public getBatteryLevel(): number {

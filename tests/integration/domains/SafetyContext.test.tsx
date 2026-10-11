@@ -3,145 +3,96 @@ import React from "react";
 import { renderHook, act } from "@testing-library/react";
 import { SafetyProvider, useSafety } from "@/context/domains/SafetyContext";
 
-describe("SafetyContext — Integración del Guardián Silencioso & Dead-Man Switch", () => {
+describe("SafetyContext — Integración de Seguridad y Reducción de Daños", () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <SafetyProvider>{children}</SafetyProvider>
   );
 
-  it("debe inicializarse con el Guardián desarmado y pantalla de cobertura inactiva", () => {
+  it("debe inicializarse con sigilo inactivo, sonido habilitado y sesión de reducción inactiva", () => {
     const { result } = renderHook(() => useSafety(), { wrapper });
 
-    expect(result.current.safetyBeacon.isActive).toBe(false);
-    expect(result.current.safetyBeacon.isAlarmTriggered).toBe(false);
-    expect(result.current.isSafetyBeaconModalOpen).toBe(false);
-    expect(result.current.isCoverScreenActive).toBe(false);
+    expect(result.current.stealthMode).toBe(false);
+    expect(result.current.soundEnabled).toBe(true);
+    expect(result.current.harmReductionSession.isActive).toBe(false);
+    expect(result.current.isHarmReductionModalOpen).toBe(false);
   });
 
-  it("debe armar el Guardián Silencioso con PIN de desactivación hasheado", async () => {
+  it("debe alternar el modo sigilo reactivamente", () => {
     const { result } = renderHook(() => useSafety(), { wrapper });
 
-    await act(async () => {
-      result.current.startSafetyBeacon({
-        durationMinutes: 45,
-        emergencyName: "Alejandro",
-        emergencyPhone: "+5491100001111",
-        locationText: "Palermo Soho, Honduras 4800",
-        targetCodename: "Vessel-99",
-        pinCode: "1234",
-        duressCode: "9999",
-      });
-    });
-
-    expect(result.current.safetyBeacon.isActive).toBe(true);
-    expect(result.current.safetyBeacon.durationMinutes).toBe(45);
-    expect(result.current.safetyBeacon.emergencyContactName).toBe("Alejandro");
-    expect(result.current.safetyBeacon.targetProfileCodename).toBe("Vessel-99");
-    expect(result.current.safetyBeacon.isAlarmTriggered).toBe(false);
-    // El PIN almacenado debe estar protegido (hasheado con salt o longitud SHA-256)
-    expect(result.current.safetyBeacon.pinCode).not.toBe("1234");
-    expect(result.current.safetyBeacon.pinCode.length).toBeGreaterThan(10);
-  });
-
-  it("debe rechazar la desactivación si se ingresa un PIN erróneo", async () => {
-    const { result } = renderHook(() => useSafety(), { wrapper });
-
-    await act(async () => {
-      result.current.startSafetyBeacon({
-        durationMinutes: 30,
-        emergencyName: "Contacto",
-        emergencyPhone: "123",
-        locationText: "Centro",
-        targetCodename: "X",
-        pinCode: "5678",
-      });
-    });
-
-    expect(result.current.safetyBeacon.isActive).toBe(true);
-
-    let success = false;
-    await act(async () => {
-      success = result.current.deactivateSafetyBeacon("0000");
-    });
-
-    expect(success).toBe(false);
-    // El guardián sigue activo protegiendo al usuario
-    expect(result.current.safetyBeacon.isActive).toBe(true);
-  });
-
-  it("debe desactivar el Guardián Silencioso exitosamente al ingresar el PIN correcto", async () => {
-    const { result } = renderHook(() => useSafety(), { wrapper });
-
-    await act(async () => {
-      result.current.startSafetyBeacon({
-        durationMinutes: 30,
-        emergencyName: "Contacto",
-        emergencyPhone: "123",
-        locationText: "Centro",
-        targetCodename: "X",
-        pinCode: "4321",
-      });
-    });
-
-    expect(result.current.safetyBeacon.isActive).toBe(true);
-
-    let success = false;
-    await act(async () => {
-      success = result.current.deactivateSafetyBeacon("4321");
-    });
-
-    expect(success).toBe(true);
-    expect(result.current.safetyBeacon.isActive).toBe(false);
-  });
-
-  it("debe activar el modo señuelo de pantalla de cobertura ante trigger de coacción (Duress)", async () => {
-    const { result } = renderHook(() => useSafety(), { wrapper });
-
-    expect(result.current.isCoverScreenActive).toBe(false);
+    expect(result.current.stealthMode).toBe(false);
 
     act(() => {
-      result.current.triggerSafetyDuress();
+      result.current.toggleStealthMode();
     });
+    expect(result.current.stealthMode).toBe(true);
 
-    // Se activa inmediatamente la pantalla de cobertura (camuflaje de notas o calculadora)
-    expect(result.current.isCoverScreenActive).toBe(true);
+    act(() => {
+      result.current.toggleStealthMode();
+    });
+    expect(result.current.stealthMode).toBe(false);
   });
 
-  it("debe extender el temporizador del Guardián Silencioso", async () => {
+  it("debe alternar el estado de sonido", () => {
     const { result } = renderHook(() => useSafety(), { wrapper });
 
-    await act(async () => {
-      result.current.startSafetyBeacon({
-        durationMinutes: 30,
-        emergencyName: "Contacto",
-        emergencyPhone: "123",
-        locationText: "Centro",
-        targetCodename: "X",
-        pinCode: "1111",
-      });
-    });
-
-    expect(result.current.safetyBeacon.durationMinutes).toBe(30);
+    expect(result.current.soundEnabled).toBe(true);
 
     act(() => {
-      result.current.extendSafetyBeacon(15);
+      result.current.toggleSound();
     });
+    expect(result.current.soundEnabled).toBe(false);
 
-    expect(result.current.safetyBeacon.durationMinutes).toBe(45);
+    act(() => {
+      result.current.toggleSound();
+    });
+    expect(result.current.soundEnabled).toBe(true);
   });
 
-  it("debe alternar la pantalla de cobertura con toggleCoverScreen", () => {
+  it("debe abrir y cerrar el modal de reducción de daños", () => {
     const { result } = renderHook(() => useSafety(), { wrapper });
 
-    expect(result.current.isCoverScreenActive).toBe(false);
+    expect(result.current.isHarmReductionModalOpen).toBe(false);
 
     act(() => {
-      result.current.toggleCoverScreen();
+      result.current.openHarmReductionModal();
     });
-    expect(result.current.isCoverScreenActive).toBe(true);
+    expect(result.current.isHarmReductionModalOpen).toBe(true);
 
     act(() => {
-      result.current.toggleCoverScreen();
+      result.current.closeHarmReductionModal();
     });
-    expect(result.current.isCoverScreenActive).toBe(false);
+    expect(result.current.isHarmReductionModalOpen).toBe(false);
+  });
+
+  it("debe gestionar el ciclo de vida de reducción de daños: iniciar, registrar dosis, agua y finalizar", () => {
+    const { result } = renderHook(() => useSafety(), { wrapper });
+
+    act(() => {
+      result.current.startHarmReductionSession();
+    });
+
+    expect(result.current.harmReductionSession.isActive).toBe(true);
+    expect(result.current.harmReductionSession.totalWaterCups).toBe(1);
+    expect(result.current.harmReductionSession.doses).toHaveLength(0);
+
+    act(() => {
+      result.current.logHarmReductionDose("MDMA", "Media pastilla");
+    });
+
+    expect(result.current.harmReductionSession.doses).toHaveLength(1);
+    expect(result.current.harmReductionSession.doses[0].substanceLabel).toBe("MDMA");
+
+    act(() => {
+      result.current.drinkWaterAck();
+    });
+
+    expect(result.current.harmReductionSession.totalWaterCups).toBe(2);
+
+    act(() => {
+      result.current.endHarmReductionSession();
+    });
+
+    expect(result.current.harmReductionSession.isActive).toBe(false);
   });
 });

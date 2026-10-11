@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { StaffMember } from "@/types/admin";
 import { TacticalHotspot, HotspotStatus, HotspotReport } from "@/types/vessel";
-import { useVessel } from "@/context/VesselContext";
+import { useLogistics, useSettings } from "@/context/VesselContext";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
 import {
   Compass,
@@ -35,8 +35,8 @@ export const HotspotsManagementTab: React.FC<HotspotsManagementTabProps> = ({
     adminUpdateHotspotStatus,
     adminDismissReports,
     adminDeleteHotspot,
-    language,
-  } = useVessel();
+  } = useLogistics();
+  const { language } = useSettings();
 
   const [statusFilter, setStatusFilter] = useState<"all" | HotspotStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");

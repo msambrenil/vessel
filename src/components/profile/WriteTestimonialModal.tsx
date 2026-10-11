@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useDiary } from "@/context/VesselContext";
 import { EncounterValidationMethod } from "@/types/vessel";
 import {
   X,
@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Lock,
 } from "lucide-react";
+import { BrutalistTextarea, BrutalistButton, BrutalistModal } from "@/components/ui";
 
 interface WriteTestimonialModalProps {
   profileId: string;
@@ -25,7 +26,7 @@ export const WriteTestimonialModal: React.FC<WriteTestimonialModalProps> = ({
   profileCodename,
   onClose,
 }) => {
-  const { addTestimonial } = useVessel();
+  const { addTestimonial } = useDiary();
   const [content, setContent] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [validationMethod, setValidationMethod] =
@@ -64,47 +65,21 @@ export const WriteTestimonialModal: React.FC<WriteTestimonialModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Testimonio Consensuado"
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in [overscroll-behavior:contain]"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md bg-obsidian-surface rounded-t-3xl sm:rounded-3xl border-t sm:border border-white/15 p-5 shadow-2xl flex flex-col relative space-y-4 max-h-[88vh] sm:max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-200 sm:animate-none"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile Tactical Drag Handle */}
-        <div className="w-12 h-1 bg-neutral-700 rounded-full mx-auto -mt-2 mb-1 sm:hidden flex-shrink-0" />
-
-        {/* Cabecera */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-electricViolet text-white shadow-violet-soft">
-              <MessageSquareHeart className="w-5 h-5 stroke-[2.5]" />
-            </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
-                Testimonio Consensuado
-              </h3>
-              <p className="text-xs text-electricViolet-glow font-mono font-bold">
-                Para {profileCodename}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal de testimonio"
-            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <BrutalistModal
+      isOpen={true}
+      onClose={onClose}
+      icon={
+        <div className="p-2 rounded-xl bg-electricViolet text-white shadow-violet-soft">
+          <MessageSquareHeart className="w-5 h-5 stroke-[2.5]" />
         </div>
-
-        {isSubmitted ? (
+      }
+      title="Testimonio Consensuado"
+      subtitle={`Para ${profileCodename}`}
+      maxWidth="md"
+      ariaLabel="Testimonio Consensuado"
+      contentClassName="space-y-4"
+    >
+      {isSubmitted ? (
           /* Estado de Éxito */
           <div className="py-8 text-center space-y-3 animate-in zoom-in-95">
             <div className="w-14 h-14 rounded-full bg-electricViolet text-white mx-auto flex items-center justify-center shadow-violet-soft animate-bounce">
@@ -182,19 +157,14 @@ export const WriteTestimonialModal: React.FC<WriteTestimonialModalProps> = ({
             </div>
 
             {/* Área de Texto Libre */}
-            <div>
-              <label className="text-xs font-bold text-neutral-300 uppercase tracking-wider block mb-1.5">
-                Tu Reseña / Experiencia
-              </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Describe cómo fue el encuentro, la química, el espacio, el trato o cualquier detalle relevante..."
-                rows={3}
-                required
-                className="w-full bg-black/50 border border-white/10 rounded-xl text-white text-xs p-3 placeholder:text-neutral-500 focus:outline-none focus:border-electricViolet focus-visible:ring-2 focus-visible:ring-electricViolet/50 transition-all leading-relaxed resize-none font-sans"
-              />
-            </div>
+            <BrutalistTextarea
+              label="Tu Reseña / Experiencia"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Describe cómo fue el encuentro, la química, el espacio, el trato o cualquier detalle relevante..."
+              rows={3}
+              required
+            />
 
             {/* Aspectos Destacados */}
             <div>
@@ -224,16 +194,16 @@ export const WriteTestimonialModal: React.FC<WriteTestimonialModalProps> = ({
             </div>
 
             {/* Botón de Enviar */}
-            <button
+            <BrutalistButton
               type="submit"
+              variant="primary"
               disabled={!content.trim()}
-              className="w-full py-3.5 min-h-[48px] bg-electricViolet text-white rounded-2xl font-bold text-xs uppercase tracking-wider hover:bg-electricViolet-glow disabled:opacity-40 transition-all shadow-violet-soft mt-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electricViolet focus-visible:ring-offset-2 focus-visible:ring-offset-black active:scale-98 font-mono"
+              className="w-full min-h-[48px] font-bold text-xs uppercase tracking-wider mt-2 font-mono"
             >
               Enviar Testimonio Consensuado
-            </button>
+            </BrutalistButton>
           </form>
         )}
-      </div>
-    </div>
+    </BrutalistModal>
   );
 };

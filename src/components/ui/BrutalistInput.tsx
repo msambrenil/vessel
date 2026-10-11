@@ -9,6 +9,7 @@ export interface BrutalistInputProps
   hint?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  containerClassName?: string;
 }
 
 export const BrutalistInput = React.forwardRef<
@@ -23,16 +24,20 @@ export const BrutalistInput = React.forwardRef<
       leftIcon,
       rightIcon,
       className = "",
+      containerClassName = "",
       disabled = false,
       id,
       ...props
     },
     ref
   ) => {
-    const inputId = id || (label ? `input-${label.toLowerCase().replace(/\s+/g, "-")}` : undefined);
+    const reactId = React.useId();
+    const inputId = id || reactId;
+    const errorId = `${inputId}-error`;
+    const hintId = `${inputId}-hint`;
 
     return (
-      <div className="w-full space-y-1.5 text-left">
+      <div className={`w-full space-y-1.5 text-left ${containerClassName}`}>
         {label && (
           <label
             htmlFor={inputId}
@@ -53,8 +58,10 @@ export const BrutalistInput = React.forwardRef<
             ref={ref}
             id={inputId}
             disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : hint ? hintId : undefined}
             className={`
-              w-full min-h-[44px] bg-obsidian-card text-neutral-100 placeholder:text-neutral-500 font-mono text-xs
+              w-full min-h-[44px] bg-obsidian-card text-neutral-100 placeholder:text-neutral-500 font-mono text-base sm:text-xs
               border rounded-xl transition-all duration-150
               ${leftIcon ? "pl-10" : "pl-3.5"}
               ${rightIcon ? "pr-10" : "pr-3.5"}
@@ -79,9 +86,9 @@ export const BrutalistInput = React.forwardRef<
         </div>
 
         {error ? (
-          <p className="text-[10px] font-mono text-bloodNeon">{error}</p>
+          <p id={errorId} role="alert" className="text-[10px] font-mono text-bloodNeon">{error}</p>
         ) : hint ? (
-          <p className="text-[10px] text-neutral-400">{hint}</p>
+          <p id={hintId} className="text-[10px] text-neutral-400">{hint}</p>
         ) : null}
       </div>
     );

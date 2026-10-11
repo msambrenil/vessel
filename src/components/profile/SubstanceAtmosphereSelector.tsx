@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
-import { useVessel } from "@/context/VesselContext";
+import { useRadarMatrix, useSettings } from "@/context/VesselContext";
 import { SubstanceAtmosphere } from "@/types/vessel";
 import { SUBSTANCE_ATMOSPHERE_CATALOG } from "@/data/substanceCatalog";
 import { audioEngine } from "@/lib/audio/SubBassAudioEngine";
-import { ShieldCheck, Check, HeartPulse } from "lucide-react";
+import { Check } from "lucide-react";
 
 export const SubstanceAtmosphereSelector: React.FC = () => {
-  const { mySubstanceAtmosphere, setMySubstanceAtmosphere, openHarmReductionModal, language } = useVessel();
+  const { mySubstanceAtmosphere, setMySubstanceAtmosphere } = useRadarMatrix();
+  const { language } = useSettings();
 
   const handleSelect = (vibe: SubstanceAtmosphere) => {
     setMySubstanceAtmosphere(vibe);
@@ -20,28 +21,17 @@ export const SubstanceAtmosphereSelector: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="flex items-center justify-between">
-        <div>
-          <span className="font-mono text-xs font-bold text-neutral-200 block uppercase tracking-wider">
-            🍸 Atmósfera de Consumo & Sustancias
-          </span>
-          <span className="text-[10.5px] text-neutral-400">
-            Define la sintonía de tu encuentro (Zero-Knowledge, guardado local)
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => openHarmReductionModal()}
-          className="flex items-center gap-1 px-2 py-1 bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 rounded-lg text-[10px] font-mono text-red-300 transition-colors cursor-pointer"
-          title="Abrir Asistente de Reducción de Daños"
-        >
-          <HeartPulse className="w-3 h-3 text-red-400" />
-          <span>Reducción de Daños</span>
-        </button>
+      <div>
+        <span className="font-mono text-xs font-bold text-neutral-200 block uppercase tracking-wider">
+          🍸 Atmósfera de Consumo & Sustancias
+        </span>
+        <span className="text-[10.5px] text-neutral-400">
+          Define la sintonía de tu encuentro (Zero-Knowledge, guardado local)
+        </span>
       </div>
 
-      {/* Grid de 4 Opciones Tácticas */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Grid de 4 Opciones Tácticas (2 cols en mobile, 4 en desktop) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {(Object.keys(SUBSTANCE_ATMOSPHERE_CATALOG) as SubstanceAtmosphere[]).map((key) => {
           const item = SUBSTANCE_ATMOSPHERE_CATALOG[key];
           const isSelected = mySubstanceAtmosphere === key;
@@ -78,14 +68,6 @@ export const SubstanceAtmosphereSelector: React.FC = () => {
           );
         })}
       </div>
-
-      {/* Consejo Táctico o de Cuidado Activo */}
-      {currentMeta.harmReductionTip && (
-        <div className="p-2 bg-neutral-900/60 border border-neutral-800/80 rounded-lg flex items-start gap-2 text-[10px] text-neutral-300">
-          <span className="text-amber-400 text-xs">💡</span>
-          <p className="leading-snug">{currentMeta.harmReductionTip[langKey]}</p>
-        </div>
-      )}
     </div>
   );
 };

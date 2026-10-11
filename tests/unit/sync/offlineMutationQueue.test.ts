@@ -134,4 +134,10 @@ describe("offlineMutationQueue — Cola Resiliente de Mutaciones Offline", () =>
     expect(typeof cleanup).toBe("function");
     cleanup();
   });
+
+  it("debe permitir hidratar la cola de mutaciones de forma asíncrona (hydrateQueueFromIdb)", async () => {
+    const queue = await import("@/lib/sync/offlineMutationQueue").then((m) => m.hydrateQueueFromIdb());
+    expect(Array.isArray(queue)).toBe(true);
+  });
 });
+

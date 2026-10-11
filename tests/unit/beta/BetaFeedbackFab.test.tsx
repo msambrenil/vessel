@@ -5,16 +5,26 @@ import { BetaFeedbackMenuSection } from "@/components/beta/BetaFeedbackFab";
 
 const mockSetSimulatedLocationActive = vi.fn();
 
-vi.mock("@/context/VesselContext", () => ({
-  useVessel: () => ({
+vi.mock("@/context/VesselContext", () => {
+  const mockCtx = () => ({
     language: "es",
     appMode: "mock",
     isSimulatedLocationActive: true,
     setSimulatedLocationActive: mockSetSimulatedLocationActive,
     myCoordinates: { lat: -33.13, lng: -64.34 },
     isLocating: false,
-  }),
-}));
+  });
+  return {
+    useVessel: mockCtx,
+    useAuth: mockCtx,
+    useSettings: mockCtx,
+    useRadarMatrix: mockCtx,
+    useChat: mockCtx,
+    useLogistics: mockCtx,
+    useDiary: mockCtx,
+    useSafety: mockCtx,
+  };
+});
 
 vi.mock("@/lib/storage/localStorageSync", () => ({
   isLocalEnvironment: () => true,
